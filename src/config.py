@@ -170,10 +170,14 @@ def make_pim_config(pim_type: PIMType,
                     num_attacc=8,
                     num_hbm=5,
                     bw_scale=None,
-                    power_constraint=False):
+                    power_constraint=False,
+                    rope=True,
+                    num_agent=None):
     config = {}
     config["PIM_TYPE"] = pim_type
     config["POWER_CONSTRAINT"] = power_constraint
+    config["ROPE"] = rope
+    config["NUM_AGENT"] = num_attacc if num_agent is None else num_agent
     config["ENERGY_TABLE"] = ENERGY_TABLE['PIM'][pim_type]
 
     internal_bandwidth_scale =  BW_SCALE[power_constraint][pim_type] \

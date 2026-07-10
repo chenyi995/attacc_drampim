@@ -106,6 +106,13 @@ def main():
     parser.add_argument("--pipeopt",
                         action='store_true',
                         help="apply pipeline optimization ")
+    parser.add_argument("--no-rope",
+                        action='store_true',
+                        help="disable RoPIM-style RoPE trace pre-pass")
+    parser.add_argument("--num-agent",
+                        type=int,
+                        default=None,
+                        help="number of GPU-generated Sk vectors/agents for RoPIM")
 
     ## set model and service environment
     parser.add_argument(
@@ -174,7 +181,9 @@ def main():
             pim_type = PIMType.BA
         pim_config = make_pim_config(pim_type,
                                      InterfaceType.NVLINK3,
-                                     power_constraint=args.powerlimit)
+                                     power_constraint=args.powerlimit,
+                                     rope=not args.no_rope,
+                                     num_agent=args.num_agent)
         system.set_accelerator(modelinfos, DeviceType.PIM, pim_config)
 
     elif args.system in ['dgx-cpu']:

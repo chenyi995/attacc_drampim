@@ -14,17 +14,31 @@ class Ramulator:
                  ramulator_dir,
                  output_log='',
                  fast_mode=False,
-                 num_hbm=5):
+                 num_hbm=5,
+                 rope=True,
+                 num_agent=1):
         self.df = pd.DataFrame()
         self.ramulator_dir = ramulator_dir
         self.output_log = output_log
         if os.path.exists(output_log):
             self.df = pd.read_csv(output_log)
+            if 'rope' not in self.df.columns:
+                self.df['rope'] = False
+            if 'num_agent' not in self.df.columns:
+                self.df['num_agent'] = 0
         self.tCK = 0.769  # ns
         self.num_hbm = num_hbm
         self.nhead = modelinfos['num_heads']
         self.dhead = modelinfos['dhead']
         self.fast_mode = fast_mode
+        self.rope = rope
+        self.num_agent = num_agent
+
+    def _effective_num_ops_per_attacc(self, layer):
+        num_ops = layer.numOp
+        if getattr(layer, "stage", "") == "gen":
+            num_ops *= max(1, self.num_agent)
+        return num_ops
 
     def make_yaml_file(self, yaml_file, file_name, power_constraint):
         trace_path = os.path.join(self.ramulator_dir, file_name + ".trace")
@@ -74,15 +88,21 @@ class Ramulator:
             else:
                 columns = [
                     'L', 'nhead', 'dhead', 'dbyte', 'pim_type',
-                    'power_constraint', 'cycle', 'mac', 'softmax', 'mvgb',
-                    'mvsb', 'wrgb'
+                    'power_constraint', 'rope', 'num_agent', 'cycle', 'mac',
+                    'softmax', 'mvgb', 'mvsb', 'wrgb'
                 ]
                 df = pd.DataFrame(columns=columns)
         else:
             df = self.df
-        if len(df.columns) > 12:
-            import pdb
-            pdb.set_trace()
+        if 'rope' not in df.columns:
+            df['rope'] = False
+        if 'num_agent' not in df.columns:
+            df['num_agent'] = 0
+        df = df[[
+            'L', 'nhead', 'dhead', 'dbyte', 'pim_type', 'power_constraint',
+            'rope', 'num_agent', 'cycle', 'mac', 'softmax', 'mvgb', 'mvsb',
+            'wrgb'
+        ]]
         new_df = pd.DataFrame(columns=df.columns)
         new_df.loc[0] = log
         df = pd.concat([df, new_df]).drop_duplicates()
@@ -101,8 +121,10 @@ class Ramulator:
             "trace_gen/gen_trace_attacc_{}.py".format(pim_type_name))
         trace_args = "--dhead {} --nhead {} --seqlen {} --dbyte {} --output {}".format(
             self.dhead, num_ops_per_hbm, l, dbyte, trace_file)
+        if self.rope:
+            trace_args += " --rope --num-agent {}".format(self.num_agent)
 
-        gen_trace_cmd = f"python {trace_exc} {trace_args}"
+        gen_trace_cmd = f"python3 {trace_exc} {trace_args}"
 
         # generate trace
         try:
@@ -159,7 +181,7 @@ class Ramulator:
             l = layer.n
             dhead = self.dhead
             dbyte = layer.dbyte
-            num_ops_per_attacc = layer.numOp
+            num_ops_per_attacc = self._effective_num_ops_per_attacc(layer)
             num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
             num_ops_group = 1
             if self.fast_mode:
@@ -169,6 +191,8 @@ class Ramulator:
 
             file_name = "attacc_l{}_nattn{}_dhead{}_dbyte{}_pc{}".format(
                 l, num_ops_per_hbm, dhead, layer.dbyte, int(power_constraint))
+            if self.rope:
+                file_name += "_rope_agent{}".format(self.num_agent)
             yaml_file = os.path.join(self.ramulator_dir, file_name + '.yaml')
             self.make_yaml_file(yaml_file, file_name, power_constraint)
 
@@ -203,7 +227,7 @@ class Ramulator:
 
             log = [
                 l, num_ops_per_hbm, dhead, dbyte, pim_type.name,
-                power_constraint
+                power_constraint, self.rope, self.num_agent
             ] + result
             self.update_log_file(log)
 
@@ -221,7 +245,7 @@ class Ramulator:
         if self.df.empty:
             self.run(pim_type, layer, power_constraint)
 
-        num_ops_per_attacc = layer.numOp
+        num_ops_per_attacc = self._effective_num_ops_per_attacc(layer)
         num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
         num_ops_group = 1
         if self.fast_mode:
@@ -234,8 +258,10 @@ class Ramulator:
         dbyte = layer.dbyte
         row = self.df[(self.df['L'] == l) & (self.df['nhead'] == num_ops_per_hbm) & \
                       (self.df['dbyte'] == dbyte) & (self.df['dhead'] == dhead) & \
-                      (self.df['power_constraint'] == power_constraint) &  \
-                      (self.df['pim_type'] == pim_type.name)]
+                      (self.df['power_constraint'] == power_constraint) & \
+                      (self.df['pim_type'] == pim_type.name) & \
+                      (self.df['rope'] == self.rope) & \
+                      (self.df['num_agent'] == self.num_agent)]
         if row.empty:
             return self.run(pim_type, layer, power_constraint)
 

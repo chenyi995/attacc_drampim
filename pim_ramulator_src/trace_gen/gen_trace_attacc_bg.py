@@ -57,6 +57,171 @@ cmd_context_mvsb = []
 
 valid_channels = []
 
+rope_enabled = False
+rope_num_agent = n_attacc
+rope_mac_cmd = "PIM_MAC_SB"
+
+
+def set_rope_config(enabled, num_agent, diff_rate):
+  global rope_enabled, rope_num_agent, rope_diff_rate
+  rope_enabled = enabled
+  rope_num_agent = max(1, num_agent)
+  rope_diff_rate = min(1.0, max(0.0, diff_rate))
+
+
+def rope_agents_per_row():
+  # Master K consumes one column; every packed agent consumes cos/sin.
+  return max(1, int((n_col - 1) / 2))
+
+
+def rope_agent_group_count():
+  return math.ceil(rope_num_agent / rope_agents_per_row())
+
+
+def rope_agent_group_size(agent_group_idx):
+  first_agent = agent_group_idx * rope_agents_per_row()
+  return max(1, min(rope_agents_per_row(), rope_num_agent - first_agent))
+
+
+def rope_cols_per_chunk(agent_group_idx):
+  return 1 + 2 * rope_agent_group_size(agent_group_idx)
+
+
+def rope_row_tiles_per_group(agent_group_idx):
+  vector_chunks = math.ceil(dhead / n_mac)
+  chunks_per_row = max(1, int(n_col / rope_cols_per_chunk(agent_group_idx)))
+  return math.ceil(vector_chunks / chunks_per_row)
+
+
+def rope_rows_per_token():
+  return sum(rope_row_tiles_per_group(group_idx)
+             for group_idx in range(rope_agent_group_count()))
+
+
+def rope_group_row_offset(agent_group_idx):
+  return sum(rope_row_tiles_per_group(group_idx)
+             for group_idx in range(agent_group_idx))
+
+
+def ropim_row_base(head_idx, token_idx, agent_group_idx, row_tile, n_head_per_hbm):
+  # Shared-K RoPIM row layout. A row holds the master K section plus a bounded
+  # group of agents' Sk; large agent counts replicate K across row groups.
+  kv_group_idx = int(head_idx / rope_num_agent)
+  lch = kv_group_idx % n_channel
+  local_group = int(kv_group_idx / n_channel)
+  rows_per_token = rope_rows_per_token()
+  group_row_base = ((local_group * max_L + token_idx) * rows_per_token +
+                    rope_group_row_offset(agent_group_idx))
+  row_idx = group_row_base + row_tile
+  bank_idx = kv_group_idx % n_bank
+  bg_idx = int(kv_group_idx / n_bank) % n_bg
+  rank_idx = int(kv_group_idx / (n_bank * n_bg)) % n_rank
+  return (lch * HBM_GS['ch'] + rank_idx * HBM_GS['rank'] +
+          bg_idx * HBM_GS['bg'] + bank_idx * HBM_GS['ba'] +
+          row_idx * HBM_GS['row'])
+
+
+def rope_diff_hash(block_idx, agent_idx):
+  value = ((block_idx + 1) * 0x9E3779B1) ^ ((agent_idx + 1) * 0x85EBCA77)
+  value ^= value >> 16
+  value = (value * 0xC2B2AE3D) & 0xffffffff
+  value ^= value >> 16
+  return value
+
+
+def rope_has_diff(block_idx, agent_idx):
+  return rope_diff_hash(block_idx, agent_idx) < int(rope_diff_rate * (1 << 32))
+
+
+def rope_diff_rank(block_idx, agent_idx):
+  return sum(1 for idx in range(agent_idx) if rope_has_diff(block_idx, idx))
+
+
+def rope_diff_count(block_idx):
+  return sum(1 for idx in range(rope_num_agent) if rope_has_diff(block_idx, idx))
+
+
+def ropim_diff_row_base(head_idx, block_idx, coordinate, overflow_idx):
+  # Slice-major, dense-agent-minor diff slab; row zero is bitmap metadata.
+  kv_group_idx = int(head_idx / rope_num_agent)
+  lch = kv_group_idx % n_channel
+  bank_idx = kv_group_idx % n_bank
+  bg_idx = int(kv_group_idx / n_bank) % n_bg
+  rank_idx = int(kv_group_idx / (n_bank * n_bg)) % n_rank
+  rows_per_coordinate = max(1, math.ceil(rope_diff_count(block_idx) / n_col))
+  logical_row = 1 + coordinate * rows_per_coordinate + overflow_idx
+  row_idx = int(n_row / 2) + logical_row % int(n_row / 2)
+  return (lch * HBM_GS["ch"] + rank_idx * HBM_GS["rank"] +
+          bg_idx * HBM_GS["bg"] + bank_idx * HBM_GS["ba"] +
+          row_idx * HBM_GS["row"])
+
+
+def generate_rope_trace(n_head_per_hbm, L):
+  total_cmd = []
+  vector_chunks = math.ceil(dhead / n_mac)
+  agents_per_row = rope_agents_per_row()
+  token_idx = max(0, L - 1)
+  block_idx = int(token_idx / rope_token_block)
+  token_in_block = token_idx % rope_token_block
+  loaded_bitmaps = set()
+  # n_head_per_hbm already includes the head-agent product assigned to this HBM.
+  # Generate one RoPE pre-pass for every served head-agent pair, not only for
+  # the agent table count.
+  for logical_idx in range(n_head_per_hbm):
+    head_idx = logical_idx
+    agent_idx = logical_idx % rope_num_agent
+    agent_group_idx = int(agent_idx / agents_per_row)
+    group_agent_idx = agent_idx % agents_per_row
+    cols_per_chunk = rope_cols_per_chunk(agent_group_idx)
+    chunks_per_row = max(1, int(n_col / cols_per_chunk))
+    row_tiles = math.ceil(vector_chunks / chunks_per_row)
+    for row_tile in range(row_tiles):
+      row_base = ropim_row_base(head_idx, token_idx, agent_group_idx, row_tile, n_head_per_hbm)
+      start_chunk = row_tile * chunks_per_row
+      end_chunk = min(vector_chunks, start_chunk + chunks_per_row)
+      for chunk_idx in range(start_chunk, end_chunk):
+        local_col = chunk_idx - start_chunk
+        chunk_col = local_col * cols_per_chunk
+        k_addr = row_base + chunk_col * HBM_GS['col']
+        sk_col = chunk_col + 1 + 2 * group_agent_idx
+        cos_addr = row_base + sk_col * HBM_GS['col']
+        sin_addr = row_base + (sk_col + 1) * HBM_GS['col']
+        # Q_rotate is already produced on the GPU and Q never enters DRAM. V is
+        # not rotated in this model, so PIM only applies RoPE to K.
+        # Approximate the two RoPE branches with one MAC for cos and one for sin.
+        for addr in [cos_addr, sin_addr]:
+          hex_addr = hex(addr)[2:]
+          total_cmd.append("{} 0x{:0>8}".format(rope_mac_cmd, hex_addr))
+      hex_addr = hex(row_base)[2:]
+      total_cmd.append("PIM_MV_SB 0x{:0>8}".format(hex_addr))
+      total_cmd.append("PIM_BARRIER 0x{:0>8}".format(hex_addr))
+
+    if rope_has_diff(block_idx, agent_idx):
+      kv_group_idx = int(head_idx / rope_num_agent)
+      bitmap_key = (kv_group_idx, block_idx)
+      dense_rank = rope_diff_rank(block_idx, agent_idx)
+      overflow_idx = int(dense_rank / n_col)
+      if bitmap_key not in loaded_bitmaps:
+        metadata_addr = (ropim_diff_row_base(head_idx, block_idx, 0, 0) -
+                         HBM_GS["row"])
+        total_cmd.append("PIM_MV_SB 0x{:0>8}".format(metadata_addr))
+        loaded_bitmaps.add(bitmap_key)
+      for chunk_idx in range(vector_chunks):
+        coordinate = token_in_block * vector_chunks + chunk_idx
+        diff_addr = (ropim_diff_row_base(
+            head_idx, block_idx, coordinate, overflow_idx) +
+            (dense_rank % n_col) * HBM_GS["col"])
+        # Sk is staged from dense pass; correction has two RoPE branches.
+        for _ in range(2):
+          total_cmd.append("{} 0x{:0>8}".format(rope_mac_cmd, diff_addr))
+        # Model the element-wise accumulation:
+        # K_rot_agent = K_rot_master + K_rot_diff before attention score.
+        total_cmd.append("{} 0x{:0>8}".format(rope_mac_cmd, diff_addr))
+        row_base = diff_addr - (dense_rank % n_col) * HBM_GS["col"]
+        total_cmd.append("PIM_MV_SB 0x{:0>8}".format(row_base))
+        total_cmd.append("PIM_BARRIER 0x{:0>8}".format(row_base))
+  return total_cmd
+
 def cmd_list_reset():
   cmd_score_wrgb   = []
   cmd_score_mac    = []
@@ -209,6 +374,8 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name):
       Attention(L, key_addr, val_addr, itr, remainder)
 
 
+  rope_preamble = generate_rope_trace(n_head_per_hbm, L) if rope_enabled else []
+
   ##-- Ovelapping Commands --##
   barrier = []
   for lch in range(n_channel):
@@ -216,7 +383,7 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name):
     hex_addr = hex(addr)[2:]
     barrier.append("PIM_BARRIER 0x{0:0>8}".format(hex_addr))
 
-  total_cmd = []
+  total_cmd = rope_preamble
   for i in range(0, num_itr -1, 2):
 
     # Head0: Score
@@ -388,6 +555,12 @@ def main():
                       help="maximum L, default= 4096")
   parser.add_argument("-db", "--dbyte", type=int, default=2, 
                       help="data type (B), default= 2")
+  parser.add_argument("--rope", action="store_true",
+                      help="enable RoPIM-style K/Sk row-buffer-local RoPE pre-pass")
+  parser.add_argument("--num-agent", type=int, default=n_attacc,
+                      help="number of GPU-generated Sk vectors/PIM agents")
+  parser.add_argument("--diff-rate", type=float, default=0.1,
+                      help="per-agent Bernoulli KV-block diff probability")
   parser.add_argument("-o", "--output", type=str, default="attacc_bg.trace", 
                       help="output path")
 
@@ -400,6 +573,7 @@ def main():
 
   data_size = args.dbyte
   n_mac = int(HBM_GS['col'] / data_size)
+  set_rope_config(args.rope, args.num_agent, args.diff_rate)
 
   print("------   Make a trace of bankgroup-level AttAcc   ------")
 

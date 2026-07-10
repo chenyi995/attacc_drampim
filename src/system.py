@@ -42,7 +42,9 @@ class System:
     def set_accelerator(self, modelinfos, name: DeviceType, config):
         self.hetero_name = name
         if self.hetero_name == DeviceType.PIM:
-            ramulator = Ramulator(modelinfos, "ramulator2", "ramulator.out")
+            ramulator = Ramulator(modelinfos, "ramulator2", "ramulator.out",
+                                  rope=config.get("ROPE", True),
+                                  num_agent=config.get("NUM_AGENT", 1))
             self.devices['Acc'] = PIM(config,
                                       self.scaling_factor,
                                       ramulator)
@@ -444,6 +446,55 @@ class System:
         else:
             perfs = [output]
 
+    def _get_rope_capacity(self, context_len, dbyte, batch_size):
+        if self.hetero_name != DeviceType.PIM:
+            return 0
+
+        acc = self.devices['Acc']
+        ramulator = getattr(acc, 'ramulator', None)
+        if ramulator is None or not getattr(ramulator, 'rope', False):
+            return 0
+
+        num_agent = getattr(ramulator, 'num_agent', 1)
+        dhead = self.model.dhead
+
+        n_col = 32
+        row_size = 1024
+        n_mac = int(32 / dbyte)
+        vector_chunks = int((dhead + n_mac - 1) / n_mac)
+        agents_per_row = max(1, int((n_col - 1) / 2))
+        agent_groups = int((num_agent + agents_per_row - 1) / agents_per_row)
+
+        row_tiles_per_token = 0
+        for group_idx in range(agent_groups):
+            group_size = min(agents_per_row,
+                             num_agent - group_idx * agents_per_row)
+            cols_per_chunk = 1 + 2 * group_size
+            chunks_per_row = max(1, int(n_col / cols_per_chunk))
+            row_tiles_per_token += int(
+                (vector_chunks + chunks_per_row - 1) / chunks_per_row)
+
+        dense_per_layer = (context_len * row_tiles_per_token * row_size *
+                           acc.num_hbm * acc.num_attacc)
+
+        # Exact expected ceil(X/32), with X following Binomial(A, 0.1).
+        # Each block has one bitmap row and compact slabs for both K and V.
+        expected_diff_rows = 0.0
+        for diff_count in range(1, num_agent + 1):
+            probability = (math.comb(num_agent, diff_count) *
+                           (0.1 ** diff_count) *
+                           (0.9 ** (num_agent - diff_count)))
+            expected_diff_rows += probability * int(
+                (diff_count + n_col - 1) / n_col)
+        token_blocks = int((context_len + 31) / 32)
+        coordinates_per_block = 32 * vector_chunks
+        sparse_rows = token_blocks * (
+            1 + 2 * coordinates_per_block * expected_diff_rows)
+        sparse_per_layer = (sparse_rows * row_size * acc.num_hbm *
+                            acc.num_attacc)
+        return ((dense_per_layer + sparse_per_layer) * self.model.ndec *
+                batch_size)
+
     def get_required_mem_capacity(self, batch_size, lin, lout):
         ndec = self.model.ndec
         hdim = self.model.hdim
@@ -465,7 +516,12 @@ class System:
         temp_memory = max((hdim + l * nhead) * a_byte, hdim * 2 * a_byte,
                           l * nhead * 2 * a_byte,
                           (ff_scale * hdim + hdim) * a_byte) + l * nhead
-        kv_memory = ndec * 2 * l * (hdim) * a_byte
+        rope_memory = self._get_rope_capacity(l, a_byte, batch_size)
+        # RoPE storage already contains the row-packed K cache. Keep only V in
+        # the conventional KV capacity term so K is not counted twice.
+        kv_factor = 1 if rope_memory else 2
+        kv_memory = ndec * kv_factor * l * hdim * a_byte
 
-        return weight_memory, kv_memory * batch_size, temp_memory * batch_size
+        return (weight_memory, kv_memory * batch_size,
+                temp_memory * batch_size, rope_memory)
 
