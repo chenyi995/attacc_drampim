@@ -21,7 +21,8 @@ def write_csv(logfile, perfs):
             col_name = [
                 'model', 'dtype', 'xpu', 'cap', 'bw', 'sys_opb', 'hw', 'cores',
                 'pipe_level', 'is parallel', 'power constraint', 'gqa_size',
-                'Lin', 'Lout', 'bs', 'required_cap', 's_flops',
+                'Lin', 'Lout', 'bs', 'required_cap', 'k_row_cap',
+                'k_data_cap', 's_flops',
                 'g_flops', 's_time', 's_matmul', 's_fc', 's_comm', 's_softmax',
                 's_act', 's_lnorm', 'g_time (ms)', 'g_matmul', 'g_fc', 'g_comm',
                 'g_etc', 'g_qkv_time', 'g_prj_time', 'g_ff_time', 'g2g_comm',
@@ -38,6 +39,23 @@ def write_csv(logfile, perfs):
             info = tag + config + time + energy
             wrt.writerow(info)
         f.close()
+
+
+def write_capacity_csv(logfile, row):
+    if logfile is None:
+        return
+
+    firstrow = not os.path.exists(logfile)
+    with open(logfile, 'a') as f:
+        wrt = csv.writer(f)
+        if firstrow:
+            wrt.writerow([
+                'model', 'dtype', 'xpu', 'hw', 'cores',
+                'Lin', 'bs', 'max_lout', 'max_context_len',
+                'required_cap', 'k_row_cap', 'k_data_cap',
+                'capacity_bytes', 'capacity_GB', 'hit_search_limit'
+            ])
+        wrt.writerow(row)
 
 
 def run(system: System,
@@ -108,11 +126,41 @@ def main():
                         help="apply pipeline optimization ")
     parser.add_argument("--no-rope",
                         action='store_true',
-                        help="disable RoPIM-style RoPE trace pre-pass")
+                        help="disable block-wise diffK trace/capacity model")
     parser.add_argument("--num-agent",
                         type=int,
                         default=None,
-                        help="number of GPU-generated Sk vectors/agents for RoPIM")
+                        help="number of agents for block-wise diffK")
+    parser.add_argument("--diff-rate",
+                        "--pb",
+                        dest="diff_rate",
+                        type=float,
+                        default=0.1,
+                        help="per-agent Bernoulli K-block diff probability Pb")
+    parser.add_argument("--token-block",
+                        type=int,
+                        default=32,
+                        help="tokens per MasterK/diffK block")
+    parser.add_argument("--sim-cores",
+                        "--num-cores",
+                        dest="sim_cores",
+                        type=int,
+                        default=1,
+                        help="host CPU workers used to parallelize Ramulator simulation")
+    parser.add_argument("--rerun-ramulator",
+                        action="store_true",
+                        help="ignore cached Ramulator rows and force a new simulation")
+    parser.add_argument("--find-max-lout",
+                        action="store_true",
+                        help="find the maximum decode output length that fits memory instead of running latency simulation")
+    parser.add_argument("--max-lout-search-limit",
+                        type=int,
+                        default=1048576,
+                        help="upper bound used by --find-max-lout search")
+    parser.add_argument("--output-file",
+                        type=str,
+                        default="output.csv",
+                        help="CSV output path")
 
     ## set model and service environment
     parser.add_argument(
@@ -163,7 +211,7 @@ def main():
             [args.lin, args.lout, args.batch]))
     num_gpu = args.ngpu
     gmem_cap = args.gmemcap * 1024 * 1024 * 1024
-    output_path = "output.csv"
+    output_path = args.output_file
     if os.path.exists(output_path):
         os.system("rm " + output_path)
 
@@ -183,13 +231,36 @@ def main():
                                      InterfaceType.NVLINK3,
                                      power_constraint=args.powerlimit,
                                      rope=not args.no_rope,
-                                     num_agent=args.num_agent)
+                                     num_agent=args.num_agent,
+                                     diff_rate=args.diff_rate,
+                                     token_block=args.token_block,
+                                     sim_cores=args.sim_cores,
+                                     force_ramulator=args.rerun_ramulator)
         system.set_accelerator(modelinfos, DeviceType.PIM, pim_config)
 
     elif args.system in ['dgx-cpu']:
         xpu_config = make_xpu_config(gpu_device)
         system.set_xpu(xpu_config['GPU'])
         system.set_accelerator(modelinfos, DeviceType.CPU, xpu_config['CPU'])
+
+    if args.find_max_lout:
+        max_lout, max_context_len, breakdown, cap_bytes, hit_limit = system.find_max_lout_capacity(
+            args.batch, args.lin, args.max_lout_search_limit)
+        hw_name = system.devices['Acc'].pim_type.name if args.system == 'dgx-attacc' else system.hetero_name.name
+        row = [
+            system.model.name, system.model.dtype.name,
+            system.devices['GPU'].name.name, hw_name, system.devices['GPU'].num_xpu,
+            args.lin, args.batch, max_lout, max_context_len,
+            breakdown['required_cap'], breakdown['k_row_cap'], breakdown['k_data_cap'],
+            cap_bytes, cap_bytes / (1000 * 1000 * 1000), hit_limit
+        ]
+        if os.path.exists(output_path):
+            os.system("rm " + output_path)
+        write_capacity_csv(output_path, row)
+        print("    Max decode output length without memory overflow: {} (context length: {}, required_cap: {:.3f} GB, cap: {:.3f} GB)".format(
+            max_lout, max_context_len, breakdown['required_cap'] / (1000 * 1000 * 1000),
+            cap_bytes / (1000 * 1000 * 1000)))
+        return
 
     run(system,
         args.batch,

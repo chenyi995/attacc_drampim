@@ -1,0 +1,2 @@
+L,nhead,dhead,dbyte,pim_type,power_constraint,rope,num_agent,diff_rate,token_block,cycle,mac,softmax,mvgb,mvsb,wrgb
+2720,615,128,2,BA,False,True,256,0.6,32,156333,418216,615,54044,64354,4787

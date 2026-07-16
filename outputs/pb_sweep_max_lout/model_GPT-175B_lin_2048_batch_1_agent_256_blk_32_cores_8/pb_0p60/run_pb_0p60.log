@@ -1,0 +1,2 @@
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+    Max decode output length without memory overflow: 673 (context length: 2720, required_cap: 1368.884 GB, cap: 1374.390 GB)

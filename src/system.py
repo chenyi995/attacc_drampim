@@ -44,7 +44,11 @@ class System:
         if self.hetero_name == DeviceType.PIM:
             ramulator = Ramulator(modelinfos, "ramulator2", "ramulator.out",
                                   rope=config.get("ROPE", True),
-                                  num_agent=config.get("NUM_AGENT", 1))
+                                  num_agent=config.get("NUM_AGENT", 1),
+                                  diff_rate=config.get("DIFF_RATE", 0.1),
+                                  token_block=config.get("TOKEN_BLOCK", 32),
+                                  sim_cores=config.get("SIM_CORES", 1),
+                                  force_run=config.get("FORCE_RAMULATOR", False))
             self.devices['Acc'] = PIM(config,
                                       self.scaling_factor,
                                       ramulator)
@@ -191,6 +195,16 @@ class System:
         assert self.model_set, "Need to set_model"
         self.model.build(batch_size, lin, lout, self.hetero_name
                          in [DeviceType.CPU, DeviceType.PIM])
+        if self.hetero_name == DeviceType.PIM:
+            ramulator = getattr(self.devices['Acc'], 'ramulator', None)
+            if ramulator is not None and getattr(ramulator, 'sim_cores', 1) > 1:
+                score_layers = [
+                    layer for decoder_block in self.model.gen_decoder
+                    for layer in decoder_block
+                    if layer.type == LayerType.MATMUL and 'score' in layer.name
+                ]
+                ramulator.precompute(self.devices['Acc'].pim_type, score_layers,
+                                     power_constraint)
         second_batch_size = num_reqs % batch_size
         num_batches = 1
         target_bs = [batch_size]
@@ -383,7 +397,8 @@ class System:
 
             perf = list(s_perf.values()) + list(g_perf.values())
 
-            cap_usage = sum(self.get_required_mem_capacity(bs, lin, lout))
+            cap_parts = self.get_required_mem_capacity(bs, lin, lout)
+            cap_usage = sum(cap_parts[:4])
 
             ## Scaling to all decoder
             ## Perf: ms, energy: nJ
@@ -430,7 +445,7 @@ class System:
         config = [
             self.hetero_name.name, self.devices['GPU'].num_xpu, pipe,
             parallel_ff, power_constraint, 0, lin, lout, batch_size,
-            cap_usage, s_flops, g_flops
+            cap_usage, cap_parts[3], cap_parts[4], s_flops, g_flops
         ]
         if self.hetero_name == DeviceType.PIM:
             config[0] = self.devices['Acc'].pim_type.name
@@ -446,54 +461,97 @@ class System:
         else:
             perfs = [output]
 
-    def _get_rope_capacity(self, context_len, dbyte, batch_size):
+    def _get_k_capacity(self, context_len, dbyte, batch_size):
         if self.hetero_name != DeviceType.PIM:
-            return 0
+            return 0, 0
 
         acc = self.devices['Acc']
         ramulator = getattr(acc, 'ramulator', None)
         if ramulator is None or not getattr(ramulator, 'rope', False):
-            return 0
+            return 0, 0
 
         num_agent = getattr(ramulator, 'num_agent', 1)
+        diff_rate = getattr(ramulator, 'diff_rate', 0.1)
+        token_block = getattr(ramulator, 'token_block', 32)
         dhead = self.model.dhead
 
-        n_col = 32
         row_size = 1024
-        n_mac = int(32 / dbyte)
-        vector_chunks = int((dhead + n_mac - 1) / n_mac)
-        agents_per_row = max(1, int((n_col - 1) / 2))
-        agent_groups = int((num_agent + agents_per_row - 1) / agents_per_row)
+        n_bank_total = 64
+        n_col = 32
+        block_bytes_per_bank = token_block * dhead * dbyte / n_bank_total
+        cols_per_k_block = int((block_bytes_per_bank + 32 - 1) / 32)
+        master_cols_per_bank = cols_per_k_block
+        diff_cols_per_bank = cols_per_k_block
 
-        row_tiles_per_token = 0
-        for group_idx in range(agent_groups):
-            group_size = min(agents_per_row,
-                             num_agent - group_idx * agents_per_row)
-            cols_per_chunk = 1 + 2 * group_size
-            chunks_per_row = max(1, int(n_col / cols_per_chunk))
-            row_tiles_per_token += int(
-                (vector_chunks + chunks_per_row - 1) / chunks_per_row)
+        token_blocks = int((context_len + token_block - 1) / token_block)
+        master_bytes = context_len * self.model.num_heads * dhead * dbyte
+        expected_diff_bytes = master_bytes * num_agent * diff_rate
 
-        dense_per_layer = (context_len * row_tiles_per_token * row_size *
-                           acc.num_hbm * acc.num_attacc)
-
-        # Exact expected ceil(X/32), with X following Binomial(A, 0.1).
-        # Each block has one bitmap row and compact slabs for both K and V.
-        expected_diff_rows = 0.0
-        for diff_count in range(1, num_agent + 1):
+        expected_rows_per_bank = 0.0
+        for diff_count in range(0, num_agent + 1):
             probability = (math.comb(num_agent, diff_count) *
-                           (0.1 ** diff_count) *
-                           (0.9 ** (num_agent - diff_count)))
-            expected_diff_rows += probability * int(
-                (diff_count + n_col - 1) / n_col)
-        token_blocks = int((context_len + 31) / 32)
-        coordinates_per_block = 32 * vector_chunks
-        sparse_rows = token_blocks * (
-            1 + 2 * coordinates_per_block * expected_diff_rows)
-        sparse_per_layer = (sparse_rows * row_size * acc.num_hbm *
-                            acc.num_attacc)
-        return ((dense_per_layer + sparse_per_layer) * self.model.ndec *
-                batch_size)
+                           (diff_rate ** diff_count) *
+                           ((1.0 - diff_rate) ** (num_agent - diff_count)))
+            used_cols = master_cols_per_bank + diff_cols_per_bank * diff_count
+            expected_rows_per_bank += probability * int(
+                (used_cols + n_col - 1) / n_col)
+
+        occupied_rows = (self.model.num_heads * token_blocks * n_bank_total *
+                         expected_rows_per_bank)
+        raw_per_layer = master_bytes + expected_diff_bytes
+        occupied_per_layer = occupied_rows * row_size
+        scale = self.model.ndec * batch_size
+        return raw_per_layer * scale, occupied_per_layer * scale
+
+    def get_aggregate_memory_capacity(self):
+        cap = self.devices['GPU'].aggregate_memory_capacity
+        if self.hetero_name in [DeviceType.CPU, DeviceType.PIM]:
+            cap += self.devices['Acc'].aggregate_memory_capacity
+        return cap
+
+    def get_capacity_breakdown(self, batch_size, lin, lout):
+        parts = self.get_required_mem_capacity(batch_size, lin, lout)
+        k_row_cap = parts[3] if len(parts) > 3 else 0
+        k_data_cap = parts[4] if len(parts) > 4 else 0
+        required_cap = sum(parts[:4]) if len(parts) > 3 else sum(parts)
+        return {
+            'required_cap': required_cap,
+            'k_row_cap': k_row_cap,
+            'k_data_cap': k_data_cap,
+            'parts': parts,
+        }
+
+    def find_max_lout_capacity(self, batch_size, lin, max_search_lout=1048576):
+        cap = self.get_aggregate_memory_capacity()
+
+        def fits(lout):
+            return self.get_capacity_breakdown(batch_size, lin, lout)['required_cap'] <= cap
+
+        if not fits(1):
+            breakdown = self.get_capacity_breakdown(batch_size, lin, 1)
+            return 0, lin, breakdown, cap, False
+
+        low = 1
+        high = 2
+        while high < max_search_lout and fits(high):
+            low = high
+            high *= 2
+
+        hit_search_limit = False
+        if high >= max_search_lout and fits(max_search_lout):
+            low = max_search_lout
+            hit_search_limit = True
+        else:
+            high = min(high, max_search_lout)
+            while low + 1 < high:
+                mid = int((low + high) / 2)
+                if fits(mid):
+                    low = mid
+                else:
+                    high = mid
+
+        breakdown = self.get_capacity_breakdown(batch_size, lin, low)
+        return low, lin + low - 1, breakdown, cap, hit_search_limit
 
     def get_required_mem_capacity(self, batch_size, lin, lout):
         ndec = self.model.ndec
@@ -516,12 +574,12 @@ class System:
         temp_memory = max((hdim + l * nhead) * a_byte, hdim * 2 * a_byte,
                           l * nhead * 2 * a_byte,
                           (ff_scale * hdim + hdim) * a_byte) + l * nhead
-        rope_memory = self._get_rope_capacity(l, a_byte, batch_size)
-        # RoPE storage already contains the row-packed K cache. Keep only V in
-        # the conventional KV capacity term so K is not counted twice.
-        kv_factor = 1 if rope_memory else 2
+        k_raw_memory, k_row_memory = self._get_k_capacity(l, a_byte, batch_size)
+        # The row-packed K storage already contains MasterK and expected diffK.
+        # Keep only V in the conventional KV capacity term so K is not counted twice.
+        kv_factor = 1 if k_row_memory else 2
         kv_memory = ndec * kv_factor * l * hdim * a_byte
 
         return (weight_memory, kv_memory * batch_size,
-                temp_memory * batch_size, rope_memory)
+                temp_memory * batch_size, k_row_memory, k_raw_memory)
 

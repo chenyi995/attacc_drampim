@@ -172,12 +172,20 @@ def make_pim_config(pim_type: PIMType,
                     bw_scale=None,
                     power_constraint=False,
                     rope=True,
-                    num_agent=None):
+                    num_agent=None,
+                    diff_rate=0.1,
+                    token_block=32,
+                    sim_cores=1,
+                    force_ramulator=False):
     config = {}
     config["PIM_TYPE"] = pim_type
     config["POWER_CONSTRAINT"] = power_constraint
     config["ROPE"] = rope
     config["NUM_AGENT"] = num_attacc if num_agent is None else num_agent
+    config["DIFF_RATE"] = min(1.0, max(0.0, diff_rate))
+    config["TOKEN_BLOCK"] = max(1, token_block)
+    config["SIM_CORES"] = sim_cores
+    config["FORCE_RAMULATOR"] = force_ramulator
     config["ENERGY_TABLE"] = ENERGY_TABLE['PIM'][pim_type]
 
     internal_bandwidth_scale =  BW_SCALE[power_constraint][pim_type] \
