@@ -203,10 +203,12 @@ def generate_rope_trace(n_head_per_hbm, L):
     if rope_has_diff(block_idx, agent_idx):
       dense_rank = rope_diff_rank(block_idx, agent_idx)
       addr = diff_row_addr(head_idx, block_idx, dense_rank)
-      row_base = addr - ((k_block_cols_per_bank() + k_block_cols_per_bank() * dense_rank) % n_col) * HBM_GS["col"]
-      total_cmd.append("PIM_MV_SB 0x{:0>8}".format(hex(row_base)[2:]))
-      row_base = addr - (addr % HBM_GS["row"])
-      total_cmd.append("PIM_BARRIER 0x{:0>8}".format(hex(row_base)[2:]))
+      for tensor_idx in range(2):
+        tensor_addr = addr + tensor_idx * pow(2, 23)
+        row_base = tensor_addr - ((k_block_cols_per_bank() + k_block_cols_per_bank() * dense_rank) % n_col) * HBM_GS["col"]
+        total_cmd.append("PIM_MV_SB 0x{:0>8}".format(hex(row_base)[2:]))
+        row_base = tensor_addr - (tensor_addr % HBM_GS["row"])
+        total_cmd.append("PIM_BARRIER 0x{:0>8}".format(hex(row_base)[2:]))
   return total_cmd
 
 def cmd_list_reset():

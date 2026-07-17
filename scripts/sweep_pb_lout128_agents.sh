@@ -14,7 +14,7 @@ LOUT="${LOUT:-128}"
 BATCH="${BATCH:-1}"
 TOKEN_BLOCK="${TOKEN_BLOCK:-32}"
 SIM_CORES="${SIM_CORES:-8}"
-OUT_ROOT="${OUT_ROOT:-${REPO_DIR}/outputs/pb_sweep_lout128}"
+OUT_ROOT="${OUT_ROOT:-${REPO_DIR}/outputs/0718/lout128}"
 RUN_NAME="${RUN_NAME:-model_${MODEL}_lin_${LIN}_lout_${LOUT}_batch_${BATCH}_blk_${TOKEN_BLOCK}_cores_${SIM_CORES}}"
 RUN_DIR="${OUT_ROOT}/${RUN_NAME}"
 

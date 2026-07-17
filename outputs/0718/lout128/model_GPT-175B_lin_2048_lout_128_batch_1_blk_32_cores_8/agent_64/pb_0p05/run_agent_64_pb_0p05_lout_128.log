@@ -1,0 +1,3 @@
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+---Run simple mode Batch 1 Lin 2048 Lout 128 pipe False parall False---
+    Batch: 1, Throughput: 34.09 tokens/s Latency: 29.34ms, pipe/ff_parallel: False/False, powerlimit: False

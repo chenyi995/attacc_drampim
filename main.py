@@ -126,21 +126,21 @@ def main():
                         help="apply pipeline optimization ")
     parser.add_argument("--no-rope",
                         action='store_true',
-                        help="disable block-wise diffK trace/capacity model")
+                        help="disable block-wise diffKV trace/capacity model")
     parser.add_argument("--num-agent",
                         type=int,
                         default=None,
-                        help="number of agents for block-wise diffK")
+                        help="number of agents for block-wise diffKV")
     parser.add_argument("--diff-rate",
                         "--pb",
                         dest="diff_rate",
                         type=float,
                         default=0.1,
-                        help="per-agent Bernoulli K-block diff probability Pb")
+                        help="per-agent Bernoulli KV-block diff probability Pb")
     parser.add_argument("--token-block",
                         type=int,
                         default=32,
-                        help="tokens per MasterK/diffK block")
+                        help="tokens per MasterKV/diffKV block")
     parser.add_argument("--sim-cores",
                         "--num-cores",
                         dest="sim_cores",

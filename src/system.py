@@ -461,7 +461,7 @@ class System:
         else:
             perfs = [output]
 
-    def _get_k_capacity(self, context_len, dbyte, batch_size):
+    def _get_master_diff_tensor_capacity(self, context_len, dbyte, batch_size):
         if self.hetero_name != DeviceType.PIM:
             return 0, 0
 
@@ -502,6 +502,11 @@ class System:
         occupied_per_layer = occupied_rows * row_size
         scale = self.model.ndec * batch_size
         return raw_per_layer * scale, occupied_per_layer * scale
+
+    def _get_kv_master_diff_capacity(self, context_len, dbyte, batch_size):
+        tensor_raw, tensor_row = self._get_master_diff_tensor_capacity(
+            context_len, dbyte, batch_size)
+        return 2 * tensor_raw, 2 * tensor_row
 
     def get_aggregate_memory_capacity(self):
         cap = self.devices['GPU'].aggregate_memory_capacity
@@ -574,10 +579,10 @@ class System:
         temp_memory = max((hdim + l * nhead) * a_byte, hdim * 2 * a_byte,
                           l * nhead * 2 * a_byte,
                           (ff_scale * hdim + hdim) * a_byte) + l * nhead
-        k_raw_memory, k_row_memory = self._get_k_capacity(l, a_byte, batch_size)
-        # The row-packed K storage already contains MasterK and expected diffK.
-        # Keep only V in the conventional KV capacity term so K is not counted twice.
-        kv_factor = 1 if k_row_memory else 2
+        k_raw_memory, k_row_memory = self._get_kv_master_diff_capacity(
+            l, a_byte, batch_size)
+        # The row-packed term contains both K and V as Master+Diff storage.
+        kv_factor = 0 if k_row_memory else 2
         kv_memory = ndec * kv_factor * l * hdim * a_byte
 
         return (weight_memory, kv_memory * batch_size,

@@ -1,0 +1,1655 @@
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2051
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2051_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2054
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2054_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2049
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2049_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2056
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2056_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2053
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2053_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2055
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2055_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2050
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2050_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2052
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2052_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2058
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2058_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2057
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2057_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2059
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2059_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2060
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2060_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2061
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2061_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2062
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2062_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2063
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2063_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2064
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2064_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2065
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2065_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2066
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2066_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2067
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2067_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2068
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2068_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2069
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2069_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2070
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2070_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2071
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2071_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2072
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2072_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2073
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2073_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2074
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2074_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2075
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2075_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2076
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2076_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2077
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2077_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2078
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2078_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2079
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2079_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2080
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2080_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2081
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2081_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2082
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2082_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2083
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2083_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2084
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2084_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2085
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2085_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2086
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2086_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2087
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2087_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2088
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2088_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2089
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2089_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2090
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2090_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2091
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2091_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2092
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2092_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2093
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2093_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2094
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2094_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2095
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2095_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2096
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2096_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2097
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2097_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2098
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2098_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2099
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2099_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2100
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2100_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2101
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2101_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2102
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2102_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2103
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2103_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2104
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2104_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2105
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2105_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2106
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2106_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2107
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2107_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2108
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2108_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2109
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2109_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2110
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2110_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2111
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2111_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2112
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2112_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2113
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2113_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2114
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2114_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2115
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2115_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2116
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2116_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2117
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2117_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2118
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2118_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2119
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2119_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2120
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2120_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2121
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2121_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2122
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2122_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2123
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2123_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2124
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2124_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2125
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2125_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2126
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2126_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2127
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2127_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2128
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2128_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2129
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2129_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2130
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2130_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2131
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2131_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2132
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2132_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2133
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2133_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2134
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2134_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2135
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2135_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2136
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2136_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2137
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2137_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2138
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2138_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2139
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2139_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2140
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2140_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2141
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2141_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2142
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2142_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2143
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2143_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2144
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2144_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2145
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2145_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2146
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2146_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2147
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2147_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2148
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2148_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2149
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2149_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2150
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2150_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2151
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2151_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2152
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2152_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2153
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2153_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2154
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2154_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2155
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2155_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2156
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2156_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2157
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2157_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2158
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2158_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2159
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2159_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2160
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2160_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2161
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2161_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2162
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2162_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2163
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2163_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2164
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2164_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2165
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2165_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2166
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2166_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2167
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2167_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2168
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2168_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2169
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2169_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2170
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2170_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2171
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2171_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2172
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2172_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2173
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2173_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2174
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2174_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+------   Make a trace of bank-level AttAcc   ------
+All Arguments:
+     dhead: 128
+     nhead: 154
+     seqlen: 2175
+     maxlen: 4096
+     dbyte: 2
+     rope: True
+     num_agent: 64
+     diff_rate: 0.3
+     token_block: 32
+     output: ramulator2/attacc_l2175_nattn154_dhead128_dbyte2_pc0_rope_agent64_pb0p3_blk32_kvmdTrue.trace
+---------------------------------------------------
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+---Run simple mode Batch 1 Lin 2048 Lout 128 pipe False parall False---
+Precomputing 127 exact Ramulator cases with 8 CPU workers
+    Batch: 1, Throughput: 34.06 tokens/s Latency: 29.36ms, pipe/ff_parallel: False/False, powerlimit: False

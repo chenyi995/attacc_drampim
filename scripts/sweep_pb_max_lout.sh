@@ -15,7 +15,7 @@ NUM_AGENT="${NUM_AGENT:-256}"
 TOKEN_BLOCK="${TOKEN_BLOCK:-32}"
 SIM_CORES="${SIM_CORES:-8}"
 MAX_LOUT_SEARCH_LIMIT="${MAX_LOUT_SEARCH_LIMIT:-1048576}"
-OUT_ROOT="${OUT_ROOT:-${REPO_DIR}/outputs/pb_sweep_max_lout}"
+OUT_ROOT="${OUT_ROOT:-${REPO_DIR}/outputs/0718/max_lout}"
 RUN_NAME="${RUN_NAME:-model_${MODEL}_lin_${LIN}_batch_${BATCH}_agent_${NUM_AGENT}_blk_${TOKEN_BLOCK}_cores_${SIM_CORES}}"
 RUN_DIR="${OUT_ROOT}/${RUN_NAME}"
 

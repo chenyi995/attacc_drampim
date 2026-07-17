@@ -35,6 +35,8 @@ class Ramulator:
                 self.df['diff_rate'] = 0.1
             if 'token_block' not in self.df.columns:
                 self.df['token_block'] = 32
+            if 'v_master_diff' not in self.df.columns:
+                self.df['v_master_diff'] = False
         self.tCK = 0.769  # ns
         self.num_hbm = num_hbm
         self.nhead = modelinfos['num_heads']
@@ -46,6 +48,7 @@ class Ramulator:
         self.token_block = max(1, int(token_block))
         self.sim_cores = max(1, int(sim_cores))
         self.force_run = force_run
+        self.v_master_diff = True
 
     def _effective_num_ops_per_attacc(self, layer):
         num_ops = layer.numOp
@@ -102,7 +105,7 @@ class Ramulator:
                 columns = [
                     'L', 'nhead', 'dhead', 'dbyte', 'pim_type',
                     'power_constraint', 'rope', 'num_agent', 'diff_rate',
-                    'token_block', 'cycle', 'mac', 'softmax', 'mvgb', 'mvsb',
+                    'token_block', 'v_master_diff', 'cycle', 'mac', 'softmax', 'mvgb', 'mvsb',
                     'wrgb'
                 ]
                 df = pd.DataFrame(columns=columns)
@@ -116,9 +119,11 @@ class Ramulator:
             df['diff_rate'] = 0.1
         if 'token_block' not in df.columns:
             df['token_block'] = 32
+        if 'v_master_diff' not in df.columns:
+            df['v_master_diff'] = False
         df = df[[
             'L', 'nhead', 'dhead', 'dbyte', 'pim_type', 'power_constraint',
-            'rope', 'num_agent', 'diff_rate', 'token_block', 'cycle', 'mac',
+            'rope', 'num_agent', 'diff_rate', 'token_block', 'v_master_diff', 'cycle', 'mac',
             'softmax', 'mvgb', 'mvsb', 'wrgb'
         ]]
         new_df = pd.DataFrame(columns=df.columns)
@@ -212,12 +217,12 @@ class Ramulator:
             num_ops_per_hbm = minimum_heads
         return (layer.n, num_ops_per_hbm, layer.k, layer.dbyte, pim_type.name,
                 power_constraint, self.rope, self.num_agent, self.diff_rate,
-                self.token_block)
+                self.token_block, self.v_master_diff)
 
     def _has_cached_result(self, key):
         if self.df.empty:
             return False
-        l, nhead, dhead, dbyte, pim_name, power_constraint, rope, num_agent, diff_rate, token_block = key
+        l, nhead, dhead, dbyte, pim_name, power_constraint, rope, num_agent, diff_rate, token_block, v_master_diff = key
         row = self.df[(self.df['L'] == l) & (self.df['nhead'] == nhead) &
                       (self.df['dbyte'] == dbyte) &
                       (self.df['dhead'] == dhead) &
@@ -226,7 +231,8 @@ class Ramulator:
                       (self.df['rope'] == rope) &
                       (self.df['num_agent'] == num_agent) &
                       (self.df['diff_rate'] == diff_rate) &
-                      (self.df['token_block'] == token_block)]
+                      (self.df['token_block'] == token_block) &
+                      (self.df['v_master_diff'] == v_master_diff)]
         return not row.empty
 
     def precompute(self, pim_type, layers, power_constraint=True):
@@ -318,9 +324,9 @@ class Ramulator:
             file_name = "attacc_l{}_nattn{}_dhead{}_dbyte{}_pc{}".format(
                 l, num_ops_per_hbm, dhead, layer.dbyte, int(power_constraint))
             if self.rope:
-                file_name += "_rope_agent{}_pb{}_blk{}".format(
+                file_name += "_rope_agent{}_pb{}_blk{}_kvmd{}".format(
                     self.num_agent, str(self.diff_rate).replace(".", "p"),
-                    self.token_block)
+                    self.token_block, self.v_master_diff)
             yaml_file = os.path.join(self.ramulator_dir, file_name + '.yaml')
             self.make_yaml_file(yaml_file, file_name, power_constraint)
 
@@ -357,7 +363,7 @@ class Ramulator:
             log = [
                 l, num_ops_per_hbm, dhead, dbyte, pim_type.name,
                 power_constraint, self.rope, self.num_agent, self.diff_rate,
-                self.token_block
+                self.token_block, self.v_master_diff
             ] + result
             self.update_log_file(log)
 
@@ -393,7 +399,8 @@ class Ramulator:
                       (self.df['rope'] == self.rope) & \
                       (self.df['num_agent'] == self.num_agent) & \
                       (self.df['diff_rate'] == self.diff_rate) & \
-                      (self.df['token_block'] == self.token_block)]
+                      (self.df['token_block'] == self.token_block) & \
+                      (self.df['v_master_diff'] == self.v_master_diff)]
         if row.empty:
             return self.run(pim_type, layer, power_constraint)
 

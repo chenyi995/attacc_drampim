@@ -192,7 +192,7 @@ def make_pim_config(pim_type: PIMType,
                                 if bw_scale is None else bw_scale
     config["NUM_ATTACC"] = num_attacc
     config["NUM_HBM"] = num_hbm
-    config["MEM_CAPACITY_PER_HBM"] = 16 * 1024 * 1024 * 1024
+    config["MEM_CAPACITY_PER_HBM"] = 30 * 1024 * 1024 * 1024
     config[
         "MEM_BW_PER_HBM"] = 670.4 * 1000 * 1000 * 1000 * internal_bandwidth_scale
     config["FLOPS_PER_HBM"] = config["MEM_BW_PER_HBM"] * opb

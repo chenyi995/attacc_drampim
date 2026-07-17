@@ -1,0 +1,2 @@
+model,dtype,xpu,hw,cores,Lin,bs,max_lout,max_context_len,required_cap,k_row_cap,k_data_cap,capacity_bytes,capacity_GB,hit_search_limit
+GPT-175B,W16A16,GPU,BA,8,2048,1,833,2880,1974562265137.053,1626668531761.053,1579105124352.0,1975684956160,1975.68495616,False
