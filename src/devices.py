@@ -367,3 +367,24 @@ class PIM:
 
         else:
             assert 0, "PIM does not support this layer."
+
+    def get_time_and_energy_runs(self, layer: Layer):
+        """Return one timing result per address-resolved CacheBlend extent."""
+        if layer.type != LayerType.MATMUL or "score" not in layer.name:
+            return [self.get_time_and_energy(layer)]
+        measured = self.ramulator.output_runs(self.pim_type, layer,
+                                              self.power_constraint)
+        run_lengths = [run[2] for run in getattr(layer, "pim_kv_runs", ())]
+        total_rows = sum(run_lengths)
+        results = []
+        for index, (time, traffic) in enumerate(measured):
+            io_energy = sum(traffic[index] * self.io_energy_table[index]
+                            for index in range(len(self.io_energy_table)))
+            dram_energy = traffic[-1] * self.energy_table['mem'] + io_energy
+            fraction = (run_lengths[index] / total_rows
+                        if total_rows else 1 / len(measured))
+            cal_energy = (layer.get_flops() * fraction / 2 *
+                          self.energy_table['alu'])
+            energy = [dram_energy, 0, 0, 0, cal_energy, 0]
+            results.append((time, [value * self.num_attacc for value in energy]))
+        return results

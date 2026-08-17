@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+output.csv
+ramulator.out
+ramulator2/build/
+ramulator2/log/

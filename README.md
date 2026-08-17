@@ -112,6 +112,83 @@ $ python main.py --system dgx-attacc --gpu A100a --ngpu 8 --model GPT-175B --lin
 
 ```
 
+### Run JSON workloads (RAG, supervisor, and KV reuse)
+
+The legacy command line above is unchanged.  A workload is an additional input
+path: a legacy RAG list (`sample`, `seg_lens`, `seg_sha`, `seg_role`, `L`,
+`lout`) or a supervisor `v2-dag` object with `agents`.  The parser retains the
+original JSON and validates segment lengths, output lengths, parent/tier
+ordering, and `parent_out` length against the parent output.
+
+First validate and inspect a workload without requiring the simulator stack:
+
+```bash
+$ python3 main.py --workload workload/workload_relay_s400w4t1.json \
+    --reuse epic --epic-prefix-recompute-tokens 1 --validate-workload
+```
+
+`no-reuse` executes each dependency tier through the unmodified
+`System.simulate` interface.  A tier is the batch unit; heterogeneous requests
+in a tier are padded to the tier's maximum input/output lengths.
+
+```bash
+$ python3 main.py --system dgx-attacc --model GPT-175B \
+    --workload workload/workload_2wikimqa_first8.json --reuse no-reuse
+```
+
+For CacheBlend, provide a complete partition of model layers.  Layer lists
+accept comma-separated indices and inclusive ranges.  The ratio selects
+`ceil(ratio * reusable_tokens)` rows independently, uniformly and without
+replacement for each partial layer and request; the seed makes those rows
+reproducible.  For GPT-175B (96 decoder layers), the following follows the
+two full layers / later partial layers convention from the supplied trace.
+
+```bash
+$ python3 main.py --system dgx-attacc --model GPT-175B \
+    --workload workload/workload_relay_s400w4t1.json --reuse cacheblend \
+    --cacheblend-full-layers 0-1 --cacheblend-partial-layers 2-95 \
+    --cacheblend-recompute-ratio 0.15 --reuse-seed 7 \
+    --cacheblend-batch-size 4 \
+    --workload-report cacheblend_output.json
+```
+
+`--cacheblend-batch-size` is the same-tier PIM-attention admission threshold.
+`1` preserves the original per-agent CacheBlend DAG.  For values such as `2`
+through `8`, GPU QKV first runs from input readiness and emits every Q transfer;
+the attention/O/FFN batch then takes the earliest completed GPU-to-PIM Q links
+from a global ready queue.  The report records both the admitted members and
+their upstream QKV members.  A short final group is flushed at its actual size.
+
+EPIC uses a static correction: it recomputes the leading configured number of
+tokens in each shifted/relaid reused segment. Position-stable prefix segments
+are reused without correction, matching the supplied trace's treatment of the
+system prompt. Its execution shares CacheBlend's address-resolved
+GPU/PIM/DIE/TLB event DAG and physical master/diff KV layout; only the
+correction-row selection differs.
+
+```bash
+$ python3 main.py --system dgx-attacc --model GPT-175B \
+    --workload workload/workload_relay_s400w4t1.json --reuse epic \
+    --epic-prefix-recompute-tokens 1 --workload-report epic_output.json
+```
+
+Reuse reports contain a GPU/PIM split-prefill event stream: weight-bearing
+operations run on GPU; PIM scans old KV and performs attention; query, new KV,
+and context traffic are recorded on the GPU-PIM link.  PIM score timing uses
+AttAcc's Ramulator path.  Before execution, the structural validator checks
+layer coverage, event shapes, and each policy's recompute-row rule.
+
+For CacheBlend, the report's `tlb` object is also the source of truth for
+Ramulator placement.  Under the current explicit default policy, one reusable
+KV block is a 32-byte-aligned contiguous allocation:
+`K[0..N-1] | V[0..N-1]`.  Every TLB entry records its `block_id` and
+`token_offset`, along with the derived concrete K/V byte addresses.  A PIM
+scan coalesces only adjacent vectors from the same physical extent; separate
+reused blocks are emitted as separate Ramulator runs and merged by the DIE
+softmax event.  Thus no scan silently treats later KV blocks as a continuation
+of the first block.  This is the current placement assumption; changing the
+layout policy must update both the TLB block table and the trace generator.
+
 ## Details of the Ramulator for AttAcc
 ### How to Run
 1. Generate PIM command traces for the Transformer-based Generative Model.

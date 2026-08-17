@@ -8,6 +8,67 @@ RAMLOG = "./ramulator.out"
 OPB_PRINT = False
 
 
+def apply_attacc_pipeline(layers, num_heads, num_xpu, level=False):
+    """Apply AttAcc's original ``--pipeopt`` decoder-block adjustment.
+
+    This used to be nested inside :meth:`System.simulate`.  Keeping the exact
+    arithmetic in one public helper lets the JSON/CacheBlend adapter regression
+    test its overlap reference event-by-event against the unmodified simulator
+    behavior, instead of duplicating a similar-looking formula.
+    """
+    qkv_time, prj_time, score_time, context_time, x2g_time, softmax_time = 0, 0, 0, 0, 0, 0
+    for layer in layers:
+        if layer.name in ["qkv"]:
+            qkv_time += layer.exec_time
+        elif layer.name in ["proj"]:
+            prj_time += layer.exec_time
+        elif layer.name in ["comm_x2g"]:
+            x2g_time += layer.exec_time
+        elif layer.name in ["score"]:
+            score_time += layer.exec_time
+        elif layer.name in ["context"]:
+            context_time += layer.exec_time
+        elif layer.name in ["softmax"]:
+            softmax_time += layer.exec_time
+
+    minimum_ratio = 1 / (num_heads / num_xpu)
+    if level is False:
+        attn_time = score_time + context_time + softmax_time
+        if attn_time > x2g_time:
+            x2g_time *= minimum_ratio
+        else:
+            x2g_time -= attn_time * (1 - minimum_ratio)
+    else:
+        fc_time = qkv_time + prj_time
+        attn_time = score_time + context_time + softmax_time
+        if attn_time > fc_time:
+            qkv_time *= minimum_ratio
+            prj_time *= minimum_ratio
+            if attn_time > x2g_time:
+                x2g_time *= minimum_ratio
+            else:
+                x2g_time -= attn_time * (1 - minimum_ratio)
+        else:
+            if fc_time > x2g_time:
+                x2g_time *= minimum_ratio
+                qkv_time -= attn_time * (1 - minimum_ratio) * (3 / 4)
+                prj_time -= attn_time * (1 - minimum_ratio) * (1 / 4)
+            else:
+                x2g_time -= attn_time * (1 - minimum_ratio)
+                qkv_time *= minimum_ratio
+                prj_time *= minimum_ratio
+    softmax_time = 0
+    for layer in layers:
+        if layer.name in ["qkv"]:
+            layer.exec_time = qkv_time
+        elif layer.name in ["proj"]:
+            layer.exec_time = prj_time
+        elif layer.name in ["comm_x2g"]:
+            layer.exec_time = x2g_time / 2
+        elif layer.name in ["softmax"]:
+            layer.exec_time = softmax_time
+
+
 class System:
 
     def __init__(self,
@@ -39,10 +100,12 @@ class System:
         self.model = Transformer(modelinfos, tensor_parallel=self.GPU.num_xpu)
         self.model_set = 1
 
-    def set_accelerator(self, modelinfos, name: DeviceType, config):
+    def set_accelerator(self, modelinfos, name: DeviceType, config,
+                        ramulator_workers: int = 1):
         self.hetero_name = name
         if self.hetero_name == DeviceType.PIM:
-            ramulator = Ramulator(modelinfos, "ramulator2", "ramulator.out")
+            ramulator = Ramulator(modelinfos, "ramulator2", "ramulator.out",
+                                  workers=ramulator_workers)
             self.devices['Acc'] = PIM(config,
                                       self.scaling_factor,
                                       ramulator)
@@ -108,63 +171,8 @@ class System:
                                                  layer.name, opb, tflops))
 
         def _pipeline(layers, level=False):
-            qkv_time, prj_time, score_time, context_time, x2g_time, softmax_time = 0, 0, 0, 0, 0, 0
-            for layer in layers:
-                if layer.name in ["qkv"]:
-                    qkv_time += layer.exec_time
-                elif layer.name in ["proj"]:
-                    prj_time += layer.exec_time
-                elif layer.name in ["comm_x2g"]:
-                    x2g_time += layer.exec_time
-                elif layer.name in ["score"]:
-                    score_time += layer.exec_time
-                elif layer.name in ["context"]:
-                    context_time += layer.exec_time
-                elif layer.name in ["softmax"]:
-                    softmax_time += layer.exec_time
-
-            minimum_ratio = 1 / (self.model.num_heads / self.GPU.num_xpu)
-            if level == False:
-                #softmax_time = 0
-                attn_time = score_time + context_time + softmax_time
-                if attn_time > x2g_time:
-                    x2g_time *= minimum_ratio
-                else:
-                    x2g_time -= attn_time * (1 - minimum_ratio)
-
-            else:
-                #softmax_time = 0
-                fc_time = qkv_time + prj_time
-                attn_time = score_time + context_time + softmax_time
-                if attn_time > fc_time:
-                    qkv_time *= minimum_ratio
-                    prj_time *= minimum_ratio
-
-                    if attn_time > x2g_time:
-                        x2g_time *= minimum_ratio
-                    else:
-                        x2g_time -= attn_time * (1 - minimum_ratio)
-                else:
-                    if fc_time > x2g_time:
-                        x2g_time *= minimum_ratio
-                        qkv_time -= attn_time * (1 - minimum_ratio) * (3 / 4)
-                        prj_time -= attn_time * (1 - minimum_ratio) * (1 / 4)
-                    else:
-                        x2g_time -= attn_time * (1 - minimum_ratio)
-                        qkv_time *= minimum_ratio
-                        prj_time *= minimum_ratio
-            softmax_time = 0
-
-            for layer in layers:
-                if layer.name in ["qkv"]:
-                    layer.exec_time = qkv_time
-                elif layer.name in ["proj"]:
-                    layer.exec_time = prj_time
-                elif layer.name in ["comm_x2g"]:
-                    # for 2 comm_x2g layers
-                    layer.exec_time = x2g_time / 2
-                elif layer.name in ["softmax"]:
-                    layer.exec_time = softmax_time
+            apply_attacc_pipeline(layers, self.model.num_heads, self.GPU.num_xpu,
+                                  level)
 
         def _ff_parallel(layers):
             bw_scale = self.devices['Acc'].peak_memory_bandwidth / self.devices[
@@ -214,6 +222,7 @@ class System:
 
         perf_all = []
         energy_all = []
+        prefill_energy_all = 0.0
         for itr, bs in enumerate(target_bs):
             time = 0
             wrt_io_busy = 0
@@ -236,6 +245,16 @@ class System:
                 s_flops += layer.get_flops() * self.devices['GPU'].num_xpu
                 time += exec_time
                 _opb_print(layer, 'sum')
+
+            # The legacy CSV record historically retained only generation
+            # energy.  Keep that record unchanged, but preserve the complete
+            # prefill energy as side-channel metadata for workload reports.
+            prefill_energy = (sum(sum(layer.energy) for layer in s_decoder) *
+                              self.model.ndec / 1000)
+            if itr == 0:
+                prefill_energy_all += prefill_energy * num_batches
+            else:
+                prefill_energy_all += prefill_energy
 
             ## Generation stage
             for gen_stage, decoder_block in enumerate(g_decoder):
@@ -434,6 +453,9 @@ class System:
             config[0] = self.devices['Acc'].pim_type.name
 
         output = [tag, config, perf_all, energy_all]
+        self.last_simulation_summary = {
+            "prefill_energy_nj": prefill_energy_all,
+        }
         print(
             "    Batch: {}, Throughput: {:.2f} tokens/s Latency: {:.2f}ms, pipe/ff_parallel: {}/{}, powerlimit: {}"
             .format(batch_size, batch_size / ((perf_all[len(s_perf)]) / 1000),
@@ -468,4 +490,3 @@ class System:
         kv_memory = ndec * 2 * l * (hdim) * a_byte
 
         return weight_memory, kv_memory * batch_size, temp_memory * batch_size
-

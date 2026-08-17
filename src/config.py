@@ -203,6 +203,10 @@ def make_pim_config(pim_type: PIMType,
 
 def make_model_config(name, dtype):
     model_table = {}
+    # Fast physical-DAG regression model.  It preserves the 128-wide head
+    # geometry used by the HBM-PIM trace generator while keeping only four
+    # decoder layers and a 1024-wide hidden state.
+    model_table['CACHEBLEND-TINY'] = [4, 1024, 8, 128, 4, 1]
     model_table['GPT-175B'] = [96, 12288, 96, 128, 4, 1]
     model_table['GPT-89B'] = [48, 12288, 96, 128, 4, 1]
     model_table['GPT-13B'] = [40, 5120, 40, 128, 4, 1]

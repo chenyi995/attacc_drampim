@@ -180,7 +180,8 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
 
 
 # n_head and n_req = n_req per a HBM 
-def run_attention(dhead, n_head_per_hbm, L, trace_file_name):
+def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
+                  value_base=None):
   partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
   head_offset = partition_size
   v_offset = pow(2, 23) 
@@ -193,8 +194,11 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name):
     remainder = 0
     if (n_head_per_hbm / ((itr+1) * n_channel) < 1):
       remainder = n_head_per_hbm % n_channel
-    key_addr = itr * partition_size 
-    val_addr = key_addr + v_offset
+    # CacheBlend supplies TLB-resolved physical byte addresses.  The old
+    # synthetic placement remains the default for every legacy invocation.
+    key_addr = (key_base if key_base is not None else 0) + itr * partition_size
+    val_addr = ((value_base if value_base is not None else key_addr + v_offset) +
+                (itr * partition_size if value_base is not None else 0))
     if remainder == 0:
       Attention(L, key_addr, val_addr, itr)
     else:
@@ -382,6 +386,10 @@ def main():
                       help="data type (B), default= 2")
   parser.add_argument("-o", "--output", type=str, default="attacc_bank.trace", 
                       help="output path")
+  parser.add_argument("--key-addr", type=lambda value: int(value, 0), default=None,
+                      help="physical byte address of the first K vector")
+  parser.add_argument("--value-addr", type=lambda value: int(value, 0), default=None,
+                      help="physical byte address of the first V vector")
 
   args = parser.parse_args()
 
@@ -400,7 +408,8 @@ def main():
   for key, value in args_dict.items():
       print(f"     {key}: {value}")
   print("---------------------------------------------------")
-  run_attention(dhead, n_head_per_hbm, L, args.output)
+  run_attention(dhead, n_head_per_hbm, L, args.output, args.key_addr,
+                args.value_addr)
 
 
 
