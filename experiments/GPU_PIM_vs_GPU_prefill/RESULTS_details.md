@@ -121,3 +121,8 @@ JSON 在 `results/lsweep/`。
 # 补充：EPIC 单段直接扫 p（`results/pgrid/`）
 
 `--epic-prefix-recompute-tokens` p = 1…256，单段 L = 8192、n_new = 1、n_off = 1（无新 query）。A6 = A4 的插值点：NVLink3 7B/65B/175B = 22 / 29 / 35，PCIe4 = 89 / 145 / 210 —— 与用 n_new 扫出的 n_q* (23/30/36, 90/145/214) 一致，证实 p 与新 token 在模型里进入 n_q 的方式相同。
+
+
+# 补充：EPIC 拐点 p* 与复用段长度 L（`results/pgridL/`）
+
+单段、无新 query，直接扫 p：7B 在 L = 1k/2k/8k/32k 下 NVLink3 p* = 18/21/22/22，PCIe4 = 93/93/89/87；175B 在 2k/8k/32k 下 NVLink3 35/35/35，PCIe4 206/210/209。p* 与 L 无关（L = 1k 时 NVLink 略低，因为固定开销——all-reduce、norm、GEMM——占比更大）；L 只放大两侧差距。
