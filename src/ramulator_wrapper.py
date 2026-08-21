@@ -77,11 +77,11 @@ class Ramulator:
 
     def _run_signature(self, pim_type, run_length, num_ops_per_hbm, dbyte,
                        power_constraint, key_addr, value_addr, channel_count,
-                       shared_kv, shared_queries):
+                       shared_kv, shared_queries, channel_base=None):
         return (
             pim_type.name, run_length, num_ops_per_hbm, dbyte,
             bool(power_constraint), self.dhead, self.num_hbm, channel_count,
-            bool(shared_kv), shared_queries,
+            bool(shared_kv), shared_queries, channel_base,
             self._address_mapping_signature(key_addr),
             self._address_mapping_signature(value_addr),
         )
@@ -108,7 +108,10 @@ class Ramulator:
         with self._trace_name_lock:
             index = self._trace_call_index
             self._trace_call_index += 1
-        return "{}_call{}".format(base, index)
+        # The process id keeps concurrently running simulations (e.g. several
+        # sbatch jobs sharing one checkout) from clobbering each other's
+        # trace/YAML files.
+        return "{}_p{}_call{}".format(base, os.getpid(), index)
 
     def make_yaml_file(self, yaml_file, file_name, power_constraint):
         trace_path = os.path.join(self.ramulator_dir, file_name + ".trace")
@@ -176,7 +179,8 @@ class Ramulator:
     #def run_ramulator(self):
     def run_ramulator(self, pim_type: PIMType, l, num_ops_per_hbm, dbyte,
                       yaml_file, file_name, key_addr=None, value_addr=None,
-                      channel_count=16, shared_kv=False, shared_queries=1):
+                      channel_count=16, shared_kv=False, shared_queries=1,
+                      channel_base=None):
         pim_type_name = pim_type.name.lower(
         ) if not pim_type == PIMType.BA else "bank"
         trace_file = os.path.join(self.ramulator_dir, file_name + '.trace')
@@ -192,6 +196,9 @@ class Ramulator:
             trace_args += " --value-addr 0x{:x}".format(value_addr)
         if channel_count != 16:
             trace_args += " --channels {}".format(channel_count)
+        if channel_base is not None and channel_count != 16:
+            # Heads stripe with wrap-around inside [base, base + channels).
+            trace_args += " --pool-base {}".format(channel_base)
         if shared_kv:
             trace_args += " --shared-kv"
         if shared_queries != 1:
@@ -300,12 +307,13 @@ class Ramulator:
                 if len(run) == 3:
                     key_addr, value_addr, run_length = run
                     channel_count = 16
+                    channel_base = None
                 else:
-                    key_addr, value_addr, run_length, _, channel_count = run
+                    key_addr, value_addr, run_length, channel_base, channel_count = run
                 signature = self._run_signature(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     power_constraint, key_addr, value_addr, channel_count,
-                    shared_kv, shared_queries)
+                    shared_kv, shared_queries, channel_base)
                 if use_signature_cache:
                     with self._signature_cache_lock:
                         cached = self._signature_cache.get(signature)
@@ -319,16 +327,19 @@ class Ramulator:
                 # the grouping code below.
                 pending_key = signature if use_signature_cache else ("uncached", index)
                 pending_by_signature.setdefault(pending_key, []).append(
-                    (index, run_length, key_addr, value_addr, channel_count))
+                    (index, run_length, key_addr, value_addr, channel_count,
+                     channel_base))
 
             run_jobs = []
             for signature, equivalent_runs in pending_by_signature.items():
-                index, run_length, key_addr, value_addr, channel_count = equivalent_runs[0]
+                (index, run_length, key_addr, value_addr, channel_count,
+                 channel_base) = equivalent_runs[0]
                 run_file = "{}_run{}".format(file_name, index)
                 yaml_file = os.path.join(self.ramulator_dir, run_file + '.yaml')
                 self.make_yaml_file(yaml_file, run_file, power_constraint)
                 run_jobs.append((signature, equivalent_runs, run_length, yaml_file,
-                                 run_file, key_addr, value_addr, channel_count))
+                                 run_file, key_addr, value_addr, channel_count,
+                                 channel_base))
             if use_signature_cache:
                 with self._signature_cache_lock:
                     self._signature_cache_misses += len(run_jobs)
@@ -338,11 +349,11 @@ class Ramulator:
 
             def execute(job):
                 (_, _, run_length, yaml_file, run_file, key_addr,
-                 value_addr, channel_count) = job
+                 value_addr, channel_count, channel_base) = job
                 return self.run_ramulator(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     yaml_file, run_file, key_addr, value_addr, channel_count,
-                    shared_kv, shared_queries)
+                    shared_kv, shared_queries, channel_base)
 
             # Each job gets an unshared trace/YAML filename and contributes a
             # separate physical TLB run.  They are independent host jobs, so
@@ -356,7 +367,7 @@ class Ramulator:
                                                              len(run_jobs))) as pool:
                         executed = list(pool.map(execute, run_jobs))
             finally:
-                for _, _, _, yaml_file, _, _, _, _ in run_jobs:
+                for _, _, _, yaml_file, _, _, _, _, _ in run_jobs:
                     try:
                         os.remove(yaml_file)
                     except FileNotFoundError:

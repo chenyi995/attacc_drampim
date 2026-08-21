@@ -7,6 +7,9 @@ GPU/PIM prefill split needed for position-independent KV reuse.
 
 from __future__ import annotations
 
+import math
+from array import array
+from bisect import bisect_left
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
@@ -35,6 +38,10 @@ class SplitEvent:
     # Empty for the original per-request events.  A non-empty list identifies
     # a single physical operation that serves several independent agents.
     batch_members: Tuple[str, ...] = ()
+    # Physically read K/V rows that carry a softmax mask (shadowed master
+    # rows of a CacheBlend/EPIC correction).  They cost DRAM bandwidth and
+    # MAC cycles but contribute no score.  Always <= rows.
+    masked_rows: int = 0
     start_s: float = 0.0
     end_s: float = 0.0
 
@@ -55,20 +62,32 @@ class SplitEvent:
             "dram_addresses": ["0x{:x}".format(address)
                                for address in self.dram_addresses],
             "batch_members": list(self.batch_members),
+            "masked_rows": self.masked_rows,
             "start_s": self.start_s,
             "end_s": self.end_s,
         }
 
 
-def _tier_shapes(workload: Workload) -> Iterable[Tuple[int, Tuple[Any, ...], int, int]]:
-    """One simultaneous padded batch per dependency tier."""
+def _tier_shapes(workload: Workload,
+                 batch_size: Optional[int] = None) -> Iterable[Tuple[int, Tuple[Any, ...], int, int]]:
+    """Padded legacy batches per dependency tier.
+
+    ``batch_size`` None (default) keeps the original behaviour: one batch per
+    tier.  Otherwise a tier is served as consecutive batches of at most
+    ``batch_size`` requests (in workload order), each padded to its own
+    maxima, so the legacy model uses the same batch bound as the DAG path.
+    """
     for tier, requests in workload.tiers.items():
-        yield (tier, requests, max(request.total_length for request in requests),
-               max(request.lout for request in requests))
+        chunk = len(requests) if not batch_size else batch_size
+        for start in range(0, len(requests), chunk):
+            group = tuple(requests[start:start + chunk])
+            yield (tier, group, max(request.total_length for request in group),
+                   max(request.lout for request in group))
 
 
 def run_no_reuse_workload(system, workload: Workload, *, pipe: bool,
-                          parallel_ff: bool, power_constraint: bool) -> List[Any]:
+                          parallel_ff: bool, power_constraint: bool,
+                          batch_size: Optional[int] = None) -> List[Any]:
     """Run every tier through the unchanged legacy simulator.
 
     A tier is the batch unit.  Requests with distinct shapes are padded to the
@@ -77,7 +96,7 @@ def run_no_reuse_workload(system, workload: Workload, *, pipe: bool,
     arguments as the old CLI command.
     """
     perfs: List[Any] = []
-    for _, requests, lin, lout in _tier_shapes(workload):
+    for _, requests, lin, lout in _tier_shapes(workload, batch_size):
         system.simulate(len(requests), lin, lout, perfs=perfs, pipe=pipe,
                         parallel_ff=parallel_ff,
                         power_constraint=power_constraint)
@@ -86,7 +105,8 @@ def run_no_reuse_workload(system, workload: Workload, *, pipe: bool,
 
 def run_no_reuse_report(system, workload: Workload, *, pipe: bool,
                         parallel_ff: bool,
-                        power_constraint: bool) -> Tuple[List[Any], Dict[str, Any]]:
+                        power_constraint: bool,
+                        batch_size: Optional[int] = None) -> Tuple[List[Any], Dict[str, Any]]:
     """Run the legacy baseline and expose a DAG-comparable wall-clock summary.
 
     ``System.simulate`` returns the original CSV-oriented record: summarization
@@ -111,7 +131,7 @@ def run_no_reuse_report(system, workload: Workload, *, pipe: bool,
     summarization_all_index = 0
     generation_all_index = 7
 
-    for tier, requests, lin, lout in _tier_shapes(workload):
+    for tier, requests, lin, lout in _tier_shapes(workload, batch_size):
         tier_records: List[Any] = []
         system.simulate(len(requests), lin, lout, perfs=tier_records,
                         pipe=pipe, parallel_ff=parallel_ff,
@@ -154,7 +174,11 @@ def run_no_reuse_report(system, workload: Workload, *, pipe: bool,
 
     return records, {
         "policy": "no-reuse",
-        "scheduling": "legacy rectangular batch per dependency tier; tiers serial",
+        "scheduling": ("legacy rectangular batch per dependency tier; tiers serial"
+                       if not batch_size else
+                       "legacy rectangular batches of <= {} requests per tier; "
+                       "batches and tiers serial".format(batch_size)),
+        "batch_size": batch_size,
         "tiers": tier_reports,
         "makespan_s": makespan_s,
         "prefill_energy_nj": prefill_energy_nj,
@@ -168,28 +192,43 @@ def run_no_reuse_report(system, workload: Workload, *, pipe: bool,
 
 def run_cacheblend_analytic_report(system, workload: Workload, plan: ReusePlan,
                                    *, pipe: bool, parallel_ff: bool,
-                                   power_constraint: bool) -> Dict[str, Any]:
-    """Estimate CacheBlend with the same legacy analytic model as no-reuse.
+                                   power_constraint: bool,
+                                   batch_size: Optional[int] = None) -> Dict[str, Any]:
+    """Estimate CacheBlend or EPIC with the same legacy analytic model as no-reuse.
 
-    Only prefill work changes: a reused row is charged for every full
-    recompute layer and for the configured fraction of partial layers.  Decode
-    retains the full KV context and therefore retains the baseline decode cost.
-    This is deliberately a same-abstraction comparison, not a replacement for
-    the physical TLB/Ramulator reference model.
+    Only prefill work changes.  CacheBlend charges a reused row for every full
+    recompute layer and for the configured fraction of partial layers; EPIC
+    charges only its recomputed prefix rows (in every layer).  Decode retains
+    the full KV context and therefore retains the baseline decode cost: the
+    PIM scans the same rows, and the reuse-only die work (run descriptors,
+    master-row mask between QK^T and softmax, LSE merge of the per-run
+    partial softmax) is below 0.2% of a decode step in the physical model, so
+    it is deliberately not modeled here.  This is a same-abstraction
+    comparison, not a replacement for the physical TLB/Ramulator reference
+    model.
     """
+    if plan.config.policy not in ("cacheblend", "epic"):
+        raise WorkloadValidationError("analytic latency model needs cacheblend or epic")
     _validate_layer_config(plan, system.model.ndec)
     _, baseline = run_no_reuse_report(
         system, workload, pipe=pipe, parallel_ff=parallel_ff,
-        power_constraint=power_constraint)
+        power_constraint=power_constraint, batch_size=batch_size)
     reusable_by_request: Dict[str, int] = {}
+    epic_prefix_by_request: Dict[str, int] = {}
     for decision in plan.reusable:
         reusable_by_request[decision.request_id] = (
             reusable_by_request.get(decision.request_id, 0) + decision.length)
+        epic_prefix_by_request[decision.request_id] = (
+            epic_prefix_by_request.get(decision.request_id, 0) +
+            len(decision.epic_prefix_rows))
     config = plan.config
-    recompute_fraction = (
-        len(config.cacheblend_full_recompute_layers) +
-        config.cacheblend_recompute_ratio * len(config.cacheblend_partial_recompute_layers)
-    ) / system.model.ndec
+    if config.policy == "cacheblend":
+        recompute_fraction = (
+            len(config.cacheblend_full_recompute_layers) +
+            config.cacheblend_recompute_ratio * len(config.cacheblend_partial_recompute_layers)
+        ) / system.model.ndec
+    else:
+        recompute_fraction = None  # EPIC: prefix rows are recomputed in full
 
     tiers = []
     makespan_s = 0.0
@@ -204,7 +243,16 @@ def run_cacheblend_analytic_report(system, workload: Workload, plan: ReusePlan,
                  if request.request_id == member).total_length -
             reusable_by_request.get(member, 0)
             for member in members)
-        effective_work = fresh_work + reused_work * recompute_fraction
+        # The baseline batch is padded to ``lin`` rows per member; reuse
+        # removes only the reused rows' skipped work, never the padding, so
+        # subtract the saving from the padded batch work rather than
+        # rebuilding it from the unpadded token counts.
+        if config.policy == "cacheblend":
+            saved_work = reused_work * (1.0 - recompute_fraction)
+        else:
+            saved_work = reused_work - sum(epic_prefix_by_request.get(member, 0)
+                                           for member in members)
+        effective_work = baseline_work - saved_work
         prefill_scale = effective_work / baseline_work
         analytic = dict(tier)
         analytic.update({
@@ -212,6 +260,7 @@ def run_cacheblend_analytic_report(system, workload: Workload, plan: ReusePlan,
             "baseline_prefill_energy_nj": tier["prefill_energy_nj"],
             "fresh_prefill_tokens": fresh_work,
             "reused_prefill_tokens": reused_work,
+            "padding_prefill_tokens": baseline_work - fresh_work - reused_work,
             "effective_prefill_tokens": effective_work,
             "prefill_scale": prefill_scale,
             "prefill_s": tier["prefill_s"] * prefill_scale,
@@ -225,9 +274,10 @@ def run_cacheblend_analytic_report(system, workload: Workload, plan: ReusePlan,
         prefill_energy_nj += analytic["prefill_energy_nj"]
         decode_energy_nj += analytic["decode_energy_nj"]
     return {
-        "policy": "cacheblend-analytic",
+        "policy": "{}-analytic".format(config.policy),
         "latency_model": "legacy-analytic",
         "scheduling": baseline["scheduling"],
+        "batch_size": batch_size,
         "recompute_fraction_per_reused_row": recompute_fraction,
         "tiers": tiers,
         "makespan_s": makespan_s,
@@ -456,6 +506,18 @@ _KV_CHANNELS = {
 }
 _ROTATE_MODES = ("gpu", "die", "bank")
 _DIE_ROTATE_CYCLE_S = 1e-9
+# After prefill, master and diff already sit as sequential streams in their
+# pools, so a scan needs one descriptor per contiguous physical run (base,
+# length, pool, mask bit-vector) rather than a lookup per logical row.  The
+# mask itself is applied on the die between QK^T and softmax at no extra
+# modeled cost; the cross-run softmax merge is the DIE LSE-merge event.
+_TLB_DESCRIPTOR_S = 5e-9
+_TLB_DESCRIPTOR_ENERGY = 0.1
+
+
+def _tlb_plan_cost(runs) -> Tuple[float, Tuple[float, ...]]:
+    count = max(1, len(runs))
+    return count * _TLB_DESCRIPTOR_S, (_TLB_DESCRIPTOR_ENERGY * count,)
 
 
 @dataclass(frozen=True)
@@ -482,6 +544,12 @@ class KVBlock:
     channel_count: int
     channel_tile: int
     partition_offset: int
+    # Index of the pool channel actually holding this block's first head.  A
+    # pool is ``channel_count`` channels of 1 GiB each; once the first
+    # channel's address range is full, allocation continues in the next
+    # channel of the same pool (heads then stripe with wrap-around inside the
+    # pool, see the trace generator's ``--pool-base``).
+    channel_offset: int = 0
 
     def token_offset(self, owner_row: int) -> int:
         try:
@@ -502,6 +570,7 @@ class KVBlock:
             "value_bytes": count * self.vector_stride,
             "channel_base": self.channel_base,
             "channel_count": self.channel_count,
+            "channel_offset": self.channel_offset,
             "channel_tile": self.channel_tile,
             "partition_offset": self.partition_offset,
         }
@@ -521,9 +590,13 @@ class KVLocation:
     token_offset: int
     channel_base: int
     channel_count: int
+    # A ``diff`` overlay names the master row it shadows.  The master stream
+    # is still read sequentially through that row; the row is masked out of
+    # the score/softmax instead of being skipped by the DRAM access pattern.
+    shadow: Optional["KVLocation"] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             "layer": self.layer, "owner": self.owner,
             "fingerprint": self.fingerprint, "owner_row": self.owner_row,
             "kind": self.kind, "key_address": "0x{:x}".format(self.key_address),
@@ -533,6 +606,50 @@ class KVLocation:
             "channel_base": self.channel_base,
             "channel_count": self.channel_count,
         }
+        if self.shadow is not None:
+            result["shadow_master"] = self.shadow.to_dict()
+        return result
+
+
+def _address_key(location: KVLocation) -> Tuple[int, int]:
+    return (location.key_address, location.value_address)
+
+
+def _physical_reads(locations: Sequence[KVLocation]) -> Tuple[List[KVLocation], set]:
+    """Expand consumer-visible K/V rows into the rows the PIM actually reads.
+
+    Master and diff live in disjoint channel pools and each pool is streamed
+    sequentially.  A corrected row therefore costs two reads: its diff row
+    (scored) and the shadowed master row (read in the master stream but
+    masked out of the score).  Returns the physical read list and the set of
+    masked ``(key, value)`` addresses.
+    """
+    reads: List[KVLocation] = []
+    masked = set()
+    for location in locations:
+        reads.append(location)
+        if location.shadow is not None:
+            reads.append(location.shadow)
+            masked.add(_address_key(location.shadow))
+    return reads, masked
+
+
+def _masked_rows_per_run(runs: Sequence[Tuple[int, int, int, int, int]],
+                         masked: set, bytes_per_vector: int) -> Tuple[int, ...]:
+    """Count masked rows inside each coalesced physical run."""
+    if not masked:
+        return tuple(0 for _ in runs)
+    stride = ((bytes_per_vector + _HBM_TX_BYTES - 1) // _HBM_TX_BYTES) * _HBM_TX_BYTES
+    # A run is one contiguous K extent (V is the same offsets in the same
+    # block), so counting masked K addresses inside [base, base + n*stride)
+    # is exact and stays O(log n) per run for long contexts.
+    masked_keys = sorted(key for key, _ in masked)
+    counts = []
+    for key_base, _, count, _, _ in runs:
+        low = bisect_left(masked_keys, key_base)
+        high = bisect_left(masked_keys, key_base + count * stride)
+        counts.append(high - low)
+    return tuple(counts)
 
 
 class CacheBlendTLB:
@@ -541,7 +658,12 @@ class CacheBlendTLB:
     Master rows hold first/full recomputations and immutable reused K/V.  A
     corrected partial-layer row receives a ``diff`` row and shadows the master
     entry in the consumer's TLB; it never overwrites a producer's cache line.
-    Master and diff use disjoint physical channel sets.
+    Master and diff use disjoint physical channel sets, and each pool is
+    streamed sequentially at attention time: the shadowed master row is still
+    read in the master stream (its ``KVLocation.shadow``) and masked out of
+    the score, while the diff pool supplies the corrected row.  Skipping the
+    shadowed row instead would break the master stream into one cold-start
+    PIM run per correction.
     """
 
     def __init__(self, bytes_per_vector: int):
@@ -576,7 +698,7 @@ class CacheBlendTLB:
         # channels in a pool: head h is placed on base+(h % 8), and only after
         # those channels are consumed does the trace advance a partition.
         channel_state = {
-            kind: {"tile": 0, "cursor": 0, "channels": channels}
+            kind: {"tile": 0, "cursor": 0, "offset": 0, "channels": channels}
             for kind, channels in _KV_CHANNELS.items()
         }
         for index, key in enumerate(sorted(self._reserved_rows)):
@@ -597,12 +719,23 @@ class CacheBlendTLB:
             if pool["cursor"] + span > _ORIGINAL_KV_GAP_BYTES:
                 pool["tile"] += 1
                 pool["cursor"] = 0
+            tiles_per_channel = _HBM_CHANNEL_BYTES // (2 * _ORIGINAL_KV_GAP_BYTES)
+            if pool["tile"] >= tiles_per_channel:
+                # This channel's 1-GiB range is full: continue in the next
+                # channel of the same pool.  Master and diff never mix.
+                pool["offset"] += 1
+                pool["tile"] = 0
+                pool["cursor"] = 0
+                if pool["offset"] >= len(channels):
+                    raise WorkloadValidationError(
+                        "CacheBlend KV allocation exceeds channel-pool {} capacity".format(kind))
             channel_base = channels[0]
-            key_base = (channel_base * _HBM_CHANNEL_BYTES +
+            channel = channels[pool["offset"]]
+            key_base = (channel * _HBM_CHANNEL_BYTES +
                         pool["tile"] * (2 * _ORIGINAL_KV_GAP_BYTES) +
                         pool["cursor"])
             value_base = key_base + _ORIGINAL_KV_GAP_BYTES
-            if value_base + span > (channel_base + 1) * _HBM_CHANNEL_BYTES:
+            if value_base + span > (channel + 1) * _HBM_CHANNEL_BYTES:
                 raise WorkloadValidationError(
                     "CacheBlend KV allocation exceeds channel-pool {} capacity".format(kind))
             partition_offset = pool["cursor"]
@@ -611,7 +744,7 @@ class CacheBlendTLB:
             self._blocks[key] = KVBlock(
                 "kvb-{:06d}".format(index), layer, owner, fingerprint, kind,
                 rows, key_base, value_base, stride, channel_base, len(channels), channel_tile,
-                partition_offset)
+                partition_offset, pool["offset"])
 
     def locate(self, layer: int, owner: str, fingerprint: str, owner_row: int,
                kind: str) -> KVLocation:
@@ -675,9 +808,14 @@ class CacheBlendTLB:
         return {"mapping": "Ramulator HBM3-PIM physical byte address",
                 "layout": "master channels 0-7, diff channels 8-15; "
                           "8-KiB partitions with V at K + 8 MiB",
-                "head_mapping": "head h uses channel_base + (h % channel_count); "
-                                "after channel_count heads, advance by one 8-KiB "
-                                "partition (implemented by the Ramulator trace generator)",
+                "scan": "each pool is streamed sequentially; a diff entry's "
+                        "shadow_master row is read in the master stream and "
+                        "masked out of the score (event masked_rows)",
+                "head_mapping": "head h uses channel_base + ((channel_offset + h) % "
+                                "channel_count); after channel_count heads, advance by "
+                                "one 8-KiB partition (implemented by the Ramulator trace "
+                                "generator, --pool-base)",
+                "channel_capacity_bytes": _HBM_CHANNEL_BYTES,
                 "transaction_bytes": _HBM_TX_BYTES,
                 "channel_sets": {kind: list(channels)
                                  for kind, channels in _KV_CHANNELS.items()},
@@ -779,12 +917,18 @@ def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                       deps: Sequence[str] = (), link_bytes: int = 0,
                       positions: Sequence[int] = (),
                       addresses: Sequence[int] = (),
-                      batch_members: Sequence[str] = ()) -> str:
+                      batch_members: Sequence[str] = (),
+                      masked_rows: int = 0) -> str:
     event_id = "cb-{}".format(len(events))
+    # A prefill TLB/link event names every visible K/V address; over a long
+    # context that is O(L) per fresh token.  Keep those lists as packed
+    # 64-bit arrays rather than tuples of Python ints to bound host memory.
+    # Device energy tables are in pJ (the legacy record divides by 1000 to
+    # report nJ, see System.simulate); keep the DAG report in the same nJ.
     events.append(SplitEvent(event_id, layer, tier, request, name, device, rows,
-                             time_s, sum(energy), link_bytes, tuple(deps),
-                             tuple(positions), tuple(addresses),
-                             tuple(batch_members)))
+                             time_s, sum(energy) / 1000.0, link_bytes, tuple(deps),
+                             tuple(positions), array("Q", addresses),
+                             tuple(batch_members), masked_rows))
     return event_id
 
 
@@ -792,27 +936,39 @@ def _append_physical_pim_scan(system, events: List[SplitEvent], *, op: Layer,
                               layer: int, tier: int, request: str, name: str,
                               rows: int, deps: Sequence[str], positions: Sequence[int],
                               runs: Sequence[Tuple[int, int, int, int, int]],
-                              batch_members: Sequence[str] = ()) -> Tuple[str, ...]:
-    """Schedule each HBM channel independently and return all scan events."""
+                              batch_members: Sequence[str] = (),
+                              masked: Sequence[int] = ()) -> Tuple[str, ...]:
+    """Schedule each HBM channel pool independently and return all scan events.
+
+    ``rows`` of a scan event is the number of K/V rows physically streamed
+    by that run; ``masked`` gives, per run, how many of those rows are
+    shadowed master rows that are read but excluded from the score.
+    """
     accelerator = system.devices["Acc"]
+    masked = tuple(masked) if masked else tuple(0 for _ in runs)
+    if len(masked) != len(runs):
+        raise WorkloadValidationError("masked-row count must be given per physical run")
     if hasattr(accelerator, "get_time_and_energy_runs"):
         measured = accelerator.get_time_and_energy_runs(op)
     else:
         # Preserve the aggregate mock-device API used by lightweight tests.
         measured = [accelerator.get_time_and_energy(op)]
         runs = (runs[0],) if runs else ()
+        masked = masked[:len(runs)]
     if len(measured) != len(runs):
         raise WorkloadValidationError("Ramulator physical-run result count mismatch")
     scan_events = []
-    for run, (time_s, energy) in zip(runs, measured):
+    for run, (time_s, energy), masked_rows in zip(runs, measured, masked):
         key_addr, value_addr, run_rows, channel, channel_count = run
+        if masked_rows > run_rows:
+            raise WorkloadValidationError("masked rows exceed the rows read by a PIM run")
         scan_events.append(_cacheblend_event(
             events, layer=layer, tier=tier, request=request, name=name,
             device="PIM:pool{}-{}".format(channel, channel + channel_count - 1),
             rows=run_rows,
             time_s=time_s, energy=energy, deps=tuple(deps),
             positions=tuple(positions), addresses=(key_addr, value_addr),
-            batch_members=tuple(batch_members)))
+            batch_members=tuple(batch_members), masked_rows=masked_rows))
     return tuple(scan_events)
 
 
@@ -998,6 +1154,8 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
     for event in events:
         if event.rows <= 0 or event.time_s < 0 or event.energy_nj < 0:
             raise WorkloadValidationError("CacheBlend event has an invalid shape or cost")
+        if event.masked_rows < 0 or event.masked_rows > event.rows:
+            raise WorkloadValidationError("CacheBlend event masks more rows than it reads")
         if event.device == "LINK":
             if event.link_bytes <= 0:
                 raise WorkloadValidationError("CacheBlend link event has no traffic")
@@ -1135,7 +1293,11 @@ def _prefill_location_deltas(request, bindings):
     for segment in request.segments:
         for _ in range(segment.length):
             location = bindings[position][3]
-            result[(location.key_address, location.value_address)] = segment.position_delta
+            result[_address_key(location)] = segment.position_delta
+            if location.shadow is not None:
+                # The shadowed master row is streamed with the same segment
+                # position shift as the diff row that replaces it.
+                result[_address_key(location.shadow)] = segment.position_delta
             position += 1
     return result
 
@@ -1243,13 +1405,24 @@ def _cacheblend_tlb_rows(workload: Workload, plan: ReusePlan, layer: int,
                 else:
                     owner, owner_row = decision.owner_request_id, row
             else:
-                owner, owner_row = request.request_id, position
+                # A producer's row is addressed by its offset inside the
+                # fingerprinted segment, exactly as a later consumer resolves
+                # it.  Keying it by absolute request position would place
+                # producer writes and consumer reads at different rows of the
+                # same master block.
+                owner, owner_row = request.request_id, row
                 # ``diff`` is an overlay, not a synonym for newly generated
                 # KV.  Trace rows such as B-pos7/8 are new live KV and remain
                 # in the master cache; only a corrected reused row shadows a
                 # master row through the diff cache.
                 kind = "master"
             location = tlb.locate(layer, owner, segment.fingerprint, owner_row, kind)
+            if kind == "diff":
+                # The master pool is streamed sequentially through the
+                # shadowed row; the TLB supplies a mask rather than a hole.
+                shadow = tlb.locate(layer, decision.owner_request_id,
+                                    segment.fingerprint, row, "master")
+                location = replace(location, shadow=shadow)
             tlb.bind(request.request_id, layer, position, location,
                      segment.position_delta, reused)
             bindings.append((position, reused, position in corrected, location))
@@ -1273,10 +1446,13 @@ def _reserve_cacheblend_tlb_rows(workload: Workload, plan: ReusePlan, layer: int
                 kind = "diff" if position in corrected else "master"
                 if kind == "diff":
                     owner, owner_row = request.request_id, position
+                    # The shadowed master row is still streamed (masked).
+                    tlb.reserve(layer, decision.owner_request_id,
+                                segment.fingerprint, row, "master")
                 else:
                     owner, owner_row = decision.owner_request_id, row
             else:
-                owner, owner_row = request.request_id, position
+                owner, owner_row = request.request_id, row
                 # Keep reservations exactly consistent with the binding rule:
                 # live/new rows are master, corrected reused rows are diff.
                 kind = "master"
@@ -1421,12 +1597,16 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
 
             old = [location for _, _, _, location in prefill_bindings[layer_index]]
             old.extend(previous_output[layer_index])
+            # ``old`` is the consumer-visible KV (one entry per position);
+            # ``reads`` is what the master/diff pools physically stream, with
+            # shadowed master rows masked rather than skipped.
+            reads, masked_keys = _physical_reads(old)
             context_ready = local_last
             if old:
                 rotate_ready = _append_q_rotate_distribution(
                     system, events, x2g, layer=layer_index, tier=tier,
                     request=request.request_id, q_dependency=q_link, q_bytes=q_bytes,
-                    locations=old, location_deltas=prefill_deltas[layer_index],
+                    locations=reads, location_deltas=prefill_deltas[layer_index],
                     rotate_mode=rotate_mode, name_prefix="decode_",
                     positions=(request.total_length + output_row,))
                 die_q = _cacheblend_event(
@@ -1435,31 +1615,37 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
                     energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
                     deps=(rotate_ready,), positions=(request.total_length + output_row,))
+                op = deepcopy(score)
+                op.m, op.n, op.k, op.numOp = 1, len(reads), system.model.dhead, heads
+                op.pim_kv_runs = tlb.scan_runs(reads)
+                plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                 address_plan = _cacheblend_event(
                     events, layer=layer_index, tier=tier, request=request.request_id,
                     name=("decode_contiguous_address_plan" if contiguous_no_reuse
                           else "decode_tlb_lookup_and_bank_plan"),
                     device=("ADDR" if contiguous_no_reuse else "TLB"), rows=len(old),
-                    time_s=(0.0 if contiguous_no_reuse else max(1, len(old)) * 5e-9),
-                    energy=(() if contiguous_no_reuse else (0.1 * len(old),)),
+                    time_s=(0.0 if contiguous_no_reuse else plan_time_s),
+                    energy=(() if contiguous_no_reuse else plan_energy),
                     deps=(die_q,), positions=(request.total_length + output_row,),
-                    addresses=[address for location in old
+                    addresses=[address for location in reads
                                for address in (location.key_address, location.value_address)])
-                op = deepcopy(score)
-                op.m, op.n, op.k, op.numOp = 1, len(old), system.model.dhead, heads
-                op.pim_kv_runs = tlb.scan_runs(old)
                 scan = _append_physical_pim_scan(
                     system, events, op=op, layer=layer_index, tier=tier,
                     request=request.request_id,
-                    name="decode_pim_kv_scan_score_softmax_pv", rows=len(old),
+                    name="decode_pim_kv_scan_score_softmax_pv", rows=len(reads),
                     deps=(address_plan,), positions=(request.total_length + output_row,),
-                    runs=op.pim_kv_runs)
+                    runs=op.pim_kv_runs,
+                    masked=_masked_rows_per_run(op.pim_kv_runs, masked_keys,
+                                                tlb.bytes_per_vector))
+                # Every physical run yields one local softmax tuple; the DIE
+                # merges those with the GPU tuple.
+                merge_width = len(scan) + 1
                 die_merge = _cacheblend_event(
                     events, layer=layer_index, tier=tier, request=request.request_id,
                     name="decode_die_lse_merge", device="DIE", rows=1,
-                    time_s=((len(old) + 1) * tuple_bytes /
+                    time_s=(merge_width * tuple_bytes /
                             system.devices["Acc"].softmax_peak_bandwidth),
-                    energy=((len(old) + 1) * tuple_bytes *
+                    energy=(merge_width * tuple_bytes *
                             system.devices["Acc"].energy_table["sram"],),
                     deps=tuple(scan) + (tuple_link,),
                     positions=(request.total_length + output_row,))
@@ -1598,6 +1784,12 @@ def _append_cacheblend_decode_batched(
                 previous_output[request.request_id][layer_index]
                 for request in active
             }
+            # Physical master/diff streams per request (masked shadow rows
+            # included) -- see ``_physical_reads``.
+            reads_by_request = {
+                request.request_id: _physical_reads(old_by_request[request.request_id])
+                for request in active
+            }
             # GPU rotation creates additional Q variants that have their own
             # GPU->PIM transfers.  Emit them before admission, so the ready
             # timestamp denotes the final required external Q arrival.
@@ -1605,7 +1797,7 @@ def _append_cacheblend_decode_batched(
                 request.request_id: _append_q_rotate_distribution(
                     system, events, x2g, layer=layer_index, tier=tier,
                     request=request.request_id, q_dependency=q_links[request.request_id],
-                    q_bytes=q_bytes, locations=old_by_request[request.request_id],
+                    q_bytes=q_bytes, locations=reads_by_request[request.request_id][0],
                     location_deltas=_prefill_location_deltas(
                         request, bindings[request.request_id][layer_index]),
                     rotate_mode=rotate_mode, name_prefix="decode_",
@@ -1676,14 +1868,21 @@ def _append_cacheblend_decode_batched(
                         time_s=time_s, energy=energy, deps=(local_last,),
                         link_bytes=tuple_bytes, positions=(position,))
 
+                # A shared master stream is common to the group when every
+                # member reads the same physical master rows; each member's
+                # own correction mask stays query-private, exactly like Q.
                 common_keys = None
                 for request in group:
-                    keys = {(location.key_address, location.value_address)
-                            for location in old_by_request[request.request_id]
+                    keys = {_address_key(location)
+                            for location in reads_by_request[request.request_id][0]
                             if location.kind == "master"}
                     common_keys = keys if common_keys is None else common_keys & keys
-                common = [location for location in old_by_request[group[0].request_id]
-                          if (location.key_address, location.value_address) in (common_keys or set())]
+                common = [location for location in reads_by_request[group[0].request_id][0]
+                          if _address_key(location) in (common_keys or set())]
+                # The mask is query-private; the shared event reports the
+                # rows masked for at least one member of the batch.
+                common_masked = set().union(*(reads_by_request[request.request_id][1]
+                                              for request in group))
                 scan_deps: Dict[str, List[str]] = {request.request_id: [] for request in group}
                 if common:
                     die_qs = []
@@ -1698,16 +1897,17 @@ def _append_cacheblend_decode_batched(
                             deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,)))
                     common_addresses = [address for location in common
                                         for address in (location.key_address, location.value_address)]
-                    tlb_event = _cacheblend_event(
-                        events, layer=layer_index, tier=tier, request=label,
-                        name="decode_batch_tlb_lookup_and_bank_plan", device="TLB",
-                        rows=len(common), time_s=max(1, len(common)) * 5e-9,
-                        energy=(0.1 * len(common),), deps=tuple(die_qs),
-                        positions=positions, addresses=common_addresses,
-                        batch_members=members)
                     op = deepcopy(score)
                     op.m, op.n, op.k, op.numOp = len(group), len(common), system.model.dhead, heads
                     op.pim_kv_runs = tlb.scan_runs(common)
+                    plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
+                    tlb_event = _cacheblend_event(
+                        events, layer=layer_index, tier=tier, request=label,
+                        name="decode_batch_tlb_lookup_and_bank_plan", device="TLB",
+                        rows=len(common), time_s=plan_time_s,
+                        energy=plan_energy, deps=tuple(die_qs),
+                        positions=positions, addresses=common_addresses,
+                        batch_members=members)
                     op.pim_shared_kv = True
                     op.pim_shared_queries = len(group)
                     shared_scan = _append_physical_pim_scan(
@@ -1715,16 +1915,18 @@ def _append_cacheblend_decode_batched(
                         request=label,
                         name="decode_batch_pim_kv_scan_score_softmax_pv", rows=len(common),
                         deps=(tlb_event,), positions=positions, runs=op.pim_kv_runs,
-                        batch_members=members)
+                        batch_members=members,
+                        masked=_masked_rows_per_run(op.pim_kv_runs, common_masked,
+                                                    tlb.bytes_per_vector))
                     for request in group:
                         scan_deps[request.request_id].extend(shared_scan)
 
                 for request in group:
                     request_id = request.request_id
                     position = request.total_length + output_row
-                    private = [location for location in old_by_request[request_id]
-                               if (location.key_address, location.value_address)
-                               not in (common_keys or set())]
+                    private = [location for location in reads_by_request[request_id][0]
+                               if _address_key(location) not in (common_keys or set())]
+                    private_masked = reads_by_request[request_id][1]
                     if private:
                         die_q = _cacheblend_event(
                             events, layer=layer_index, tier=tier, request=request_id,
@@ -1734,22 +1936,25 @@ def _append_cacheblend_decode_batched(
                             deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,))
                         addresses = [address for location in private
                                      for address in (location.key_address, location.value_address)]
+                        op = deepcopy(score)
+                        op.m, op.n, op.k, op.numOp = 1, len(private), system.model.dhead, heads
+                        op.pim_kv_runs = tlb.scan_runs(private)
+                        plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                         address_plan = _cacheblend_event(
                             events, layer=layer_index, tier=tier, request=request_id,
                             name=("decode_contiguous_address_plan" if contiguous_no_reuse
                                   else "decode_tlb_lookup_and_bank_plan"),
                             device=("ADDR" if contiguous_no_reuse else "TLB"), rows=len(private),
-                            time_s=(0.0 if contiguous_no_reuse else max(1, len(private)) * 5e-9),
-                            energy=(() if contiguous_no_reuse else (0.1 * len(private),)),
+                            time_s=(0.0 if contiguous_no_reuse else plan_time_s),
+                            energy=(() if contiguous_no_reuse else plan_energy),
                             deps=(die_q,), positions=(position,), addresses=addresses)
-                        op = deepcopy(score)
-                        op.m, op.n, op.k, op.numOp = 1, len(private), system.model.dhead, heads
-                        op.pim_kv_runs = tlb.scan_runs(private)
                         scan_deps[request_id].extend(_append_physical_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
                             request=request_id, name="decode_pim_kv_scan_score_softmax_pv",
                             rows=len(private), deps=(address_plan,), positions=(position,),
-                            runs=op.pim_kv_runs))
+                            runs=op.pim_kv_runs,
+                            masked=_masked_rows_per_run(op.pim_kv_runs, private_masked,
+                                                        tlb.bytes_per_vector)))
 
                 context_links: Dict[str, str] = {}
                 for request in group:
@@ -1757,12 +1962,15 @@ def _append_cacheblend_decode_batched(
                     position = request.total_length + output_row
                     contribution = scan_deps[request_id]
                     if contribution:
+                        # One local softmax tuple per physical run plus the
+                        # GPU tuple.
+                        merge_width = len(contribution) + 1
                         merge = _cacheblend_event(
                             events, layer=layer_index, tier=tier, request=request_id,
                             name="decode_die_lse_merge", device="DIE", rows=1,
-                            time_s=((len(old_by_request[request_id]) + 1) * tuple_bytes /
+                            time_s=(merge_width * tuple_bytes /
                                     system.devices["Acc"].softmax_peak_bandwidth),
-                            energy=((len(old_by_request[request_id]) + 1) * tuple_bytes *
+                            energy=(merge_width * tuple_bytes *
                                     system.devices["Acc"].energy_table["sram"],),
                             deps=tuple(contribution + [tuple_links[request_id]]),
                             positions=(position,))
@@ -1883,10 +2091,59 @@ def _append_physical_no_reuse_prefill_layer(
     return post_last, store
 
 
+def summarize_cacheblend_schedule(scheduled: Sequence[SplitEvent],
+                                  workload: Workload) -> Dict[str, Any]:
+    """Compact per-request / per-tier completion times of a scheduled DAG.
+
+    ``prefill_end_s`` is the last non-decode event of the request,
+    ``first_token_s`` the completion of its first generated token (last event
+    at query position ``total_length``), and ``end_s`` its final event.  Batch
+    events are attributed to every member.
+    """
+    per_request: Dict[str, Dict[str, float]] = {
+        request.request_id: {"tier": request.tier, "prefill_end_s": 0.0,
+                             "first_token_s": 0.0, "end_s": 0.0}
+        for request in workload.requests}
+    first_position = {request.request_id: request.total_length
+                      for request in workload.requests}
+    for event in scheduled:
+        members = event.batch_members or (event.request_id,)
+        for index, member in enumerate(members):
+            record = per_request.get(member)
+            if record is None:
+                continue
+            record["end_s"] = max(record["end_s"], event.end_s)
+            if event.name.startswith("decode_"):
+                # Batch events list one query position per member, in member
+                # order; a private event lists only its own positions.
+                if event.batch_members and len(event.query_positions) == len(members):
+                    positions = (event.query_positions[index],)
+                else:
+                    positions = event.query_positions
+                if first_position[member] in positions:
+                    record["first_token_s"] = max(record["first_token_s"], event.end_s)
+            else:
+                record["prefill_end_s"] = max(record["prefill_end_s"], event.end_s)
+    tiers: Dict[str, Dict[str, float]] = {}
+    for request in workload.requests:
+        record = per_request[request.request_id]
+        tier = tiers.setdefault(str(request.tier), {"start_s": None, "end_s": 0.0,
+                                                    "requests": 0})
+        tier["end_s"] = max(tier["end_s"], record["end_s"])
+        tier["requests"] += 1
+    for event in scheduled:
+        tier = tiers.get(str(event.tier))
+        if tier is not None:
+            tier["start_s"] = (event.start_s if tier["start_s"] is None
+                               else min(tier["start_s"], event.start_s))
+    return {"requests": per_request, "tiers": tiers}
+
+
 def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             *, pipe: bool, batch_size: int = 1,
                             physical_no_reuse: bool = False,
-                            rotate_mode: str = "die") -> Dict[str, Any]:
+                            rotate_mode: str = "gpu",
+                            include_events: bool = True) -> Dict[str, Any]:
     if system.hetero_name != DeviceType.PIM:
         raise WorkloadValidationError("reuse prefill requires --system dgx-attacc")
     validate_reuse_plan(workload, plan, system.model.ndec)
@@ -2024,35 +2281,42 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     positions=compute_positions, addresses=[address for loc in writes
                                                             for address in (loc.key_address,
                                                                             loc.value_address)])
-                gpu_local_last = q
+                # The GPU attends the fresh rows to each other as one
+                # rectangular block, exactly like an ordinary prefill over
+                # ``len(compute_positions)`` tokens (m = n = fresh rows, the
+                # same convention as the no-reuse path).  Old cache rows are
+                # deliberately excluded from this GPU op: they are scanned by
+                # the PIM and merged at the DIE.  A per-token m = 1 loop would
+                # re-stream the whole fresh K/V from GPU memory for every
+                # query and overstate this stage by more than an order of
+                # magnitude for a mostly-fresh request.
+                fresh_rows = len(compute_positions)
+                local_last = q
+                for template, name in ((score, "gpu_local_score"),
+                                       (softmax, "gpu_local_softmax"),
+                                       (context, "gpu_local_context")):
+                    op = deepcopy(template)
+                    op.m, op.n, op.numOp = fresh_rows, fresh_rows, heads
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                    local_last = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name=name, device="GPU",
+                        rows=fresh_rows, time_s=time_s, energy=energy,
+                        deps=(local_last,), positions=compute_positions)
+                # Each fresh query still hands its own local softmax tuple to
+                # the DIE, which merges it with that query's PIM partials.
                 local_tuple_events: List[str] = []
-                for ordinal, position in enumerate(compute_positions):
-                    # Fresh Q/K/V are only the recomputed prefix of this query;
-                    # old cache rows are deliberately excluded from this GPU op.
-                    fresh_width = ordinal + 1
-                    local_last = gpu_local_last
-                    for template, name in ((score, "gpu_local_score"),
-                                           (softmax, "gpu_local_softmax"),
-                                           (context, "gpu_local_context")):
-                        op = deepcopy(template)
-                        op.m, op.n, op.numOp = 1, fresh_width, heads
-                        time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-                        local_last = _cacheblend_event(
-                            events, layer=layer_index, tier=tier,
-                            request=request.request_id, name=name, device="GPU", rows=1,
-                            time_s=time_s, energy=energy, deps=(local_last,),
-                            positions=(position,))
-                    tuple_bytes = heads * (system.model.dhead + 2) * dbyte
-                    tuple_transfer = _link_layer(x2g, "gpu_partial_lse_to_pim",
-                                                  tuple_bytes)
-                    time_s, energy = system.devices["GPU"].get_time_and_energy(tuple_transfer)
+                tuple_bytes = heads * (system.model.dhead + 2) * dbyte
+                tuple_transfer = _link_layer(x2g, "gpu_partial_lse_to_pim", tuple_bytes)
+                tuple_time_s, tuple_energy = system.devices["GPU"].get_time_and_energy(
+                    tuple_transfer)
+                for position in compute_positions:
                     local_tuple_events.append(_cacheblend_event(
                         events, layer=layer_index, tier=tier,
                         request=request.request_id, name="gpu_partial_lse_to_pim",
-                        device="LINK", rows=1, time_s=time_s, energy=energy,
+                        device="LINK", rows=1, time_s=tuple_time_s, energy=tuple_energy,
                         deps=(local_last,), link_bytes=tuple_bytes,
                         positions=(position,)))
-                    gpu_local_last = local_last
 
                 die_last = q_link
                 pim_results: List[str] = []
@@ -2061,12 +2325,20 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 # This preserves causality (the key includes every visible
                 # location) while issuing one multi-Q Ramulator scan instead
                 # of one process invocation per fresh token.
+                # A prefill scan streams the reused *master* rows visible to
+                # the query.  A corrected row's diff is being computed on the
+                # GPU in this very layer, so only its shadowed master row is
+                # streamed here, and it is masked out of the score.
                 old_groups: Dict[Tuple[Tuple[int, int], ...], List[Tuple[int, int, str, List[KVLocation]]]] = {}
+                masked_prefill_keys = {_address_key(loc.shadow) for _, reused, corrected, loc
+                                       in bindings if reused and corrected and loc.shadow is not None}
                 for ordinal, (position, tuple_event) in enumerate(zip(compute_positions,
                                                                        local_tuple_events)):
-                    old = [loc for pos, reused, corrected, loc in bindings
-                           if reused and not corrected and pos <= position]
-                    key = tuple((loc.key_address, loc.value_address) for loc in old)
+                    old = [loc.shadow if corrected else loc
+                           for pos, reused, corrected, loc in bindings
+                           if reused and pos <= position and
+                           (not corrected or loc.shadow is not None)]
+                    key = tuple(_address_key(loc) for loc in old)
                     old_groups.setdefault(key, []).append((ordinal, position, tuple_event, old))
                 for compatible_queries in old_groups.values():
                     # Prefill follows the same user-visible admission bound as
@@ -2095,19 +2367,20 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                 energy=(local_hidden * dbyte * system.devices["Acc"].energy_table["sram"],),
                                 deps=tuple(dict.fromkeys((die_last, rotate_ready))),
                                 positions=(position,)))
-                        tlb_event = _cacheblend_event(
-                            events, layer=layer_index, tier=tier, request=request.request_id,
-                            name="tlb_lookup_and_bank_plan", device="TLB", rows=len(old),
-                            time_s=max(1, len(old)) * 5e-9, energy=(0.1 * len(old),),
-                            deps=tuple(die_qs), positions=tuple(item[1] for item in grouped),
-                            addresses=[address for loc in old
-                                       for address in (loc.key_address, loc.value_address)])
                         op = deepcopy(score)
                         op.m, op.n, op.k, op.numOp = len(grouped), len(old), system.model.dhead, heads
                         # Each contiguous physical TLB run is supplied to
                         # Ramulator.  Do not collapse a multi-block scan to its
                         # first K/V base address.
                         op.pim_kv_runs = tlb.scan_runs(old)
+                        plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
+                        tlb_event = _cacheblend_event(
+                            events, layer=layer_index, tier=tier, request=request.request_id,
+                            name="tlb_lookup_and_bank_plan", device="TLB", rows=len(old),
+                            time_s=plan_time_s, energy=plan_energy,
+                            deps=tuple(die_qs), positions=tuple(item[1] for item in grouped),
+                            addresses=[address for loc in old
+                                       for address in (loc.key_address, loc.value_address)])
                         op.pim_shared_kv = True
                         op.pim_shared_queries = len(grouped)
                         scan = _append_physical_pim_scan(
@@ -2115,9 +2388,13 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             request=request.request_id, name="pim_kv_scan_score_softmax_pv",
                             rows=len(old), deps=(tlb_event,),
                             positions=tuple(item[1] for item in grouped),
-                            runs=op.pim_kv_runs)
+                            runs=op.pim_kv_runs,
+                            masked=_masked_rows_per_run(op.pim_kv_runs, masked_prefill_keys,
+                                                        tlb.bytes_per_vector))
                         for ordinal, position, tuple_event, _ in grouped:
-                            merge_width = len(old) + ordinal + 1
+                            # One local softmax tuple per physical run plus
+                            # the query's GPU tuple.
+                            merge_width = len(scan) + 1
                             die_merge = _cacheblend_event(
                                 events, layer=layer_index, tier=tier, request=request.request_id,
                                 name="die_lse_merge", device="DIE", rows=1,
@@ -2180,6 +2457,11 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     scheduled = _schedule_cacheblend(events, pipe=pipe)
     _annotate_batch_q_arrivals(scheduled, batch_records)
     overlap_validation = validate_cacheblend_attacc_overlap_contract(scheduled, pipe=pipe)
+    tlb_report = tlb.report()
+    if not include_events:
+        # The per-position TLB entry list is as large as the event list.
+        tlb_report = dict(tlb_report, entries_omitted=len(tlb_report["entries"]))
+        del tlb_report["entries"]
     report = {
         "policy": "no-reuse-physical" if physical_no_reuse else plan.config.policy,
         "latency_model": "physical-dag-ramulator" if physical_no_reuse else None,
@@ -2187,17 +2469,24 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "cacheblend_rotate_mode": rotate_mode,
         "batches": batch_records,
         "overlap_validation": overlap_validation,
-        "events": [event.to_dict() for event in scheduled],
-        "tlb": tlb.report(),
+        "events": ([event.to_dict() for event in scheduled] if include_events
+                   else None),
+        "event_count": len(scheduled),
+        "summary": summarize_cacheblend_schedule(scheduled, workload),
+        "tlb": tlb_report,
         "link_bytes": sum(event.link_bytes for event in scheduled),
         "makespan_s": max((event.end_s for event in scheduled), default=0.0),
         "gpu_time_s_unoverlapped": sum(event.time_s for event in scheduled
                                         if event.device == "GPU"),
         "pim_time_s_unoverlapped": sum(event.time_s for event in scheduled
                                         if event.device == "PIM"),
+        # Address-resolved scans run on per-pool resources (PIM:poolA-B).
+        "pim_pool_time_s_unoverlapped": sum(event.time_s for event in scheduled
+                                             if event.device.startswith("PIM:")),
         "die_time_s_unoverlapped": sum(event.time_s for event in scheduled
                                         if event.device == "DIE"),
         "energy_nj": sum(event.energy_nj for event in scheduled),
+        "energy_unit": "nJ",
     }
     ramulator = getattr(system.devices.get("Acc"), "ramulator", None)
     if ramulator is not None and hasattr(ramulator, "cache_report"):
@@ -2207,7 +2496,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
 
 def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                       *, pipe: bool = False, cacheblend_batch_size: int = 1,
-                      cacheblend_rotate_mode: str = "die") -> Dict[str, Any]:
+                      cacheblend_rotate_mode: str = "gpu",
+                      include_events: bool = True) -> Dict[str, Any]:
     """Dispatch address-resolved CacheBlend and EPIC to the shared DAG.
 
     CacheBlend samples correction rows per layer; EPIC overlays the fixed
@@ -2218,5 +2508,6 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
         return _run_cacheblend_prefill(system, workload, plan, pipe=pipe,
                                        batch_size=cacheblend_batch_size,
                                        physical_no_reuse=(plan.config.policy == "no-reuse"),
-                                       rotate_mode=cacheblend_rotate_mode)
+                                       rotate_mode=cacheblend_rotate_mode,
+                                       include_events=include_events)
     return _run_legacy_reuse_prefill(system, workload, plan)

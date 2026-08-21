@@ -1,0 +1,42 @@
+[
+ {
+  "sample": 0,
+  "seg_lens": [
+   32,
+   32768,
+   16
+  ],
+  "seg_sha": [
+   "9d37756f0de0f885",
+   "c88a3c650d05bdf3",
+   "9d1f28b99e28b1c1"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "query"
+  ],
+  "L": 32816,
+  "lout": 2
+ },
+ {
+  "sample": 1,
+  "seg_lens": [
+   1,
+   32768,
+   16
+  ],
+  "seg_sha": [
+   "e06ab0046a6007e8",
+   "c88a3c650d05bdf3",
+   "b7481dcf2fa911dc"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "query"
+  ],
+  "L": 32785,
+  "lout": 2
+ }
+]

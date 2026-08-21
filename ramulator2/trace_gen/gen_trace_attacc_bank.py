@@ -13,6 +13,7 @@ n_attacc = 8
 max_n_hbm = 8
 n_hbm = 5
 n_channel = 16
+n_channel_total = 16
 n_pch = 2
 n_rank = 2
 n_bank = 4
@@ -57,6 +58,26 @@ cmd_context_mvsb = []
 
 valid_channels = []
 
+# First channel of the KV pool a TLB-resolved run belongs to (``--pool-base``).
+# When set, head ``lch`` of a block placed in channel ``blk`` is addressed at
+# pool_base + ((blk - pool_base + lch) % n_channel): heads wrap inside the
+# pool instead of running past its last channel into a foreign pool.  ``None``
+# keeps the original AttAcc striping (block channel + lch).
+pool_base = None
+
+def ch_delta(addr_offset, lch):
+  """Byte delta from ``addr_offset`` to the same offset in head lch's channel."""
+  if pool_base is None:
+    return lch * HBM_GS['ch']
+  blk = (addr_offset // HBM_GS['ch']) % n_channel_total
+  target = pool_base + ((blk - pool_base + lch) % n_channel)
+  return (target - blk) * HBM_GS['ch']
+
+def barrier_channel_addr(addr_offset, lch):
+  if pool_base is None:
+    return (addr_offset // HBM_GS['ch']) * HBM_GS['ch'] + lch * HBM_GS['ch']
+  return (pool_base + lch) * HBM_GS['ch']
+
 def cmd_list_reset():
   cmd_score_wrgb   = []
   cmd_score_mac    = []
@@ -94,7 +115,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
       for col_idx in range(math.ceil(dhead / n_bank / n_mac)):
         for lch in range(math.ceil(valid_channel)):
           # GEMV buffer address, col granularity = 1
-          addr = addr_offset + lch * HBM_GS['ch'] + ba_idx * HBM_GS['ba'] + col_idx
+          addr = addr_offset + ch_delta(addr_offset, lch) + ba_idx * HBM_GS['ba'] + col_idx
           hex_addr = hex(addr)[2:]
           cmd_score_wrgb[itr].append("PIM_WR_GB 0x{0:0>8}".format(hex_addr))
 
@@ -110,7 +131,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
 
         # All bank command (legacy channel)
         for lch in range(math.ceil(valid_channel)):
-          addr = addr_offset + lch * HBM_GS['ch'] + idx * HBM_GS['col']
+          addr = addr_offset + ch_delta(addr_offset, lch) + idx * HBM_GS['col']
           hex_addr = hex(addr)[2:]
           cmd_score_mac[itr][-1].append("PIM_MAC_AB 0x{0:0>8}".format(hex_addr))
          ## parallelization
@@ -122,7 +143,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
         for bg_idx in range(n_bg):   
           for rank in range(n_rank):
             for lch in range(math.ceil(valid_channel)):
-              bank_addr = addr_offset + lch * HBM_GS['ch'] + rank * HBM_GS['rank'] + \
+              bank_addr = addr_offset + ch_delta(addr_offset, lch) + rank * HBM_GS['rank'] + \
                           bg_idx * HBM_GS['bg']
               hex_addr = hex(bank_addr)[2:]
               cmd_score_mvsb[itr][-1].append("PIM_MV_SB 0x{0:0>8}".format(hex_addr))
@@ -139,7 +160,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
           # number of columns of partition = L / (R parallel units)
             for lch in range(math.ceil(valid_channel)):
               # GEMV buffer address, col granularity = 1
-              addr = addr_offset + lch * HBM_GS['ch'] + rank * HBM_GS['rank'] + \
+              addr = addr_offset + ch_delta(addr_offset, lch) + rank * HBM_GS['rank'] + \
                      bg_idx * HBM_GS['bg'] + col_idx
               hex_addr = hex(addr)[2:]
               cmd_context_mvgb[itr].append("PIM_MV_GB 0x{0:0>8}".format(hex_addr))
@@ -153,7 +174,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
       for k_idx in range(math.ceil(L / (n_pch * n_rank * n_bg))):
         idx = k_idx + n_idx * math.ceil(L / (n_pch * n_rank * n_bg))
         for lch in range(math.ceil(valid_channel)):
-          addr = addr_offset + lch * HBM_GS['ch'] + idx * HBM_GS['col'] 
+          addr = addr_offset + ch_delta(addr_offset, lch) + idx * HBM_GS['col']
           hex_addr = hex(addr)[2:]
           cmd_context_mac[itr][-1].append("PIM_MAC_AB 0x{0:0>8}".format(hex_addr))
 
@@ -162,15 +183,15 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
       for ba_idx in range(n_bank):
         for rank in range(n_rank):
           for lch in range(math.ceil(valid_channel)):
-            bank_addr = addr_offset + lch * HBM_GS['ch'] + rank * HBM_GS['rank'] + \
-                        ba_idx * HBM_GS['ba'] 
+            bank_addr = addr_offset + ch_delta(addr_offset, lch) + rank * HBM_GS['rank'] + \
+                        ba_idx * HBM_GS['ba']
             hex_addr = hex(bank_addr)[2:]
             cmd_context_mvsb[itr][-1].append("PIM_MV_SB 0x{0:0>8}".format(hex_addr))
 
   def softmax(L, addr_offset):
     channel_base = (addr_offset // HBM_GS['ch']) * HBM_GS['ch']
     for lch in range(math.ceil(valid_channel)):
-      addr = channel_base + lch * HBM_GS['ch'] 
+      addr = channel_base + ch_delta(addr_offset, lch)
       hex_addr = hex(addr)[2:]
       cmd_sfm[itr].append("PIM_SFM 0x{0:0>8}".format(hex_addr))
 
@@ -215,10 +236,9 @@ def _shared_query_attention_commands(n_head_per_hbm, L, key_base, value_base,
     Attention(L, key_addr, val_addr, itr, valid_channel)
 
   barrier = []
-  channel_base = (key_base // HBM_GS['ch']) * HBM_GS['ch']
   for lch in range(n_channel):
     barrier.append("PIM_BARRIER 0x{0:0>8}".format(
-        hex(channel_base + lch * HBM_GS['ch'])[2:]))
+        hex(barrier_channel_addr(key_base, lch))[2:]))
 
   total_cmd = []
   for itr in range(num_itr):
@@ -298,9 +318,8 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
 
   ##-- Ovelapping Commands --##
   barrier = []
-  channel_base = ((key_base if key_base is not None else 0) // HBM_GS['ch']) * HBM_GS['ch']
   for lch in range(n_channel):
-    addr = channel_base + lch * HBM_GS['ch']
+    addr = barrier_channel_addr(key_base if key_base is not None else 0, lch)
     hex_addr = hex(addr)[2:]
     barrier.append("PIM_BARRIER 0x{0:0>8}".format(hex_addr))
 
@@ -473,7 +492,7 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
       trace_file.write(cmd + "\n")
 
 def main():
-  global dhead, max_L, data_size, n_mac, n_channel
+  global dhead, max_L, data_size, n_mac, n_channel, pool_base
 
 
   parser = argparse.ArgumentParser(description="Output path and operation infos",
@@ -501,6 +520,9 @@ def main():
                       help="number of private Q streams sharing that resident K/V segment")
   parser.add_argument("--channels", type=int, default=16,
                       help="number of contiguous physical channels assigned to this KV class")
+  parser.add_argument("--pool-base", type=int, default=None,
+                      help="first channel of that KV class's pool; heads then wrap inside "
+                           "[pool-base, pool-base + channels) instead of striping past it")
 
   args = parser.parse_args()
 
@@ -514,6 +536,10 @@ def main():
   if not 1 <= args.channels <= 16:
     raise ValueError("channels must be in [1, 16]")
   n_channel = args.channels
+  if args.pool_base is not None:
+    if not 0 <= args.pool_base <= 16 - args.channels:
+      raise ValueError("pool-base must keep the pool inside the 16 channels")
+    pool_base = args.pool_base
 
   print("------   Make a trace of bank-level AttAcc   ------")
 

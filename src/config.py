@@ -4,6 +4,55 @@ SCALING_FACTOR = {}
 SCALING_FACTOR['MAX_COMPUTE_UTIL'] = 0.8
 SCALING_FACTOR['MAX_OFF_MEM_BW_UTIL'] = 0.85
 
+# ---------------------------------------------------------------------------
+# One HBM3 stack, shared by the GPU's near memory and the AttAcc far memory.
+#
+# Organisation and timing are the Ramulator presets the PIM side is simulated
+# with (``HBM3_8Gb_2R`` / ``HBM3_5.2Gbps`` in ramulator2/src/dram/impl/
+# HBM3-PIM.cpp), so the GPU's HBM in the refined model is *the same device*
+# as the PIM's: 16 channels x 2 pseudo-channels x 2 ranks x 4 BG x 4 banks,
+# 1 KiB rows of 32 x 32 B columns, 5.2 Gbps -> 670.4 GB/s per stack.  The
+# A100a GPU has five of them (80 GB, 3352 GB/s), exactly the AttAcc stack
+# count, which is also why the legacy ``OFF_MEM_BW_PER_DEVICE`` was 3352.
+# ---------------------------------------------------------------------------
+HBM3_STACK = {
+    'BYTES_PER_S': 670.4 * 1000 * 1000 * 1000,
+    'CAPACITY_BYTES': 16 * 1024 * 1024 * 1024,
+    'CHANNELS': 16,
+    'PSEUDO_CHANNELS': 2,
+    'RANKS': 2,
+    'BANK_GROUPS': 4,
+    'BANKS_PER_GROUP': 4,
+    'ROW_BYTES': 1024,
+    'COLUMN_BYTES': 32,
+    'tCK_PS': 1300,
+    # cycles (HBM3_5.2Gbps preset)
+    'nBL': 2, 'nCL': 19, 'nRCD': 19, 'nRP': 19, 'nRAS': 45, 'nRC': 63,
+    'nCCDS': 2, 'nCCDL': 4, 'nRRDS': 2, 'nRRDL': 4, 'nFAW': 39,
+    'nRTW': 3, 'nWTRL': 11, 'nRFC': 260, 'nREFI': 5070,
+}
+
+
+def hbm3_stream_efficiency(spec=HBM3_STACK):
+    """Fraction of peak a bank-interleaved streaming access pattern sustains.
+
+    A GPU memory controller keeps >= tRC / (row data time) banks in flight per
+    channel, so row activation is hidden behind the data bus and the only
+    losses are refresh (tRFC / tREFI) and the read<->write bus turnaround,
+    charged once per 1 KiB row (32 columns x nBL cycles of data against
+    (nRTW + nWTRL) / 2 cycles of bubble).  With the HBM3 presets this is
+    0.949 x 0.901 = 0.855 -- the legacy model's flat 0.85 derived from the
+    device timing rather than assumed.
+    """
+    refresh = 1.0 - spec['nRFC'] / spec['nREFI']
+    row_data_cycles = (spec['ROW_BYTES'] // spec['COLUMN_BYTES']) * spec['nBL']
+    turnaround = (spec['nRTW'] + spec['nWTRL']) / 2.0
+    bus = row_data_cycles / (row_data_cycles + turnaround)
+    return refresh * bus
+
+
+GPU_MODELS = ('legacy', 'refined', 'flash')
+
 # ENERGY_TABLE: pJ per byte
 # Cache info: https://core.ac.uk/download/pdf/232142915.pdf
 ENERGY_TABLE = {
@@ -74,10 +123,55 @@ def make_xpu_config(gpu_type: GPUType,
                     flops=None,
                     mem_cap=None,
                     mem_bw=None,
-                    power_constraint=True):
+                    power_constraint=True,
+                    gpu_model='legacy',
+                    pim_link_bw=None,
+                    attn_splitk=False):
+    assert gpu_model in GPU_MODELS, "gpu_model must be one of {}".format(GPU_MODELS)
     config = {'GPU': {}, 'CPU': {}}
     config['GPU']["GPUTYPE"] = gpu_type
     config['GPU']["NUM_DEVICE"] = 8 if num_gpu is None else num_gpu
+    # ``legacy``: the original AttAcc xPU model (flat 0.8 compute
+    # utilisation on every GEMM).  ``refined`` (user decision 2026-08-20):
+    # the projection GEMMs and the attention score/context matmuls are
+    # priced with the cuBLAS efficiency measured for their size instead of
+    # the flat 0.8 -- nothing else about them changes (same tiling, same
+    # per-layer SM occupancy, same memory model, S = QK^T still materialised),
+    # so attention can only get slower, never faster; and every GPU<->AttAcc
+    # transfer pays the NVLink latency plus the far HBM3's streaming time.
+    # Softmax, activation, norm and all-reduce keep the legacy GPU model.
+    # ``flash`` (user decision 2026-08-21) = ``refined`` plus the attention
+    # priced as a fused FlashAttention-2 kernel: one CTA per (head, request,
+    # 128-row Q block), efficiency vs key length from the FA-2 A100 plots,
+    # S = QK^T never leaves the SM (softmax fused, no HBM traffic), decode
+    # (m = 1) split over keys (flash-decoding).
+    # The GPU's near HBM is the same HBM3 stack as the AttAcc's (5 x 670.4
+    # GB/s); its derived streaming efficiency (0.855) matches the legacy 0.85
+    # constant, which is therefore kept.
+    config['GPU']["GPU_MODEL"] = gpu_model
+    # fused attention: rows of Q held per CTA (FlashAttention-2, d = 128) and
+    # the tensor-core MMA row granularity a short Q block is padded to.
+    config['GPU']["ATTN_Q_BLOCK"] = 128
+    config['GPU']["ATTN_MMA_ROWS"] = 16
+    # keys per CTA when a decode-shaped attention (m == 1) is split over the
+    # key dimension (flash-decoding) to fill the SMs.
+    config['GPU']["ATTN_DECODE_SPLIT"] = 256
+    # flash only: also let a short-Q prefill attention (m > 1) split its key
+    # range across CTAs (flash-attn's ``num_splits`` heuristic) when the
+    # (head, request, Q-block) CTAs alone cannot fill the SMs; the split is
+    # chosen to maximise FA efficiency(keys/s) x SM occupancy.  Off by
+    # default so the 2026-08-21 flash matrix stays reproducible.
+    config['GPU']["ATTN_SPLITK"] = bool(attn_splitk)
+    config['GPU']["HBM_SPEC"] = HBM3_STACK
+    config['GPU']["NUM_HBM_STACKS"] = 5
+    config['GPU']["HBM_STREAM_EFF"] = hbm3_stream_efficiency()
+    # latency of one GPU<->AttAcc NVLink transfer: the intercept of the A100
+    # all-reduce fit used by ``get_nvlink_time`` (6.06 us).
+    config['GPU']["NVLINK_LATENCY_S"] = 6060e-9
+    # Bandwidth of the GPU <-> AttAcc link used by X2G transfers (K/V, Q,
+    # context); the GPU <-> GPU all-reduce keeps INTERFACE_BW.  None = same
+    # NVLink generation as the GPU fabric (the original AttAcc assumption).
+    config['GPU']["PIM_LINK_BW"] = pim_link_bw
 
     if gpu_type == GPUType.A100a:
         # Ref: DGX-A100 whitepaper
@@ -87,7 +181,8 @@ def make_xpu_config(gpu_type: GPUType,
         config['GPU']["MEM_CAPACITY_PER_DEVICE"] = 80 * 1024 * 1024 * 1024 \
                                                     if mem_cap is None else mem_cap
 
-        config['GPU']["OFF_MEM_BW_PER_DEVICE"] = 3352 * 1000 * 1000 * 1000 \
+        # 5 x HBM3 stacks at 670.4 GB/s == the AttAcc memory device
+        config['GPU']["OFF_MEM_BW_PER_DEVICE"] = 5 * HBM3_STACK['BYTES_PER_S'] \
                                                   if mem_bw is None else mem_bw
         config['GPU']["L2_MEM_BW_PER_DEVICE"] = float('inf')
         #config['GPU']["L2_MEM_BW_PER_DEVICE"] = 3.8 * 1000 * 1000 * 1000 * 1000

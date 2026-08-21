@@ -1,9 +1,15 @@
+import os
+
 from .type import *
 from .model import *
 from .devices import *
 from .config import *
-RAMPATH = "./ramulator2"
-RAMLOG = "./ramulator.out"
+# Ramulator working paths.  Concurrent experiment jobs must not share the
+# CSV shape cache: ``update_log_file`` rewrites the whole file, so two jobs
+# appending at once would lose or corrupt each other's rows.  The environment
+# overrides let each job own a private trace directory and log.
+RAMPATH = os.environ.get("ATTACC_RAMULATOR_DIR", "ramulator2")
+RAMLOG = os.environ.get("ATTACC_RAMULATOR_LOG", "ramulator.out")
 
 OPB_PRINT = False
 
@@ -104,7 +110,7 @@ class System:
                         ramulator_workers: int = 1):
         self.hetero_name = name
         if self.hetero_name == DeviceType.PIM:
-            ramulator = Ramulator(modelinfos, "ramulator2", "ramulator.out",
+            ramulator = Ramulator(modelinfos, RAMPATH, RAMLOG,
                                   workers=ramulator_workers)
             self.devices['Acc'] = PIM(config,
                                       self.scaling_factor,

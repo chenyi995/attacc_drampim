@@ -10,6 +10,9 @@ from src.workload import (Request, Segment, Workload, WorkloadValidationError,
 from src.workload_runner import (run_cacheblend_analytic_report,
                                  run_no_reuse_report, run_no_reuse_workload)
 from src.workload_runner import run_reuse_prefill
+from src.ablation import (_batch_scan_profile, _master_diff_lengths,
+                         _naive_run_lengths, resolve_config,
+                         run_ablation_report)
 from src.model import Transformer
 from src.system import System, apply_attacc_pipeline
 from src.config import make_xpu_config
@@ -189,6 +192,30 @@ class WorkloadTests(unittest.TestCase):
         self.assertAlmostEqual(child["prefill_s"], .004 * 2.0 / 3.0)
         self.assertAlmostEqual(child["decode_s"], .001)
         self.assertEqual(report["policy"], "cacheblend-analytic")
+        # EPIC under the same legacy abstraction: only its recomputed prefix
+        # rows are charged.  The child's shifted parent_out segment recomputes
+        # one leading row of its four reused rows.
+        epic_plan = build_reuse_plan(workload, "epic", epic_prefix_recompute_tokens=1)
+        epic = run_cacheblend_analytic_report(
+            FakeSystem(), workload, epic_plan, pipe=False, parallel_ff=False,
+            power_constraint=False)
+        self.assertEqual(epic["policy"], "epic-analytic")
+        self.assertAlmostEqual(epic["tiers"][1]["prefill_scale"], 1.0 / 4.0)
+        self.assertAlmostEqual(epic["tiers"][1]["decode_s"], .001)
+        # A tier batch bound splits a tier into serial padded batches.
+        two = Workload("rag", (
+            Request("a", 0, None, 2, (Segment("sys", "s", 2),), 2),
+            Request("b", 0, None, 2, (Segment("sys", "s", 3),), 3),
+            Request("c", 0, None, 2, (Segment("sys", "s", 5),), 5)), {})
+        _, batched = run_no_reuse_report(FakeSystem(), two, pipe=False,
+                                         parallel_ff=False, power_constraint=False,
+                                         batch_size=2)
+        self.assertEqual([(t["batch_size"], t["lin"]) for t in batched["tiers"]],
+                         [(2, 3), (1, 5)])
+        _, whole = run_no_reuse_report(FakeSystem(), two, pipe=False,
+                                       parallel_ff=False, power_constraint=False)
+        self.assertEqual([(t["batch_size"], t["lin"]) for t in whole["tiers"]],
+                         [(3, 5)])
 
     def test_single_no_reuse_workload_matches_legacy_call_arguments(self):
         payload = [{"sample": 0, "seg_lens": [2, 3, 4],
@@ -326,6 +353,166 @@ class WorkloadTests(unittest.TestCase):
         via_json = run_no_reuse_workload(make_system(), workload, pipe=True,
                                          parallel_ff=False, power_constraint=False)
         self.assertEqual(via_json, direct)
+
+    def _ablation_toy(self):
+        """Two-request workload with one shared chunk, on a toy model.
+
+        ``devices['Acc']`` stays the GPU model, so the comparison exercises the
+        ablation driver's layer/pipeline arithmetic rather than Ramulator.
+        """
+        toy = {"name": "toy", "ndec": 4, "num_heads": 4, "hdim": 16,
+               "dhead": 4, "ff_scale": 4, "gqa_size": 1,
+               "dtype": DataType.W16A16}
+        gpu = make_xpu_config(GPUType.A100a, num_gpu=1)["GPU"]
+        workload = Workload("rag", (
+            Request("r0", 0, None, 3, (
+                Segment("sys", "shared-sys", 4), Segment("doc", "own-0", 4),
+                Segment("query", "q0", 2)), 10),
+            Request("r1", 0, None, 3, (
+                Segment("sys", "shared-sys", 4), Segment("doc", "own-1", 4),
+                Segment("query", "q1", 2)), 10),), {})
+        return toy, gpu, workload
+
+    def test_ablation_a1_reproduces_the_original_attacc_legacy_report(self):
+        """A1 must be the untouched AttAcc evaluation, not a re-derivation.
+
+        The legacy CSV's summarization total omits the K/V link layer, which
+        the ablation driver counts so that GPU-side and PIM-side prefill
+        configurations are accounted the same way.  Everything else -- decode
+        time, prefill compute, prefill and decode energy -- must match bit for
+        bit.
+        """
+        toy, gpu, workload = self._ablation_toy()
+        plan = build_reuse_plan(workload, "no-reuse", 0.0, 0, (), (), 1)
+
+        legacy_system = System(gpu, toy)
+        legacy_system.hetero_name = DeviceType.PIM
+        legacy_system.devices["Acc"].pim_type = SimpleNamespace(name="bank")
+        _, legacy = run_no_reuse_report(legacy_system, workload, pipe=True,
+                                        parallel_ff=True, power_constraint=False)
+
+        system = System(gpu, toy)
+        system.hetero_name = DeviceType.PIM
+        report = run_ablation_report(
+            system, workload, plan,
+            resolve_config("A1", None, None, None, policy="no-reuse"),
+            pipe=True, parallel_ff=True, power_constraint=False)
+
+        legacy_decode = sum(tier["decode_s"] for tier in legacy["tiers"])
+        legacy_prefill = sum(tier["prefill_s"] for tier in legacy["tiers"])
+        link_s = sum(tier["prefill_breakdown_s"].get("gpu_comm_x2g", 0.0)
+                     for tier in report["tiers"])
+        self.assertGreater(link_s, 0.0)
+        self.assertAlmostEqual(report["decode_s"] / legacy_decode, 1.0, places=12)
+        self.assertAlmostEqual((report["prefill_s"] - link_s) / legacy_prefill,
+                               1.0, places=12)
+        self.assertAlmostEqual(report["energy_nj"] / legacy["energy_nj"],
+                               1.0, places=12)
+        self.assertAlmostEqual(
+            report["prefill_energy_nj"] / legacy["prefill_energy_nj"], 1.0,
+            places=12)
+
+    def test_naive_mapping_fragments_the_scan_that_master_diff_keeps_whole(self):
+        """The 3-vs-4 mechanism must be a real address-pattern difference.
+
+        Naive keeps the software's chunk layout in one 16-channel pool, so a
+        recomputed row splits the stream and is read from its own block.
+        Master/diff streams the immutable rows -- including the ones shadowed
+        by a correction -- as whole per-chunk extents in one pool while the
+        recomputed rows form a single extent in the other.
+        """
+        toy, gpu, workload = self._ablation_toy()
+        plan = build_reuse_plan(workload, "cacheblend", 0.5, 7, (0,),
+                                (1, 2, 3), 1)
+        request = workload.requests[1]
+        naive_full = _naive_run_lengths(request, plan, 0)      # full-recompute
+        naive_partial = _naive_run_lengths(request, plan, 1)   # patched layer
+        master, diff_rows = _master_diff_lengths(request, plan, 1)
+
+        self.assertEqual(sum(naive_full), request.total_length)
+        self.assertGreater(len(naive_partial), len(naive_full))
+        self.assertGreater(diff_rows, 0)
+        self.assertEqual(sum(master), request.total_length)
+        # Naive reads each logical row once; master/diff also streams the
+        # shadowed master row of every correction.
+        self.assertEqual(sum(naive_partial), request.total_length)
+        self.assertEqual(sum(master) + diff_rows,
+                         request.total_length + diff_rows)
+
+        config = resolve_config("A3", None, None, None, policy="cacheblend")
+        profile = _batch_scan_profile(workload.requests, plan, 1, 10, 2, 32, config)
+        self.assertEqual(len(profile.pools), 1)
+        self.assertEqual({run[4] for run in profile.pools[0]}, {16})
+        self.assertEqual(sum(run[2] for run in profile.pools[0]), 12)
+
+        config = resolve_config("A4", None, None, None, policy="cacheblend")
+        profile = _batch_scan_profile(workload.requests, plan, 1, 10, 2, 32, config)
+        self.assertEqual(len(profile.pools), 2)
+        self.assertEqual({run[3] for run in profile.pools[0]}, {0})
+        self.assertEqual({run[3] for run in profile.pools[1]}, {8})
+        self.assertEqual(sum(run[2] for run in profile.pools[0]), 12)
+
+    def test_split_prefill_overlaps_its_gpu_and_pim_branches(self):
+        """A6's two branches have no data dependency, so the layer costs max().
+
+        KVpim-sim's trace runs the GPU ``fresh score`` events of B-prefill L2
+        concurrently with the ``b0``/``b1`` scans and merges the two partial
+        (m, l, o) triples on the DIE afterwards, so charging the branches one
+        after the other overstates the split.  A5 has no GPU branch and must be
+        bit-identical under both settings.
+        """
+        toy, gpu, workload = self._ablation_toy()
+        plan = build_reuse_plan(workload, "cacheblend", 0.5, 7, (0,),
+                                (1, 2, 3), 1)
+
+        def stub_runs(op):
+            # Stand in for Ramulator: one measurement per contiguous extent,
+            # linear in the rows it streams.  The test is about how the driver
+            # combines the branches, not about the memory timing.
+            return [(1e-9 * run[2] * op.numOp, [1.0] * 6)
+                    for run in op.pim_kv_runs]
+
+        def run(preset, overlap):
+            system = System(gpu, toy)
+            system.hetero_name = DeviceType.PIM
+            system.devices["Acc"].pim_type = SimpleNamespace(name="bank")
+            system.devices["Acc"].get_time_and_energy_runs = stub_runs
+            return run_ablation_report(
+                system, workload, plan,
+                resolve_config(preset, None, None, None, policy="cacheblend",
+                               split_overlap=overlap),
+                pipe=True, parallel_ff=True, power_constraint=False)
+
+        overlap, serial = run("A6", True), run("A6", False)
+        self.assertLess(overlap["prefill_s"], serial["prefill_s"])
+        # Overlap hides time, it does not remove work.
+        self.assertAlmostEqual(overlap["prefill_energy_nj"] /
+                               serial["prefill_energy_nj"], 1.0, places=12)
+        # The breakdown still sums to the reported prefill time.
+        for tier in overlap["tiers"]:
+            saving = tier["prefill_breakdown_s"]["split_overlap_saving"]
+            self.assertLess(saving, 0.0)
+
+        a5_overlap, a5_serial = run("A5", True), run("A5", False)
+        self.assertEqual(a5_overlap["prefill_s"], a5_serial["prefill_s"])
+        self.assertNotIn("split_overlap_saving",
+                         a5_overlap["tiers"][0]["prefill_breakdown_s"])
+
+    def test_ablation_rejects_incoherent_placement_switches(self):
+        for kwargs in (
+                {"preset": None, "prefill_attn": "gpu", "decode_attn": "gpu",
+                 "kv_mapping": "naive", "policy": "cacheblend"},
+                {"preset": None, "prefill_attn": "gpu", "decode_attn": "pim",
+                 "kv_mapping": "none", "policy": "cacheblend"},
+                {"preset": None, "prefill_attn": "gpu", "decode_attn": "pim",
+                 "kv_mapping": "master-diff", "policy": "no-reuse"},
+                {"preset": None, "prefill_attn": "gpu", "decode_attn": "pim",
+                 "kv_mapping": "private", "policy": "cacheblend"}):
+            policy = kwargs.pop("policy")
+            with self.assertRaises(WorkloadValidationError):
+                resolve_config(kwargs.pop("preset"), kwargs["prefill_attn"],
+                               kwargs["decode_attn"], kwargs["kv_mapping"],
+                               policy=policy)
 
     def test_reuse_structure_checker_covers_layers_and_rows(self):
         workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
@@ -553,7 +740,7 @@ class WorkloadTests(unittest.TestCase):
         report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                    cacheblend_batch_size=2)
         self.assertEqual(report["cacheblend_batch_size"], 2)
-        self.assertEqual(report["cacheblend_rotate_mode"], "die")
+        self.assertEqual(report["cacheblend_rotate_mode"], "gpu")
         worker_batches = [batch for batch in report["batches"] if batch["tier"] == 1]
         self.assertTrue(worker_batches)
         self.assertTrue(all(batch["size"] == 2 for batch in worker_batches))
@@ -578,23 +765,155 @@ class WorkloadTests(unittest.TestCase):
         self.assertTrue(shared)
         self.assertTrue(all(len(event["batch_members"]) == 2 for event in shared))
         self.assertIn(True, pim.shared_kv)
-        die_rotate = [event for event in report["events"]
-                      if event["name"].startswith("decode_die_rotate_q_")]
-        self.assertTrue(die_rotate)
-        gpu_report = run_reuse_prefill(System(), workload, plan, pipe=True,
+        gpu_rotate = [event for event in report["events"]
+                      if event["name"] == "decode_gpu_rotate_q_extra_to_pim"]
+        self.assertTrue(gpu_rotate)
+        die_report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                        cacheblend_batch_size=2,
-                                       cacheblend_rotate_mode="gpu")
+                                       cacheblend_rotate_mode="die")
         bank_report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                         cacheblend_batch_size=2,
                                         cacheblend_rotate_mode="bank")
-        self.assertEqual(gpu_report["cacheblend_rotate_mode"], "gpu")
+        self.assertEqual(die_report["cacheblend_rotate_mode"], "die")
         self.assertEqual(bank_report["cacheblend_rotate_mode"], "bank")
-        self.assertTrue(any(event["name"] == "decode_gpu_rotate_q_extra_to_pim"
-                            for event in gpu_report["events"]))
+        self.assertTrue(any(event["name"].startswith("decode_die_rotate_q_")
+                            for event in die_report["events"]))
         self.assertTrue(any(event["name"] == "decode_bank_rotate_q_local"
                             for event in bank_report["events"]))
-        self.assertGreater(gpu_report["link_bytes"], bank_report["link_bytes"])
-        self.assertGreaterEqual(report["makespan_s"], bank_report["makespan_s"])
+        self.assertGreater(report["link_bytes"], bank_report["link_bytes"])
+        self.assertGreaterEqual(die_report["makespan_s"], bank_report["makespan_s"])
+
+    def test_cacheblend_decode_streams_master_and_diff_pools_sequentially(self):
+        """Corrections mask master rows; they must not fragment the master stream.
+
+        Master and diff are disjoint channel pools.  A consumer streams the
+        owner's master block sequentially (shadowed rows read but masked) and
+        its diff rows sequentially, so the number of physical runs is
+        independent of how many rows CacheBlend chose to correct.
+        """
+        class GPU:
+            def get_time_and_energy(self, layer):
+                return .001, [1, 0, 0, 0, 0, 0]
+
+        class PIM:
+            peak_memory_bandwidth = 10**12
+            softmax_peak_bandwidth = 10**12
+            energy_table = {"mem": 1, "sram": 1}
+
+            def get_time_and_energy(self, layer):
+                return .002, [2, 0, 0, 0, 0, 0]
+
+            def get_time_and_energy_runs(self, layer):
+                return [(.002, [2, 0, 0, 0, 0, 0])
+                        for _ in getattr(layer, "pim_kv_runs", ((),))]
+
+        class System:
+            hetero_name = DeviceType.PIM
+            devices = {"GPU": GPU(), "Acc": PIM()}
+            model = Transformer({"name": "toy", "ndec": 2, "num_heads": 4,
+                                 "hdim": 16, "ff_scale": 4,
+                                 "dtype": DataType.W16A16}, tensor_parallel=1)
+
+        def request(request_id, query):
+            segments = (Segment("sys", "sys", 2), Segment("doc", "doc", 20),
+                        Segment("query", query, 2))
+            return Request(request_id, 0, None, 2, segments, 24)
+
+        workload = Workload("rag", (request("r0", "q0"), request("r1", "q1")), {})
+
+        def decode_scans(ratio):
+            plan = build_reuse_plan(workload, "cacheblend", ratio, 3, (0,), (1,))
+            report = run_reuse_prefill(System(), workload, plan, pipe=True)
+            corrected = sum(len(rows) for rows in
+                            plan.cacheblend_partial_rows[1].get("r1", {}).values())
+            first = min(event["query_positions"][0] for event in report["events"]
+                        if event["request"] == "r1" and event["transformer_layer"] == 1
+                        and event["name"] == "decode_pim_kv_scan_score_softmax_pv")
+            scans = [event for event in report["events"]
+                     if event["request"] == "r1" and event["transformer_layer"] == 1
+                     and event["name"] == "decode_pim_kv_scan_score_softmax_pv"
+                     and event["query_positions"] == [first]]
+            return plan, report, corrected, scans
+
+        plan, report, corrected, scans = decode_scans(0.25)
+        self.assertGreater(corrected, 0)
+        master = [event for event in scans if event["device"] == "PIM:pool0-7"]
+        diff = [event for event in scans if event["device"] == "PIM:pool8-15"]
+        # The whole 24-row context is streamed from master (shadowed rows
+        # included), and only the corrected rows come from the diff pool.
+        self.assertEqual(sum(event["rows"] for event in master), 24)
+        self.assertEqual(sum(event["masked_rows"] for event in master), corrected)
+        self.assertEqual(len(diff), 1)
+        self.assertEqual(diff[0]["rows"], corrected)
+        self.assertEqual(diff[0]["masked_rows"], 0)
+        # Fragmentation-free: exactly as many master runs as with no correction.
+        _, _, _, baseline = decode_scans(0.0)
+        self.assertEqual(len(master),
+                         len([event for event in baseline
+                              if event["device"] == "PIM:pool0-7"]))
+        # Every event's rows and masks are consistent and the DIE merge is
+        # priced per physical run (one local softmax tuple each) plus the GPU
+        # tuple, not per K/V row.
+        merge = next(event for event in report["events"]
+                     if event["request"] == "r1" and event["transformer_layer"] == 1
+                     and event["name"] == "decode_die_lse_merge")
+        tuple_bytes = 4 * (4 + 2) * 2
+        self.assertAlmostEqual(merge["time_s"],
+                               (len(scans) + 1) * tuple_bytes / 10**12)
+        # A producer's master rows are exactly the rows a consumer resolves,
+        # so the shadowed master row of a diff entry is the owner's row.
+        entries = report["tlb"]["entries"]
+        owner_rows = {(entry["layer"], entry["position"]): entry["location"]
+                      for entry in entries if entry["request"] == "r0"
+                      and entry["position"] < 24}
+        for entry in entries:
+            if entry["request"] != "r1" or not entry["reused"]:
+                continue
+            location = entry["location"]
+            owner = owner_rows[(entry["layer"], entry["position"])]
+            if location["kind"] == "diff":
+                self.assertEqual(location["shadow_master"]["key_address"],
+                                 owner["key_address"])
+                self.assertEqual(location["channel_base"], 8)
+            else:
+                self.assertEqual(location["key_address"], owner["key_address"])
+        # Prefill scans of a partial layer stream master only (the diff row
+        # is being computed on the GPU) and mask the corrected rows.
+        prefill = [event for event in report["events"]
+                   if event["request"] == "r1" and event["transformer_layer"] == 1
+                   and event["name"] == "pim_kv_scan_score_softmax_pv"]
+        self.assertTrue(prefill)
+        self.assertTrue(all(event["device"] == "PIM:pool0-7" for event in prefill))
+        self.assertTrue(any(event["masked_rows"] > 0 for event in prefill))
+
+    def test_cacheblend_pool_spills_into_next_channel_of_the_same_pool(self):
+        """A pool is channel_count x 1 GiB; a full first channel spills within the pool."""
+        from src.workload_runner import CacheBlendTLB, _HBM_CHANNEL_BYTES
+        tlb = CacheBlendTLB(256)
+        # 40 blocks of 4 MiB K each: 8 MiB K windows hold two blocks per
+        # 16 MiB tile, so 64 tiles = 1 GiB fill channel 0 after 128 blocks;
+        # use bigger blocks to keep the test fast: 8 MiB (one block per tile).
+        rows_per_block = (1 << 23) // 256
+        for index in range(70):
+            for row in range(0, rows_per_block, rows_per_block - 1):
+                tlb.reserve(0, "o", "fp{}".format(index), row, "master")
+        # ``reserve`` keeps only rows; give each block its full span.
+        for index in range(70):
+            tlb._reserved_rows[(0, "o", "fp{}".format(index), "master")] = set(range(rows_per_block))
+        tlb.reserve(0, "c", "d", 0, "diff")
+        tlb.finalize()
+        blocks = tlb.report()["blocks"]
+        master = [b for b in blocks if b["kind"] == "master"]
+        self.assertEqual(len(master), 70)
+        channels = sorted({int(b["key_base"], 0) // _HBM_CHANNEL_BYTES for b in master})
+        self.assertEqual(channels, [0, 1])
+        self.assertTrue(all(b["channel_base"] == 0 and b["channel_count"] == 8 for b in master))
+        self.assertEqual({b["channel_offset"] for b in master}, {0, 1})
+        spilled = [b for b in master if b["channel_offset"] == 1]
+        self.assertEqual(len(spilled), 6)
+        self.assertEqual(int(spilled[0]["key_base"], 0), 1 * _HBM_CHANNEL_BYTES)
+        diff = [b for b in blocks if b["kind"] == "diff"]
+        self.assertEqual(int(diff[0]["key_base"], 0) // _HBM_CHANNEL_BYTES, 8)
 
 
 if __name__ == "__main__":

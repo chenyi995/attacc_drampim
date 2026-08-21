@@ -13,6 +13,7 @@ n_attacc = 8
 max_n_hbm = 8
 n_hbm = 5
 n_channel = 16
+n_channel_total = 16
 n_pch = 2
 n_rank = 2
 n_bank = 4
@@ -57,6 +58,26 @@ cmd_context_mvsb = []
 
 valid_channels = []
 
+# First channel of the KV pool a TLB-resolved run belongs to (``--pool-base``).
+# When set, head ``lch`` of a block placed in channel ``blk`` is addressed at
+# pool_base + ((blk - pool_base + lch) % n_channel): heads wrap inside the
+# pool instead of running past its last channel into a foreign pool.  ``None``
+# keeps the original AttAcc striping (block channel + lch).
+pool_base = None
+
+def ch_delta(addr_offset, lch):
+  """Byte delta from ``addr_offset`` to the same offset in head lch's channel."""
+  if pool_base is None:
+    return lch * HBM_GS['ch']
+  blk = (addr_offset // HBM_GS['ch']) % n_channel_total
+  target = pool_base + ((blk - pool_base + lch) % n_channel)
+  return (target - blk) * HBM_GS['ch']
+
+def barrier_channel_addr(addr_offset, lch):
+  if pool_base is None:
+    return (addr_offset // HBM_GS['ch']) * HBM_GS['ch'] + lch * HBM_GS['ch']
+  return (pool_base + lch) * HBM_GS['ch']
+
 def cmd_list_reset():
   cmd_score_wrgb   = []
   cmd_score_mac    = []
@@ -68,7 +89,12 @@ def cmd_list_reset():
 
   valid_channel = []
 
-def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
+def Attention(L, key_addr, val_addr, itr, valid_channel=None):
+  # ``n_channel`` is set from the command line in main().  Do not capture its
+  # import-time value (16) as a Python default argument, otherwise a
+  # TLB-resolved one-channel run still emits commands to sixteen channels.
+  if valid_channel is None:
+    valid_channel = n_channel
   cmd_score_wrgb.append([])
   cmd_score_mac.append([])
   cmd_score_mvsb.append([])
@@ -89,7 +115,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
       for col_idx in range(math.ceil(dhead / n_bank / n_mac)):
         for lch in range(math.ceil(valid_channel)):
           # GEMV buffer address, col granularity = 1
-          addr = addr_offset + lch * HBM_GS['ch'] + ba_idx * HBM_GS['ba'] + col_idx
+          addr = addr_offset + ch_delta(addr_offset, lch) + ba_idx * HBM_GS['ba'] + col_idx
           hex_addr = hex(addr)[2:]
           cmd_score_wrgb[itr].append("PIM_WR_GB 0x{0:0>8}".format(hex_addr))
 
@@ -105,7 +131,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
 
         # All bank command (legacy channel)
         for lch in range(math.ceil(valid_channel)):
-          addr = addr_offset + lch * HBM_GS['ch'] + idx * HBM_GS['col']
+          addr = addr_offset + ch_delta(addr_offset, lch) + idx * HBM_GS['col']
           hex_addr = hex(addr)[2:]
           cmd_score_mac[itr][-1].append("PIM_MAC_AB 0x{0:0>8}".format(hex_addr))
          ## parallelization
@@ -117,7 +143,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
         for bg_idx in range(n_bg):   
           for rank in range(n_rank):
             for lch in range(math.ceil(valid_channel)):
-              bank_addr = addr_offset + lch * HBM_GS['ch'] + rank * HBM_GS['rank'] + \
+              bank_addr = addr_offset + ch_delta(addr_offset, lch) + rank * HBM_GS['rank'] + \
                           bg_idx * HBM_GS['bg']
               hex_addr = hex(bank_addr)[2:]
               cmd_score_mvsb[itr][-1].append("PIM_MV_SB 0x{0:0>8}".format(hex_addr))
@@ -134,7 +160,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
           # number of columns of partition = L / (R parallel units)
             for lch in range(math.ceil(valid_channel)):
               # GEMV buffer address, col granularity = 1
-              addr = addr_offset + lch * HBM_GS['ch'] + rank * HBM_GS['rank'] + \
+              addr = addr_offset + ch_delta(addr_offset, lch) + rank * HBM_GS['rank'] + \
                      bg_idx * HBM_GS['bg'] + col_idx
               hex_addr = hex(addr)[2:]
               cmd_context_mvgb[itr].append("PIM_MV_GB 0x{0:0>8}".format(hex_addr))
@@ -148,7 +174,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
       for k_idx in range(math.ceil(L / (n_pch * n_rank * n_bg))):
         idx = k_idx + n_idx * math.ceil(L / (n_pch * n_rank * n_bg))
         for lch in range(math.ceil(valid_channel)):
-          addr = addr_offset + lch * HBM_GS['ch'] + idx * HBM_GS['col'] 
+          addr = addr_offset + ch_delta(addr_offset, lch) + idx * HBM_GS['col']
           hex_addr = hex(addr)[2:]
           cmd_context_mac[itr][-1].append("PIM_MAC_AB 0x{0:0>8}".format(hex_addr))
 
@@ -157,14 +183,15 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
       for ba_idx in range(n_bank):
         for rank in range(n_rank):
           for lch in range(math.ceil(valid_channel)):
-            bank_addr = addr_offset + lch * HBM_GS['ch'] + rank * HBM_GS['rank'] + \
-                        ba_idx * HBM_GS['ba'] 
+            bank_addr = addr_offset + ch_delta(addr_offset, lch) + rank * HBM_GS['rank'] + \
+                        ba_idx * HBM_GS['ba']
             hex_addr = hex(bank_addr)[2:]
             cmd_context_mvsb[itr][-1].append("PIM_MV_SB 0x{0:0>8}".format(hex_addr))
 
-  def softmax(L):
+  def softmax(L, addr_offset):
+    channel_base = (addr_offset // HBM_GS['ch']) * HBM_GS['ch']
     for lch in range(math.ceil(valid_channel)):
-      addr = lch * HBM_GS['ch'] 
+      addr = channel_base + ch_delta(addr_offset, lch)
       hex_addr = hex(addr)[2:]
       cmd_sfm[itr].append("PIM_SFM 0x{0:0>8}".format(hex_addr))
 
@@ -172,7 +199,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
 
   score_mac(key_addr, L)
 
-  softmax(L)
+  softmax(L, key_addr)
 
   context_cpvec(val_addr, L)
 
@@ -180,8 +207,88 @@ def Attention(L, key_addr, val_addr, itr, valid_channel = n_channel):
 
 
 # n_head and n_req = n_req per a HBM 
+def _shared_query_attention_commands(n_head_per_hbm, L, key_base, value_base,
+                                     shared_queries):
+  """Build a shared-KV multi-query command stream.
+
+  The normal trace generator models head pipelining.  Reusing it by inflating
+  ``nhead`` would incorrectly turn queries into physical heads.  For a true
+  shared-KV batch, keep the head count unchanged and, for each K/V row
+  command, issue the per-query operations while that row is still selected.
+  Q, score/softmax state, and PV results remain private to each query; only
+  the DRAM row selection and K/V address are common.
+
+  This is deliberately used only for a batch larger than one.  Batch one
+  continues through the legacy command interleaving below, preserving the
+  original AttAcc trace exactly.
+  """
+  partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
+  num_itr = math.ceil(n_head_per_hbm / n_channel)
+  cmd_list_reset()
+  for itr in range(num_itr):
+    remainder = 0
+    if n_head_per_hbm / ((itr + 1) * n_channel) < 1:
+      remainder = n_head_per_hbm % n_channel
+    valid_channel = n_channel if remainder == 0 else remainder
+    offset = 0  # The TLB base already names the one shared resident segment.
+    key_addr = key_base + offset
+    val_addr = value_base + offset
+    Attention(L, key_addr, val_addr, itr, valid_channel)
+
+  barrier = []
+  for lch in range(n_channel):
+    barrier.append("PIM_BARRIER 0x{0:0>8}".format(
+        hex(barrier_channel_addr(key_base, lch))[2:]))
+
+  total_cmd = []
+  for itr in range(num_itr):
+    # Score phase.  Each query writes its own Q vector.  The MACs are then
+    # interleaved at a K-row granularity, so repeating Q does not create a
+    # second logical K/V placement or a second head.
+    for _ in range(shared_queries):
+      total_cmd += cmd_score_wrgb[itr]
+    total_cmd += barrier
+    score_mvsb_index = 0
+    for score_index, score_cmds in enumerate(cmd_score_mac[itr]):
+      for _ in range(shared_queries):
+        total_cmd += score_cmds
+        if (score_index % 16 == 15 or
+                score_index == len(cmd_score_mac[itr]) - 1):
+          total_cmd += cmd_score_mvsb[itr][score_mvsb_index]
+      if score_index % 16 == 15 or score_index == len(cmd_score_mac[itr]) - 1:
+        score_mvsb_index += 1
+    # Score MAC/MVSB commands are ordered by the trace itself.  The barrier
+    # is only needed before consuming the completed score state, not after
+    # every K-row command (which would hide the row-buffer benefit of a
+    # shared-KV batch).
+    total_cmd += barrier
+
+    # Softmax is query-private.  It follows that query's score stream before
+    # any V/PV operation consumes the result.
+    for _ in range(shared_queries):
+      total_cmd += cmd_sfm[itr]
+    total_cmd += barrier
+
+    # Context/PV phase mirrors the score ordering over the shared V rows.
+    for _ in range(shared_queries):
+      total_cmd += cmd_context_mvgb[itr]
+    total_cmd += barrier
+    for context_index, context_cmds in enumerate(cmd_context_mac[itr]):
+      for _ in range(shared_queries):
+        total_cmd += context_cmds
+        total_cmd += cmd_context_mvsb[itr][context_index]
+    total_cmd += barrier
+  return total_cmd
+
+
 def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
-                  value_base=None):
+                  value_base=None, shared_kv=False, shared_queries=1):
+  if shared_queries < 1:
+    raise ValueError("shared_queries must be positive")
+  if shared_queries > 1:
+    if not shared_kv:
+      raise ValueError("shared_queries requires --shared-kv")
+
   partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
   head_offset = partition_size
   v_offset = pow(2, 23) 
@@ -196,9 +303,13 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
       remainder = n_head_per_hbm % n_channel
     # CacheBlend supplies TLB-resolved physical byte addresses.  The old
     # synthetic placement remains the default for every legacy invocation.
-    key_addr = (key_base if key_base is not None else 0) + itr * partition_size
+    # ``shared_kv`` represents several independent Q batches that all scan
+    # the same resident K/V segment.  The default remains the legacy layout
+    # where each head group owns a distinct K/V partition.
+    offset = 0 if shared_kv else itr * partition_size
+    key_addr = (key_base if key_base is not None else 0) + offset
     val_addr = ((value_base if value_base is not None else key_addr + v_offset) +
-                (itr * partition_size if value_base is not None else 0))
+                (offset if value_base is not None else 0))
     if remainder == 0:
       Attention(L, key_addr, val_addr, itr)
     else:
@@ -208,7 +319,7 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
   ##-- Ovelapping Commands --##
   barrier = []
   for lch in range(n_channel):
-    addr = lch * HBM_GS['ch']
+    addr = barrier_channel_addr(key_base if key_base is not None else 0, lch)
     hex_addr = hex(addr)[2:]
     barrier.append("PIM_BARRIER 0x{0:0>8}".format(hex_addr))
 
@@ -361,14 +472,27 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
         total_cmd += barrier
 
 
-  trace_file = open(trace_file_name, 'w')
-  for cmd in total_cmd:
-    trace_file.write(cmd + "\n")
+  if shared_queries > 1:
+    # Preserve the original two-head pipeline exactly, but expand every
+    # query-private PIM operation at the point where its K/V row is live.
+    # A barrier is shared by the whole batch: it denotes a true phase
+    # dependency, not one dependency per Q.  Thus consecutive MACs below
+    # target the same physical K/V row for all Qs before the scheduler moves
+    # on, enabling Ramulator to expose row/ACT reuse.
+    expanded_cmd = []
+    for cmd in total_cmd:
+      if cmd.startswith("PIM_BARRIER"):
+        expanded_cmd.append(cmd)
+      else:
+        expanded_cmd.extend([cmd] * shared_queries)
+    total_cmd = expanded_cmd
 
-  trace_file.close()
+  with open(trace_file_name, 'w') as trace_file:
+    for cmd in total_cmd:
+      trace_file.write(cmd + "\n")
 
 def main():
-  global dhead, max_L, data_size, n_mac
+  global dhead, max_L, data_size, n_mac, n_channel, pool_base
 
 
   parser = argparse.ArgumentParser(description="Output path and operation infos",
@@ -390,6 +514,15 @@ def main():
                       help="physical byte address of the first K vector")
   parser.add_argument("--value-addr", type=lambda value: int(value, 0), default=None,
                       help="physical byte address of the first V vector")
+  parser.add_argument("--shared-kv", action="store_true",
+                      help="reuse one K/V physical segment for every query batch")
+  parser.add_argument("--shared-queries", type=int, default=1,
+                      help="number of private Q streams sharing that resident K/V segment")
+  parser.add_argument("--channels", type=int, default=16,
+                      help="number of contiguous physical channels assigned to this KV class")
+  parser.add_argument("--pool-base", type=int, default=None,
+                      help="first channel of that KV class's pool; heads then wrap inside "
+                           "[pool-base, pool-base + channels) instead of striping past it")
 
   args = parser.parse_args()
 
@@ -400,6 +533,13 @@ def main():
 
   data_size = args.dbyte
   n_mac = int(HBM_GS['col'] / data_size)
+  if not 1 <= args.channels <= 16:
+    raise ValueError("channels must be in [1, 16]")
+  n_channel = args.channels
+  if args.pool_base is not None:
+    if not 0 <= args.pool_base <= 16 - args.channels:
+      raise ValueError("pool-base must keep the pool inside the 16 channels")
+    pool_base = args.pool_base
 
   print("------   Make a trace of bank-level AttAcc   ------")
 
@@ -409,7 +549,7 @@ def main():
       print(f"     {key}: {value}")
   print("---------------------------------------------------")
   run_attention(dhead, n_head_per_hbm, L, args.output, args.key_addr,
-                args.value_addr)
+                args.value_addr, args.shared_kv, args.shared_queries)
 
 
 

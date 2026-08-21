@@ -1,0 +1,1018 @@
+"""Legacy-model ablation driver for the PIM KV-reuse study.
+
+This module answers one question with one code path: given a workload and a
+reuse policy, what do latency, energy, and AttAcc memory occupancy look like
+when the *placement* of prefill attention, decode attention, and the KV cache
+changes?
+
+It deliberately stays inside the original AttAcc evaluation abstraction:
+
+* every layer is priced by the same ``devices['GPU']`` / ``devices['Acc']``
+  models that :meth:`System.simulate` uses,
+* decode attention on PIM is measured by the original AttAcc Ramulator trace
+  (one trace per contiguous K/V extent, deduplicated by run signature),
+* a dependency tier is served as rectangular padded batches, exactly as the
+  legacy no-reuse adapter does.
+
+The physical TLB/event-DAG model in :mod:`src.workload_runner` is a different
+abstraction and is not used here.
+
+Six named configurations (``--ablation``) span the study:
+
+===  ==============  ============  ============  =============================
+key  prefill attn    decode attn   KV mapping    meaning
+===  ==============  ============  ============  =============================
+A1   gpu             pim           private       original AttAcc, no reuse
+A2   gpu             gpu           none          pure GPU running the reuse SW
+A3   gpu             pim           naive         SW prefill, PIM decode, no
+                                                 PIM-aware remap
+A4   gpu             pim           master-diff   SW prefill, PIM decode, master
+                                                 and diff in disjoint pools
+A5   pim             pim           master-diff   projections on GPU, all
+                                                 prefill attention on PIM
+A6   split           pim           master-diff   GPU attends fresh rows, PIM
+                                                 scans reused KV
+===  ==============  ============  ============  =============================
+
+Reuse policy (``--reuse no-reuse|cacheblend|epic``) is independent of the
+placement configuration; ``A1`` is only meaningful with ``no-reuse`` and
+``A3``--``A6`` are only meaningful with a reuse policy.
+"""
+
+from __future__ import annotations
+
+import copy
+import math
+from dataclasses import dataclass
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+
+from .model import Layer
+from .system import apply_attacc_pipeline
+from .type import DeviceType, LayerType
+from .workload import ReusePlan, Request, Workload, WorkloadValidationError
+from .workload_runner import _tier_shapes
+
+# A channel is one 1-GiB region of the HBM3-PIM address mapper; K starts at an
+# 8-KiB-aligned partition and V sits 8 MiB above it.  These are the original
+# AttAcc trace-generator constants, repeated here so an ablation run produces
+# the same addresses as the physical model's TLB.
+_HBM_CHANNEL_BYTES = 1 << 30
+_ORIGINAL_KV_GAP_BYTES = 1 << 23
+_TOTAL_CHANNELS = 16
+
+PREFILL_ATTN_MODES = ("gpu", "split", "pim")
+DECODE_ATTN_MODES = ("gpu", "pim")
+KV_MAPPINGS = ("none", "private", "naive", "master-diff")
+MASTER_SHADOW_MODES = ("read-mask", "skip")
+
+PRESETS: Dict[str, Dict[str, str]] = {
+    "A1": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "private"},
+    "A2": {"prefill_attn": "gpu", "decode_attn": "gpu", "kv_mapping": "none"},
+    "A3": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "naive"},
+    "A4": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "master-diff"},
+    "A5": {"prefill_attn": "pim", "decode_attn": "pim", "kv_mapping": "master-diff"},
+    "A6": {"prefill_attn": "split", "decode_attn": "pim", "kv_mapping": "master-diff"},
+}
+
+PRESET_LABELS = {
+    "A1": "pure AttAcc, no reuse",
+    "A2": "pure GPU running CacheBlend/EPIC",
+    "A3": "software prefill + PIM decode, naive KV mapping",
+    "A4": "software prefill + PIM decode, master/diff pools",
+    "A5": "prefill attention also on PIM, master/diff pools",
+    "A6": "GPU/PIM split prefill, master/diff pools",
+}
+
+
+@dataclass(frozen=True)
+class AblationConfig:
+    """Where each stage runs and how the KV cache is laid out in the PIM."""
+
+    preset: Optional[str]
+    prefill_attn: str
+    decode_attn: str
+    kv_mapping: str
+    # Queries that share one PIM K/V stream when prefill attention runs on the
+    # PIM (the GEMV buffer's query capacity).  1 reproduces AttAcc's native
+    # one-query-per-scan decode behaviour applied to prefill.
+    pim_prefill_query_batch: int = 4
+    # Channels of the 16-channel device given to the master pool; the diff
+    # pool receives the rest.  Only used by ``master-diff``.
+    master_pool_channels: int = 8
+    # Software prefill (A3/A4) reads reused K/V back from PIM over the link.
+    prefill_kv_readback: bool = True
+    # What the master pool does with a row that a correction has overwritten.
+    # ``read-mask`` streams it with the master run and drops it from the score,
+    # keeping the run contiguous; ``skip`` leaves it out of the address stream
+    # and therefore breaks the master run at every correction.
+    master_shadow: str = "read-mask"
+    # ``split`` prefill only: the GPU's fresh-row attention and the PIM's
+    # reused-KV scan have no data dependency on each other, so the layer costs
+    # max(gpu, pim) rather than their sum.  False restores the serial charge.
+    split_overlap: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "preset": self.preset,
+            "label": PRESET_LABELS.get(self.preset or "", "custom"),
+            "prefill_attn": self.prefill_attn,
+            "decode_attn": self.decode_attn,
+            "kv_mapping": self.kv_mapping,
+            "pim_prefill_query_batch": self.pim_prefill_query_batch,
+            "master_pool_channels": self.master_pool_channels,
+            "prefill_kv_readback": self.prefill_kv_readback,
+            "master_shadow": self.master_shadow,
+            "split_overlap": self.split_overlap,
+        }
+
+
+def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
+                   decode_attn: Optional[str], kv_mapping: Optional[str],
+                   *, policy: str, pim_prefill_query_batch: int = 4,
+                   master_pool_channels: int = 8,
+                   prefill_kv_readback: bool = True,
+                   master_shadow: str = "read-mask",
+                   split_overlap: bool = True) -> AblationConfig:
+    """Expand a preset and let explicit switches override it."""
+    base = dict(PRESETS[preset]) if preset else {}
+    if not base and not (prefill_attn and decode_attn):
+        raise WorkloadValidationError(
+            "--ablation preset or both --prefill-attn and --decode-attn are required")
+    resolved = {
+        "prefill_attn": prefill_attn or base.get("prefill_attn", "gpu"),
+        "decode_attn": decode_attn or base.get("decode_attn", "pim"),
+        "kv_mapping": kv_mapping or base.get("kv_mapping", "private"),
+    }
+    if resolved["prefill_attn"] not in PREFILL_ATTN_MODES:
+        raise WorkloadValidationError("--prefill-attn must be one of {}".format(
+            ", ".join(PREFILL_ATTN_MODES)))
+    if resolved["decode_attn"] not in DECODE_ATTN_MODES:
+        raise WorkloadValidationError("--decode-attn must be one of {}".format(
+            ", ".join(DECODE_ATTN_MODES)))
+    if resolved["kv_mapping"] not in KV_MAPPINGS:
+        raise WorkloadValidationError("--kv-mapping must be one of {}".format(
+            ", ".join(KV_MAPPINGS)))
+    if resolved["decode_attn"] == "gpu" and resolved["kv_mapping"] != "none":
+        raise WorkloadValidationError(
+            "--decode-attn gpu keeps the KV cache in GPU memory; use --kv-mapping none")
+    if resolved["decode_attn"] == "pim" and resolved["kv_mapping"] == "none":
+        raise WorkloadValidationError(
+            "--decode-attn pim needs a PIM KV mapping (private, naive, master-diff)")
+    if policy == "no-reuse" and resolved["kv_mapping"] in ("naive", "master-diff"):
+        raise WorkloadValidationError(
+            "--kv-mapping {} describes reused/recomputed KV; --reuse no-reuse uses "
+            "private".format(resolved["kv_mapping"]))
+    if policy != "no-reuse" and resolved["kv_mapping"] == "private":
+        raise WorkloadValidationError(
+            "--kv-mapping private is the no-reuse layout; use naive or master-diff")
+    if not 1 <= master_pool_channels < _TOTAL_CHANNELS:
+        raise WorkloadValidationError(
+            "--kv-pool-split must leave both pools at least one channel")
+    if pim_prefill_query_batch < 1:
+        raise WorkloadValidationError("--pim-prefill-query-batch must be >= 1")
+    if master_shadow not in MASTER_SHADOW_MODES:
+        raise WorkloadValidationError("--master-shadow must be one of {}".format(
+            ", ".join(MASTER_SHADOW_MODES)))
+    return AblationConfig(preset=preset, pim_prefill_query_batch=pim_prefill_query_batch,
+                          master_pool_channels=master_pool_channels,
+                          prefill_kv_readback=prefill_kv_readback,
+                          master_shadow=master_shadow,
+                          split_overlap=split_overlap, **resolved)
+
+
+# ---------------------------------------------------------------------------
+# Reuse bookkeeping
+# ---------------------------------------------------------------------------
+
+
+def _reused_tokens_by_request(plan: ReusePlan) -> Dict[str, int]:
+    totals: Dict[str, int] = {}
+    for decision in plan.reusable:
+        totals[decision.request_id] = totals.get(decision.request_id, 0) + decision.length
+    return totals
+
+
+def _reused_segments_by_request(plan: ReusePlan) -> Dict[str, List[Tuple[int, int, str]]]:
+    """``request -> [(segment index, length, fingerprint)]`` for reused segments."""
+    result: Dict[str, List[Tuple[int, int, str]]] = {}
+    for decision in plan.reusable:
+        result.setdefault(decision.request_id, []).append(
+            (decision.segment_index, decision.length, decision.fingerprint))
+    for rows in result.values():
+        rows.sort()
+    return result
+
+
+def _epic_prefix_by_request(plan: ReusePlan) -> Dict[str, int]:
+    totals: Dict[str, int] = {}
+    for decision in plan.reusable:
+        totals[decision.request_id] = (totals.get(decision.request_id, 0) +
+                                       len(decision.epic_prefix_rows))
+    return totals
+
+
+def _corrected_rows(plan: ReusePlan, layer: int,
+                    request_id: str) -> Dict[int, Tuple[int, ...]]:
+    """Recomputed rows of one request in one transformer layer, by segment.
+
+    CacheBlend samples them per layer; EPIC fixes the leading rows of every
+    shifted segment in every layer.  Returns ``{}`` when the layer reuses the
+    old K/V unchanged.
+    """
+    policy = plan.config.policy
+    if policy == "cacheblend":
+        if layer in plan.config.cacheblend_full_recompute_layers:
+            return {}
+        return dict(plan.cacheblend_partial_rows.get(layer, {}).get(request_id, {}))
+    if policy == "epic":
+        return {decision.segment_index: decision.epic_prefix_rows
+                for decision in plan.reusable
+                if decision.request_id == request_id and decision.epic_prefix_rows}
+    return {}
+
+
+def _layer_classes(plan: ReusePlan, ndec: int,
+                   requests: Sequence[Request]) -> List[Tuple[int, int]]:
+    """Group transformer layers that share a decode K/V access pattern.
+
+    Returns ``[(representative layer, number of layers in the class)]``.  A
+    CacheBlend full-recompute layer holds no diff rows and therefore scans a
+    different physical pattern from a partial layer; EPIC applies the same
+    correction in every layer.
+    """
+    policy = plan.config.policy
+    if policy == "cacheblend":
+        full = tuple(layer for layer in plan.config.cacheblend_full_recompute_layers
+                     if layer < ndec)
+        partial = tuple(layer for layer in plan.config.cacheblend_partial_recompute_layers
+                        if layer < ndec)
+        classes = []
+        if full:
+            classes.append((full[0], len(full)))
+        if partial:
+            classes.append((partial[0], len(partial)))
+        return classes
+    return [(0, ndec)]
+
+
+# ---------------------------------------------------------------------------
+# Physical K/V run structure seen by one decode scan
+# ---------------------------------------------------------------------------
+
+
+def _channel_extent(channel: int, order: int, rows: int, stride: int) -> Tuple[int, int]:
+    """Base K/V byte addresses of the ``order``-th extent inside a channel."""
+    key_base = (channel * _HBM_CHANNEL_BYTES +
+                (order * rows * stride) % _ORIGINAL_KV_GAP_BYTES)
+    return key_base, key_base + _ORIGINAL_KV_GAP_BYTES
+
+
+def _naive_run_lengths(request: Request, plan: ReusePlan, layer: int) -> List[int]:
+    """Runs of a naive, non-PIM-aware layout.
+
+    The software's chunk/block layout is preserved and every block -- reused,
+    recomputed, and private -- is allocated from one pool spanning all 16
+    channels.  A scan walks the request's K/V in logical token order, so it
+    leaves a contiguous extent at every segment boundary and at every
+    recomputed row (whose new K/V lives in a separately allocated block).
+    The stale master row underneath a recomputed row is skipped, not read.
+    """
+    reused = {index: length for index, length, _ in
+              _reused_segments_by_request(plan).get(request.request_id, ())}
+    corrected = _corrected_rows(plan, layer, request.request_id)
+    lengths: List[int] = []
+    for index, segment in enumerate(request.segments):
+        if index not in reused:
+            # A privately computed segment is one freshly allocated block.
+            lengths.append(segment.length)
+            continue
+        rows = sorted(set(corrected.get(index, ())))
+        cursor = 0
+        for row in rows:
+            if row > cursor:
+                lengths.append(row - cursor)  # master piece before the patch
+            lengths.append(1)                 # the recomputed row, elsewhere
+            cursor = row + 1
+        if cursor < segment.length:
+            lengths.append(segment.length - cursor)
+    return [length for length in lengths if length > 0]
+
+
+def _master_diff_lengths(request: Request, plan: ReusePlan, layer: int,
+                         shadow: str = "read-mask") -> Tuple[List[int], int]:
+    """Runs of the PIM-aware master/diff layout, one tuple per channel pool.
+
+    Master holds every immutable row -- including the rows shadowed by a
+    correction, which are streamed and masked out of the score rather than
+    breaking the stream -- and is co-located per segment.  Diff holds the
+    recomputed rows as one contiguous extent in the other pool.  The two pools
+    use disjoint channels and therefore run concurrently.
+    """
+    reused = {index: length for index, length, _ in
+              _reused_segments_by_request(plan).get(request.request_id, ())}
+    corrected = _corrected_rows(plan, layer, request.request_id)
+    diff_rows = sum(len(set(rows)) for rows in corrected.values())
+    master_lengths: List[int] = []
+    private_rows = 0
+    for index, segment in enumerate(request.segments):
+        if index not in reused:
+            private_rows += segment.length
+            continue
+        if shadow == "read-mask":
+            # One shared, PIM-aware extent per reused chunk: the overwritten
+            # rows stay in the address stream and are masked out of the score.
+            master_lengths.append(segment.length)
+            continue
+        # ``skip`` leaves every overwritten row out of the address stream, so
+        # the chunk's extent breaks at each correction.
+        cursor = 0
+        for row in sorted(set(corrected.get(index, ()))):
+            if row > cursor:
+                master_lengths.append(row - cursor)
+            cursor = row + 1
+        if cursor < segment.length:
+            master_lengths.append(segment.length - cursor)
+    if private_rows:
+        master_lengths.append(private_rows)
+    return [length for length in master_lengths if length > 0], diff_rows
+
+
+def _private_runs(context_rows: int, stride: int
+                  ) -> Tuple[Tuple[int, int, int, int, int], ...]:
+    key_base, value_base = _channel_extent(0, 0, context_rows, stride)
+    return ((key_base, value_base, context_rows, 0, _TOTAL_CHANNELS),)
+
+
+@dataclass(frozen=True)
+class ScanProfile:
+    """Physical K/V runs one decode step performs, grouped by channel pool."""
+
+    pools: Tuple[Tuple[Tuple[int, int, int, int, int], ...], ...]
+    rows_read: int
+    run_count: int
+    # True when the scan is one full-length extent over all 16 channels, i.e.
+    # exactly the original AttAcc measurement.
+    legacy_shape: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"pools": [[{"rows": run[2], "channel_base": run[3],
+                            "channels": run[4]} for run in pool]
+                          for pool in self.pools],
+                "rows_read": self.rows_read, "run_count": self.run_count,
+                "legacy_shape": self.legacy_shape}
+
+
+def _runs_from_lengths(lengths: Sequence[int], stride: int, channel_base: int,
+                       channels: int) -> Tuple[Tuple[int, int, int, int, int], ...]:
+    runs = []
+    for order, length in enumerate(lengths):
+        if length <= 0:
+            continue
+        key_base, value_base = _channel_extent(channel_base, order, length, stride)
+        runs.append((key_base, value_base, length, channel_base, channels))
+    return tuple(runs)
+
+
+def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int,
+                        input_rows: int, tail_rows: int, stride: int,
+                        config: AblationConfig) -> ScanProfile:
+    """Representative scan of one padded batch.
+
+    A legacy trace carries the batch in ``numOp`` (heads x batch), so every
+    attention unit in the trace shares one run-length profile.  The batch
+    profile is therefore the member-average structure, rescaled to the padded
+    input length.  Generated tokens are appended as their own extent, so the
+    profile changes only in its tail as decode proceeds and the Ramulator
+    signature cache keeps serving the fixed part.
+    """
+    if config.kv_mapping == "private":
+        return ScanProfile((_private_runs(input_rows + tail_rows, stride),),
+                           input_rows + tail_rows, 1, legacy_shape=True)
+    if config.kv_mapping == "naive":
+        lengths = _average_run_lengths(
+            [_naive_run_lengths(request, plan, layer) for request in requests],
+            input_rows)
+        if tail_rows > 0:
+            lengths = list(lengths) + [tail_rows]
+        runs = _runs_from_lengths(lengths, stride, 0, _TOTAL_CHANNELS)
+        return ScanProfile((runs,), sum(lengths), len(runs))
+    master_channels = config.master_pool_channels
+    per_request = [_master_diff_lengths(request, plan, layer, config.master_shadow)
+                   for request in requests]
+    diff_rows = int(round(sum(rows for _, rows in per_request) /
+                          max(len(per_request), 1)))
+    # ``skip`` drops every overwritten row from the master stream, so the
+    # master pool covers the input minus those rows; ``read-mask`` still reads
+    # them and covers the whole input.
+    master_rows = (input_rows - diff_rows if config.master_shadow == "skip"
+                   else input_rows)
+    master_lengths = _average_run_lengths([lengths for lengths, _ in per_request],
+                                          max(master_rows, 1))
+    if tail_rows > 0:
+        master_lengths = list(master_lengths) + [tail_rows]
+    pools = [_runs_from_lengths(master_lengths, stride, 0, master_channels)]
+    if diff_rows > 0:
+        pools.append(_runs_from_lengths([diff_rows], stride, master_channels,
+                                        _TOTAL_CHANNELS - master_channels))
+    rows = sum(master_lengths) + max(diff_rows, 0)
+    return ScanProfile(tuple(pools), rows, sum(len(pool) for pool in pools))
+
+
+def _average_run_lengths(per_request: Sequence[Sequence[int]],
+                         total_rows: int) -> List[int]:
+    """Mean run structure of a batch, rescaled to the padded input length.
+
+    Members of a padded batch have different segment compositions and
+    different recompute-row counts, but one legacy trace can carry only one
+    run-length profile.  The batch is therefore represented by the mean number
+    of runs, with the padded rows distributed in the members' mean proportion.
+    """
+    populated = [list(runs) for runs in per_request if runs]
+    if not populated:
+        return [total_rows]
+    count = max(1, int(round(sum(len(runs) for runs in populated) / len(populated))))
+    weights = [0.0] * count
+    for runs in populated:
+        total = float(sum(runs)) or 1.0
+        scale = count / len(runs)
+        for index, length in enumerate(runs):
+            weights[min(count - 1, int(index * scale))] += length / total
+    weight_sum = sum(weights)
+    if weight_sum <= 0:
+        return [total_rows]
+    lengths = [max(1, int(round(total_rows * value / weight_sum))) for value in weights]
+    # Rounding must not change how many rows the scan reads.
+    drift = total_rows - sum(lengths)
+    index = 0
+    while drift and index < len(lengths) * 8:
+        slot = index % len(lengths)
+        step = 1 if drift > 0 else -1
+        if lengths[slot] + step >= 1:
+            lengths[slot] += step
+            drift -= step
+        index += 1
+    return lengths
+
+
+# ---------------------------------------------------------------------------
+# Layer pricing
+# ---------------------------------------------------------------------------
+
+
+def _scaled(layer: Layer, factor: float) -> Layer:
+    op = copy.deepcopy(layer)
+    op.m = max(1, int(round(layer.m * factor)))
+    return op
+
+
+def _link_layer(template: Layer, name: str, rows: int, width: int) -> Layer:
+    op = copy.deepcopy(template)
+    op.name = name
+    op.m, op.n, op.k, op.numOp = max(rows, 0), width, 1, 1
+    return op
+
+
+def _pim_scan(system, template: Layer, *, rows: int, queries: int, heads: int,
+              runs: Sequence[Tuple[int, int, int, int, int]],
+              query_batch: int) -> Tuple[float, List[float]]:
+    """Price one PIM attention scan with the original AttAcc Ramulator path.
+
+    ``runs`` are the contiguous K/V extents of one channel pool; they are
+    streamed one after another inside that pool.  ``queries`` queries share
+    the stream ``query_batch`` at a time, so the pool is re-streamed
+    ``ceil(queries / query_batch)`` times -- ``queries = 1`` is the decode
+    case and reproduces AttAcc's original measurement exactly.
+    """
+    if not runs:
+        return 0.0, [0.0] * 6
+    op = copy.deepcopy(template)
+    op.m, op.n, op.k, op.numOp = 1, sum(run[2] for run in runs), template.k, heads
+    op.pim_kv_runs = tuple(runs)
+    shared_queries = min(query_batch, max(queries, 1))
+    # ``--shared-kv`` puts every head group of a trace on one K/V partition.
+    # Only a multi-query scan needs it; a decode scan keeps AttAcc's original
+    # per-head-group placement.
+    op.pim_shared_kv = shared_queries > 1
+    op.pim_shared_queries = shared_queries
+    measured = system.devices["Acc"].get_time_and_energy_runs(op)
+    passes = math.ceil(max(queries, 1) / op.pim_shared_queries)
+    time_s = sum(item[0] for item in measured) * passes
+    energy = [sum(values) * passes for values in
+              zip(*[item[1] for item in measured])]
+    return time_s, list(energy)
+
+
+def _accumulate(target: Dict[str, float], key: str, value: float) -> None:
+    target[key] = target.get(key, 0.0) + value
+
+
+# ---------------------------------------------------------------------------
+# Prefill and decode
+# ---------------------------------------------------------------------------
+
+
+def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
+                   requests: Sequence[Request], lin: int, ndec: int,
+                   *, scale: float, reused_rows: int, effective_rows: int
+                   ) -> Tuple[float, float, Dict[str, float], Dict[str, float]]:
+    """Time and energy of one padded prefill batch, summed over all layers."""
+    batch = len(requests)
+    heads = max(1, system.model.num_heads // system.model.tp)
+    dbyte = system.model.sum_decoder[0].dbyte
+    local_hidden = system.model.hdim // system.model.tp
+    templates = {layer.name: layer for layer in system.model.sum_decoder}
+    x2g = templates.get("comm_x2g")
+    breakdown: Dict[str, float] = {}
+    energy_breakdown: Dict[str, float] = {}
+    # Attention under a PIM/split placement is priced per layer class and is
+    # already summed over layers; every other term is one layer x ndec.
+    attn_breakdown: Dict[str, float] = {}
+    attn_energy_breakdown: Dict[str, float] = {}
+    attn_time = 0.0
+    attn_energy = 0.0
+    padded_rows = batch * lin
+    time_s = 0.0
+    energy_nj = 0.0
+    io_busy = 0.0
+
+    for layer in system.model.sum_decoder:
+        attention = layer.name in ("score", "softmax", "context")
+        if attention and config.prefill_attn != "gpu":
+            continue  # priced below on the configured attention device
+        op = _scaled(layer, scale) if layer.type != LayerType.MATMUL else None
+        if attention:
+            # score/softmax/context carry the token count in m (per head), so
+            # the reuse saving scales them exactly like a weight layer.
+            op = copy.deepcopy(layer)
+            op.m = max(1, int(round(layer.m * scale)))
+        elif op is None:
+            op = _scaled(layer, scale)
+        exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
+        if layer.type == LayerType.X2G:
+            exec_time += max(io_busy - time_s, 0)
+            io_busy = time_s + exec_time
+        time_s += exec_time
+        energy_nj += sum(energy) / 1000.0
+        _accumulate(breakdown, "gpu_" + layer.name, exec_time)
+        _accumulate(energy_breakdown, "gpu_" + layer.name, sum(energy) / 1000.0)
+
+    if config.prefill_attn == "gpu":
+        if config.prefill_kv_readback and reused_rows and config.decode_attn == "pim":
+            # The KV cache lives in AttAcc memory, so software prefill has to
+            # pull every reused K/V row back over the link before the GPU can
+            # attend to it.
+            op = _link_layer(x2g, "kv_pim_to_gpu", reused_rows, 2 * local_hidden)
+            exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
+            time_s += exec_time
+            energy_nj += sum(energy) / 1000.0
+            _accumulate(breakdown, "link_kv_pim_to_gpu", exec_time)
+            _accumulate(energy_breakdown, "link_kv_pim_to_gpu", sum(energy) / 1000.0)
+    else:
+        # Layers differ in how much reuse they carry, and a CacheBlend
+        # full-recompute layer carries none at all: it rebuilds the whole
+        # request K/V, so its attention is an ordinary GPU prefill with no PIM
+        # scan and no Q/context link -- exactly what the reference trace shows
+        # for its L0/L1 ("in GPU with all-new KV, old KV unused").  Everything
+        # below is therefore accumulated per layer class and already totalled
+        # over layers, unlike the uniform terms above.
+        score, softmax = templates["score"], templates["softmax"]
+        stride = ((system.model.dhead * dbyte + 31) // 32) * 32
+        classes = []  # (layer count, recomputed rows in the batch, carries reuse)
+        full_layers = (len(plan.config.cacheblend_full_recompute_layers)
+                       if plan.config.policy == "cacheblend" else 0)
+        full_layers = min(full_layers, ndec)
+        if full_layers:
+            classes.append((full_layers, padded_rows, False))
+            reuse_layers = ndec - full_layers
+            if reuse_layers:
+                # Total recomputed rows are conserved: the uniform ``scale``
+                # already spreads the saving over every layer, so the partial
+                # layers absorb the whole saving here.
+                partial_rows = ((effective_rows * ndec - padded_rows * full_layers) /
+                                reuse_layers)
+                classes.append((reuse_layers, max(partial_rows, 1.0), True))
+        else:
+            classes.append((ndec, effective_rows, True))
+
+        for count, rows_batch, carries_reuse in classes:
+            queries = max(1, int(round(rows_batch / max(batch, 1))))
+            if not carries_reuse:
+                # Full recompute: one ordinary GPU prefill attention block.
+                for name in ("score", "softmax", "context"):
+                    op = copy.deepcopy(templates[name])
+                    op.m = max(1, queries)
+                    if name in ("score", "softmax"):
+                        op.n = max(1, queries)
+                    else:
+                        op.k = max(1, queries)
+                    exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
+                    attn_time += exec_time * count
+                    attn_energy += sum(energy) / 1000.0 * count
+                    _accumulate(attn_breakdown, "gpu_full_" + name, exec_time * count)
+                    _accumulate(attn_energy_breakdown, "gpu_full_" + name,
+                                sum(energy) / 1000.0 * count)
+                continue
+
+            if config.prefill_attn == "pim":
+                scan_rows, gpu_rows = lin, 0
+            else:  # split: the GPU attends this batch's fresh rows to each other
+                scan_rows = reused_rows // max(batch, 1)
+                gpu_rows = queries
+            if scan_rows <= 0:
+                # Nothing reusable in this batch: the split degenerates to an
+                # ordinary GPU prefill, with no PIM scan and no link traffic.
+                for name in ("score", "softmax", "context"):
+                    op = copy.deepcopy(templates[name])
+                    op.m = max(1, gpu_rows)
+                    if name in ("score", "softmax"):
+                        op.n = max(1, gpu_rows)
+                    else:
+                        op.k = max(1, gpu_rows)
+                    exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
+                    attn_time += exec_time * count
+                    attn_energy += sum(energy) / 1000.0 * count
+                    _accumulate(attn_breakdown, "gpu_local_" + name, exec_time * count)
+                    _accumulate(attn_energy_breakdown, "gpu_local_" + name,
+                                sum(energy) / 1000.0 * count)
+                continue
+
+            # The two branches of one attention layer.  ``pim_branch`` cannot
+            # start before q~ has crossed the link; ``gpu_branch`` needs no
+            # PIM data and starts as soon as QKV is done, so the two run
+            # concurrently and the layer costs the slower one -- this is what
+            # KVpim-sim's trace shows for B-prefill L2, where the GPU ``fresh
+            # score`` events overlap the b0/b1 scans and the DIE merges the two
+            # partial (m, l, o) triples afterwards.  Energy is additive either
+            # way; only the critical path changes.
+            pim_branch = 0.0
+            gpu_branch = 0.0
+
+            pim_time, pim_energy = _pim_scan(
+                system, score, rows=scan_rows, queries=queries,
+                heads=heads * batch, runs=_private_runs(scan_rows, stride),
+                query_batch=config.pim_prefill_query_batch)
+            pim_branch += pim_time
+            attn_energy += sum(pim_energy) / 1000.0 * count
+            _accumulate(attn_breakdown, "pim_prefill_score", pim_time * count)
+            _accumulate(attn_energy_breakdown, "pim_prefill_score",
+                        sum(pim_energy) / 1000.0 * count)
+
+            sfm = copy.deepcopy(softmax)
+            sfm.m, sfm.n, sfm.numOp = queries, scan_rows, heads * batch
+            exec_time, energy = system.devices["Acc"].get_time_and_energy(sfm)
+            pim_branch += exec_time
+            attn_energy += sum(energy) / 1000.0 * count
+            _accumulate(attn_breakdown, "pim_prefill_softmax", exec_time * count)
+            _accumulate(attn_energy_breakdown, "pim_prefill_softmax",
+                        sum(energy) / 1000.0 * count)
+
+            if gpu_rows:
+                for name in ("score", "softmax", "context"):
+                    op = copy.deepcopy(templates[name])
+                    op.m = max(1, gpu_rows)
+                    if name in ("score", "softmax"):
+                        op.n = max(1, gpu_rows)
+                    else:
+                        op.k = max(1, gpu_rows)
+                    exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
+                    gpu_branch += exec_time
+                    attn_energy += sum(energy) / 1000.0 * count
+                    _accumulate(attn_breakdown, "gpu_local_" + name, exec_time * count)
+                    _accumulate(attn_energy_breakdown, "gpu_local_" + name,
+                                sum(energy) / 1000.0 * count)
+
+            # Q must reach the PIM before it can scan; the merged context comes
+            # back afterwards and is on the critical path of both branches.
+            link_time = {}
+            for name, width in (("q_gpu_to_pim", local_hidden),
+                                ("ctx_pim_to_gpu", local_hidden)):
+                op = _link_layer(x2g, name, int(round(rows_batch)), width)
+                exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
+                link_time[name] = exec_time
+                attn_energy += sum(energy) / 1000.0 * count
+                _accumulate(attn_breakdown, "link_" + name, exec_time * count)
+                _accumulate(attn_energy_breakdown, "link_" + name,
+                            sum(energy) / 1000.0 * count)
+
+            pim_branch += link_time["q_gpu_to_pim"]
+            serial = pim_branch + gpu_branch
+            critical = max(pim_branch, gpu_branch) if config.split_overlap else serial
+            attn_time += (critical + link_time["ctx_pim_to_gpu"]) * count
+            if critical != serial:
+                # Keep the breakdown summing to attn_time: the components above
+                # are the per-device costs, this is what the overlap removes.
+                _accumulate(attn_breakdown, "split_overlap_saving",
+                            (critical - serial) * count)
+
+    totals = {key: value * ndec for key, value in breakdown.items()}
+    energy_totals = {key: value * ndec for key, value in energy_breakdown.items()}
+    for key, value in attn_breakdown.items():
+        _accumulate(totals, key, value)
+    for key, value in attn_energy_breakdown.items():
+        _accumulate(energy_totals, key, value)
+    return (time_s * ndec + attn_time, energy_nj * ndec + attn_energy,
+            totals, energy_totals)
+
+
+def _decode_block_time(system, config: AblationConfig, block: Sequence[Layer],
+                       profile: Optional[ScanProfile], *, heads: int, batch: int,
+                       pipe: bool, parallel_ff: bool
+                       ) -> Tuple[float, float, Dict[str, float]]:
+    """Price one decoder block of one decode step on the configured devices."""
+    breakdown: Dict[str, float] = {}
+    energy_nj = 0.0
+    for layer in block:
+        if config.decode_attn == "pim" and layer.type in (
+                LayerType.MATMUL, LayerType.SOFTMAX, LayerType.X2G):
+            if layer.name == "score" and profile is not None and profile.legacy_shape:
+                # One full-length extent over all sixteen channels is exactly
+                # the original AttAcc measurement; keep its shape-indexed
+                # Ramulator cache instead of re-running an identical trace.
+                exec_time, energy = system.devices["Acc"].get_time_and_energy(layer)
+                energy_nj += sum(energy) / 1000.0
+            elif layer.name == "score":
+                pool_times, pool_energy = [], 0.0
+                for pool in profile.pools:
+                    time_s, energy = _pim_scan(
+                        system, layer, rows=sum(run[2] for run in pool), queries=1,
+                        heads=heads * batch, runs=pool, query_batch=1)
+                    pool_times.append(time_s)
+                    pool_energy += sum(energy) / 1000.0
+                # Disjoint channel pools stream concurrently; extents inside a
+                # pool are serial.
+                exec_time = max(pool_times) if pool_times else 0.0
+                energy_nj += pool_energy
+            else:
+                exec_time, energy = system.devices["Acc"].get_time_and_energy(layer)
+                energy_nj += sum(energy) / 1000.0
+        else:
+            exec_time, energy = system.devices["GPU"].get_time_and_energy(layer)
+            energy_nj += sum(energy) / 1000.0
+        layer.exec_time = exec_time
+        _accumulate(breakdown, layer.name, exec_time)
+    if config.decode_attn == "pim":
+        apply_attacc_pipeline(block, system.model.num_heads,
+                              system.devices["GPU"].num_xpu, pipe)
+        if parallel_ff:
+            _ff_parallel(system, block, batch)
+    return sum(layer.exec_time for layer in block), energy_nj, breakdown
+
+
+def _ff_parallel(system, layers: Sequence[Layer], batch: int) -> None:
+    """AttAcc's ``--ffopt``: feedforward overlaps the PIM attention."""
+    bw_scale = (system.devices["Acc"].peak_memory_bandwidth /
+                system.devices["GPU"].peak_memory_bandwidth)
+    for layer in layers:
+        if "ff" not in layer.name:
+            continue
+        if layer.bound == "compute":
+            attn_flops = (system.devices["GPU"].peak_memory_bandwidth /
+                          layer.dbyte * 2 * bw_scale)
+            ratio = system.devices["GPU"].peak_flops / (
+                system.devices["GPU"].peak_flops + attn_flops)
+            layer.exec_time *= ratio
+        elif layer.bound == "memory":
+            attn_eff_bw = (system.devices["GPU"].peak_memory_bandwidth *
+                           bw_scale / batch)
+            ratio = system.devices["GPU"].peak_memory_bandwidth / (
+                system.devices["GPU"].peak_memory_bandwidth + attn_eff_bw)
+            layer.exec_time *= ratio
+
+
+# ---------------------------------------------------------------------------
+# Memory accounting
+# ---------------------------------------------------------------------------
+
+
+def _memory_report(system, workload: Workload, plan: ReusePlan,
+                   config: AblationConfig,
+                   batch_size: Optional[int] = None) -> Dict[str, Any]:
+    """AttAcc/GPU KV occupancy of the whole workload under this mapping.
+
+    Reused chunks are stored once and shared by every consumer; recomputed
+    rows add one row each.  ``private`` stores a full private copy per
+    request, which is what the no-reuse baseline needs.
+    """
+    ndec = system.model.ndec
+    dbyte = 2 if system.model.dtype.name.startswith("W16") else 1
+    bytes_per_row = 2 * system.model.hdim * dbyte * ndec
+    reused_by_request = _reused_tokens_by_request(plan)
+    generated = sum(request.lout for request in workload.requests)
+    total_tokens = sum(request.total_length for request in workload.requests)
+
+    # Sharing is a property of the reuse policy, not of the PIM mapping: a
+    # pure-GPU CacheBlend/EPIC deployment also stores each reused chunk once,
+    # it just stores it in GPU memory.
+    if plan.config.policy == "no-reuse":
+        stored_rows = total_tokens + generated
+        shared_rows = 0
+        diff_rows = 0
+    else:
+        # One physical copy per distinct reusable chunk.
+        distinct: Dict[str, int] = {}
+        for decision in plan.reusable:
+            distinct[decision.fingerprint] = decision.length
+        shared_rows = sum(distinct.values())
+        private_rows = total_tokens - sum(reused_by_request.values())
+        # A CacheBlend full-recompute layer rebuilds the whole request K/V, so
+        # in those layers nothing is shared and no row is a diff.
+        full_layers = (len(plan.config.cacheblend_full_recompute_layers)
+                       if plan.config.policy == "cacheblend" else 0)
+        reuse_layers = max(ndec - full_layers, 0)
+        diff_rows = 0
+        for layer in range(ndec):
+            for request in workload.requests:
+                diff_rows += sum(len(set(rows)) for rows in
+                                 _corrected_rows(plan, layer, request.request_id).values())
+        diff_rows = diff_rows / max(ndec, 1)
+        reuse_layer_rows = shared_rows + private_rows + diff_rows * ndec / max(reuse_layers, 1)
+        stored_rows = ((reuse_layers * reuse_layer_rows +
+                        full_layers * total_tokens) / max(ndec, 1) + generated)
+        shared_rows = shared_rows * reuse_layers / max(ndec, 1)
+
+    kv_bytes = stored_rows * bytes_per_row
+    baseline_bytes = (total_tokens + generated) * bytes_per_row
+    report: Dict[str, Any] = {
+        "kv_bytes": kv_bytes,
+        "kv_gib": kv_bytes / (1 << 30),
+        "kv_rows": stored_rows,
+        "shared_master_rows": shared_rows,
+        "diff_rows_per_layer": diff_rows,
+        "full_recompute_layers": (len(plan.config.cacheblend_full_recompute_layers)
+                                  if plan.config.policy == "cacheblend" else 0),
+        "generated_rows": generated,
+        "no_reuse_kv_bytes": baseline_bytes,
+        "kv_bytes_vs_no_reuse": kv_bytes / baseline_bytes if baseline_bytes else None,
+        "bytes_per_token_all_layers": bytes_per_row,
+        "resident_in": "GPU HBM" if config.decode_attn == "gpu" else "AttAcc HBM",
+    }
+    if config.decode_attn == "pim":
+        capacity = system.devices["Acc"].aggregate_memory_capacity
+        report["attacc_capacity_bytes"] = capacity
+        report["attacc_capacity_used"] = kv_bytes / capacity if capacity else None
+        if config.kv_mapping == "master-diff":
+            report["master_pool_channels"] = config.master_pool_channels
+            report["diff_pool_channels"] = _TOTAL_CHANNELS - config.master_pool_channels
+    weights, _, _ = system.get_required_mem_capacity(1, 1, 2)
+    report["gpu_weight_bytes"] = weights
+    gpu_capacity = system.devices["GPU"].aggregate_memory_capacity
+    report["gpu_capacity_bytes"] = gpu_capacity
+    # With decode on the PIM the KV cache is resident in AttAcc HBM and the
+    # GPU's HBM holds the weights plus, transiently, the K/V of the prefill
+    # layer it is currently computing for the largest padded batch (fresh
+    # rows it produced and reused rows it read back over the link).
+    largest = max((len(requests) * lin for _, requests, lin, _ in
+                   _tier_shapes(workload, batch_size)), default=0)
+    hidden = system.model.hdim
+    dbyte = system.model.sum_decoder[0].dbyte if system.model.sum_decoder else 2
+    temp_kv = largest * 2 * hidden * dbyte  # one layer, all tensor-parallel shards
+    report["gpu_temp_kv_bytes_per_layer"] = temp_kv
+    resident_kv = kv_bytes if config.decode_attn == "gpu" else temp_kv
+    report["gpu_capacity_used"] = (
+        (weights + resident_kv) / gpu_capacity if gpu_capacity else None)
+    return report
+
+
+# ---------------------------------------------------------------------------
+# Driver
+# ---------------------------------------------------------------------------
+
+
+def run_ablation_report(system, workload: Workload, plan: ReusePlan,
+                        config: AblationConfig, *, pipe: bool, parallel_ff: bool,
+                        power_constraint: bool,
+                        batch_size: Optional[int] = None) -> Dict[str, Any]:
+    """Run one ablation configuration over every dependency tier."""
+    if config.decode_attn == "pim" and system.hetero_name != DeviceType.PIM:
+        raise WorkloadValidationError("--decode-attn pim requires --system dgx-attacc")
+    if config.prefill_attn != "gpu" and system.hetero_name != DeviceType.PIM:
+        raise WorkloadValidationError(
+            "--prefill-attn {} requires --system dgx-attacc".format(config.prefill_attn))
+    ndec = system.model.ndec
+    reused_by_request = _reused_tokens_by_request(plan)
+    epic_prefix = _epic_prefix_by_request(plan)
+    policy = plan.config.policy
+    if policy == "cacheblend":
+        recompute_fraction = (
+            len(plan.config.cacheblend_full_recompute_layers) +
+            plan.config.cacheblend_recompute_ratio *
+            len(plan.config.cacheblend_partial_recompute_layers)) / ndec
+    else:
+        recompute_fraction = None
+
+    tiers: List[Dict[str, Any]] = []
+    makespan_s = 0.0
+    prefill_energy_nj = 0.0
+    decode_energy_nj = 0.0
+    prefill_s_total = 0.0
+    decode_s_total = 0.0
+
+    for tier, requests, lin, lout in _tier_shapes(workload, batch_size):
+        if lout < 2:
+            raise WorkloadValidationError(
+                "end-to-end reporting requires lout >= 2")
+        batch = len(requests)
+        attn_on_hetero = (config.decode_attn == "pim")
+        system.model.build(batch, lin, lout, attn_on_hetero)
+        heads = max(1, system.model.num_heads // system.model.tp)
+        dbyte = system.model.sum_decoder[0].dbyte
+        stride = ((system.model.dhead * dbyte + 31) // 32) * 32
+
+        padded_rows = batch * lin
+        reused_rows = sum(reused_by_request.get(request.request_id, 0)
+                          for request in requests)
+        if policy == "cacheblend":
+            saved_rows = reused_rows * (1.0 - recompute_fraction)
+        elif policy == "epic":
+            saved_rows = reused_rows - sum(epic_prefix.get(request.request_id, 0)
+                                           for request in requests)
+        else:
+            saved_rows = 0.0
+        effective_rows = padded_rows - saved_rows
+        scale = effective_rows / padded_rows if padded_rows else 1.0
+
+        prefill_s, prefill_energy, prefill_breakdown, prefill_energy_breakdown = (
+            _prefill_batch(system, plan, config, requests, lin, ndec, scale=scale,
+                           reused_rows=int(reused_rows),
+                           effective_rows=int(round(effective_rows))))
+
+        decode_s = 0.0
+        decode_energy = 0.0
+        decode_breakdown: Dict[str, float] = {}
+        scan_profiles: Dict[str, Any] = {}
+        classes = _layer_classes(plan, ndec, requests)
+        for step_index, block in enumerate(system.model.gen_decoder):
+            context_rows = lin + step_index + 1
+            for representative, count in classes:
+                profile = None
+                if config.decode_attn == "pim":
+                    profile = _batch_scan_profile(requests, plan, representative,
+                                                  lin, context_rows - lin, stride,
+                                                  config)
+                    if step_index == 0:
+                        scan_profiles["layer_{}".format(representative)] = dict(
+                            profile.to_dict(), layers=count)
+                block_copy = copy.deepcopy(block)
+                block_time, block_energy, block_breakdown = _decode_block_time(
+                    system, config, block_copy, profile, heads=heads, batch=batch,
+                    pipe=pipe, parallel_ff=parallel_ff)
+                decode_s += block_time * count
+                decode_energy += block_energy * count
+                for key, value in block_breakdown.items():
+                    _accumulate(decode_breakdown, key, value * count)
+
+        duration_s = prefill_s + decode_s
+        makespan_s += duration_s
+        prefill_s_total += prefill_s
+        decode_s_total += decode_s
+        prefill_energy_nj += prefill_energy
+        decode_energy_nj += decode_energy
+        tiers.append({
+            "tier": tier,
+            "batch_size": batch,
+            "members": [request.request_id for request in requests],
+            "lin": lin,
+            "lout": lout,
+            "decode_steps": lout - 1,
+            "padded_prefill_tokens": padded_rows,
+            "reused_prefill_tokens": reused_rows,
+            "effective_prefill_tokens": effective_rows,
+            "prefill_scale": scale,
+            "prefill_s": prefill_s,
+            "decode_s": decode_s,
+            "decode_per_token_s": decode_s / (lout - 1),
+            "duration_s": duration_s,
+            "prefill_energy_nj": prefill_energy,
+            "decode_energy_nj": decode_energy,
+            "energy_nj": prefill_energy + decode_energy,
+            "prefill_breakdown_s": prefill_breakdown,
+            "prefill_energy_breakdown_nj": prefill_energy_breakdown,
+            "decode_breakdown_s": decode_breakdown,
+            "decode_scan_profile": scan_profiles,
+        })
+
+    report = {
+        "policy": policy,
+        "latency_model": "legacy-attacc-ablation",
+        "gpu_model": getattr(system.devices["GPU"], "gpu_model", "legacy"),
+        "ablation": config.to_dict(),
+        "scheduling": ("legacy rectangular batches of <= {} requests per tier; "
+                       "batches and tiers serial".format(batch_size) if batch_size
+                       else "one legacy rectangular batch per dependency tier; tiers serial"),
+        "batch_size": batch_size,
+        "recompute_fraction_per_reused_row": recompute_fraction,
+        "tiers": tiers,
+        "makespan_s": makespan_s,
+        "prefill_s": prefill_s_total,
+        "decode_s": decode_s_total,
+        "prefill_energy_nj": prefill_energy_nj,
+        "decode_energy_nj": decode_energy_nj,
+        "energy_nj": prefill_energy_nj + decode_energy_nj,
+        "energy_unit": "nJ",
+        "memory": _memory_report(system, workload, plan, config,
+                                 batch_size=batch_size),
+    }
+    ramulator = getattr(system.devices.get("Acc"), "ramulator", None)
+    if ramulator is not None and hasattr(ramulator, "cache_report"):
+        report["ramulator_signature_cache"] = ramulator.cache_report()
+    return report

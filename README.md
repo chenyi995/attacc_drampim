@@ -189,6 +189,51 @@ softmax event.  Thus no scan silently treats later KV blocks as a continuation
 of the first block.  This is the current placement assumption; changing the
 layout policy must update both the TLB block table and the trace generator.
 
+## Placement ablation and the GPU+PIM-vs-GPU prefill study (2026-08)
+
+`--ablation A1..A6` selects where prefill attention, decode attention and the
+KV cache live (see the docstring of `src/ablation.py`):
+
+| key | prefill attn | decode attn | KV mapping |
+|---|---|---|---|
+| A1 | gpu | pim | private (original AttAcc, `--reuse no-reuse`) |
+| A2 | gpu | gpu | none (pure GPU running CacheBlend/EPIC) |
+| A3 | gpu | pim | naive |
+| A4 | gpu | pim | master-diff |
+| A5 | pim | pim | master-diff |
+| A6 | split (GPU fresh rows, PIM reused rows) | pim | master-diff |
+
+Related switches: `--tier-batch-size N` (serve each dependency tier as padded
+batches of <= N requests), `--pim-prefill-query-batch q` (queries sharing one PIM
+K/V scan), `--kv-pool-split`, `--master-shadow`, `--split-attn {overlap,serial}`.
+
+GPU performance model `--gpu-model {legacy,refined,flash}`: `legacy` = the
+original AttAcc xPU formulas (default, bit-identical to the published model);
+`refined` = projection and attention GEMMs priced by a measured cuBLAS A100
+efficiency table (`src/gemm_table.py`) plus NVLink latency / far-HBM streaming
+on GPU<->AttAcc transfers; `flash` = refined plus attention as a fused
+FlashAttention-2 kernel (128-row Q blocks, softmax on-chip, flash-decoding for
+decode).  `--attn-splitk` (flash only) lets short-Q prefill attention split its
+key range across CTAs.  `--pim-link {nvlink3,nvlink4,pcie5,pcie4}` sets the
+GPU<->AttAcc link bandwidth used by K/V, Q and context transfers.
+
+```
+# one ablation cell (LLAMA-7B, CacheBlend r=0.15, split prefill, flash GPU):
+python main.py --system dgx-attacc --model LLAMA-7B \
+    --workload workload/workload_rag_shared_p24_s8.json --tier-batch-size 4 \
+    --ramulator-workers 4 --pipeopt --ffopt --ablation A6 --reuse cacheblend \
+    --cacheblend-full-layers 0-1 --cacheblend-partial-layers 2-31 \
+    --cacheblend-recompute-ratio 0.15 --reuse-seed 7 --gpu-model flash \
+    --workload-report out.json
+```
+
+`experiments/GPU_PIM_vs_GPU_prefill/` holds the replay-pair study (when does
+GPU+PIM cooperative prefill beat pure-GPU prefill): workload generator
+`workload/gen_replay_pair.py`, runner, analysis script, raw JSONs and
+`RESULTS.md`.  Each run needs its own Ramulator working directory when several
+run concurrently: set `ATTACC_RAMULATOR_DIR` / `ATTACC_RAMULATOR_LOG` (see
+`experiments/GPU_PIM_vs_GPU_prefill/run_one.sh`).
+
 ## Details of the Ramulator for AttAcc
 ### How to Run
 1. Generate PIM command traces for the Transformer-based Generative Model.

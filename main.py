@@ -4,6 +4,8 @@ import argparse
 import csv
 import json
 import os
+from src.ablation import (DECODE_ATTN_MODES, KV_MAPPINGS,
+                          PREFILL_ATTN_MODES, PRESETS)
 from src.workload import (WorkloadValidationError, build_reuse_plan,
                           load_workload, workload_summary)
 
@@ -111,6 +113,27 @@ def main():
                         type=int,
                         default=8,
                         help="number of GPUs in DGX system. default=8")
+    parser.add_argument(
+        "--pim-link",
+        choices=("nvlink3", "nvlink4", "pcie5", "pcie4"),
+        default="nvlink3",
+        help="GPU <-> AttAcc link (600 / 900 / 128 / 64 GB/s bidirectional); "
+             "the GPU <-> GPU all-reduce fabric is unaffected")
+    parser.add_argument(
+        "--attn-splitk",
+        action="store_true",
+        help="flash GPU model only: let short-Q prefill attention split its "
+             "key range across CTAs (flash-attn num_splits heuristic)")
+    parser.add_argument(
+        "--gpu-model",
+        choices=("legacy", "refined", "flash"),
+        default="legacy",
+        help="GPU performance model. legacy: original AttAcc xPU formulas; "
+             "refined: projection and attention GEMMs at the measured cuBLAS "
+             "efficiency for their size, NVLink latency + far-HBM streaming "
+             "on GPU<->AttAcc transfers, everything else legacy; flash: "
+             "refined plus attention as a fused FlashAttention-2 kernel "
+             "(128-row Q blocks, softmax on-chip, flash-decoding for m = 1)")
     parser.add_argument("--gmemcap",
                         type=int,
                         default=80,
@@ -196,11 +219,18 @@ def main():
         "--cacheblend-latency-model",
         choices=("physical", "analytic"),
         default="physical",
-        help="physical: TLB/Ramulator-DAG reference; analytic: legacy-model comparable estimate")
+        help="for --reuse cacheblend/epic. physical: TLB/Ramulator-DAG reference; "
+             "analytic: legacy AttAcc model with prefill scaled by recomputed work")
+    parser.add_argument(
+        "--tier-batch-size",
+        type=int,
+        default=0,
+        help="legacy/analytic paths: serve each dependency tier as serial padded "
+             "batches of at most this many requests (0 = one batch per tier)")
     parser.add_argument(
         "--cacheblend-rotate-mode",
         choices=("gpu", "die", "bank"),
-        default="die",
+        default="gpu",
         help="where CacheBlend emits position-shifted Q variants")
     parser.add_argument(
         "--ramulator-workers",
@@ -218,6 +248,63 @@ def main():
         default=0,
         help="seed for CacheBlend's randomly distributed recompute tokens")
     parser.add_argument(
+        "--ablation",
+        choices=tuple(sorted(PRESETS)),
+        help="named placement configuration of the KV-reuse study: "
+             "A1 pure AttAcc no reuse, A2 pure GPU software reuse, "
+             "A3 software prefill + PIM decode with naive KV mapping, "
+             "A4 same with master/diff pools, A5 prefill attention also on PIM, "
+             "A6 GPU/PIM split prefill.  Individual switches below override it")
+    parser.add_argument(
+        "--prefill-attn",
+        choices=PREFILL_ATTN_MODES,
+        help="where prefill attention runs: gpu (pure software), split (GPU "
+             "attends fresh rows, PIM scans reused KV), pim (all on PIM)")
+    parser.add_argument(
+        "--decode-attn",
+        choices=DECODE_ATTN_MODES,
+        help="where decode attention runs and therefore where the KV cache lives")
+    parser.add_argument(
+        "--kv-mapping",
+        choices=KV_MAPPINGS,
+        help="physical KV layout in the PIM: private (no reuse), naive (one "
+             "shared channel pool, software chunk order, no PIM-aware remap), "
+             "master-diff (immutable rows and recomputed rows in disjoint "
+             "channel pools), none (KV stays in GPU memory)")
+    parser.add_argument(
+        "--pim-prefill-query-batch",
+        type=int,
+        default=4,
+        help="queries sharing one PIM K/V stream when prefill attention runs on "
+             "the PIM (--prefill-attn pim/split)")
+    parser.add_argument(
+        "--kv-pool-split",
+        type=int,
+        default=8,
+        help="channels given to the master pool under --kv-mapping master-diff; "
+             "the remaining 16 - N channels hold the diff pool")
+    parser.add_argument(
+        "--master-shadow",
+        choices=("read-mask", "skip"),
+        default="read-mask",
+        help="under --kv-mapping master-diff, what the master pool does with a row "
+             "a correction has overwritten: read-mask streams it and drops it from "
+             "the score (contiguous run); skip leaves it out of the address stream "
+             "(breaks the run at every correction)")
+    parser.add_argument(
+        "--split-attn",
+        choices=("overlap", "serial"),
+        default="overlap",
+        help="under --prefill-attn split, whether the GPU's fresh-row attention "
+             "and the PIM's reused-KV scan run concurrently (overlap: the layer "
+             "costs max of the two branches, matching KVpim-sim's trace) or are "
+             "charged one after the other (serial)")
+    parser.add_argument(
+        "--no-prefill-kv-readback",
+        action="store_true",
+        help="assume software prefill already has the reused KV in GPU memory "
+             "instead of reading it back from the PIM over the link")
+    parser.add_argument(
         "--validate-workload",
         action="store_true",
         help="validate --workload and print its tier/reuse plan without running hardware simulation")
@@ -230,6 +317,12 @@ def main():
         type=str,
         default="workload_output.json",
         help="JSON report path for reuse execution; no-reuse still writes output.csv")
+    parser.add_argument(
+        "--workload-report-events",
+        choices=("full", "none"),
+        default="full",
+        help="full: include every DAG event and TLB entry in the JSON report; "
+             "none: keep only the summary (per-request/tier times, energy, blocks)")
 
     args = parser.parse_args()
     if args.ramulator_workers < 1:
@@ -293,7 +386,12 @@ def main():
     # set system
     dtype = DataType.W16A16 if args.word == 2 else DataType.W8A8
     modelinfos = make_model_config(args.model, dtype)
-    xpu_config = make_xpu_config(gpu_device, num_gpu=num_gpu, mem_cap=gmem_cap)
+    pim_link = {"nvlink3": InterfaceType.NVLINK3, "nvlink4": InterfaceType.NVLINK4,
+                "pcie5": InterfaceType.PCIE5, "pcie4": InterfaceType.PCIE4}[args.pim_link]
+    pim_link_bw = {"nvlink3": 600, "nvlink4": 900, "pcie5": 128, "pcie4": 64}[args.pim_link] * 1000 * 1000 * 1000
+    xpu_config = make_xpu_config(gpu_device, num_gpu=num_gpu, mem_cap=gmem_cap,
+                                 gpu_model=args.gpu_model, pim_link_bw=pim_link_bw,
+                                 attn_splitk=args.attn_splitk)
     system = System(xpu_config['GPU'], modelinfos)
     if args.system in ['dgx-attacc']:
         if args.pim == "bg":
@@ -303,23 +401,54 @@ def main():
         else:
             pim_type = PIMType.BA
         pim_config = make_pim_config(pim_type,
-                                     InterfaceType.NVLINK3,
+                                     pim_link,
                                      power_constraint=args.powerlimit)
         system.set_accelerator(modelinfos, DeviceType.PIM, pim_config,
                                ramulator_workers=args.ramulator_workers)
 
     elif args.system in ['dgx-cpu']:
-        xpu_config = make_xpu_config(gpu_device)
+        xpu_config = make_xpu_config(gpu_device, gpu_model=args.gpu_model)
         system.set_xpu(xpu_config['GPU'])
         system.set_accelerator(modelinfos, DeviceType.CPU, xpu_config['CPU'])
 
     if workload is not None:
         from src.workload_runner import (run_cacheblend_analytic_report,
                                          run_no_reuse_report, run_reuse_prefill)
+        if args.ablation or args.prefill_attn or args.decode_attn or args.kv_mapping:
+            from src.ablation import resolve_config, run_ablation_report
+            try:
+                ablation = resolve_config(
+                    args.ablation, args.prefill_attn, args.decode_attn,
+                    args.kv_mapping, policy=args.reuse,
+                    pim_prefill_query_batch=args.pim_prefill_query_batch,
+                    master_pool_channels=args.kv_pool_split,
+                    prefill_kv_readback=not args.no_prefill_kv_readback,
+                    master_shadow=args.master_shadow,
+                    split_overlap=(args.split_attn == "overlap"))
+                report = run_ablation_report(
+                    system, workload, reuse_plan, ablation, pipe=args.pipeopt,
+                    parallel_ff=args.ffopt, power_constraint=args.powerlimit,
+                    batch_size=args.tier_batch_size or None)
+            except WorkloadValidationError as exc:
+                parser.error(str(exc))
+            report["workload"] = workload_summary(workload, reuse_plan)
+            with open(args.workload_report, "w") as report_file:
+                json.dump(report, report_file, indent=2, sort_keys=True)
+                report_file.write("\n")
+            print("Wrote ablation report to {}".format(args.workload_report))
+            headline = {key: report.get(key) for key in
+                        ("policy", "makespan_s", "prefill_s", "decode_s",
+                         "energy_nj", "prefill_energy_nj", "decode_energy_nj")}
+            headline["ablation"] = report["ablation"]
+            headline["kv_gib"] = report["memory"]["kv_gib"]
+            headline["kv_bytes_vs_no_reuse"] = report["memory"]["kv_bytes_vs_no_reuse"]
+            print("REPORT_SUMMARY " + json.dumps(headline, sort_keys=True))
+            return
         if args.reuse == "no-reuse" and args.no_reuse_latency_model == "legacy":
             perfs, report = run_no_reuse_report(
                 system, workload, pipe=args.pipeopt, parallel_ff=args.ffopt,
-                power_constraint=args.powerlimit)
+                power_constraint=args.powerlimit,
+                batch_size=args.tier_batch_size or None)
             write_csv(output_path, perfs)
             report["workload"] = workload_summary(workload, reuse_plan)
             with open(args.workload_report, "w") as report_file:
@@ -327,23 +456,32 @@ def main():
                 report_file.write("\n")
             print("Wrote no-reuse execution report to {}".format(
                 args.workload_report))
+            print("REPORT_SUMMARY " + json.dumps(
+                {key: report.get(key) for key in
+                 ("policy", "batch_size", "makespan_s", "energy_nj",
+                  "prefill_energy_nj", "decode_energy_nj", "tiers")},
+                sort_keys=True))
         else:
             try:
                 if args.reuse == "no-reuse":
                     report = run_reuse_prefill(
                         system, workload, reuse_plan, pipe=args.pipeopt,
                         cacheblend_batch_size=args.cacheblend_batch_size,
-                        cacheblend_rotate_mode=args.cacheblend_rotate_mode)
-                elif args.reuse == "cacheblend" and args.cacheblend_latency_model == "analytic":
+                        cacheblend_rotate_mode=args.cacheblend_rotate_mode,
+                        include_events=(args.workload_report_events == "full"))
+                elif (args.reuse in ("cacheblend", "epic") and
+                      args.cacheblend_latency_model == "analytic"):
                     report = run_cacheblend_analytic_report(
                         system, workload, reuse_plan, pipe=args.pipeopt,
                         parallel_ff=args.ffopt,
-                        power_constraint=args.powerlimit)
+                        power_constraint=args.powerlimit,
+                        batch_size=args.tier_batch_size or None)
                 else:
                     report = run_reuse_prefill(
                         system, workload, reuse_plan, pipe=args.pipeopt,
                         cacheblend_batch_size=args.cacheblend_batch_size,
-                        cacheblend_rotate_mode=args.cacheblend_rotate_mode)
+                        cacheblend_rotate_mode=args.cacheblend_rotate_mode,
+                        include_events=(args.workload_report_events == "full"))
             except WorkloadValidationError as exc:
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)
@@ -351,6 +489,12 @@ def main():
                 json.dump(report, report_file, indent=2, sort_keys=True)
                 report_file.write("\n")
             print("Wrote reuse execution report to {}".format(args.workload_report))
+            headline = {key: report.get(key) for key in
+                        ("policy", "makespan_s", "energy_nj", "energy_unit", "link_bytes",
+                         "gpu_time_s_unoverlapped", "pim_pool_time_s_unoverlapped",
+                         "die_time_s_unoverlapped", "event_count")}
+            headline["summary"] = report.get("summary")
+            print("REPORT_SUMMARY " + json.dumps(headline, sort_keys=True))
         return
 
     run(system,
