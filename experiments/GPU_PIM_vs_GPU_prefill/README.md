@@ -1,6 +1,6 @@
 # GPU+PIM cooperative prefill vs pure-GPU prefill (replay-pair micro-benchmark)
 
-Headline result: `RESULTS.md` (turning points n_q\* by link x policy x model).
+Headline result: `RESULTS.md` (two tables: CacheBlend r limit and EPIC recompute-token limit per model and link); details in `RESULTS_details.md`.
 
 User-designed input (2026-08-21): a workload with exactly two requests.
 Request 0 = sys(32) + doc(L, shared) + query(n_new) is prefilled entirely on the
