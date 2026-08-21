@@ -116,3 +116,8 @@
 * **拐点 n_q\* 基本不随 L 变**（三种 L 下都在 20–25 之间），L 只放大拐点两侧的差距；所以前面按 L = 8192 给出的 n_q\* 表可以直接用于其他上下文长度，"允许的 r" 则要按 r\* = n_q\*/L 换算（L 越长 r\* 越小）。
 
 JSON 在 `results/lsweep/`。
+
+
+# 补充：EPIC 单段直接扫 p（`results/pgrid/`）
+
+`--epic-prefix-recompute-tokens` p = 1…256，单段 L = 8192、n_new = 1、n_off = 1（无新 query）。A6 = A4 的插值点：NVLink3 7B/65B/175B = 22 / 29 / 35，PCIe4 = 89 / 145 / 210 —— 与用 n_new 扫出的 n_q* (23/30/36, 90/145/214) 一致，证实 p 与新 token 在模型里进入 n_q 的方式相同。
