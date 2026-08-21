@@ -227,12 +227,13 @@ python main.py --system dgx-attacc --model LLAMA-7B \
     --workload-report out.json
 ```
 
-`experiments/GPU_PIM_vs_GPU_prefill/` holds the replay-pair study (when does
-GPU+PIM cooperative prefill beat pure-GPU prefill): workload generator
-`workload/gen_replay_pair.py`, runner, analysis script, raw JSONs and
-`RESULTS.md`.  Each run needs its own Ramulator working directory when several
-run concurrently: set `ATTACC_RAMULATOR_DIR` / `ATTACC_RAMULATOR_LOG` (see
-`experiments/GPU_PIM_vs_GPU_prefill/run_one.sh`).
+`experiments/GPU_PIM_vs_GPU_prefill/RESULTS.md` holds the replay-pair study
+(when does GPU+PIM cooperative prefill beat pure-GPU prefill) with the command
+lines to reproduce it; workload generator `workload/gen_replay_pair.py`, raw
+JSONs under `results/`.  When several simulations run concurrently give each
+its own Ramulator working directory via `ATTACC_RAMULATOR_DIR` /
+`ATTACC_RAMULATOR_LOG` (the Ramulator shape cache `ramulator.out` is rewritten
+whole).
 
 ## Details of the Ramulator for AttAcc
 ### How to Run

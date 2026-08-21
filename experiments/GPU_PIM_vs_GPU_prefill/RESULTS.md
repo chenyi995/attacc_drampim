@@ -45,4 +45,13 @@ L 只改变拐点两侧的差距：p = 1 时 7B 的 A6/A4 在 NVLink3 下从 0.8
 | PCIe4 | 175B | 0.16 | 0.17 | 0.18 | 0.20 | 0.24 | 0.28 | 0.31 | 0.38 | 0.45 | 0.58 | 0.74 | 0.94 | 1.15 |
 
 ---
-数据来源、网格点、夹逼区间、理论核对、上下文长度扫描等全部细节在 `RESULTS_details.md`；原始 JSON 在 `results/`。
+原始仿真 JSON 在 `results/`（每个文件是一次 `main.py --workload-report` 的输出；`tiers[1]["prefill_s"]` 即第二次 prefill 的时间）。复现一格：
+
+```bash
+python workload/gen_replay_pair.py --L 8192 --n-new 1 --n-off 1 --out wl.json
+python main.py --system dgx-attacc --model LLAMA-7B --workload wl.json --tier-batch-size 1 \
+    --pipeopt --ffopt --gpu-model flash --pim-link nvlink3 --ablation A4 \
+    --reuse epic --epic-prefix-recompute-tokens 8 --workload-report a4.json
+# 同样命令换 --ablation A6 得到协同版本；CacheBlend 用 --reuse cacheblend --cacheblend-full-layers 0-1
+#   --cacheblend-partial-layers 2-31 --cacheblend-recompute-ratio r --reuse-seed 7
+```
