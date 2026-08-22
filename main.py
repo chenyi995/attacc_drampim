@@ -278,6 +278,15 @@ def main():
         help="queries sharing one PIM K/V stream when prefill attention runs on "
              "the PIM (--prefill-attn pim/split)")
     parser.add_argument(
+        "--pim-prefill-mode",
+        choices=("split", "bank-whole"),
+        default="split",
+        help="reuse-prefill attention placement in the physical DAG.  split "
+             "(default): GPU attends fresh rows to each other, PIM scans the "
+             "reused KV, DIE merges.  bank-whole: the batch's own K/V lands "
+             "first, every query scans the full landed range in the banks and "
+             "the DIE drops non-causal positions (no GPU triangle, no LSE)")
+    parser.add_argument(
         "--pim-batch-command",
         choices=("mq", "replicate"),
         default="mq",
@@ -494,6 +503,7 @@ def main():
                         cacheblend_batch_size=args.cacheblend_batch_size,
                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
                         include_events=(args.workload_report_events == "full"),
+                        pim_prefill_mode=args.pim_prefill_mode,
                         pim_batch_command=args.pim_batch_command,
                         pim_pe_freq_ghz=args.pe_freq_ghz,
                         gemv_buffer_bytes=args.gemv_buffer_bytes)
@@ -510,6 +520,7 @@ def main():
                         cacheblend_batch_size=args.cacheblend_batch_size,
                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
                         include_events=(args.workload_report_events == "full"),
+                        pim_prefill_mode=args.pim_prefill_mode,
                         pim_batch_command=args.pim_batch_command,
                         pim_pe_freq_ghz=args.pe_freq_ghz,
                         gemv_buffer_bytes=args.gemv_buffer_bytes)

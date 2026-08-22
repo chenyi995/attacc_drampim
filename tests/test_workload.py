@@ -1033,6 +1033,77 @@ class MQBatchCommandTests(unittest.TestCase):
         self.assertTrue(all(count <= 2 for count in pim.sweep_queries))
         self.assertEqual(pim.assertion, "mq")
 
+    def test_bank_whole_prefill_lands_kv_first_and_loads_di_bitmap(self):
+        class GPU:
+            def get_time_and_energy(self, layer):
+                return .001, [1, 0, 0, 0, 0, 0]
+
+        class PIM:
+            peak_memory_bandwidth = 10**12
+            softmax_peak_bandwidth = 10**12
+            energy_table = {"mem": 1, "sram": 1}
+
+            def get_time_and_energy(self, layer):
+                return .002, [2, 0, 0, 0, 0, 0]
+
+        class System:
+            hetero_name = DeviceType.PIM
+            devices = {"GPU": GPU(), "Acc": PIM()}
+            model = Transformer({"name": "toy", "ndec": 3, "num_heads": 4,
+                                 "hdim": 16, "ff_scale": 4,
+                                 "dtype": DataType.W16A16}, tensor_parallel=1)
+
+        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
+        report = run_reuse_prefill(System(), workload, plan, pipe=True,
+                                   cacheblend_batch_size=4,
+                                   pim_batch_command="mq",
+                                   pim_prefill_mode="bank-whole")
+        self.assertEqual(report["pim_prefill_mode"], "bank-whole")
+        events = report["events"]
+        by_id = {event["id"]: event for event in events}
+        prefill = [event for event in events
+                   if not event["name"].startswith("decode_")]
+        # (2) No GPU fresh-row triangle and no LSE tuple in bank-whole prefill.
+        self.assertFalse([e for e in prefill if e["name"] == "gpu_local_score"])
+        self.assertFalse([e for e in prefill
+                          if e["name"] == "gpu_partial_lse_to_pim"])
+        assemblies = [e for e in prefill if e["name"] == "die_score_assembly"]
+        self.assertTrue(assemblies)
+        # Landing order: every bank-whole prefill scan transitively follows a
+        # dram_store of this layer via its die_query_position_transform deps.
+        scans = [e for e in prefill
+                 if e["name"] == "pim_kv_scan_score_softmax_pv"]
+        self.assertTrue(scans)
+
+        def transitively_depends_on_store(event, depth=0):
+            if depth > 6:
+                return False
+            for dep in event["depends_on"]:
+                parent = by_id[dep]
+                if parent["name"].startswith("dram_store"):
+                    return True
+                if transitively_depends_on_store(parent, depth + 1):
+                    return True
+            return False
+
+        self.assertTrue(all(transitively_depends_on_store(e) for e in scans))
+        # Scans cover the fresh rows too (rows > reused visible rows alone):
+        # the relay workers reuse 500 rows and compute 200, so a full-range
+        # scan reads more than the reused set.
+        worker_scans = [e for e in scans if e["request"].startswith("t1w")]
+        self.assertTrue(worker_scans)
+        self.assertTrue(all(e["rows"] > 500 for e in worker_scans))
+        # (1) D_i bitmap: one load per (request, partial layer with
+        # corrections) for CacheBlend, before that layer's masked scans.
+        bitmap_loads = [e for e in prefill if e["name"] == "die_load_di_bitmap"]
+        self.assertTrue(bitmap_loads)
+        self.assertGreater(report["di_bitmap_bytes"], 0)
+        partial_with_corrections = {(e["request"], e["transformer_layer"])
+                                    for e in prefill
+                                    if e["name"] == "die_load_di_bitmap"}
+        self.assertTrue(all(layer == 2 for _, layer in partial_with_corrections))
+
 
 if __name__ == "__main__":
     unittest.main()

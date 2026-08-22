@@ -1229,16 +1229,24 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
             if not any("pim_kv_scan" in name for name in dependency_names) or not any(
                     "partial_lse_to_pim" in name for name in dependency_names):
                 raise WorkloadValidationError("CacheBlend DIE merge lacks a local contribution")
+        if event.name == "die_score_assembly":
+            # Bank-whole prefill: the DIE assembles one score vector per query
+            # from the pool scans alone (causal drop, no GPU tuple).
+            dependency_names = {named(dependency) for dependency in event.depends_on}
+            if not any("pim_kv_scan" in name for name in dependency_names):
+                raise WorkloadValidationError(
+                    "bank-whole DIE score assembly lacks a PIM scan contribution")
 
     groups: Dict[Tuple[str, int], List[SplitEvent]] = {}
     for event in events:
         groups.setdefault((event.request_id, event.transformer_layer), []).append(event)
     for (request_id, layer), group in groups.items():
         names = {event.name for event in group}
-        for context_name, tuple_name, merge_name in (
-                ("ctx_pim_to_gpu", "gpu_partial_lse_to_pim", "die_lse_merge"),
+        for context_name, tuple_name, merge_names in (
+                ("ctx_pim_to_gpu", "gpu_partial_lse_to_pim",
+                 ("die_lse_merge", "die_score_assembly")),
                 ("decode_ctx_pim_to_gpu", "decode_gpu_partial_lse_to_pim",
-                 "decode_die_lse_merge")):
+                 ("decode_die_lse_merge",))):
             contexts = [event for event in group if event.name == context_name]
             if not contexts:
                 continue
@@ -1246,7 +1254,7 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
             relevant = [event for event in group
                         if set(event.query_positions).intersection(context.query_positions)]
             merge_events = {event.event_id for event in relevant
-                            if event.name == merge_name}
+                            if event.name in merge_names}
             scan_events = {event.event_id for event in relevant
                            if "pim_kv_scan" in event.name}
             # A DIE merge already depends on its GPU tuple.  If no old KV was
@@ -2188,6 +2196,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             physical_no_reuse: bool = False,
                             rotate_mode: str = "gpu",
                             include_events: bool = True,
+                            pim_prefill_mode: str = "split",
                             pim_batch_command: str = "replicate",
                             pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
                             gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
@@ -2224,12 +2233,19 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     if pim_batch_command not in ("replicate", "mq"):
         raise WorkloadValidationError(
             "--pim-batch-command must be 'replicate' or 'mq'")
+    if pim_prefill_mode not in ("split", "bank-whole"):
+        raise WorkloadValidationError(
+            "--pim-prefill-mode must be 'split' or 'bank-whole'")
     if pim_pe_freq_ghz <= 0:
         raise WorkloadValidationError("--pe-freq-ghz must be positive")
     if gemv_buffer_bytes < 64:
         raise WorkloadValidationError(
             "--gemv-buffer-bytes must hold at least one 64-B query slice")
     batch_records: List[Dict[str, Any]] = []
+    # (1) D_i bitmap loads (master-write filter): EPIC's correction set is
+    # layer-invariant (one load per agent); CacheBlend samples per layer.
+    epic_bitmap_loaded: set = set()
+    di_bitmap_bytes_total = 0
 
     for tier, requests, _, _ in _tier_shapes(workload):
         tier_done: List[str] = []
@@ -2257,6 +2273,37 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         initial_deps=request_ready)
                     continue
                 reusable = [item for item in bindings if item[1]]
+                # (1) D_i bitmap master-write filter (2026-08-21): before this
+                # layer's masked scans, the driver loads a per-agent bitmap of
+                # the overridden positions into the DIE.  Master-side score
+                # writes at D_i are dropped against it, so diff/master arrival
+                # order is immaterial -- the same information the mask gate
+                # consults, given a second (score-side) consumer.
+                bitmap_corrected = any(item[2] for item in bindings if item[1])
+                if (not physical_no_reuse and not full and reusable and
+                        bitmap_corrected and
+                        (plan.config.policy != "epic" or
+                         request.request_id not in epic_bitmap_loaded)):
+                    if plan.config.policy == "epic":
+                        epic_bitmap_loaded.add(request.request_id)
+                    bitmap_bytes = (request.total_length + 7) // 8
+                    di_bitmap_bytes_total += bitmap_bytes
+                    transfer = _link_layer(x2g, "di_bitmap_gpu_to_die", bitmap_bytes)
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(transfer)
+                    bitmap_link = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="di_bitmap_gpu_to_die",
+                        device="LINK", rows=1, time_s=time_s, energy=energy,
+                        deps=request_ready, link_bytes=bitmap_bytes)
+                    bitmap_load = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="die_load_di_bitmap",
+                        device="DIE", rows=1,
+                        time_s=bitmap_bytes / system.devices["Acc"].softmax_peak_bandwidth,
+                        energy=(bitmap_bytes * system.devices["Acc"].energy_table["sram"],),
+                        deps=(bitmap_link,))
+                    request_ready = tuple(dict.fromkeys(
+                        request_ready + (bitmap_load,)))
                 # A partial layer without an old cache is simply an ordinary
                 # GPU prefill; do not fabricate PIM traffic for it.
                 if full or not reusable:
@@ -2336,6 +2383,112 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     positions=compute_positions, addresses=[address for loc in writes
                                                             for address in (loc.key_address,
                                                                             loc.value_address)])
+                if pim_prefill_mode == "bank-whole":
+                    # (2) Bank-whole prefill with causal drop (2026-08-21):
+                    # the batch's own K/V lands in the stack first (Fugue
+                    # sec 4.5.2 landing order), every query of the sweep scans
+                    # the full landed range -- reused masters (shadowed rows
+                    # read-masked) plus all fresh/corrected rows -- and the
+                    # DIE drops non-causal positions (key position > query
+                    # position) while assembling each query's score vector:
+                    # one comparator, no GPU triangle, no LSE tuple, a single
+                    # sequential softmax per query.  The dropped upper
+                    # triangle is scanned and therefore costed.
+                    store = _append_channel_kv_stores(
+                        system, events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="dram_store_diff_and_live",
+                        locations=writes, dbyte=dbyte, deps=(kv_link,),
+                        positions=compute_positions)
+                    prefill_store_events.extend(store)
+                    location_deltas = _prefill_location_deltas(request, bindings)
+                    masked_prefill_keys = {_address_key(loc.shadow)
+                                           for _, reused_flag, corrected, loc in bindings
+                                           if reused_flag and corrected and
+                                           loc.shadow is not None}
+                    old_reads = [loc.shadow if corrected else loc
+                                 for _, reused_flag, corrected, loc in bindings
+                                 if reused_flag and
+                                 (not corrected or loc.shadow is not None)]
+                    scan_locations = old_reads + list(writes)
+                    scan_addresses = [address for loc in scan_locations
+                                      for address in (loc.key_address, loc.value_address)]
+                    pim_results = []
+                    sweep_cap = max(1, min(batch_size,
+                                           mq_query_capacity(gemv_buffer_bytes)))
+                    for first in range(0, len(compute_positions), sweep_cap):
+                        grouped_positions = compute_positions[first:first + sweep_cap]
+                        die_qs = []
+                        for position in grouped_positions:
+                            rotate_ready = _append_q_rotate_distribution(
+                                system, events, x2g, layer=layer_index, tier=tier,
+                                request=request.request_id, q_dependency=q_link,
+                                q_bytes=local_hidden * dbyte, locations=scan_locations,
+                                location_deltas=location_deltas,
+                                rotate_mode=rotate_mode, name_prefix="",
+                                positions=(position,))
+                            die_qs.append(_cacheblend_event(
+                                events, layer=layer_index, tier=tier,
+                                request=request.request_id,
+                                name="die_query_position_transform", device="DIE",
+                                rows=1,
+                                time_s=((local_hidden * dbyte) /
+                                        system.devices["Acc"].softmax_peak_bandwidth),
+                                energy=(local_hidden * dbyte *
+                                        system.devices["Acc"].energy_table["sram"],),
+                                deps=tuple(dict.fromkeys((rotate_ready,) + tuple(store))),
+                                positions=(position,)))
+                        op = deepcopy(score)
+                        op.m, op.n, op.k, op.numOp = (len(grouped_positions),
+                                                      len(scan_locations),
+                                                      system.model.dhead, heads)
+                        op.pim_kv_runs = tlb.scan_runs(scan_locations)
+                        plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
+                        tlb_event = _cacheblend_event(
+                            events, layer=layer_index, tier=tier,
+                            request=request.request_id,
+                            name="tlb_lookup_and_bank_plan", device="TLB",
+                            rows=len(scan_locations), time_s=plan_time_s,
+                            energy=plan_energy, deps=tuple(die_qs),
+                            positions=tuple(grouped_positions),
+                            addresses=scan_addresses)
+                        op.pim_shared_kv = len(grouped_positions) > 1
+                        op.pim_shared_queries = len(grouped_positions)
+                        _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
+                        scan = _append_physical_pim_scan(
+                            system, events, op=op, layer=layer_index, tier=tier,
+                            request=request.request_id,
+                            name="pim_kv_scan_score_softmax_pv",
+                            rows=len(scan_locations), deps=(tlb_event,),
+                            positions=tuple(grouped_positions), runs=op.pim_kv_runs,
+                            masked=_masked_rows_per_run(op.pim_kv_runs,
+                                                        masked_prefill_keys,
+                                                        tlb.bytes_per_vector))
+                        assembly_bytes = heads * (system.model.dhead + 2) * dbyte
+                        for position in grouped_positions:
+                            pim_results.append(_cacheblend_event(
+                                events, layer=layer_index, tier=tier,
+                                request=request.request_id,
+                                name="die_score_assembly", device="DIE", rows=1,
+                                time_s=(len(scan) * assembly_bytes /
+                                        system.devices["Acc"].softmax_peak_bandwidth),
+                                energy=(len(scan) * assembly_bytes *
+                                        system.devices["Acc"].energy_table["sram"],),
+                                deps=tuple(scan), positions=(position,)))
+                    ctx_bytes = len(compute_positions) * local_hidden * dbyte
+                    ctx_transfer = _link_layer(x2g, "ctx_pim_to_gpu", ctx_bytes)
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(ctx_transfer)
+                    ctx_link = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="ctx_pim_to_gpu",
+                        device="LINK", rows=len(compute_positions), time_s=time_s,
+                        energy=energy, deps=tuple(dict.fromkeys(pim_results)),
+                        link_bytes=ctx_bytes, positions=compute_positions)
+                    post_last = _post_attention_gpu(
+                        system, events, post, layer=layer_index, tier=tier,
+                        request=request.request_id, rows=len(compute_positions),
+                        dependency=ctx_link, positions=compute_positions)
+                    request_ready = (post_last,)
+                    continue
                 # The GPU attends the fresh rows to each other as one
                 # rectangular block, exactly like an ordinary prefill over
                 # ``len(compute_positions)`` tokens (m = n = fresh rows, the
@@ -2527,6 +2680,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "cacheblend_batch_size": batch_size,
         "cacheblend_rotate_mode": rotate_mode,
         "pim_batch_command": pim_batch_command,
+        "pim_prefill_mode": pim_prefill_mode,
+        "di_bitmap_bytes": di_bitmap_bytes_total,
+        "di_write_filter": "master-side score writes at D_i dropped against the "
+                           "per-agent bitmap; diff/master arrival order immaterial",
         "pim_pe_freq_ghz": pim_pe_freq_ghz,
         "gemv_buffer_bytes": gemv_buffer_bytes,
         "pim_sweep_query_capacity": mq_query_capacity(gemv_buffer_bytes),
@@ -2561,6 +2718,7 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                       *, pipe: bool = False, cacheblend_batch_size: int = 1,
                       cacheblend_rotate_mode: str = "gpu",
                       include_events: bool = True,
+                      pim_prefill_mode: str = "split",
                       pim_batch_command: str = "replicate",
                       pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
                       gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
@@ -2576,6 +2734,7 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                                        physical_no_reuse=(plan.config.policy == "no-reuse"),
                                        rotate_mode=cacheblend_rotate_mode,
                                        include_events=include_events,
+                                       pim_prefill_mode=pim_prefill_mode,
                                        pim_batch_command=pim_batch_command,
                                        pim_pe_freq_ghz=pim_pe_freq_ghz,
                                        gemv_buffer_bytes=gemv_buffer_bytes)

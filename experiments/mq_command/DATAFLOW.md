@@ -129,14 +129,23 @@ AttAcc 原文(§4.2/§5.1/§7.7)+ 本仓库实测(results_c_points.json)。
 
 ## 6. 三个裁决项的处置建议(2026-08-21 查证,待宸逸裁决)
 
-1. **diff/master 写序**:用 decoder metadata 派生的 per-agent D_i 位图(512 B/agent,
-   16 agent 共 8 KB,并入 E4 metadata)做 **master 端写过滤**(命中 D_i 即丢),
-   diff 经写口直写——到达顺序无关。否选"调度强制 diff 后行"(牺牲分池并行)。
-   落点:E4 RTL + 论文 §4.3.2 一句;仿真器零改动。
-2. **prefill 批内下三角**:段 K/V 全落地后,该段 Q 批扫 old+早段+**本段**,
-   die 在分数拼装口做 (position ≤ q_pos) 因果丢弃(每 Q 位置 die 已有)。
-   代价 = 本段上三角 ≈3% 额外扫描功;不需要 GPU 三角/LSE,批界=段界自动成立。
-   落点:E4 一个比较器 + 论文 §4.5.2 一句;仿真器在实装 B3/B4 时扫描范围 +s。
+1. **diff/master 写序 —— 已实装(2026-08-21,宸逸裁决采纳)**:per-agent D_i 位图
+   做 **master 端写过滤**(命中 D_i 即丢),diff 经写口直写,到达顺序无关;与
+   mask gate 同源信息。仿真器:attach/prefill 时新增 `di_bitmap_gpu_to_die`
+   (LINK,⌈context/8⌉ B)与 `die_load_di_bitmap`(DIE)事件,EPIC 每 agent 一次、
+   CacheBlend 每 partial 层一次,层内含掩码的扫描依赖位图装载;报表含
+   `di_bitmap_bytes` 与机制说明。RTL 落点:E4 位图 + master 写路查询口;
+   论文 §4.3.2 一句(待写)。
+2. **prefill 批内下三角 —— 已实装(2026-08-21,宸逸裁决采纳)**:新模式
+   `--pim-prefill-mode bank-whole`(默认仍 split):本层 fresh/corrected K/V
+   **先落地**(store 事件为扫描的前置依赖),每个 ≤cap 的 Q 子批扫**全落地范围**
+   (read-mask 的 master + 全部 fresh 行,行数 +s,上三角被扫即被计费),DIE 以
+   `die_score_assembly` 事件按 (position ≤ q_pos) 因果丢弃后逐 Q 单次 softmax——
+   **无 GPU 三角、无 LSE tuple**。校验器新增 assembly 规则并将其纳入 context
+   返回检查;单测
+   `test_bank_whole_prefill_lands_kv_first_and_loads_di_bitmap` 锁住
+   落地顺序/无 GPU 三角/位图计数三件事。RTL 落点:E4 一个位置比较器;
+   论文 §4.5.2 一句(待写)。
 3. **TSV 上下行 —— 已实测,结论:不是墙,窄下行不需要**(2026-08-21,
    chenyi-experiment-821 分支)。查证:WRGB/MVSB/MVGB/SFM/RD/WR 在 pCH 级本就
    互相按 nBL=2 串行(共享半双工,与真实 TSV 一致)。已给模型补上方向转向约束
