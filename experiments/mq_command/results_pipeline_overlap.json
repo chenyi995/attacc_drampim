@@ -1,0 +1,138 @@
+{
+  "length": 4096,
+  "pe_freq_ghz": 1.3,
+  "rows": [
+    {
+      "n": 1,
+      "nrtw": 0,
+      "nwtrl": 0,
+      "overlap_benefit": 0.993,
+      "pipelined_two_heads_cycles": 16297,
+      "pipelined_us": 12.53,
+      "serial_two_heads_cycles": 16176,
+      "single_head_cycles": 8088,
+      "turnaround_cost_pct": 0.0
+    },
+    {
+      "n": 1,
+      "nrtw": 3,
+      "nwtrl": 11,
+      "overlap_benefit": 0.993,
+      "pipelined_two_heads_cycles": 16298,
+      "pipelined_us": 12.53,
+      "serial_two_heads_cycles": 16178,
+      "single_head_cycles": 8089,
+      "turnaround_cost_pct": 0.01
+    },
+    {
+      "n": 1,
+      "nrtw": 12,
+      "nwtrl": 44,
+      "overlap_benefit": 0.992,
+      "pipelined_two_heads_cycles": 16321,
+      "pipelined_us": 12.55,
+      "serial_two_heads_cycles": 16196,
+      "single_head_cycles": 8098,
+      "turnaround_cost_pct": 0.15
+    },
+    {
+      "n": 4,
+      "nrtw": 0,
+      "nwtrl": 0,
+      "overlap_benefit": 0.981,
+      "pipelined_two_heads_cycles": 19911,
+      "pipelined_us": 15.31,
+      "serial_two_heads_cycles": 19542,
+      "single_head_cycles": 9771,
+      "turnaround_cost_pct": 0.0
+    },
+    {
+      "n": 4,
+      "nrtw": 3,
+      "nwtrl": 11,
+      "overlap_benefit": 0.978,
+      "pipelined_two_heads_cycles": 19983,
+      "pipelined_us": 15.37,
+      "serial_two_heads_cycles": 19542,
+      "single_head_cycles": 9771,
+      "turnaround_cost_pct": 0.36
+    },
+    {
+      "n": 4,
+      "nrtw": 12,
+      "nwtrl": 44,
+      "overlap_benefit": 0.968,
+      "pipelined_two_heads_cycles": 20178,
+      "pipelined_us": 15.52,
+      "serial_two_heads_cycles": 19542,
+      "single_head_cycles": 9771,
+      "turnaround_cost_pct": 1.34
+    },
+    {
+      "n": 8,
+      "nrtw": 0,
+      "nwtrl": 0,
+      "overlap_benefit": 1.025,
+      "pipelined_two_heads_cycles": 29238,
+      "pipelined_us": 22.48,
+      "serial_two_heads_cycles": 29976,
+      "single_head_cycles": 14988,
+      "turnaround_cost_pct": 0.0
+    },
+    {
+      "n": 8,
+      "nrtw": 3,
+      "nwtrl": 11,
+      "overlap_benefit": 1.017,
+      "pipelined_two_heads_cycles": 29483,
+      "pipelined_us": 22.67,
+      "serial_two_heads_cycles": 29978,
+      "single_head_cycles": 14989,
+      "turnaround_cost_pct": 0.84
+    },
+    {
+      "n": 8,
+      "nrtw": 12,
+      "nwtrl": 44,
+      "overlap_benefit": 0.988,
+      "pipelined_two_heads_cycles": 30354,
+      "pipelined_us": 23.34,
+      "serial_two_heads_cycles": 29978,
+      "single_head_cycles": 14989,
+      "turnaround_cost_pct": 3.82
+    },
+    {
+      "n": 16,
+      "nrtw": 0,
+      "nwtrl": 0,
+      "overlap_benefit": 1.01,
+      "pipelined_two_heads_cycles": 56710,
+      "pipelined_us": 43.61,
+      "serial_two_heads_cycles": 57298,
+      "single_head_cycles": 28649,
+      "turnaround_cost_pct": 0.0
+    },
+    {
+      "n": 16,
+      "nrtw": 3,
+      "nwtrl": 11,
+      "overlap_benefit": 1.003,
+      "pipelined_two_heads_cycles": 57110,
+      "pipelined_us": 43.92,
+      "serial_two_heads_cycles": 57300,
+      "single_head_cycles": 28650,
+      "turnaround_cost_pct": 0.71
+    },
+    {
+      "n": 16,
+      "nrtw": 12,
+      "nwtrl": 44,
+      "overlap_benefit": 1.0,
+      "pipelined_two_heads_cycles": 57347,
+      "pipelined_us": 44.1,
+      "serial_two_heads_cycles": 57324,
+      "single_head_cycles": 28662,
+      "turnaround_cost_pct": 1.12
+    }
+  ]
+}
