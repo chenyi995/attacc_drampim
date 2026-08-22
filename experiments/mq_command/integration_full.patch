@@ -1,0 +1,962 @@
+diff --git a/main.py b/main.py
+index 46604f2..d3227fa 100644
+--- a/main.py
++++ b/main.py
+@@ -277,6 +277,28 @@ def main():
+         default=4,
+         help="queries sharing one PIM K/V stream when prefill attention runs on "
+              "the PIM (--prefill-attn pim/split)")
++    parser.add_argument(
++        "--pim-batch-command",
++        choices=("mq", "replicate"),
++        default="mq",
++        help="how a multi-query PIM sweep issues its MACs.  mq (default, the "
++             "Fugue design): one MAC_AB per column serves every resident Q; "
++             "the bank PE multiplies internally and the command interval "
++             "carries the n-fold PE time plus the IDD7 power stretch.  "
++             "replicate: legacy one MAC_AB per (column, query)")
++    parser.add_argument(
++        "--pe-freq-ghz",
++        type=float,
++        default=0.666,
++        help="bank GEMV-unit (PE) clock in GHz for the mq batch command; "
++             "0.666 is AttAcc's synthesized point (tCCDS-matched)")
++    parser.add_argument(
++        "--gemv-buffer-bytes",
++        type=int,
++        default=512,
++        help="per-bank GEMV input-vector buffer size; one query slice is "
++             "64 B, so this caps the queries resident in one sweep (the "
++             "sweep splits beyond it).  512 = AttAcc's 16 x 256-bit buffer")
+     parser.add_argument(
+         "--kv-pool-split",
+         type=int,
+@@ -424,7 +446,10 @@ def main():
+                     master_pool_channels=args.kv_pool_split,
+                     prefill_kv_readback=not args.no_prefill_kv_readback,
+                     master_shadow=args.master_shadow,
+-                    split_overlap=(args.split_attn == "overlap"))
++                    split_overlap=(args.split_attn == "overlap"),
++                    pim_batch_command=args.pim_batch_command,
++                    pim_pe_freq_ghz=args.pe_freq_ghz,
++                    gemv_buffer_bytes=args.gemv_buffer_bytes)
+                 report = run_ablation_report(
+                     system, workload, reuse_plan, ablation, pipe=args.pipeopt,
+                     parallel_ff=args.ffopt, power_constraint=args.powerlimit,
+@@ -468,7 +493,10 @@ def main():
+                         system, workload, reuse_plan, pipe=args.pipeopt,
+                         cacheblend_batch_size=args.cacheblend_batch_size,
+                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
+-                        include_events=(args.workload_report_events == "full"))
++                        include_events=(args.workload_report_events == "full"),
++                        pim_batch_command=args.pim_batch_command,
++                        pim_pe_freq_ghz=args.pe_freq_ghz,
++                        gemv_buffer_bytes=args.gemv_buffer_bytes)
+                 elif (args.reuse in ("cacheblend", "epic") and
+                       args.cacheblend_latency_model == "analytic"):
+                     report = run_cacheblend_analytic_report(
+@@ -481,7 +509,10 @@ def main():
+                         system, workload, reuse_plan, pipe=args.pipeopt,
+                         cacheblend_batch_size=args.cacheblend_batch_size,
+                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
+-                        include_events=(args.workload_report_events == "full"))
++                        include_events=(args.workload_report_events == "full"),
++                        pim_batch_command=args.pim_batch_command,
++                        pim_pe_freq_ghz=args.pe_freq_ghz,
++                        gemv_buffer_bytes=args.gemv_buffer_bytes)
+             except WorkloadValidationError as exc:
+                 parser.error(str(exc))
+             report["workload"] = workload_summary(workload, reuse_plan)
+diff --git a/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py b/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py
+index 4b06274..8bf6593 100755
+--- a/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py
++++ b/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py
+@@ -282,12 +282,17 @@ def _shared_query_attention_commands(n_head_per_hbm, L, key_base, value_base,
+ 
+ 
+ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
+-                  value_base=None, shared_kv=False, shared_queries=1):
++                  value_base=None, shared_kv=False, shared_queries=1,
++                  mq_command=False, phase="full"):
+   if shared_queries < 1:
+     raise ValueError("shared_queries must be positive")
+   if shared_queries > 1:
+     if not shared_kv:
+       raise ValueError("shared_queries requires --shared-kv")
++  if mq_command and shared_queries < 1:
++    raise ValueError("--mq requires a positive --shared-queries")
++  if phase not in ("full", "score", "context"):
++    raise ValueError("--phase must be full, score, or context")
+ 
+   partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
+   head_offset = partition_size
+@@ -472,17 +477,43 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
+         total_cmd += barrier
+ 
+ 
++  if phase != "full":
++    # Asymmetric MQ sweeps (PLAN_mq_command.md, extended 2026-08-21): the
++    # score phase runs once with n_q resident queries, the context phase runs
++    # ceil(n_q / n_c) passes with n_c resident probability vectors.  Each
++    # phase is its own Ramulator run with its own --shared-queries, so the
++    # stream is sliced here at the first MVGB: WRGB + score MACs/MVSB + SFM
++    # belong to the score phase, MVGB + context MACs/MVSB to the context
++    # phase.  The two-head pipeline interleaves phases across heads, so the
++    # slice is defined only for a single head-iteration stream.
++    if math.ceil(n_head_per_hbm / n_channel) > 1:
++      raise ValueError("--phase score/context requires nhead <= channels")
++    boundary = next((index for index, cmd in enumerate(total_cmd)
++                     if cmd.startswith("PIM_MV_GB")), len(total_cmd))
++    total_cmd = (total_cmd[:boundary] if phase == "score"
++                 else total_cmd[boundary:])
++
+   if shared_queries > 1:
+     # Preserve the original two-head pipeline exactly, but expand every
+     # query-private PIM operation at the point where its K/V row is live.
+     # A barrier is shared by the whole batch: it denotes a true phase
+-    # dependency, not one dependency per Q.  Thus consecutive MACs below
+-    # target the same physical K/V row for all Qs before the scheduler moves
+-    # on, enabling Ramulator to expose row/ACT reuse.
++    # dependency, not one dependency per Q.
++    #
++    # Two batch-command schemes:
++    # * replicate (default): every non-barrier command is issued once per Q.
++    #   B queries against one column = B MAC_ABs, each re-reading the column.
++    # * mq (--mq): the MQ-MAC semantics -- ONE MAC_AB reads the column once
++    #   and the bank PE multiplies it against every resident Q internally.
++    #   Only the genuinely query-private data movements stay per Q: WR_GB
++    #   (load each Q), MV_SB (each Q's partial scores), SFM (each Q's
++    #   softmax), MV_GB (each Q's probabilities).  The n-fold MAC time and
++    #   the power stretch are modeled by the host-side nCCDAB override.
+     expanded_cmd = []
+     for cmd in total_cmd:
+       if cmd.startswith("PIM_BARRIER"):
+         expanded_cmd.append(cmd)
++      elif mq_command and cmd.startswith("PIM_MAC_AB"):
++        expanded_cmd.append(cmd)
+       else:
+         expanded_cmd.extend([cmd] * shared_queries)
+     total_cmd = expanded_cmd
+@@ -518,6 +549,16 @@ def main():
+                       help="reuse one K/V physical segment for every query batch")
+   parser.add_argument("--shared-queries", type=int, default=1,
+                       help="number of private Q streams sharing that resident K/V segment")
++  parser.add_argument("--phase", choices=("full", "score", "context"),
++                      default="full",
++                      help="emit only one attention phase (asymmetric MQ "
++                           "sweeps run score and context as separate jobs "
++                           "with their own --shared-queries)")
++  parser.add_argument("--mq", action="store_true",
++                      help="MQ-MAC batch command: one MAC_AB per column serves every "
++                           "resident Q (PE-internal n-fold multiply); only WR_GB/MV_SB/"
++                           "SFM/MV_GB stay per query.  Default replicates every command "
++                           "per query.")
+   parser.add_argument("--channels", type=int, default=16,
+                       help="number of contiguous physical channels assigned to this KV class")
+   parser.add_argument("--pool-base", type=int, default=None,
+@@ -549,7 +590,8 @@ def main():
+       print(f"     {key}: {value}")
+   print("---------------------------------------------------")
+   run_attention(dhead, n_head_per_hbm, L, args.output, args.key_addr,
+-                args.value_addr, args.shared_kv, args.shared_queries)
++                args.value_addr, args.shared_kv, args.shared_queries,
++                mq_command=args.mq, phase=args.phase)
+ 
+ 
+ 
+diff --git a/ramulator2/trace_gen/gen_trace_attacc_bank.py b/ramulator2/trace_gen/gen_trace_attacc_bank.py
+index 4b06274..8bf6593 100755
+--- a/ramulator2/trace_gen/gen_trace_attacc_bank.py
++++ b/ramulator2/trace_gen/gen_trace_attacc_bank.py
+@@ -282,12 +282,17 @@ def _shared_query_attention_commands(n_head_per_hbm, L, key_base, value_base,
+ 
+ 
+ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
+-                  value_base=None, shared_kv=False, shared_queries=1):
++                  value_base=None, shared_kv=False, shared_queries=1,
++                  mq_command=False, phase="full"):
+   if shared_queries < 1:
+     raise ValueError("shared_queries must be positive")
+   if shared_queries > 1:
+     if not shared_kv:
+       raise ValueError("shared_queries requires --shared-kv")
++  if mq_command and shared_queries < 1:
++    raise ValueError("--mq requires a positive --shared-queries")
++  if phase not in ("full", "score", "context"):
++    raise ValueError("--phase must be full, score, or context")
+ 
+   partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
+   head_offset = partition_size
+@@ -472,17 +477,43 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
+         total_cmd += barrier
+ 
+ 
++  if phase != "full":
++    # Asymmetric MQ sweeps (PLAN_mq_command.md, extended 2026-08-21): the
++    # score phase runs once with n_q resident queries, the context phase runs
++    # ceil(n_q / n_c) passes with n_c resident probability vectors.  Each
++    # phase is its own Ramulator run with its own --shared-queries, so the
++    # stream is sliced here at the first MVGB: WRGB + score MACs/MVSB + SFM
++    # belong to the score phase, MVGB + context MACs/MVSB to the context
++    # phase.  The two-head pipeline interleaves phases across heads, so the
++    # slice is defined only for a single head-iteration stream.
++    if math.ceil(n_head_per_hbm / n_channel) > 1:
++      raise ValueError("--phase score/context requires nhead <= channels")
++    boundary = next((index for index, cmd in enumerate(total_cmd)
++                     if cmd.startswith("PIM_MV_GB")), len(total_cmd))
++    total_cmd = (total_cmd[:boundary] if phase == "score"
++                 else total_cmd[boundary:])
++
+   if shared_queries > 1:
+     # Preserve the original two-head pipeline exactly, but expand every
+     # query-private PIM operation at the point where its K/V row is live.
+     # A barrier is shared by the whole batch: it denotes a true phase
+-    # dependency, not one dependency per Q.  Thus consecutive MACs below
+-    # target the same physical K/V row for all Qs before the scheduler moves
+-    # on, enabling Ramulator to expose row/ACT reuse.
++    # dependency, not one dependency per Q.
++    #
++    # Two batch-command schemes:
++    # * replicate (default): every non-barrier command is issued once per Q.
++    #   B queries against one column = B MAC_ABs, each re-reading the column.
++    # * mq (--mq): the MQ-MAC semantics -- ONE MAC_AB reads the column once
++    #   and the bank PE multiplies it against every resident Q internally.
++    #   Only the genuinely query-private data movements stay per Q: WR_GB
++    #   (load each Q), MV_SB (each Q's partial scores), SFM (each Q's
++    #   softmax), MV_GB (each Q's probabilities).  The n-fold MAC time and
++    #   the power stretch are modeled by the host-side nCCDAB override.
+     expanded_cmd = []
+     for cmd in total_cmd:
+       if cmd.startswith("PIM_BARRIER"):
+         expanded_cmd.append(cmd)
++      elif mq_command and cmd.startswith("PIM_MAC_AB"):
++        expanded_cmd.append(cmd)
+       else:
+         expanded_cmd.extend([cmd] * shared_queries)
+     total_cmd = expanded_cmd
+@@ -518,6 +549,16 @@ def main():
+                       help="reuse one K/V physical segment for every query batch")
+   parser.add_argument("--shared-queries", type=int, default=1,
+                       help="number of private Q streams sharing that resident K/V segment")
++  parser.add_argument("--phase", choices=("full", "score", "context"),
++                      default="full",
++                      help="emit only one attention phase (asymmetric MQ "
++                           "sweeps run score and context as separate jobs "
++                           "with their own --shared-queries)")
++  parser.add_argument("--mq", action="store_true",
++                      help="MQ-MAC batch command: one MAC_AB per column serves every "
++                           "resident Q (PE-internal n-fold multiply); only WR_GB/MV_SB/"
++                           "SFM/MV_GB stay per query.  Default replicates every command "
++                           "per query.")
+   parser.add_argument("--channels", type=int, default=16,
+                       help="number of contiguous physical channels assigned to this KV class")
+   parser.add_argument("--pool-base", type=int, default=None,
+@@ -549,7 +590,8 @@ def main():
+       print(f"     {key}: {value}")
+   print("---------------------------------------------------")
+   run_attention(dhead, n_head_per_hbm, L, args.output, args.key_addr,
+-                args.value_addr, args.shared_kv, args.shared_queries)
++                args.value_addr, args.shared_kv, args.shared_queries,
++                mq_command=args.mq, phase=args.phase)
+ 
+ 
+ 
+diff --git a/src/ablation.py b/src/ablation.py
+index 0edda7c..873c6ff 100644
+--- a/src/ablation.py
++++ b/src/ablation.py
+@@ -47,6 +47,8 @@ from dataclasses import dataclass
+ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+ 
+ from .model import Layer
++from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
++                                MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
+ from .system import apply_attacc_pipeline
+ from .type import DeviceType, LayerType
+ from .workload import ReusePlan, Request, Workload, WorkloadValidationError
+@@ -110,6 +112,17 @@ class AblationConfig:
+     # reused-KV scan have no data dependency on each other, so the layer costs
+     # max(gpu, pim) rather than their sum.  False restores the serial charge.
+     split_overlap: bool = True
++    # How a multi-query PIM sweep issues its MACs (PLAN_mq_command.md).
++    # ``replicate``: one MAC_AB per (column, query), the legacy expansion.
++    # ``mq``: one MAC_AB per column serves every resident Q; the PE multiplies
++    # internally and the command interval carries the n-fold time and the
++    # power stretch.
++    pim_batch_command: str = "replicate"
++    # Bank-PE clock for the MQ command (AttAcc synthesizes 666 MHz).
++    pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ
++    # Per-bank GEMV (input-vector) buffer size; one Q slice is 64 B, so this
++    # caps the queries resident in one sweep (the sweep splits beyond it).
++    gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES
+ 
+     def to_dict(self) -> Dict[str, Any]:
+         return {
+@@ -123,6 +136,9 @@ class AblationConfig:
+             "prefill_kv_readback": self.prefill_kv_readback,
+             "master_shadow": self.master_shadow,
+             "split_overlap": self.split_overlap,
++            "pim_batch_command": self.pim_batch_command,
++            "pim_pe_freq_ghz": self.pim_pe_freq_ghz,
++            "gemv_buffer_bytes": self.gemv_buffer_bytes,
+         }
+ 
+ 
+@@ -132,7 +148,10 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
+                    master_pool_channels: int = 8,
+                    prefill_kv_readback: bool = True,
+                    master_shadow: str = "read-mask",
+-                   split_overlap: bool = True) -> AblationConfig:
++                   split_overlap: bool = True,
++                   pim_batch_command: str = "replicate",
++                   pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
++                   gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> AblationConfig:
+     """Expand a preset and let explicit switches override it."""
+     base = dict(PRESETS[preset]) if preset else {}
+     if not base and not (prefill_attn and decode_attn):
+@@ -173,11 +192,22 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
+     if master_shadow not in MASTER_SHADOW_MODES:
+         raise WorkloadValidationError("--master-shadow must be one of {}".format(
+             ", ".join(MASTER_SHADOW_MODES)))
++    if pim_batch_command not in ("replicate", "mq"):
++        raise WorkloadValidationError(
++            "--pim-batch-command must be 'replicate' or 'mq'")
++    if pim_pe_freq_ghz <= 0:
++        raise WorkloadValidationError("--pe-freq-ghz must be positive")
++    if gemv_buffer_bytes < 64:
++        raise WorkloadValidationError(
++            "--gemv-buffer-bytes must hold at least one 64-B query slice")
+     return AblationConfig(preset=preset, pim_prefill_query_batch=pim_prefill_query_batch,
+                           master_pool_channels=master_pool_channels,
+                           prefill_kv_readback=prefill_kv_readback,
+                           master_shadow=master_shadow,
+-                          split_overlap=split_overlap, **resolved)
++                          split_overlap=split_overlap,
++                          pim_batch_command=pim_batch_command,
++                          pim_pe_freq_ghz=pim_pe_freq_ghz,
++                          gemv_buffer_bytes=gemv_buffer_bytes, **resolved)
+ 
+ 
+ # ---------------------------------------------------------------------------
+@@ -474,7 +504,10 @@ def _link_layer(template: Layer, name: str, rows: int, width: int) -> Layer:
+ 
+ def _pim_scan(system, template: Layer, *, rows: int, queries: int, heads: int,
+               runs: Sequence[Tuple[int, int, int, int, int]],
+-              query_batch: int) -> Tuple[float, List[float]]:
++              query_batch: int, batch_command: str = "replicate",
++              pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
++              gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES
++              ) -> Tuple[float, List[float]]:
+     """Price one PIM attention scan with the original AttAcc Ramulator path.
+ 
+     ``runs`` are the contiguous K/V extents of one channel pool; they are
+@@ -488,12 +521,18 @@ def _pim_scan(system, template: Layer, *, rows: int, queries: int, heads: int,
+     op = copy.deepcopy(template)
+     op.m, op.n, op.k, op.numOp = 1, sum(run[2] for run in runs), template.k, heads
+     op.pim_kv_runs = tuple(runs)
+-    shared_queries = min(query_batch, max(queries, 1))
++    # The resident-Q count of one sweep is bounded by the per-bank GEMV
++    # buffer whichever batch command is used (both schemes keep every Q of
++    # the sweep loaded); beyond it the sweep splits into more passes.
++    shared_queries = min(query_batch, max(queries, 1),
++                         mq_query_capacity(gemv_buffer_bytes))
+     # ``--shared-kv`` puts every head group of a trace on one K/V partition.
+     # Only a multi-query scan needs it; a decode scan keeps AttAcc's original
+     # per-head-group placement.
+     op.pim_shared_kv = shared_queries > 1
+     op.pim_shared_queries = shared_queries
++    op.pim_batch_command = batch_command
++    op.pim_pe_freq_ghz = pe_freq_ghz
+     measured = system.devices["Acc"].get_time_and_energy_runs(op)
+     passes = math.ceil(max(queries, 1) / op.pim_shared_queries)
+     time_s = sum(item[0] for item in measured) * passes
+@@ -650,7 +689,10 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
+             pim_time, pim_energy = _pim_scan(
+                 system, score, rows=scan_rows, queries=queries,
+                 heads=heads * batch, runs=_private_runs(scan_rows, stride),
+-                query_batch=config.pim_prefill_query_batch)
++                query_batch=config.pim_prefill_query_batch,
++                batch_command=config.pim_batch_command,
++                pe_freq_ghz=config.pim_pe_freq_ghz,
++                gemv_buffer_bytes=config.gemv_buffer_bytes)
+             pim_branch += pim_time
+             attn_energy += sum(pim_energy) / 1000.0 * count
+             _accumulate(attn_breakdown, "pim_prefill_score", pim_time * count)
+@@ -735,7 +777,10 @@ def _decode_block_time(system, config: AblationConfig, block: Sequence[Layer],
+                 for pool in profile.pools:
+                     time_s, energy = _pim_scan(
+                         system, layer, rows=sum(run[2] for run in pool), queries=1,
+-                        heads=heads * batch, runs=pool, query_batch=1)
++                        heads=heads * batch, runs=pool, query_batch=1,
++                        batch_command=config.pim_batch_command,
++                        pe_freq_ghz=config.pim_pe_freq_ghz,
++                        gemv_buffer_bytes=config.gemv_buffer_bytes)
+                     pool_times.append(time_s)
+                     pool_energy += sum(energy) / 1000.0
+                 # Disjoint channel pools stream concurrently; extents inside a
+diff --git a/src/ramulator_wrapper.py b/src/ramulator_wrapper.py
+index 0248bf9..050c9ce 100644
+--- a/src/ramulator_wrapper.py
++++ b/src/ramulator_wrapper.py
+@@ -9,6 +9,47 @@ from src.model import *
+ from src.type import *
+ 
+ 
++# --- MQ-MAC batch command timing (PLAN_mq_command.md §2.1) -----------------
++# One MAC_AB reads a column once and the bank PE multiplies it against every
++# resident Q internally.  The effective MAC_AB-to-MAC_AB interval is the max of
++#   * the power stretch: the IDD7-derived budget (AttAcc §4.2) is kept by
++#     scaling the power-constrained nCCDAB with the per-command energy, which
++#     grows by one 16-lane MAC + one 32-B GEMV-buffer read per extra Q;
++#   * the PE throughput: n ops at the PE clock (AttAcc §7.1 synthesizes the
++#     GEMV unit at 666 MHz);
++#   * the DRAM datapath floor (the NPC nCCDAB).
++# Energies come from the same FGDRAM-based ENERGY_TABLE the energy model uses.
++_MQ_TCK_NS = 0.769                     # command-clock period used everywhere
++_MQ_NCCDAB_PC = 6                      # HBM3_5.2Gbps preset, power-constrained
++_MQ_NCCDAB_NPC = 4                     # HBM3_5.2Gbps_NPC preset
++MQ_DEFAULT_PE_FREQ_GHZ = 0.666         # AttAcc's synthesized GEMV-unit clock
++MQ_DEFAULT_GEMV_BUFFER_BYTES = 512     # AttAcc's 16 x 256-bit GEMV buffer
++# One Q occupies 64 B per bank in the score phase (d_head=128, BF16, split
++# over the 4 banks of a bank group), i.e. two 32-B buffer entries.
++MQ_QUERY_SLICE_BYTES = 64
++
++
++def mq_query_capacity(gemv_buffer_bytes=MQ_DEFAULT_GEMV_BUFFER_BYTES):
++    """Resident-Q capacity of one bank's GEMV buffer (the sweep splits beyond)."""
++    return max(1, int(gemv_buffer_bytes) // MQ_QUERY_SLICE_BYTES)
++
++
++def mq_interval_cycles(shared_queries, power_constraint,
++                       pe_freq_ghz=MQ_DEFAULT_PE_FREQ_GHZ):
++    """Effective nCCDAB (in command cycles) of one MQ-MAC command."""
++    n = max(1, int(shared_queries))
++    e_col = ENERGY_TABLE['PIM'][PIMType.BA]['mem'] * 32          # 32-B read, pJ
++    e_q = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +          # 16-lane MAC
++           32 * ENERGY_TABLE['PIM'][PIMType.BA]['sram'])          # buffer read
++    pe_cycles = math.ceil(n / (float(pe_freq_ghz) * _MQ_TCK_NS))
++    if power_constraint:
++        power_cycles = math.ceil(_MQ_NCCDAB_PC * (e_col + n * e_q) /
++                                 (e_col + e_q))
++    else:
++        power_cycles = _MQ_NCCDAB_NPC
++    return max(power_cycles, pe_cycles, _MQ_NCCDAB_NPC)
++
++
+ class Ramulator:
+ 
+     def __init__(self,
+@@ -77,11 +118,13 @@ class Ramulator:
+ 
+     def _run_signature(self, pim_type, run_length, num_ops_per_hbm, dbyte,
+                        power_constraint, key_addr, value_addr, channel_count,
+-                       shared_kv, shared_queries, channel_base=None):
++                       shared_kv, shared_queries, channel_base=None,
++                       mq_command=False, nccdab_override=None):
+         return (
+             pim_type.name, run_length, num_ops_per_hbm, dbyte,
+             bool(power_constraint), self.dhead, self.num_hbm, channel_count,
+             bool(shared_kv), shared_queries, channel_base,
++            bool(mq_command), nccdab_override,
+             self._address_mapping_signature(key_addr),
+             self._address_mapping_signature(value_addr),
+         )
+@@ -113,7 +156,8 @@ class Ramulator:
+         # trace/YAML files.
+         return "{}_p{}_call{}".format(base, os.getpid(), index)
+ 
+-    def make_yaml_file(self, yaml_file, file_name, power_constraint):
++    def make_yaml_file(self, yaml_file, file_name, power_constraint,
++                       nccdab_override=None):
+         trace_path = os.path.join(self.ramulator_dir, file_name + ".trace")
+         line = ""
+         line += "Frontend:\n"
+@@ -139,6 +183,12 @@ class Ramulator:
+             line += "      preset: HBM3_5.2Gbps\n"
+         else:
+             line += "      preset: HBM3_5.2Gbps_NPC\n"
++        if nccdab_override is not None:
++            # MQ-MAC command: one MAC_AB carries every resident Q, so its
++            # effective command-to-command interval is set per run (power
++            # stretch and PE throughput, see mq_interval_cycles).  Ramulator2
++            # natively overwrites preset timings with user-provided values.
++            line += "      nCCDAB: {}\n".format(int(nccdab_override))
+         line += "\n"
+         line += "  Controller:\n"
+         line += "    impl: HBM3-PIM\n"
+@@ -180,7 +230,7 @@ class Ramulator:
+     def run_ramulator(self, pim_type: PIMType, l, num_ops_per_hbm, dbyte,
+                       yaml_file, file_name, key_addr=None, value_addr=None,
+                       channel_count=16, shared_kv=False, shared_queries=1,
+-                      channel_base=None):
++                      channel_base=None, mq_command=False, phase="full"):
+         pim_type_name = pim_type.name.lower(
+         ) if not pim_type == PIMType.BA else "bank"
+         trace_file = os.path.join(self.ramulator_dir, file_name + '.trace')
+@@ -203,6 +253,10 @@ class Ramulator:
+             trace_args += " --shared-kv"
+         if shared_queries != 1:
+             trace_args += " --shared-queries {}".format(shared_queries)
++        if mq_command:
++            trace_args += " --mq"
++        if phase != "full":
++            trace_args += " --phase {}".format(phase)
+ 
+         gen_trace_cmd = f"python3 {trace_exc} {trace_args}"
+ 
+@@ -295,6 +349,23 @@ class Ramulator:
+                 raise ValueError("pim_shared_queries must be positive")
+             if shared_queries > 1 and not shared_kv:
+                 raise ValueError("pim_shared_queries requires pim_shared_kv")
++            # MQ-MAC batch command (PLAN_mq_command.md): one MAC_AB serves
++            # every resident Q; its command interval carries the n-fold PE
++            # time and the power stretch.  'replicate' keeps the legacy
++            # one-command-per-(column, query) trace expansion.
++            batch_command = getattr(layer, "pim_batch_command", "replicate")
++            if batch_command not in ("replicate", "mq"):
++                raise ValueError("pim_batch_command must be 'replicate' or 'mq'")
++            mq_command = batch_command == "mq" and shared_queries > 1
++            phase = getattr(layer, "pim_phase", "full")
++            if phase not in ("full", "score", "context"):
++                raise ValueError("pim_phase must be 'full', 'score' or 'context'")
++            nccdab_override = None
++            if mq_command:
++                pe_freq_ghz = float(getattr(layer, "pim_pe_freq_ghz",
++                                            MQ_DEFAULT_PE_FREQ_GHZ))
++                nccdab_override = mq_interval_cycles(
++                    shared_queries, power_constraint, pe_freq_ghz)
+             # Results are cached only for the address-resolved reuse path.
+             # The CacheBlend/EPIC wrapper restarts Ramulator for every run,
+             # so an equal mapping signature is exactly the same independent
+@@ -313,7 +384,8 @@ class Ramulator:
+                 signature = self._run_signature(
+                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
+                     power_constraint, key_addr, value_addr, channel_count,
+-                    shared_kv, shared_queries, channel_base)
++                    shared_kv, shared_queries, channel_base,
++                    mq_command, nccdab_override) + (phase,)
+                 if use_signature_cache:
+                     with self._signature_cache_lock:
+                         cached = self._signature_cache.get(signature)
+@@ -336,7 +408,8 @@ class Ramulator:
+                  channel_base) = equivalent_runs[0]
+                 run_file = "{}_run{}".format(file_name, index)
+                 yaml_file = os.path.join(self.ramulator_dir, run_file + '.yaml')
+-                self.make_yaml_file(yaml_file, run_file, power_constraint)
++                self.make_yaml_file(yaml_file, run_file, power_constraint,
++                                    nccdab_override=nccdab_override)
+                 run_jobs.append((signature, equivalent_runs, run_length, yaml_file,
+                                  run_file, key_addr, value_addr, channel_count,
+                                  channel_base))
+@@ -353,7 +426,8 @@ class Ramulator:
+                 return self.run_ramulator(
+                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
+                     yaml_file, run_file, key_addr, value_addr, channel_count,
+-                    shared_kv, shared_queries, channel_base)
++                    shared_kv, shared_queries, channel_base,
++                    mq_command=mq_command, phase=phase)
+ 
+             # Each job gets an unshared trace/YAML filename and contributes a
+             # separate physical TLB run.  They are independent host jobs, so
+diff --git a/src/workload_runner.py b/src/workload_runner.py
+index 0dbc7a8..a55ed95 100644
+--- a/src/workload_runner.py
++++ b/src/workload_runner.py
+@@ -15,6 +15,8 @@ from dataclasses import dataclass, replace
+ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+ 
+ from .model import Layer
++from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
++                                MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
+ from .type import DeviceType, LayerType
+ from .workload import (ReusePlan, Workload, WorkloadValidationError,
+                        validate_reuse_plan)
+@@ -515,6 +517,18 @@ _TLB_DESCRIPTOR_S = 5e-9
+ _TLB_DESCRIPTOR_ENERGY = 0.1
+ 
+ 
++def _apply_pim_batch(op, batch_command: str, pe_freq_ghz: float) -> None:
++    """Stamp the sweep's batch-command scheme onto a PIM scan op.
++
++    ``replicate`` keeps the legacy one-MAC-per-(column, query) trace.  ``mq``
++    is the MQ-MAC command of PLAN_mq_command.md: one MAC_AB per column serves
++    every resident Q, and the Ramulator wrapper carries the n-fold PE time
++    plus the power stretch in the command interval.
++    """
++    op.pim_batch_command = batch_command
++    op.pim_pe_freq_ghz = pe_freq_ghz
++
++
+ def _tlb_plan_cost(runs) -> Tuple[float, Tuple[float, ...]]:
+     count = max(1, len(runs))
+     return count * _TLB_DESCRIPTOR_S, (_TLB_DESCRIPTOR_ENERGY * count,)
+@@ -1083,16 +1097,32 @@ def _annotate_batch_q_arrivals(scheduled: Sequence[SplitEvent],
+         arrival = max(event.end_s for event in q_events)
+         batch["q_arrival_s"] = arrival
+         batch["q_arrival_event_ids"] = [event.event_id for event in q_events]
+-        shared_starts = [event.start_s for event in scheduled
+-                         if event.request_id == batch["id"] and
+-                         event.name == "decode_batch_tlb_lookup_and_bank_plan"]
+-        if shared_starts:
+-            start = min(shared_starts)
+-            if start + 1e-18 < arrival:
+-                raise WorkloadValidationError(
+-                    "CacheBlend shared-KV batch begins before its final Q arrival")
+-            batch["attention_admission_s"] = arrival
+-            batch["attention_start_s"] = start
++        arrival_by_member: Dict[str, float] = {}
++        for event in q_events:
++            arrival_by_member[event.request_id] = max(
++                arrival_by_member.get(event.request_id, 0.0), event.end_s)
++        # The admitted batch may be served by several consecutive PIM sweeps
++        # (the GEMV-buffer capacity splits it).  Each sweep needs only its own
++        # members' Q arrivals; audit every sweep against exactly that set.
++        sweep_events = [event for event in scheduled
++                        if event.request_id == batch["id"] and
++                        event.name == "decode_batch_tlb_lookup_and_bank_plan"]
++        if sweep_events:
++            sweeps = []
++            for event in sweep_events:
++                sweep_members = list(event.batch_members) or batch["members"]
++                sweep_arrival = max(arrival_by_member[member]
++                                    for member in sweep_members)
++                if event.start_s + 1e-18 < sweep_arrival:
++                    raise WorkloadValidationError(
++                        "CacheBlend shared-KV sweep begins before its final Q arrival")
++                sweeps.append({"members": sweep_members,
++                               "admission_s": sweep_arrival,
++                               "start_s": event.start_s})
++            batch["sweeps"] = sweeps
++            batch["attention_admission_s"] = max(item["admission_s"]
++                                                 for item in sweeps)
++            batch["attention_start_s"] = min(item["start_s"] for item in sweeps)
+             batch["admission"] = "global-q-ready-queue"
+         else:
+             batch["attention_admission_s"] = None
+@@ -1680,7 +1710,10 @@ def _append_cacheblend_decode_batched(
+         inputs: Sequence[Tuple[Any, Mapping[int, Sequence[Tuple[int, bool, bool, KVLocation]]],
+                                str, Sequence[str]]], batch_size: int,
+         batch_records: List[Dict[str, Any]], rotate_mode: str,
+-        pipe: bool, contiguous_no_reuse: bool = False) -> Dict[str, Tuple[str, ...]]:
++        pipe: bool, contiguous_no_reuse: bool = False,
++        pim_batch_command: str = "replicate",
++        pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
++        gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Tuple[str, ...]]:
+     """Decode a tier, admitting PIM-attention batches by real Q arrival.
+ 
+     Q does not exist until QKV has run, so QKV is first batched by its GPU
+@@ -1885,41 +1918,52 @@ def _append_cacheblend_decode_batched(
+                                               for request in group))
+                 scan_deps: Dict[str, List[str]] = {request.request_id: [] for request in group}
+                 if common:
+-                    die_qs = []
+-                    for request in group:
+-                        request_id = request.request_id
+-                        position = request.total_length + output_row
+-                        die_qs.append(_cacheblend_event(
+-                            events, layer=layer_index, tier=tier, request=request_id,
+-                            name="decode_die_query_position_transform", device="DIE", rows=1,
+-                            time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
+-                            energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
+-                            deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,)))
+                     common_addresses = [address for location in common
+                                         for address in (location.key_address, location.value_address)]
+-                    op = deepcopy(score)
+-                    op.m, op.n, op.k, op.numOp = len(group), len(common), system.model.dhead, heads
+-                    op.pim_kv_runs = tlb.scan_runs(common)
+-                    plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
+-                    tlb_event = _cacheblend_event(
+-                        events, layer=layer_index, tier=tier, request=label,
+-                        name="decode_batch_tlb_lookup_and_bank_plan", device="TLB",
+-                        rows=len(common), time_s=plan_time_s,
+-                        energy=plan_energy, deps=tuple(die_qs),
+-                        positions=positions, addresses=common_addresses,
+-                        batch_members=members)
+-                    op.pim_shared_kv = True
+-                    op.pim_shared_queries = len(group)
+-                    shared_scan = _append_physical_pim_scan(
+-                        system, events, op=op, layer=layer_index, tier=tier,
+-                        request=label,
+-                        name="decode_batch_pim_kv_scan_score_softmax_pv", rows=len(common),
+-                        deps=(tlb_event,), positions=positions, runs=op.pim_kv_runs,
+-                        batch_members=members,
+-                        masked=_masked_rows_per_run(op.pim_kv_runs, common_masked,
+-                                                    tlb.bytes_per_vector))
+-                    for request in group:
+-                        scan_deps[request.request_id].extend(shared_scan)
++                    # A sweep can hold at most the queries whose slices fit
++                    # the per-bank GEMV buffer; a larger admitted batch is
++                    # served by consecutive sweeps over the same rows
++                    # (Fugue: "beyond which the sweep splits").
++                    sweep_cap = mq_query_capacity(gemv_buffer_bytes)
++                    for sweep_start in range(0, len(group), sweep_cap):
++                        sweep = group[sweep_start:sweep_start + sweep_cap]
++                        sweep_members = tuple(request.request_id for request in sweep)
++                        sweep_positions = tuple(request.total_length + output_row
++                                                for request in sweep)
++                        die_qs = []
++                        for request in sweep:
++                            request_id = request.request_id
++                            position = request.total_length + output_row
++                            die_qs.append(_cacheblend_event(
++                                events, layer=layer_index, tier=tier, request=request_id,
++                                name="decode_die_query_position_transform", device="DIE", rows=1,
++                                time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
++                                energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
++                                deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,)))
++                        op = deepcopy(score)
++                        op.m, op.n, op.k, op.numOp = len(sweep), len(common), system.model.dhead, heads
++                        op.pim_kv_runs = tlb.scan_runs(common)
++                        plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
++                        tlb_event = _cacheblend_event(
++                            events, layer=layer_index, tier=tier, request=label,
++                            name="decode_batch_tlb_lookup_and_bank_plan", device="TLB",
++                            rows=len(common), time_s=plan_time_s,
++                            energy=plan_energy, deps=tuple(die_qs),
++                            positions=sweep_positions, addresses=common_addresses,
++                            batch_members=sweep_members)
++                        op.pim_shared_kv = True
++                        op.pim_shared_queries = len(sweep)
++                        _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
++                        shared_scan = _append_physical_pim_scan(
++                            system, events, op=op, layer=layer_index, tier=tier,
++                            request=label,
++                            name="decode_batch_pim_kv_scan_score_softmax_pv", rows=len(common),
++                            deps=(tlb_event,), positions=sweep_positions, runs=op.pim_kv_runs,
++                            batch_members=sweep_members,
++                            masked=_masked_rows_per_run(op.pim_kv_runs, common_masked,
++                                                        tlb.bytes_per_vector))
++                        for request in sweep:
++                            scan_deps[request.request_id].extend(shared_scan)
+ 
+                 for request in group:
+                     request_id = request.request_id
+@@ -2143,7 +2187,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
+                             *, pipe: bool, batch_size: int = 1,
+                             physical_no_reuse: bool = False,
+                             rotate_mode: str = "gpu",
+-                            include_events: bool = True) -> Dict[str, Any]:
++                            include_events: bool = True,
++                            pim_batch_command: str = "replicate",
++                            pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
++                            gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
+     if system.hetero_name != DeviceType.PIM:
+         raise WorkloadValidationError("reuse prefill requires --system dgx-attacc")
+     validate_reuse_plan(workload, plan, system.model.ndec)
+@@ -2174,6 +2221,14 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
+     if rotate_mode not in _ROTATE_MODES:
+         raise WorkloadValidationError("--cacheblend-rotate-mode must be one of {}".format(
+             ", ".join(_ROTATE_MODES)))
++    if pim_batch_command not in ("replicate", "mq"):
++        raise WorkloadValidationError(
++            "--pim-batch-command must be 'replicate' or 'mq'")
++    if pim_pe_freq_ghz <= 0:
++        raise WorkloadValidationError("--pe-freq-ghz must be positive")
++    if gemv_buffer_bytes < 64:
++        raise WorkloadValidationError(
++            "--gemv-buffer-bytes must hold at least one 64-B query slice")
+     batch_records: List[Dict[str, Any]] = []
+ 
+     for tier, requests, _, _ in _tier_shapes(workload):
+@@ -2340,14 +2395,14 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
+                            (not corrected or loc.shadow is not None)]
+                     key = tuple(_address_key(loc) for loc in old)
+                     old_groups.setdefault(key, []).append((ordinal, position, tuple_event, old))
++                prefill_sweep = max(1, min(batch_size,
++                                           mq_query_capacity(gemv_buffer_bytes)))
+                 for compatible_queries in old_groups.values():
+                     # Prefill follows the same user-visible admission bound as
+-                    # decode.  Compatibility alone is not permission to make
+-                    # an unbounded Q batch: it would exceed the modeled
+-                    # per-batch Q/softmax-buffer capacity and turn a request
+-                    # with thousands of fresh rows into one giant trace.
+-                    for first in range(0, len(compatible_queries), batch_size):
+-                        grouped = compatible_queries[first:first + batch_size]
++                    # decode, further capped by the per-bank GEMV buffer's
++                    # resident-Q capacity (the sweep splits beyond it).
++                    for first in range(0, len(compatible_queries), prefill_sweep):
++                        grouped = compatible_queries[first:first + prefill_sweep]
+                         old = grouped[0][3]
+                         if not old:
+                             continue
+@@ -2383,6 +2438,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
+                                        for address in (loc.key_address, loc.value_address)])
+                         op.pim_shared_kv = True
+                         op.pim_shared_queries = len(grouped)
++                        _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
+                         scan = _append_physical_pim_scan(
+                             system, events, op=op, layer=layer_index, tier=tier,
+                             request=request.request_id, name="pim_kv_scan_score_softmax_pv",
+@@ -2448,7 +2504,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
+                 system, events, tlb, templates, post, tier=tier, inputs=decode_inputs,
+                 batch_size=batch_size, batch_records=batch_records,
+                 rotate_mode=rotate_mode, pipe=pipe,
+-                contiguous_no_reuse=physical_no_reuse).values() for dep in deps)
++                contiguous_no_reuse=physical_no_reuse,
++                pim_batch_command=pim_batch_command,
++                pim_pe_freq_ghz=pim_pe_freq_ghz,
++                gemv_buffer_bytes=gemv_buffer_bytes).values() for dep in deps)
+         previous_tier_done = tuple(tier_done)
+ 
+     validate_cacheblend_events(events, workload, local_hidden=local_hidden,
+@@ -2467,6 +2526,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
+         "latency_model": "physical-dag-ramulator" if physical_no_reuse else None,
+         "cacheblend_batch_size": batch_size,
+         "cacheblend_rotate_mode": rotate_mode,
++        "pim_batch_command": pim_batch_command,
++        "pim_pe_freq_ghz": pim_pe_freq_ghz,
++        "gemv_buffer_bytes": gemv_buffer_bytes,
++        "pim_sweep_query_capacity": mq_query_capacity(gemv_buffer_bytes),
+         "batches": batch_records,
+         "overlap_validation": overlap_validation,
+         "events": ([event.to_dict() for event in scheduled] if include_events
+@@ -2497,7 +2560,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
+ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
+                       *, pipe: bool = False, cacheblend_batch_size: int = 1,
+                       cacheblend_rotate_mode: str = "gpu",
+-                      include_events: bool = True) -> Dict[str, Any]:
++                      include_events: bool = True,
++                      pim_batch_command: str = "replicate",
++                      pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
++                      gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
+     """Dispatch address-resolved CacheBlend and EPIC to the shared DAG.
+ 
+     CacheBlend samples correction rows per layer; EPIC overlays the fixed
+@@ -2509,5 +2575,8 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
+                                        batch_size=cacheblend_batch_size,
+                                        physical_no_reuse=(plan.config.policy == "no-reuse"),
+                                        rotate_mode=cacheblend_rotate_mode,
+-                                       include_events=include_events)
++                                       include_events=include_events,
++                                       pim_batch_command=pim_batch_command,
++                                       pim_pe_freq_ghz=pim_pe_freq_ghz,
++                                       gemv_buffer_bytes=gemv_buffer_bytes)
+     return _run_legacy_reuse_prefill(system, workload, plan)
+diff --git a/tests/test_workload.py b/tests/test_workload.py
+index 9497063..5cc4049 100644
+--- a/tests/test_workload.py
++++ b/tests/test_workload.py
+@@ -916,5 +916,123 @@ class WorkloadTests(unittest.TestCase):
+         self.assertEqual(int(diff[0]["key_base"], 0) // _HBM_CHANNEL_BYTES, 8)
+ 
+ 
++class MQBatchCommandTests(unittest.TestCase):
++    """MQ-MAC batch command (PLAN_mq_command.md): trace shape and timing knobs."""
++
++    def test_interval_carries_power_stretch_and_pe_throughput(self):
++        from src.ramulator_wrapper import mq_interval_cycles, mq_query_capacity
++        # Power-constrained base is nCCDAB=6; each extra Q adds one 16-lane
++        # MAC + one 32-B buffer read against the IDD7-derived budget.
++        self.assertEqual(mq_interval_cycles(1, True, 1.3), 6)
++        self.assertEqual(mq_interval_cycles(4, True, 1.3), 7)
++        self.assertEqual(mq_interval_cycles(8, True, 1.3), 9)
++        # At AttAcc's synthesized 666 MHz the PE throughput term dominates.
++        self.assertEqual(mq_interval_cycles(4, True, 0.666), 8)
++        self.assertEqual(mq_interval_cycles(8, True, 0.666), 16)
++        # NPC floor is the DRAM datapath's own nCCDAB=4.
++        self.assertEqual(mq_interval_cycles(2, False, 1.3), 4)
++        # One 64-B query slice per Q in AttAcc's 512-B GEMV buffer.
++        self.assertEqual(mq_query_capacity(512), 8)
++        self.assertEqual(mq_query_capacity(1024), 16)
++
++    def test_mq_trace_reads_each_column_once(self):
++        import subprocess
++        import tempfile
++        from collections import Counter
++        generator = ROOT / "ramulator2" / "trace_gen" / "gen_trace_attacc_bank.py"
++        counts = {}
++        with tempfile.TemporaryDirectory() as tmp:
++            for label, extra in (("replicate", []), ("mq", ["--mq"])):
++                trace = Path(tmp) / (label + ".trace")
++                subprocess.run(
++                    ["python3", str(generator), "--dhead", "128", "--nhead", "1",
++                     "--seqlen", "64", "--dbyte", "2", "--output", str(trace),
++                     "--shared-kv", "--shared-queries", "4"] + extra,
++                    check=True, stdout=subprocess.DEVNULL)
++                counts[label] = Counter(line.split()[0]
++                                        for line in trace.read_text().splitlines()
++                                        if line.strip())
++        # MQ issues every MAC_AB once; the query-private movements stay x4.
++        self.assertEqual(counts["replicate"]["PIM_MAC_AB"],
++                         4 * counts["mq"]["PIM_MAC_AB"])
++        for shared in ("PIM_WR_GB", "PIM_MV_SB", "PIM_SFM", "PIM_MV_GB"):
++            self.assertEqual(counts["replicate"][shared], counts["mq"][shared])
++
++    def test_phase_slices_partition_the_full_trace(self):
++        import subprocess
++        import tempfile
++        from collections import Counter
++        generator = ROOT / "ramulator2" / "trace_gen" / "gen_trace_attacc_bank.py"
++        counts = {}
++        with tempfile.TemporaryDirectory() as tmp:
++            for phase in ("full", "score", "context"):
++                trace = Path(tmp) / (phase + ".trace")
++                subprocess.run(
++                    ["python3", str(generator), "--dhead", "128", "--nhead", "1",
++                     "--seqlen", "64", "--dbyte", "2", "--output", str(trace),
++                     "--shared-kv", "--shared-queries", "4", "--mq",
++                     "--phase", phase],
++                    check=True, stdout=subprocess.DEVNULL)
++                counts[phase] = Counter(line.split()[0]
++                                        for line in trace.read_text().splitlines()
++                                        if line.strip())
++        merged = counts["score"] + counts["context"]
++        self.assertEqual(merged, counts["full"])
++        # Q loading and softmax belong to the score phase, P loading to the
++        # context phase; the MACs split between the two.
++        self.assertNotIn("PIM_MV_GB", counts["score"])
++        self.assertNotIn("PIM_WR_GB", counts["context"])
++        self.assertNotIn("PIM_SFM", counts["context"])
++        self.assertGreater(counts["score"]["PIM_MAC_AB"], 0)
++        self.assertGreater(counts["context"]["PIM_MAC_AB"], 0)
++
++    def test_batched_decode_splits_sweeps_at_the_gemv_buffer_capacity(self):
++        # Four admitted agents against a 128-B (two-query) GEMV buffer must
++        # scan the common master rows in consecutive sweeps of at most two Qs.
++        class GPU:
++            def get_time_and_energy(self, layer):
++                return .001, [1, 0, 0, 0, 0, 0]
++
++        class PIM:
++            peak_memory_bandwidth = 10**12
++            softmax_peak_bandwidth = 10**12
++            energy_table = {"mem": 1, "sram": 1}
++
++            def __init__(self):
++                self.sweep_queries = []
++
++            def get_time_and_energy(self, layer):
++                if getattr(layer, "pim_shared_kv", False):
++                    self.sweep_queries.append(
++                        int(getattr(layer, "pim_shared_queries", 1)))
++                    self.assertion = getattr(layer, "pim_batch_command", None)
++                return .002, [2, 0, 0, 0, 0, 0]
++
++        pim = PIM()
++
++        class System:
++            hetero_name = DeviceType.PIM
++            devices = {"GPU": GPU(), "Acc": pim}
++            model = Transformer({"name": "toy", "ndec": 3, "num_heads": 4,
++                                 "hdim": 16, "ff_scale": 4,
++                                 "dtype": DataType.W16A16}, tensor_parallel=1)
++
++        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
++        plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
++        report = run_reuse_prefill(System(), workload, plan, pipe=True,
++                                   cacheblend_batch_size=4,
++                                   pim_batch_command="mq",
++                                   gemv_buffer_bytes=128)
++        self.assertEqual(report["pim_batch_command"], "mq")
++        self.assertEqual(report["pim_sweep_query_capacity"], 2)
++        shared = [event for event in report["events"]
++                  if event["name"] == "decode_batch_pim_kv_scan_score_softmax_pv"]
++        self.assertTrue(shared)
++        self.assertTrue(all(len(event["batch_members"]) <= 2 for event in shared))
++        self.assertTrue(pim.sweep_queries)
++        self.assertTrue(all(count <= 2 for count in pim.sweep_queries))
++        self.assertEqual(pim.assertion, "mq")
++
++
+ if __name__ == "__main__":
+     unittest.main()

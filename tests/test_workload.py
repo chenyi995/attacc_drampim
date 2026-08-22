@@ -916,5 +916,123 @@ class WorkloadTests(unittest.TestCase):
         self.assertEqual(int(diff[0]["key_base"], 0) // _HBM_CHANNEL_BYTES, 8)
 
 
+class MQBatchCommandTests(unittest.TestCase):
+    """MQ-MAC batch command (PLAN_mq_command.md): trace shape and timing knobs."""
+
+    def test_interval_carries_power_stretch_and_pe_throughput(self):
+        from src.ramulator_wrapper import mq_interval_cycles, mq_query_capacity
+        # Power-constrained base is nCCDAB=6; each extra Q adds one 16-lane
+        # MAC + one 32-B buffer read against the IDD7-derived budget.
+        self.assertEqual(mq_interval_cycles(1, True, 1.3), 6)
+        self.assertEqual(mq_interval_cycles(4, True, 1.3), 7)
+        self.assertEqual(mq_interval_cycles(8, True, 1.3), 9)
+        # At AttAcc's synthesized 666 MHz the PE throughput term dominates.
+        self.assertEqual(mq_interval_cycles(4, True, 0.666), 8)
+        self.assertEqual(mq_interval_cycles(8, True, 0.666), 16)
+        # NPC floor is the DRAM datapath's own nCCDAB=4.
+        self.assertEqual(mq_interval_cycles(2, False, 1.3), 4)
+        # One 64-B query slice per Q in AttAcc's 512-B GEMV buffer.
+        self.assertEqual(mq_query_capacity(512), 8)
+        self.assertEqual(mq_query_capacity(1024), 16)
+
+    def test_mq_trace_reads_each_column_once(self):
+        import subprocess
+        import tempfile
+        from collections import Counter
+        generator = ROOT / "ramulator2" / "trace_gen" / "gen_trace_attacc_bank.py"
+        counts = {}
+        with tempfile.TemporaryDirectory() as tmp:
+            for label, extra in (("replicate", []), ("mq", ["--mq"])):
+                trace = Path(tmp) / (label + ".trace")
+                subprocess.run(
+                    ["python3", str(generator), "--dhead", "128", "--nhead", "1",
+                     "--seqlen", "64", "--dbyte", "2", "--output", str(trace),
+                     "--shared-kv", "--shared-queries", "4"] + extra,
+                    check=True, stdout=subprocess.DEVNULL)
+                counts[label] = Counter(line.split()[0]
+                                        for line in trace.read_text().splitlines()
+                                        if line.strip())
+        # MQ issues every MAC_AB once; the query-private movements stay x4.
+        self.assertEqual(counts["replicate"]["PIM_MAC_AB"],
+                         4 * counts["mq"]["PIM_MAC_AB"])
+        for shared in ("PIM_WR_GB", "PIM_MV_SB", "PIM_SFM", "PIM_MV_GB"):
+            self.assertEqual(counts["replicate"][shared], counts["mq"][shared])
+
+    def test_phase_slices_partition_the_full_trace(self):
+        import subprocess
+        import tempfile
+        from collections import Counter
+        generator = ROOT / "ramulator2" / "trace_gen" / "gen_trace_attacc_bank.py"
+        counts = {}
+        with tempfile.TemporaryDirectory() as tmp:
+            for phase in ("full", "score", "context"):
+                trace = Path(tmp) / (phase + ".trace")
+                subprocess.run(
+                    ["python3", str(generator), "--dhead", "128", "--nhead", "1",
+                     "--seqlen", "64", "--dbyte", "2", "--output", str(trace),
+                     "--shared-kv", "--shared-queries", "4", "--mq",
+                     "--phase", phase],
+                    check=True, stdout=subprocess.DEVNULL)
+                counts[phase] = Counter(line.split()[0]
+                                        for line in trace.read_text().splitlines()
+                                        if line.strip())
+        merged = counts["score"] + counts["context"]
+        self.assertEqual(merged, counts["full"])
+        # Q loading and softmax belong to the score phase, P loading to the
+        # context phase; the MACs split between the two.
+        self.assertNotIn("PIM_MV_GB", counts["score"])
+        self.assertNotIn("PIM_WR_GB", counts["context"])
+        self.assertNotIn("PIM_SFM", counts["context"])
+        self.assertGreater(counts["score"]["PIM_MAC_AB"], 0)
+        self.assertGreater(counts["context"]["PIM_MAC_AB"], 0)
+
+    def test_batched_decode_splits_sweeps_at_the_gemv_buffer_capacity(self):
+        # Four admitted agents against a 128-B (two-query) GEMV buffer must
+        # scan the common master rows in consecutive sweeps of at most two Qs.
+        class GPU:
+            def get_time_and_energy(self, layer):
+                return .001, [1, 0, 0, 0, 0, 0]
+
+        class PIM:
+            peak_memory_bandwidth = 10**12
+            softmax_peak_bandwidth = 10**12
+            energy_table = {"mem": 1, "sram": 1}
+
+            def __init__(self):
+                self.sweep_queries = []
+
+            def get_time_and_energy(self, layer):
+                if getattr(layer, "pim_shared_kv", False):
+                    self.sweep_queries.append(
+                        int(getattr(layer, "pim_shared_queries", 1)))
+                    self.assertion = getattr(layer, "pim_batch_command", None)
+                return .002, [2, 0, 0, 0, 0, 0]
+
+        pim = PIM()
+
+        class System:
+            hetero_name = DeviceType.PIM
+            devices = {"GPU": GPU(), "Acc": pim}
+            model = Transformer({"name": "toy", "ndec": 3, "num_heads": 4,
+                                 "hdim": 16, "ff_scale": 4,
+                                 "dtype": DataType.W16A16}, tensor_parallel=1)
+
+        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
+        report = run_reuse_prefill(System(), workload, plan, pipe=True,
+                                   cacheblend_batch_size=4,
+                                   pim_batch_command="mq",
+                                   gemv_buffer_bytes=128)
+        self.assertEqual(report["pim_batch_command"], "mq")
+        self.assertEqual(report["pim_sweep_query_capacity"], 2)
+        shared = [event for event in report["events"]
+                  if event["name"] == "decode_batch_pim_kv_scan_score_softmax_pv"]
+        self.assertTrue(shared)
+        self.assertTrue(all(len(event["batch_members"]) <= 2 for event in shared))
+        self.assertTrue(pim.sweep_queries)
+        self.assertTrue(all(count <= 2 for count in pim.sweep_queries))
+        self.assertEqual(pim.assertion, "mq")
+
+
 if __name__ == "__main__":
     unittest.main()
