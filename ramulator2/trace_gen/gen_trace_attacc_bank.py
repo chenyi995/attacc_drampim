@@ -282,12 +282,17 @@ def _shared_query_attention_commands(n_head_per_hbm, L, key_base, value_base,
 
 
 def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
-                  value_base=None, shared_kv=False, shared_queries=1):
+                  value_base=None, shared_kv=False, shared_queries=1,
+                  mq_command=False, phase="full"):
   if shared_queries < 1:
     raise ValueError("shared_queries must be positive")
   if shared_queries > 1:
     if not shared_kv:
       raise ValueError("shared_queries requires --shared-kv")
+  if mq_command and shared_queries < 1:
+    raise ValueError("--mq requires a positive --shared-queries")
+  if phase not in ("full", "score", "context"):
+    raise ValueError("--phase must be full, score, or context")
 
   partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
   head_offset = partition_size
@@ -472,16 +477,49 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
         total_cmd += barrier
 
 
+  if phase != "full":
+    # Asymmetric MQ sweeps (PLAN_mq_command.md, extended 2026-08-21): the
+    # score phase runs once with n_q resident queries, the context phase runs
+    # ceil(n_q / n_c) passes with n_c resident probability vectors.  Each
+    # phase is its own Ramulator run with its own --shared-queries, so the
+    # stream is sliced here at the first MVGB: WRGB + score MACs/MVSB + SFM
+    # belong to the score phase, MVGB + context MACs/MVSB to the context
+    # phase.  The two-head pipeline interleaves phases across heads, so the
+    # slice is defined only for a single head-iteration stream.
+    # TODO(chenyi-822): support multi-head-per-channel streams by slicing
+    # each head iteration independently and concatenating the phases
+    # serially.  The upstream generator interleaves two heads on a channel
+    # (two-head pipelining), but C-abl-2 measured that pipeline as ~neutral
+    # within one channel (0.98-1.03x: the channel command bus serializes
+    # both MAC streams), so the serial per-head approximation would be
+    # accurate to within ~3%.  Until implemented, fail fast:
+    if math.ceil(n_head_per_hbm / n_channel) > 1:
+      raise ValueError("--phase score/context requires nhead <= channels")
+    boundary = next((index for index, cmd in enumerate(total_cmd)
+                     if cmd.startswith("PIM_MV_GB")), len(total_cmd))
+    total_cmd = (total_cmd[:boundary] if phase == "score"
+                 else total_cmd[boundary:])
+
   if shared_queries > 1:
     # Preserve the original two-head pipeline exactly, but expand every
     # query-private PIM operation at the point where its K/V row is live.
     # A barrier is shared by the whole batch: it denotes a true phase
-    # dependency, not one dependency per Q.  Thus consecutive MACs below
-    # target the same physical K/V row for all Qs before the scheduler moves
-    # on, enabling Ramulator to expose row/ACT reuse.
+    # dependency, not one dependency per Q.
+    #
+    # Two batch-command schemes:
+    # * replicate (default): every non-barrier command is issued once per Q.
+    #   B queries against one column = B MAC_ABs, each re-reading the column.
+    # * mq (--mq): the MQ-MAC semantics -- ONE MAC_AB reads the column once
+    #   and the bank PE multiplies it against every resident Q internally.
+    #   Only the genuinely query-private data movements stay per Q: WR_GB
+    #   (load each Q), MV_SB (each Q's partial scores), SFM (each Q's
+    #   softmax), MV_GB (each Q's probabilities).  The n-fold MAC time and
+    #   the power stretch are modeled by the host-side nCCDAB override.
     expanded_cmd = []
     for cmd in total_cmd:
       if cmd.startswith("PIM_BARRIER"):
+        expanded_cmd.append(cmd)
+      elif mq_command and cmd.startswith("PIM_MAC_AB"):
         expanded_cmd.append(cmd)
       else:
         expanded_cmd.extend([cmd] * shared_queries)
@@ -518,6 +556,16 @@ def main():
                       help="reuse one K/V physical segment for every query batch")
   parser.add_argument("--shared-queries", type=int, default=1,
                       help="number of private Q streams sharing that resident K/V segment")
+  parser.add_argument("--phase", choices=("full", "score", "context"),
+                      default="full",
+                      help="emit only one attention phase (asymmetric MQ "
+                           "sweeps run score and context as separate jobs "
+                           "with their own --shared-queries)")
+  parser.add_argument("--mq", action="store_true",
+                      help="MQ-MAC batch command: one MAC_AB per column serves every "
+                           "resident Q (PE-internal n-fold multiply); only WR_GB/MV_SB/"
+                           "SFM/MV_GB stay per query.  Default replicates every command "
+                           "per query.")
   parser.add_argument("--channels", type=int, default=16,
                       help="number of contiguous physical channels assigned to this KV class")
   parser.add_argument("--pool-base", type=int, default=None,
@@ -549,7 +597,8 @@ def main():
       print(f"     {key}: {value}")
   print("---------------------------------------------------")
   run_attention(dhead, n_head_per_hbm, L, args.output, args.key_addr,
-                args.value_addr, args.shared_kv, args.shared_queries)
+                args.value_addr, args.shared_kv, args.shared_queries,
+                mq_command=args.mq, phase=args.phase)
 
 
 
