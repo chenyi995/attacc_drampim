@@ -1,0 +1,79 @@
+# C 系列实验汇总:共享 KV 下 bank-PIM 的批处理微架构
+
+目标读者:计算机专业学生/接手人,不预设了解本项目或 DRAM/PIM。
+读完应能回答:C 系列每个实验是什么、机制在哪、头条数字与出处、
+支撑论文哪个论点、怎么复现。遵守 `docs/OUTPUT_SPEC.md`;编号定义以
+`docs/EXPERIMENTS.md` 为准,本页是自足汇总。
+
+## 0. 三十秒背景
+
+n 个 agent 共享同一份 KV 缓存时,decode 每步有 n 条查询要对同一 K/V
+做注意力(GEMM 视角:Q[n×d_head]·K^T[d_head×L])。bank 级 PIM
+(bank PE,DRAM bank 旁的乘加单元)的原生命令一次只服务一条查询:
+n 条查询 = 把 KV 从 DRAM 列读 (column read) n 遍——列读是最贵的动作。
+C 系列回答:**怎么让一次列读服务 n 条查询、代价是什么、微架构怎么配**。
+查证过的空白:bank 级 PIM 文献无人做多查询共享列读(LongSight,
+MICRO'25:"batching…no reuse due to lack of shared KV")。
+
+## 1. 主实验:C1 / C2 / C3
+
+| 编号 | 是什么 | 机制 |
+|---|---|---|
+| **C1 compact** | 基线一:AttAcc 原样,KV 存一份,单查询串行扫 | 上游 replicate 命令流 |
+| **C2 多通道** | 基线二:KV 复制 k 份到 k 组通道并行(容量换时间) | 解析上界 `ceil(N/k)×t1`(对 C2 有利的估计) |
+| **C3 非对称 MQ** | 论文主张:MQ-MAC 批命令 + (n_q,n_c) 驻留 + PE 提频,score/context 两相各自定间隔 | `--pim-batch-command mq`、`--phase`、`mq_interval_cycles` |
+
+**MQ-MAC 命令**:一条 `PIM_MAC_AB` 列读一次,bank PE 对 n 条驻留查询各做
+一次 16 路 FP16 乘加;只有查询私有搬运(载 Q/搬 score/softmax/搬回 P)
+仍每查询一份。命令间隔按 `mq_interval_cycles` 拉伸 = max(功耗拉伸,
+PE 吞吐, 通路下限 4)——两个独立设计轴(buffer 容量 × PE 频率)与匹配
+频率 f\*(8/16/32 → 1.30/2.08/3.20 GHz)详见
+`docs/README_mq_design_space.md`。
+
+**头条数字**(L=4096、功耗受限,`experiments/mq_command/results_c_points.json`):
+
+- C3 (32,4)@1.3 GHz:**每 agent 1.71 µs,3.63× vs C1,列读/行激活 ÷7.1,
+  KV 容量 1×**;同频对照行(0.666 GHz=AttAcc 原生 PE):(16,2) 2.29×、
+  (32,4) 2.90×——这是纯命令/微架构收益,提频部分另有面积代价(C-abl-3);
+- C2 需 k≥8 份拷贝才在延迟上追平,且能耗不降(排除项)。
+
+## 2. 消融与实装
+
+| 编号 | 内容 | 结论/落点 | driver |
+|---|---|---|---|
+| **C-abl-1** | 命令方案消融:MQ vs ×B 复制 vs dense,96 点 | 支撑"为什么是 MQ 命令" | `run_mq_study.py` |
+| **C-abl-2** | 搬运总线方向转向(nRTW/nWTRL 约束)+ 同通道两头流水 | 流水收益 ≤0.84% → **关闭窄下行方案**(设计裁决) | `run_pipeline_overlap.py` |
+| **C-abl-3** | 微架构 RTL sweep:bank PE(基线/(8,1)/(16,2)/(32,4)×频点)+ logic die(AGENTS 8/16/32),N28/Genus 12 点 | 论文 die 面积口径;in-bank 预算下 (16,2) 在线内、(32,4) 越线(`docs/audit/06_area_balance_0822.md`) | `fugue-logic-die-rtl/syn/run_mq_sweep_all.sh` → `collect_mq_results.py` |
+| **C-impl** | 机制实装:D_i 位图 master 写过滤(到达顺序无关);bank-whole 因果丢弃 prefill | 对应论文 §4.3.2 / §4.5.2 | `--pim-prefill-mode bank-whole`;单测 |
+
+## 3. 在论文中的意义
+
+C 系列支撑论文的**微架构与 die 面积章节**(E4 方向,映射以
+`docs/EXPERIMENTS.md` 尾节为准)。公平性声明(进正文必写,详见
+`docs/audit/07_fairness_review.md` §5):C3 头条须并排同频行与提频面积
+代价;C2 是解析上界;PE 提频只提 PE、DRAM 时序地板不放松。
+
+## 4. 实现位置(结合代码)
+
+- 时序模型:`src/ramulator_wrapper.py`(`mq_query_capacity`/
+  `mq_interval_cycles`/YAML `nCCDAB` 覆盖/签名缓存键);
+- trace:`ramulator2/trace_gen/gen_trace_attacc_bank.py`(`--mq`/`--phase`);
+- C++:`ramulator2/src/dram/impl/HBM3-PIM.cpp`(MVSB↔MVGB/WRGB 转向
+  约束,唯二 +7 行);
+- 集成:`src/workload_runner.py`(层标记、按 GEMV 容量拆 sweep、D_i
+  位图事件、bank-whole)、`main.py`(CLI,**mq 为默认**;代码内部 Layer
+  默认 replicate 保回归);
+- 测试:`tests/test_workload.py` `MQBatchCommandTests` 5 例;
+- 设计与三路审计:`experiments/mq_command/DATAFLOW.md`;
+  分块审计:`docs/audit/04_mq_c_series.md`。
+
+## 5. 复现
+
+```sh
+cd /data2/chenyi9/KV-PIM/attacc_drampim_xinyao
+python3 experiments/mq_command/run_c_points.py          # C1/C2/C3 八点
+python3 experiments/mq_command/run_mq_study.py --workers 48   # C-abl-1
+python3 experiments/mq_command/run_pipeline_overlap.py  # C-abl-2
+# C-abl-3(RTL 仓库):
+cd /data2/chenyi9/KV-PIM/fugue-logic-die-rtl/syn && python3 collect_mq_results.py
+```
