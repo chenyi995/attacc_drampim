@@ -9,6 +9,103 @@ from src.model import *
 from src.type import *
 
 
+# --- MQ-MAC batch command timing (PLAN_mq_command.md §2.1) -----------------
+# One MAC_AB reads a column once and the bank PE multiplies it against every
+# resident Q internally.  The effective MAC_AB-to-MAC_AB interval is the max of
+#   * the power stretch: the IDD7-derived budget (AttAcc §4.2) is kept by
+#     scaling the power-constrained nCCDAB with the per-command energy, which
+#     grows by one 16-lane MAC + one 32-B GEMV-buffer read per extra Q;
+#   * the PE throughput: n ops at the PE clock (AttAcc §7.1 synthesizes the
+#     GEMV unit at 666 MHz);
+#   * the DRAM datapath floor (the NPC nCCDAB).
+# Energies come from the same FGDRAM-based ENERGY_TABLE the energy model uses.
+#
+# Provenance of each constant (audited 2026-08-22):
+#   _MQ_TCK_NS            -- upstream AttAcc simulator's Ramulator.tCK
+#                            (class attribute below, 0.769 ns).  The Ramulator
+#                            preset's tCK_ps=1300 field disagrees (~2% on the
+#                            nRFC conversion only); seconds always follow
+#                            this value (AttAcc convention).
+#   _MQ_NCCDAB_PC / _NPC  -- nCCDAB column of the HBM3_5.2Gbps and
+#                            HBM3_5.2Gbps_NPC preset rows in
+#                            ramulator2/src/dram/impl/HBM3-PIM.cpp (official
+#                            AttAcc pim_ramulator presets).
+#   MQ_DEFAULT_PE_FREQ_GHZ -- AttAcc paper sec 7.1: "The GEMV unit and
+#                            accumulator operate at 666MHz considering tCCDS";
+#                            hand-verified against attacc.pdf, 2026-08-22.
+#   MQ_DEFAULT_GEMV_BUFFER_BYTES -- AttAcc paper sec 5.1: "double-buffered
+#                            16x256-bit buffers" = 512 B per buffer copy;
+#                            hand-verified against attacc.pdf, 2026-08-22.
+#   MQ_QUERY_SLICE_BYTES  -- derived: d_head=128 x 2 B (BF16) spread over the
+#                            4 banks of a bank group = 64 B per bank, i.e.
+#                            two 32-B buffer entries (PLAN_mq_command.md 2.1).
+_MQ_TCK_NS = 0.769                     # command-clock period used everywhere
+_MQ_NCCDAB_PC = 6                      # HBM3_5.2Gbps preset, power-constrained
+_MQ_NCCDAB_NPC = 4                     # HBM3_5.2Gbps_NPC preset
+MQ_DEFAULT_PE_FREQ_GHZ = 0.666         # AttAcc's synthesized GEMV-unit clock
+MQ_DEFAULT_GEMV_BUFFER_BYTES = 512     # AttAcc's 16 x 256-bit GEMV buffer
+# One Q occupies 64 B per bank in the score phase (d_head=128, BF16, split
+# over the 4 banks of a bank group), i.e. two 32-B buffer entries.
+MQ_QUERY_SLICE_BYTES = 64
+
+
+def mq_query_capacity(gemv_buffer_bytes=MQ_DEFAULT_GEMV_BUFFER_BYTES):
+    """Resident-Q capacity of one bank's GEMV buffer (the sweep splits beyond)."""
+    return max(1, int(gemv_buffer_bytes) // MQ_QUERY_SLICE_BYTES)
+
+
+def mq_interval_cycles(shared_queries, power_constraint,
+                       pe_freq_ghz=MQ_DEFAULT_PE_FREQ_GHZ):
+    """Effective nCCDAB (in command cycles) of one MQ-MAC command.
+
+    Input: n = queries served by one column read; power_constraint = PC vs
+    NPC preset; pe_freq_ghz = the PE clock of the hardware being simulated.
+    Output: the minimum spacing between consecutive MQ MAC_AB commands, in
+    command cycles (x _MQ_TCK_NS for seconds).  The spacing is the max of a
+    power floor, a PE-throughput term, and the datapath floor.
+
+    Design-order note (the causal direction of the PE term): in design, the
+    interval is fixed FIRST by the DRAM-side floors below, and the PE clock
+    is the DERIVED requirement -- to serve n resident queries within the
+    floor, the PE must run at
+        f_required(n) = n / (interval_floor(n) * _MQ_TCK_NS)      [GHz]
+    (the "matching frequency"; e.g. n=16, floor=10 -> 2.08 GHz).  The
+    inverted form coded below, ceil(n / (f * tCK)), exists only so the
+    simulator can also evaluate hardware whose PE is SLOWER than that
+    requirement (e.g. AttAcc's stock 666 MHz PE running MQ unchanged), in
+    which case the PE, not the DRAM, sets the column-read spacing.
+    """
+    n = max(1, int(shared_queries))
+    # e_col: energy of one 32-B column read from the cell array to the bank
+    # PE (bank-level PIM: the data never leaves the bank, so only the
+    # cell->PE segment counts).  FGDRAM (MICRO'17) table, config.py:
+    # (0.11 ACT/PRE + 0.44 RD/WR) pJ/bit * 8 = 4.4 pJ/B; x 32 B = 140.8 pJ.
+    e_col = ENERGY_TABLE['PIM'][PIMType.BA]['mem'] * 32          # 32-B read, pJ
+    # e_q: incremental energy PER RESIDENT QUERY on that same column read:
+    # 16 FP16 MAC lanes (counted at 1 byte-equivalent per lane, model
+    # convention of PLAN_mq_command.md 2.1) plus reading the query's 32-B
+    # slice from the GEMV buffer (SRAM).  ~5.23 pJ << e_col: extra queries
+    # are energetically cheap, which is why MQ pays off.
+    e_q = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +          # 16-lane MAC
+           32 * ENERGY_TABLE['PIM'][PIMType.BA]['sram'])          # buffer read
+    # PE-throughput term (inverted design equation, see docstring): n queries
+    # need n PE cycles; one command cycle contains f * tCK PE cycles.
+    pe_cycles = math.ceil(n / (float(pe_freq_ghz) * _MQ_TCK_NS))
+    if power_constraint:
+        # Power floor by equal-power stretching: the preset's nCCDAB=6 for a
+        # single-query command (energy e_col + e_q) implies the power budget
+        #     P_max = (e_col + e_q) / (6 * tCK).
+        # An MQ command spends e_col + n*e_q, so keeping the same average
+        # power requires
+        #     interval >= 6 * (e_col + n*e_q) / (e_col + e_q),
+        # which reduces to exactly 6 at n=1 (upstream-compatible).
+        power_cycles = math.ceil(_MQ_NCCDAB_PC * (e_col + n * e_q) /
+                                 (e_col + e_q))
+    else:
+        power_cycles = _MQ_NCCDAB_NPC
+    return max(power_cycles, pe_cycles, _MQ_NCCDAB_NPC)
+
+
 class Ramulator:
 
     def __init__(self,
@@ -77,11 +174,16 @@ class Ramulator:
 
     def _run_signature(self, pim_type, run_length, num_ops_per_hbm, dbyte,
                        power_constraint, key_addr, value_addr, channel_count,
-                       shared_kv, shared_queries, channel_base=None):
+                       shared_kv, shared_queries, channel_base=None,
+                       mq_command=False, nccdab_override=None):
+        # mq_command / nccdab_override join the cache key: the same scan shape
+        # measures differently under the MQ command stream or a stretched
+        # nCCDAB, so MQ and replicate results must not share cache entries.
         return (
             pim_type.name, run_length, num_ops_per_hbm, dbyte,
             bool(power_constraint), self.dhead, self.num_hbm, channel_count,
             bool(shared_kv), shared_queries, channel_base,
+            bool(mq_command), nccdab_override,
             self._address_mapping_signature(key_addr),
             self._address_mapping_signature(value_addr),
         )
@@ -113,7 +215,8 @@ class Ramulator:
         # trace/YAML files.
         return "{}_p{}_call{}".format(base, os.getpid(), index)
 
-    def make_yaml_file(self, yaml_file, file_name, power_constraint):
+    def make_yaml_file(self, yaml_file, file_name, power_constraint,
+                       nccdab_override=None):
         trace_path = os.path.join(self.ramulator_dir, file_name + ".trace")
         line = ""
         line += "Frontend:\n"
@@ -139,6 +242,12 @@ class Ramulator:
             line += "      preset: HBM3_5.2Gbps\n"
         else:
             line += "      preset: HBM3_5.2Gbps_NPC\n"
+        if nccdab_override is not None:
+            # MQ-MAC command: one MAC_AB carries every resident Q, so its
+            # effective command-to-command interval is set per run (power
+            # stretch and PE throughput, see mq_interval_cycles).  Ramulator2
+            # natively overwrites preset timings with user-provided values.
+            line += "      nCCDAB: {}\n".format(int(nccdab_override))
         line += "\n"
         line += "  Controller:\n"
         line += "    impl: HBM3-PIM\n"
@@ -180,7 +289,7 @@ class Ramulator:
     def run_ramulator(self, pim_type: PIMType, l, num_ops_per_hbm, dbyte,
                       yaml_file, file_name, key_addr=None, value_addr=None,
                       channel_count=16, shared_kv=False, shared_queries=1,
-                      channel_base=None):
+                      channel_base=None, mq_command=False, phase="full"):
         pim_type_name = pim_type.name.lower(
         ) if not pim_type == PIMType.BA else "bank"
         trace_file = os.path.join(self.ramulator_dir, file_name + '.trace')
@@ -203,6 +312,10 @@ class Ramulator:
             trace_args += " --shared-kv"
         if shared_queries != 1:
             trace_args += " --shared-queries {}".format(shared_queries)
+        if mq_command:
+            trace_args += " --mq"
+        if phase != "full":
+            trace_args += " --phase {}".format(phase)
 
         gen_trace_cmd = f"python3 {trace_exc} {trace_args}"
 
@@ -295,6 +408,23 @@ class Ramulator:
                 raise ValueError("pim_shared_queries must be positive")
             if shared_queries > 1 and not shared_kv:
                 raise ValueError("pim_shared_queries requires pim_shared_kv")
+            # MQ-MAC batch command (PLAN_mq_command.md): one MAC_AB serves
+            # every resident Q; its command interval carries the n-fold PE
+            # time and the power stretch.  'replicate' keeps the legacy
+            # one-command-per-(column, query) trace expansion.
+            batch_command = getattr(layer, "pim_batch_command", "replicate")
+            if batch_command not in ("replicate", "mq"):
+                raise ValueError("pim_batch_command must be 'replicate' or 'mq'")
+            mq_command = batch_command == "mq" and shared_queries > 1
+            phase = getattr(layer, "pim_phase", "full")
+            if phase not in ("full", "score", "context"):
+                raise ValueError("pim_phase must be 'full', 'score' or 'context'")
+            nccdab_override = None
+            if mq_command:
+                pe_freq_ghz = float(getattr(layer, "pim_pe_freq_ghz",
+                                            MQ_DEFAULT_PE_FREQ_GHZ))
+                nccdab_override = mq_interval_cycles(
+                    shared_queries, power_constraint, pe_freq_ghz)
             # Results are cached only for the address-resolved reuse path.
             # The CacheBlend/EPIC wrapper restarts Ramulator for every run,
             # so an equal mapping signature is exactly the same independent
@@ -313,7 +443,8 @@ class Ramulator:
                 signature = self._run_signature(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     power_constraint, key_addr, value_addr, channel_count,
-                    shared_kv, shared_queries, channel_base)
+                    shared_kv, shared_queries, channel_base,
+                    mq_command, nccdab_override) + (phase,)
                 if use_signature_cache:
                     with self._signature_cache_lock:
                         cached = self._signature_cache.get(signature)
@@ -336,7 +467,8 @@ class Ramulator:
                  channel_base) = equivalent_runs[0]
                 run_file = "{}_run{}".format(file_name, index)
                 yaml_file = os.path.join(self.ramulator_dir, run_file + '.yaml')
-                self.make_yaml_file(yaml_file, run_file, power_constraint)
+                self.make_yaml_file(yaml_file, run_file, power_constraint,
+                                    nccdab_override=nccdab_override)
                 run_jobs.append((signature, equivalent_runs, run_length, yaml_file,
                                  run_file, key_addr, value_addr, channel_count,
                                  channel_base))
@@ -353,7 +485,8 @@ class Ramulator:
                 return self.run_ramulator(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     yaml_file, run_file, key_addr, value_addr, channel_count,
-                    shared_kv, shared_queries, channel_base)
+                    shared_kv, shared_queries, channel_base,
+                    mq_command=mq_command, phase=phase)
 
             # Each job gets an unshared trace/YAML filename and contributes a
             # separate physical TLB run.  They are independent host jobs, so
