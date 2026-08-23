@@ -9,18 +9,26 @@ from src.model import *
 from src.type import *
 
 
-# --- MQ-MAC batch command timing (PLAN_mq_command.md §2.1) -----------------
+# --- MQ-MAC batch command timing (PLAN_mq_command.md §2.1; 2026-08-23 rev) --
 # One MAC_AB reads a column once and the bank PE multiplies it against every
-# resident Q internally.  The effective MAC_AB-to-MAC_AB interval is the max of
-#   * the power stretch: the IDD7-derived budget (AttAcc §4.2) is kept by
-#     scaling the power-constrained nCCDAB with the per-command energy, which
-#     grows by one 16-lane MAC + one 32-B GEMV-buffer read per extra Q;
-#   * the PE throughput: n ops at the PE clock (AttAcc §7.1 synthesizes the
-#     GEMV unit at 666 MHz);
-#   * the DRAM datapath floor (the NPC nCCDAB).
-# Energies come from the same FGDRAM-based ENERGY_TABLE the energy model uses.
+# resident Q internally.  Design principle (Chenyi, 2026-08-23): the DRAM
+# command cadence is NEVER stretched by compute -- the column stream runs at
+# the preset nCCDAB and the PE computes in the slack, raising its clock as
+# needed.  Precedent: Samsung's FIMDRAM executes PIM ops strictly off the
+# command stream ("each memory command increments the CRF PC") and its
+# official PIMSimulator carries no PIM-specific timing at all (standard
+# tCCDL=4).  The nCCDAB presets (6 PC / 4 NPC) are DRAM-read-side
+# constraints with no compute term (the earlier equal-power stretch of
+# compute energy into the interval was removed as contrary to both the
+# design intent and the precedent).  PE power is accounted SEPARATELY
+# against the stack budget: see mq_pe_power_w / MQ_POWER_BUDGET_W.
 #
-# Provenance of each constant (audited 2026-08-22):
+# Provenance of each constant (audited 2026-08-22; budget added 2026-08-23):
+#   MQ_POWER_BUDGET_W     -- AttAcc paper Fig. 7(a) power-budget red line,
+#                            computed per the JEDEC JESD238 IDD7 all-bank
+#                            interleave-read loop; hand-read from the figure,
+#                            2026-08-23.  Checks the separate PE-power
+#                            account only; never enters the interval.
 #   _MQ_TCK_NS            -- upstream AttAcc simulator's Ramulator.tCK
 #                            (class attribute below, 0.769 ns).  The Ramulator
 #                            preset's tCK_ps=1300 field disagrees (~2% on the
@@ -47,6 +55,11 @@ MQ_DEFAULT_GEMV_BUFFER_BYTES = 512     # AttAcc's 16 x 256-bit GEMV buffer
 # One Q occupies 64 B per bank in the score phase (d_head=128, BF16, split
 # over the 4 banks of a bank group), i.e. two 32-B buffer entries.
 MQ_QUERY_SLICE_BYTES = 64
+MQ_POWER_BUDGET_W = 116                # AttAcc Fig. 7(a) IDD7 budget line
+# Cell-side microscopic energies (FGDRAM-based ENERGY_TABLE):
+_MQ_E_COL_PJ = ENERGY_TABLE['PIM'][PIMType.BA]['mem'] * 32   # one 32-B read
+_MQ_E_Q_PJ = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +  # 16-lane MAC
+              32 * ENERGY_TABLE['PIM'][PIMType.BA]['sram'])  # buffer read
 
 
 def mq_query_capacity(gemv_buffer_bytes=MQ_DEFAULT_GEMV_BUFFER_BYTES):
@@ -58,52 +71,32 @@ def mq_interval_cycles(shared_queries, power_constraint,
                        pe_freq_ghz=MQ_DEFAULT_PE_FREQ_GHZ):
     """Effective nCCDAB (in command cycles) of one MQ-MAC command.
 
-    Input: n = queries served by one column read; power_constraint = PC vs
-    NPC preset; pe_freq_ghz = the PE clock of the hardware being simulated.
-    Output: the minimum spacing between consecutive MQ MAC_AB commands, in
-    command cycles (x _MQ_TCK_NS for seconds).  The spacing is the max of a
-    power floor, a PE-throughput term, and the datapath floor.
-
-    Design-order note (the causal direction of the PE term): in design, the
-    interval is fixed FIRST by the DRAM-side floors below, and the PE clock
-    is the DERIVED requirement -- to serve n resident queries within the
-    floor, the PE must run at
-        f_required(n) = n / (interval_floor(n) * _MQ_TCK_NS)      [GHz]
-    (the "matching frequency"; e.g. n=16, floor=10 -> 2.08 GHz).  The
-    inverted form coded below, ceil(n / (f * tCK)), exists only so the
-    simulator can also evaluate hardware whose PE is SLOWER than that
-    requirement (e.g. AttAcc's stock 666 MHz PE running MQ unchanged), in
-    which case the PE, not the DRAM, sets the column-read spacing.
+    interval = max(preset floor, PE-throughput term).  The preset floor
+    (6 PC / 4 NPC) is a DRAM-read-side constraint and is NEVER stretched
+    by compute; the PE term ceil(n/(f*tCK)) only matters when the PE is
+    slower than the matching requirement f*(n) = n/(floor*tCK) -- e.g.
+    AttAcc's stock 666 MHz PE running MQ unchanged.  Compute power is
+    accounted separately (mq_pe_power_w vs MQ_POWER_BUDGET_W).
     """
     n = max(1, int(shared_queries))
-    # e_col: energy of one 32-B column read from the cell array to the bank
-    # PE (bank-level PIM: the data never leaves the bank, so only the
-    # cell->PE segment counts).  FGDRAM (MICRO'17) table, config.py:
-    # (0.11 ACT/PRE + 0.44 RD/WR) pJ/bit * 8 = 4.4 pJ/B; x 32 B = 140.8 pJ.
-    e_col = ENERGY_TABLE['PIM'][PIMType.BA]['mem'] * 32          # 32-B read, pJ
-    # e_q: incremental energy PER RESIDENT QUERY on that same column read:
-    # 16 FP16 MAC lanes (counted at 1 byte-equivalent per lane, model
-    # convention of PLAN_mq_command.md 2.1) plus reading the query's 32-B
-    # slice from the GEMV buffer (SRAM).  ~5.23 pJ << e_col: extra queries
-    # are energetically cheap, which is why MQ pays off.
-    e_q = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +          # 16-lane MAC
-           32 * ENERGY_TABLE['PIM'][PIMType.BA]['sram'])          # buffer read
-    # PE-throughput term (inverted design equation, see docstring): n queries
-    # need n PE cycles; one command cycle contains f * tCK PE cycles.
     pe_cycles = math.ceil(n / (float(pe_freq_ghz) * _MQ_TCK_NS))
-    if power_constraint:
-        # Power floor by equal-power stretching: the preset's nCCDAB=6 for a
-        # single-query command (energy e_col + e_q) implies the power budget
-        #     P_max = (e_col + e_q) / (6 * tCK).
-        # An MQ command spends e_col + n*e_q, so keeping the same average
-        # power requires
-        #     interval >= 6 * (e_col + n*e_q) / (e_col + e_q),
-        # which reduces to exactly 6 at n=1 (upstream-compatible).
-        power_cycles = math.ceil(_MQ_NCCDAB_PC * (e_col + n * e_q) /
-                                 (e_col + e_q))
-    else:
-        power_cycles = _MQ_NCCDAB_NPC
-    return max(power_cycles, pe_cycles, _MQ_NCCDAB_NPC)
+    floor = _MQ_NCCDAB_PC if power_constraint else _MQ_NCCDAB_NPC
+    return max(floor, pe_cycles)
+
+
+def mq_pe_power_w(shared_queries, interval_cycles, active_banks=16 * 64):
+    """Stack-level PE dynamic-power increment of an MQ sweep, in watts.
+
+    Per bank and per column read the PE spends n * _MQ_E_Q_PJ (n 16-lane
+    MACs plus n 32-B buffer reads, cell-side FGDRAM scale); one command
+    lands every interval_cycles.  Default active_banks = 16 banks/pCH x
+    64 pCH (a whole 8-Hi stack scanning).  Compare against
+    MQ_POWER_BUDGET_W minus the column-stream draw -- the check is
+    reported, not enforced here.
+    """
+    n = max(1, int(shared_queries))
+    interval_ns = max(1, int(interval_cycles)) * _MQ_TCK_NS
+    return active_banks * n * _MQ_E_Q_PJ / (interval_ns * 1000.0)
 
 
 class Ramulator:
