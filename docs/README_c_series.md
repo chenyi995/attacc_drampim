@@ -1,9 +1,9 @@
 # C 系列实验汇总:共享 KV 下 bank-PIM 的批处理微架构
 
-目标读者:计算机专业学生/接手人,不预设了解本项目或 DRAM/PIM。
+目标读者:计算机专业学生/接手人,不预设了解本项目或 DRAM/PIM;
+概念首现即释,数字均为实测并标出处,本页自足。
 读完应能回答:C 系列每个实验是什么、机制在哪、头条数字与出处、
-支撑论文哪个论点、怎么复现。遵守 `docs/OUTPUT_SPEC.md`;编号定义以
-`docs/EXPERIMENTS.md` 为准,本页是自足汇总。
+支撑论文哪个论点、怎么复现。
 
 ## 0. 三十秒背景
 
@@ -26,9 +26,11 @@ MICRO'25:"batching…no reuse due to lack of shared KV")。
 **MQ-MAC 命令**:一条 `PIM_MAC_AB` 列读一次,bank PE 对 n 条驻留查询各做
 一次 16 路 FP16 乘加;只有查询私有搬运(载 Q/搬 score/softmax/搬回 P)
 仍每查询一份。命令间隔按 `mq_interval_cycles` 拉伸 = max(功耗拉伸,
-PE 吞吐, 通路下限 4)——两个独立设计轴(buffer 容量 × PE 频率)与匹配
-频率 f\*(8/16/32 → 1.30/2.08/3.20 GHz)详见
-`docs/README_mq_design_space.md`。
+PE 吞吐 ceil(n/(f·tCK)), 通路下限 4)。设计上有**两个独立的轴**:
+GEMV buffer 容量决定驻留几条查询(64 B/条,面积大头),PE 频率决定
+每次列读间隔能服务几条(面积小头);每档容量 n 有匹配频率
+f\*(n)=n/(功耗地板·tCK):n=8/16/32 → 1.30/2.08/3.20 GHz,超过 f\*
+再提频撞功耗地板无收益。
 
 **头条数字**(L=4096、功耗受限,`experiments/mq_command/results_c_points.json`):
 
@@ -43,15 +45,15 @@ PE 吞吐, 通路下限 4)——两个独立设计轴(buffer 容量 × PE 频率
 |---|---|---|---|
 | **C-abl-1** | 命令方案消融:MQ vs ×B 复制 vs dense,96 点 | 支撑"为什么是 MQ 命令" | `run_mq_study.py` |
 | **C-abl-2** | 搬运总线方向转向(nRTW/nWTRL 约束)+ 同通道两头流水 | 流水收益 ≤0.84% → **关闭窄下行方案**(设计裁决) | `run_pipeline_overlap.py` |
-| **C-abl-3** | 微架构 RTL sweep:bank PE(基线/(8,1)/(16,2)/(32,4)×频点)+ logic die(AGENTS 8/16/32),N28/Genus 12 点 | 论文 die 面积口径;in-bank 预算下 (16,2) 在线内、(32,4) 越线(`docs/audit/06_area_balance_0822.md`) | `fugue-logic-die-rtl/syn/run_mq_sweep_all.sh` → `collect_mq_results.py` |
+| **C-abl-3** | 微架构 RTL sweep:bank PE(基线/(8,1)/(16,2)/(32,4)×频点)+ logic die(AGENTS 8/16/32),N28/Genus 12 点 | 论文 die 面积口径(只报相对 AttAcc bank PE 的倍数);按 AttAcc §7.7 的 in-bank 面积预算,(16,2) 各频点在预算内,(32,4) 从 1.0 GHz 起越线 | `fugue-logic-die-rtl/syn/run_mq_sweep_all.sh` → `collect_mq_results.py` |
 | **C-impl** | 机制实装:D_i 位图 master 写过滤(到达顺序无关);bank-whole 因果丢弃 prefill | 对应论文 §4.3.2 / §4.5.2 | `--pim-prefill-mode bank-whole`;单测 |
 
 ## 3. 在论文中的意义
 
-C 系列支撑论文的**微架构与 die 面积章节**(E4 方向,映射以
-`docs/EXPERIMENTS.md` 尾节为准)。公平性声明(进正文必写,详见
-`docs/audit/07_fairness_review.md` §5):C3 头条须并排同频行与提频面积
-代价;C2 是解析上界;PE 提频只提 PE、DRAM 时序地板不放松。
+C 系列支撑论文的**微架构与 die 面积章节**(E4 方向)。公平性声明
+(进正文必写):C3 头条须并排同频行与提频面积代价;C2 是解析上界
+(对被排除方有利,排除结论因此保守);PE 提频只提 PE、DRAM 时序地板
+(功耗/通路 nCCDAB)不放松。
 
 ## 4. 实现位置(结合代码)
 
@@ -64,8 +66,7 @@ C 系列支撑论文的**微架构与 die 面积章节**(E4 方向,映射以
   位图事件、bank-whole)、`main.py`(CLI,**mq 为默认**;代码内部 Layer
   默认 replicate 保回归);
 - 测试:`tests/test_workload.py` `MQBatchCommandTests` 5 例;
-- 设计与三路审计:`experiments/mq_command/DATAFLOW.md`;
-  分块审计:`docs/audit/04_mq_c_series.md`。
+- 设计与三路审计:`experiments/mq_command/DATAFLOW.md`。
 
 ## 5. 复现
 
