@@ -920,18 +920,23 @@ class WorkloadTests(unittest.TestCase):
 class MQBatchCommandTests(unittest.TestCase):
     """MQ-MAC batch command (PLAN_mq_command.md): trace shape and timing knobs."""
 
-    def test_interval_carries_power_stretch_and_pe_throughput(self):
-        from src.ramulator_wrapper import mq_interval_cycles, mq_query_capacity
-        # Power-constrained base is nCCDAB=6; each extra Q adds one 16-lane
-        # MAC + one 32-B buffer read against the IDD7-derived budget.
+    def test_interval_is_preset_floor_or_pe_bound(self):
+        from src.ramulator_wrapper import (MQ_POWER_BUDGET_W,
+                                           mq_interval_cycles, mq_pe_power_w,
+                                           mq_query_capacity)
+        # 2026-08-23 model revision: the DRAM cadence is never stretched by
+        # compute (FIMDRAM precedent).  interval = max(preset floor, PE term).
         self.assertEqual(mq_interval_cycles(1, True, 1.3), 6)
-        self.assertEqual(mq_interval_cycles(4, True, 1.3), 7)
-        self.assertEqual(mq_interval_cycles(8, True, 1.3), 9)
+        self.assertEqual(mq_interval_cycles(4, True, 1.3), 6)   # was 7 under
+        self.assertEqual(mq_interval_cycles(8, True, 1.3), 9)   # the stretch
         # At AttAcc's synthesized 666 MHz the PE throughput term dominates.
         self.assertEqual(mq_interval_cycles(4, True, 0.666), 8)
         self.assertEqual(mq_interval_cycles(8, True, 0.666), 16)
         # NPC floor is the DRAM datapath's own nCCDAB=4.
         self.assertEqual(mq_interval_cycles(2, False, 1.3), 4)
+        # PE power is a separate account: a whole stack running n=32 at the
+        # PC floor stays far inside the 116-W IDD7 budget line.
+        self.assertLess(mq_pe_power_w(32, 6), MQ_POWER_BUDGET_W)
         # One 64-B query slice per Q in AttAcc's 512-B GEMV buffer.
         self.assertEqual(mq_query_capacity(512), 8)
         self.assertEqual(mq_query_capacity(1024), 16)
