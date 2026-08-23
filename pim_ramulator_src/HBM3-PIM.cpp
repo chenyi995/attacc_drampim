@@ -421,6 +421,13 @@ class HBM3PIM : public IDRAM, public Implementation {
           // CAS <-> CAS (DQ <-> GEMV unit)
           /// Data bus occupancy
           {.level = "pseudochannel", .preceding = {"WRGB", "MVSB", "MVGB", "SFM", "RD", "WR"}, .following = {"WRGB", "MVSB", "MVGB", "SFM", "RD", "WR"}, .latency = V("nBL")},
+          // Movement-bus direction turnaround on the shared half-duplex TSV/GBUS
+          // path: MVSB moves data bank->die (read-like), WRGB/MVGB move data
+          // die->bank (write-like).  Reuse the JEDEC bus-turnaround values so
+          // they stay preset-consistent and YAML-overridable (PIM traces issue
+          // no plain RD/WR, so overriding nRTW/nWTRL scopes to this path).
+          {.level = "pseudochannel", .preceding = {"MVSB"}, .following = {"MVGB", "WRGB"}, .latency = V("nRTW")},
+          {.level = "pseudochannel", .preceding = {"MVGB", "WRGB"}, .following = {"MVSB"}, .latency = V("nWTRL")},
           /// Minimal latency to different bank group for commands regarding data path
           {.level = "rank", .preceding = {"WRGB", "MVSB", "MVGB", "SFM", "RD", "WR"}, .following = {"WRGB", "MVSB", "MVGB", "SFM", "RD", "WR"}, .latency = V("nCCDS")},
           /// Minimal latency to same bank group for column commands regarding data path
