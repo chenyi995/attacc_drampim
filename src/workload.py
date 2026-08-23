@@ -55,6 +55,10 @@ class Request:
     lout: int
     segments: Tuple[Segment, ...]
     total_length: int
+    # KV rows this agent already holds from its own earlier turns.  They are
+    # never recomputed -- prefill and decode only attend over them -- and they
+    # are not part of ``total_length`` or any segment.
+    history_len: int = 0
     raw: Mapping[str, Any] = field(default_factory=dict, compare=False)
 
 
@@ -214,9 +218,11 @@ def _parse_rag(data: List[Any]) -> Workload:
         actual = sum(segment.length for segment in segments)
         if actual != total:
             raise _error(where, "L={} but segment lengths sum to {}".format(total, actual))
+        history = _positive_int(sample.get("history_len", 0),
+                                where + ".history_len", allow_zero=True)
         requests.append(Request(sample_id, 0, None,
                                 _positive_int(sample["lout"], where + ".lout"),
-                                segments, total, sample))
+                                segments, total, history, sample))
     if not requests:
         raise _error("samples", "must not be empty")
     return Workload("rag", tuple(requests), data)
@@ -256,8 +262,11 @@ def _parse_supervisor(data: Mapping[str, Any]) -> Workload:
                 position_delta=_int(segment.get("delta", 0), seg_where + ".delta"),
                 raw=segment,
             ))
+        history = _positive_int(agent.get("history_len", 0),
+                                where + ".history_len", allow_zero=True)
         requests.append(Request(request_id, tier, parent, lout, tuple(segments),
-                                sum(segment.length for segment in segments), agent))
+                                sum(segment.length for segment in segments),
+                                history, agent))
 
     by_id = {request.request_id: request for request in requests}
     for request in requests:
@@ -504,6 +513,7 @@ def workload_summary(workload: Workload, plan: Optional[ReusePlan] = None) -> Di
         },
         "total_input_tokens": sum(request.total_length for request in workload.requests),
         "total_output_tokens": sum(request.lout for request in workload.requests),
+        "total_history_tokens": sum(request.history_len for request in workload.requests),
     }
     if plan is not None:
         result["reuse"] = plan.to_dict()

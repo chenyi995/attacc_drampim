@@ -405,7 +405,8 @@ def _runs_from_lengths(lengths: Sequence[int], stride: int, channel_base: int,
 
 def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int,
                         input_rows: int, tail_rows: int, stride: int,
-                        config: AblationConfig) -> ScanProfile:
+                        config: AblationConfig,
+                        history_rows: int = 0) -> ScanProfile:
     """Representative scan of one padded batch.
 
     A legacy trace carries the batch in ``numOp`` (heads x batch), so every
@@ -413,15 +414,22 @@ def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int
     profile is therefore the member-average structure, rescaled to the padded
     input length.  Generated tokens are appended as their own extent, so the
     profile changes only in its tail as decode proceeds and the Ramulator
-    signature cache keeps serving the fixed part.
+    signature cache keeps serving the fixed part.  ``history_rows`` is the
+    agent's own KV from earlier turns: one resident, contiguous extent that
+    the scan walks before this turn's rows (private rows in the master pool
+    under ``master-diff``).
     """
     if config.kv_mapping == "private":
-        return ScanProfile((_private_runs(input_rows + tail_rows, stride),),
-                           input_rows + tail_rows, 1, legacy_shape=True)
+        return ScanProfile((_private_runs(history_rows + input_rows + tail_rows,
+                                          stride),),
+                           history_rows + input_rows + tail_rows, 1,
+                           legacy_shape=True)
     if config.kv_mapping == "naive":
         lengths = _average_run_lengths(
             [_naive_run_lengths(request, plan, layer) for request in requests],
             input_rows)
+        if history_rows > 0:
+            lengths = [history_rows] + list(lengths)
         if tail_rows > 0:
             lengths = list(lengths) + [tail_rows]
         runs = _runs_from_lengths(lengths, stride, 0, _TOTAL_CHANNELS)
@@ -438,6 +446,8 @@ def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int
                    else input_rows)
     master_lengths = _average_run_lengths([lengths for lengths, _ in per_request],
                                           max(master_rows, 1))
+    if history_rows > 0:
+        master_lengths = [history_rows] + list(master_lengths)
     if tail_rows > 0:
         master_lengths = list(master_lengths) + [tail_rows]
     pools = [_runs_from_lengths(master_lengths, stride, 0, master_channels)]
@@ -552,9 +562,18 @@ def _accumulate(target: Dict[str, float], key: str, value: float) -> None:
 
 def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
                    requests: Sequence[Request], lin: int, ndec: int,
-                   *, scale: float, reused_rows: int, effective_rows: int
+                   *, scale: float, reused_rows: int, effective_rows: int,
+                   history_rows: int = 0
                    ) -> Tuple[float, float, Dict[str, float], Dict[str, float]]:
-    """Time and energy of one padded prefill batch, summed over all layers."""
+    """Time and energy of one padded prefill batch, summed over all layers.
+
+    ``history_rows`` is the per-request KV already resident from the agent's
+    own earlier turns (padded to the batch maximum).  Those rows are never
+    recomputed; prefill only attends over them, so they widen the attention
+    context (the score/softmax/context templates arrive here already widened
+    by the caller), extend the PIM scan, and -- under a GPU-prefill placement
+    with the KV cache in AttAcc memory -- travel back over the link.
+    """
     batch = len(requests)
     heads = max(1, system.model.num_heads // system.model.tp)
     dbyte = system.model.sum_decoder[0].dbyte
@@ -596,11 +615,12 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
         _accumulate(energy_breakdown, "gpu_" + layer.name, sum(energy) / 1000.0)
 
     if config.prefill_attn == "gpu":
-        if config.prefill_kv_readback and reused_rows and config.decode_attn == "pim":
+        readback_rows = reused_rows + len(requests) * history_rows
+        if config.prefill_kv_readback and readback_rows and config.decode_attn == "pim":
             # The KV cache lives in AttAcc memory, so software prefill has to
-            # pull every reused K/V row back over the link before the GPU can
-            # attend to it.
-            op = _link_layer(x2g, "kv_pim_to_gpu", reused_rows, 2 * local_hidden)
+            # pull every reused K/V row -- and the agents' resident history
+            # rows -- back over the link before the GPU can attend to them.
+            op = _link_layer(x2g, "kv_pim_to_gpu", readback_rows, 2 * local_hidden)
             exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
             time_s += exec_time
             energy_nj += sum(energy) / 1000.0
@@ -636,29 +656,21 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
         for count, rows_batch, carries_reuse in classes:
             queries = max(1, int(round(rows_batch / max(batch, 1))))
             if not carries_reuse:
-                # Full recompute: one ordinary GPU prefill attention block.
-                for name in ("score", "softmax", "context"):
-                    op = copy.deepcopy(templates[name])
-                    op.m = max(1, queries)
-                    if name in ("score", "softmax"):
-                        op.n = max(1, queries)
-                    else:
-                        op.k = max(1, queries)
-                    exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
-                    attn_time += exec_time * count
-                    attn_energy += sum(energy) / 1000.0 * count
-                    _accumulate(attn_breakdown, "gpu_full_" + name, exec_time * count)
-                    _accumulate(attn_energy_breakdown, "gpu_full_" + name,
-                                sum(energy) / 1000.0 * count)
-                continue
-
-            if config.prefill_attn == "pim":
-                scan_rows, gpu_rows = lin, 0
+                # Full recompute rebuilds every shared row, but the agent's
+                # own history KV stays valid in every layer: the GPU attends
+                # the rebuilt rows to each other while the PIM scans the
+                # resident history (none at H=0: an ordinary GPU block).
+                scan_rows, gpu_rows = history_rows, queries
+                gpu_prefix = "gpu_full_"
+            elif config.prefill_attn == "pim":
+                scan_rows, gpu_rows = lin + history_rows, 0
+                gpu_prefix = "gpu_local_"
             else:  # split: the GPU attends this batch's fresh rows to each other
-                scan_rows = reused_rows // max(batch, 1)
+                scan_rows = reused_rows // max(batch, 1) + history_rows
                 gpu_rows = queries
+                gpu_prefix = "gpu_local_"
             if scan_rows <= 0:
-                # Nothing reusable in this batch: the split degenerates to an
+                # Nothing resident to scan: the layer degenerates to an
                 # ordinary GPU prefill, with no PIM scan and no link traffic.
                 for name in ("score", "softmax", "context"):
                     op = copy.deepcopy(templates[name])
@@ -670,8 +682,8 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
                     exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
                     attn_time += exec_time * count
                     attn_energy += sum(energy) / 1000.0 * count
-                    _accumulate(attn_breakdown, "gpu_local_" + name, exec_time * count)
-                    _accumulate(attn_energy_breakdown, "gpu_local_" + name,
+                    _accumulate(attn_breakdown, gpu_prefix + name, exec_time * count)
+                    _accumulate(attn_energy_breakdown, gpu_prefix + name,
                                 sum(energy) / 1000.0 * count)
                 continue
 
@@ -719,8 +731,8 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
                     exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
                     gpu_branch += exec_time
                     attn_energy += sum(energy) / 1000.0 * count
-                    _accumulate(attn_breakdown, "gpu_local_" + name, exec_time * count)
-                    _accumulate(attn_energy_breakdown, "gpu_local_" + name,
+                    _accumulate(attn_breakdown, gpu_prefix + name, exec_time * count)
+                    _accumulate(attn_energy_breakdown, gpu_prefix + name,
                                 sum(energy) / 1000.0 * count)
 
             # Q must reach the PIM before it can scan; the merged context comes
@@ -844,12 +856,15 @@ def _memory_report(system, workload: Workload, plan: ReusePlan,
     reused_by_request = _reused_tokens_by_request(plan)
     generated = sum(request.lout for request in workload.requests)
     total_tokens = sum(request.total_length for request in workload.requests)
+    # Each agent's own earlier-turn KV is private and already resident; it is
+    # stored once per agent whatever the reuse policy.
+    history_rows = sum(request.history_len for request in workload.requests)
 
     # Sharing is a property of the reuse policy, not of the PIM mapping: a
     # pure-GPU CacheBlend/EPIC deployment also stores each reused chunk once,
     # it just stores it in GPU memory.
     if plan.config.policy == "no-reuse":
-        stored_rows = total_tokens + generated
+        stored_rows = total_tokens + generated + history_rows
         shared_rows = 0
         diff_rows = 0
     else:
@@ -872,11 +887,12 @@ def _memory_report(system, workload: Workload, plan: ReusePlan,
         diff_rows = diff_rows / max(ndec, 1)
         reuse_layer_rows = shared_rows + private_rows + diff_rows * ndec / max(reuse_layers, 1)
         stored_rows = ((reuse_layers * reuse_layer_rows +
-                        full_layers * total_tokens) / max(ndec, 1) + generated)
+                        full_layers * total_tokens) / max(ndec, 1) + generated +
+                       history_rows)
         shared_rows = shared_rows * reuse_layers / max(ndec, 1)
 
     kv_bytes = stored_rows * bytes_per_row
-    baseline_bytes = (total_tokens + generated) * bytes_per_row
+    baseline_bytes = (total_tokens + generated + history_rows) * bytes_per_row
     report: Dict[str, Any] = {
         "kv_bytes": kv_bytes,
         "kv_gib": kv_bytes / (1 << 30),
@@ -886,6 +902,7 @@ def _memory_report(system, workload: Workload, plan: ReusePlan,
         "full_recompute_layers": (len(plan.config.cacheblend_full_recompute_layers)
                                   if plan.config.policy == "cacheblend" else 0),
         "generated_rows": generated,
+        "history_rows": history_rows,
         "no_reuse_kv_bytes": baseline_bytes,
         "kv_bytes_vs_no_reuse": kv_bytes / baseline_bytes if baseline_bytes else None,
         "bytes_per_token_all_layers": bytes_per_row,
@@ -959,6 +976,19 @@ def run_ablation_report(system, workload: Workload, plan: ReusePlan,
         batch = len(requests)
         attn_on_hetero = (config.decode_attn == "pim")
         system.model.build(batch, lin, lout, attn_on_hetero)
+        # Agentic multi-turn: KV rows the agents already hold from their own
+        # earlier turns, padded to the batch maximum like ``lin``.  They are
+        # attended, never recomputed, so they widen every attention context
+        # (score/softmax read ``n`` more columns, context contracts over ``k``
+        # more rows) without touching the projection/FF row counts.
+        hist_rows = max((request.history_len for request in requests), default=0)
+        if hist_rows:
+            for block in [system.model.sum_decoder] + system.model.gen_decoder:
+                for layer in block:
+                    if layer.name in ("score", "softmax"):
+                        layer.n += hist_rows
+                    elif layer.name == "context":
+                        layer.k += hist_rows
         heads = max(1, system.model.num_heads // system.model.tp)
         dbyte = system.model.sum_decoder[0].dbyte
         stride = ((system.model.dhead * dbyte + 31) // 32) * 32
@@ -979,7 +1009,8 @@ def run_ablation_report(system, workload: Workload, plan: ReusePlan,
         prefill_s, prefill_energy, prefill_breakdown, prefill_energy_breakdown = (
             _prefill_batch(system, plan, config, requests, lin, ndec, scale=scale,
                            reused_rows=int(reused_rows),
-                           effective_rows=int(round(effective_rows))))
+                           effective_rows=int(round(effective_rows)),
+                           history_rows=hist_rows))
 
         decode_s = 0.0
         decode_energy = 0.0
@@ -993,7 +1024,7 @@ def run_ablation_report(system, workload: Workload, plan: ReusePlan,
                 if config.decode_attn == "pim":
                     profile = _batch_scan_profile(requests, plan, representative,
                                                   lin, context_rows - lin, stride,
-                                                  config)
+                                                  config, history_rows=hist_rows)
                     if step_index == 0:
                         scan_profiles["layer_{}".format(representative)] = dict(
                             profile.to_dict(), layers=count)
@@ -1020,6 +1051,7 @@ def run_ablation_report(system, workload: Workload, plan: ReusePlan,
             "lout": lout,
             "decode_steps": lout - 1,
             "padded_prefill_tokens": padded_rows,
+            "history_rows_per_request": hist_rows,
             "reused_prefill_tokens": reused_rows,
             "effective_prefill_tokens": effective_rows,
             "prefill_scale": scale,

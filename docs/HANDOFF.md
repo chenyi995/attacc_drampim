@@ -73,3 +73,8 @@ python3 collect_mq_results.py     # 汇总 12 点面积/时序/功耗
    行激活计数输出链路——差距全表见 `docs/SIM_VS_PAPER_AUDIT_0821.md`。
 4. C-abl-3 的 sweep 若中断:重跑 `run_mq_sweep_all.sh` 即续;完成后把
    `collect_mq_results.py` 输出整理进 `fugue-logic-die-rtl/syn/MQ_MICROARCH.md`。
+5. **agentic 多轮驻留 KV(`history_len` / `--history-len`)已在 ablation 路径
+   与物理事件 DAG 路径实装**(LOG 2026-08-22);legacy 解析路径
+   (`--no-reuse-latency-model legacy`、`--cacheblend-latency-model analytic`)
+   不支持,history>0 会显式报错。尚无带 `history_len` 的实验系列/工作负载
+   JSON(现有 JSON 都是 H=0,行为逐位不变)。

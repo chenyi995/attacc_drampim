@@ -1,6 +1,7 @@
 import copy
 import json
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -1103,6 +1104,252 @@ class MQBatchCommandTests(unittest.TestCase):
                                     for e in prefill
                                     if e["name"] == "die_load_di_bitmap"}
         self.assertTrue(all(layer == 2 for _, layer in partial_with_corrections))
+
+
+class AgenticHistoryTests(unittest.TestCase):
+    """Agentic multi-turn history KV: attended everywhere, recomputed nowhere.
+
+    ``history_len`` rows are the agent's own KV from earlier turns.  They are
+    already resident in PIM memory when the run starts, so every prefill and
+    decode attention pass must scan them, while QKV, the GPU-PIM link, and
+    the DRAM stores must not grow by a single row.
+    """
+
+    def _system(self, ndec=2):
+        class GPU:
+            def get_time_and_energy(self, layer):
+                return .001, [1, 0, 0, 0, 0, 0]
+
+        class PIM:
+            peak_memory_bandwidth = 10**12
+            softmax_peak_bandwidth = 10**12
+            energy_table = {"mem": 1, "sram": 1}
+
+            def get_time_and_energy(self, layer):
+                return .002, [2, 0, 0, 0, 0, 0]
+
+            def get_time_and_energy_runs(self, layer):
+                # One measurement per physical run, so every run keeps its
+                # own scan event (rows are then observable per extent).
+                return [(.002, [2, 0, 0, 0, 0, 0])
+                        for _ in getattr(layer, "pim_kv_runs", ((),))]
+
+        class System:
+            hetero_name = DeviceType.PIM
+            devices = {"GPU": GPU(), "Acc": PIM()}
+            model = Transformer({"name": "toy", "ndec": ndec, "num_heads": 4,
+                                 "hdim": 16, "ff_scale": 4,
+                                 "dtype": DataType.W16A16}, tensor_parallel=1)
+
+        return System()
+
+    def _with_history(self, workload, history_len):
+        return Workload(workload.kind, tuple(
+            replace(request, history_len=history_len)
+            for request in workload.requests), workload.raw)
+
+    def test_history_len_is_parsed_from_both_json_kinds(self):
+        rag = [{"sample": 0, "seg_lens": [1, 2, 1],
+                "seg_sha": ["s", "d", "q"],
+                "seg_role": ["sys", "doc", "query"], "L": 4,
+                "lout": 2, "history_len": 7}]
+        path = ROOT / "tests/.history_workload.json"
+        path.write_text(json.dumps(rag), encoding="utf-8")
+        self.addCleanup(path.unlink)
+        workload = load_workload(path)
+        self.assertEqual([request.history_len for request in workload.requests], [7])
+        # History is resident context, not input: it joins no segment sum.
+        self.assertEqual(workload.requests[0].total_length, 4)
+        self.assertEqual(workload_summary(workload)["total_history_tokens"], 7)
+
+        supervisor = {"agents": [
+            {"id": "sup", "tier": 0, "parent": None, "lout": 2,
+             "segs": [{"role": "sys", "sha": "s", "len": 2}],
+             "history_len": 5},
+            {"id": "w0", "tier": 1, "parent": "sup", "lout": 1,
+             "segs": [{"role": "parent_out", "sha": "o", "len": 2}]},
+        ]}
+        path.write_text(json.dumps(supervisor), encoding="utf-8")
+        workload = load_workload(path)
+        self.assertEqual({request.request_id: request.history_len
+                          for request in workload.requests},
+                         {"sup": 5, "w0": 0})
+        self.assertEqual(workload_summary(workload)["total_history_tokens"], 5)
+
+        rag[0]["history_len"] = -1
+        path.write_text(json.dumps(rag), encoding="utf-8")
+        with self.assertRaises(WorkloadValidationError):
+            load_workload(path)
+
+    def test_history_extends_split_prefill_and_decode_scans(self):
+        workload = Workload("rag", (
+            Request("r", 0, None, 2, (Segment("sys", "s", 4),), 4),), {})
+        base = run_reuse_prefill(self._system(), workload,
+                                 build_reuse_plan(workload, "epic"), pipe=True)
+        hist_workload = self._with_history(workload, 3)
+        hist = run_reuse_prefill(self._system(), hist_workload,
+                                 build_reuse_plan(hist_workload, "epic"),
+                                 pipe=True)
+        self.assertEqual(base["history_rows"], 0)
+        self.assertEqual(hist["history_rows"], 3)
+
+        def events(report, name):
+            return [event for event in report["events"] if event["name"] == name]
+
+        # Nothing without reuse or history: a plain GPU prefill, no PIM scan.
+        self.assertFalse(events(base, "pim_kv_scan_score_softmax_pv"))
+        # With history the layer takes the split path: the GPU still attends
+        # this turn's 4 fresh rows to each other while the PIM scans exactly
+        # the 3 resident history rows -- QKV, KV link, and store stay at 4.
+        prefill_scans = events(hist, "pim_kv_scan_score_softmax_pv")
+        self.assertTrue(prefill_scans)
+        self.assertTrue(all(event["rows"] == 3 for event in prefill_scans))
+        self.assertTrue(all(event["rows"] == 4
+                            for event in events(hist, "gpu_local_score")))
+        for report in (base, hist):
+            self.assertTrue(all(event["rows"] == 4
+                                for event in events(report, "qkv")))
+            self.assertTrue(all(event["rows"] == 4
+                                for event in events(report, "kv_gpu_to_pim")))
+        # Decode's first token scans prefill KV plus history: 4 + 3 rows,
+        # summed over that query position's per-pool-run scan events.
+        def first_token_scan_rows(report):
+            scans = events(report, "decode_pim_kv_scan_score_softmax_pv")
+            first = min(event["query_positions"][0] for event in scans)
+            return sum(event["rows"] for event in scans
+                       if event["query_positions"] == [first] and
+                       event["transformer_layer"] == 0)
+
+        self.assertEqual(first_token_scan_rows(base), 4)
+        self.assertEqual(first_token_scan_rows(hist), 7)
+        # One resident master-pool extent per request and layer.
+        history_blocks = [block for block in hist["tlb"]["blocks"]
+                          if block["fingerprint"].endswith("::history")]
+        self.assertEqual(len(history_blocks), self._system().model.ndec)
+        self.assertTrue(all(block["kind"] == "master" and
+                            block["vector_count"] == 3
+                            for block in history_blocks))
+        self.assertGreater(hist["makespan_s"], base["makespan_s"])
+
+    def test_history_is_scanned_even_in_full_recompute_layers(self):
+        workload = Workload("rag", (
+            Request("r0", 0, None, 2, (Segment("sys", "shared", 4),
+                                       Segment("query", "q0", 2)), 6),
+            Request("r1", 0, None, 2, (Segment("sys", "shared", 4),
+                                       Segment("query", "q1", 2)), 6),), {})
+        hist_workload = self._with_history(workload, 2)
+        plan = build_reuse_plan(hist_workload, "cacheblend", .5, 7, (0,), (1,))
+        report = run_reuse_prefill(self._system(), hist_workload, plan, pipe=True)
+        full_layer_scans = [
+            event for event in report["events"]
+            if event["name"] == "pim_kv_scan_score_softmax_pv" and
+            event["transformer_layer"] == 0]
+        # The full-recompute layer rebuilds every segment row on the GPU but
+        # still scans each agent's 2 resident history rows on the PIM.
+        self.assertTrue(full_layer_scans)
+        self.assertTrue(all(event["rows"] == 2 for event in full_layer_scans))
+        self.assertTrue(all(
+            event["rows"] == 6 for event in report["events"]
+            if event["name"] == "qkv" and event["transformer_layer"] == 0))
+
+    def test_history_widens_the_physical_no_reuse_scan(self):
+        class GPU:
+            def get_time_and_energy(self, layer):
+                return .001, [1, 0, 0, 0, 0, 0]
+
+        class PIM:
+            peak_memory_bandwidth = 10**12
+            softmax_peak_bandwidth = 10**12
+            energy_table = {"mem": 1, "sram": 1}
+
+            def __init__(self):
+                self.prefill_shapes = []
+
+            def get_time_and_energy(self, layer):
+                if getattr(layer, "pim_kv_runs", None) is not None and layer.m > 1:
+                    self.prefill_shapes.append((layer.m, layer.n,
+                                                layer.pim_kv_runs))
+                return .002, [2, 0, 0, 0, 0, 0]
+
+        pim = PIM()
+
+        class System:
+            hetero_name = DeviceType.PIM
+            devices = {"GPU": GPU(), "Acc": pim}
+            model = Transformer({"name": "toy", "ndec": 2, "num_heads": 4,
+                                 "hdim": 16, "ff_scale": 4,
+                                 "dtype": DataType.W16A16}, tensor_parallel=1)
+
+        workload = self._with_history(Workload("rag", (
+            Request("r", 0, None, 1, (Segment("sys", "s", 4),), 4),), {}), 2)
+        report = run_reuse_prefill(System(), workload,
+                                   build_reuse_plan(workload, "no-reuse"),
+                                   pipe=True)
+        self.assertEqual(report["policy"], "no-reuse-physical")
+        self.assertEqual(report["history_rows"], 2)
+        # 4 queries against 4 fresh + 2 resident rows; the resident extent is
+        # a second physical run, and the KV link/store still carry 4 rows.
+        self.assertTrue(pim.prefill_shapes)
+        self.assertTrue(all(shape == (4, 6, shape[2]) and len(shape[2]) == 2
+                            for shape in pim.prefill_shapes))
+        for name, rows in (("kv_gpu_to_pim", 4), ("dram_store_master", 4),
+                           ("pim_kv_scan_score_softmax_pv", 6)):
+            matching = [event for event in report["events"]
+                        if event["name"] == name and
+                        not event["name"].startswith("decode_")]
+            self.assertTrue(matching)
+            self.assertTrue(all(event["rows"] == rows for event in matching))
+
+    def test_history_is_rejected_by_the_legacy_analytic_model(self):
+        class FakeSystem:
+            def simulate(self, batch, lin, lout, **kwargs):
+                perf_ms = [0.0] * 20
+                perf_ms[0] = float(lin)
+                perf_ms[7] = float(batch)
+                kwargs["perfs"].append([[], [], perf_ms, [2.0]])
+
+        workload = self._with_history(Workload("rag", (
+            Request("r", 0, None, 2, (Segment("sys", "s", 4),), 4),), {}), 8)
+        with self.assertRaisesRegex(WorkloadValidationError, "history_len"):
+            run_no_reuse_report(FakeSystem(), workload, pipe=False,
+                                parallel_ff=False, power_constraint=False)
+
+    def test_ablation_report_charges_history_in_time_and_memory(self):
+        toy = {"name": "toy", "ndec": 4, "num_heads": 4, "hdim": 16,
+               "dhead": 4, "ff_scale": 4, "gqa_size": 1,
+               "dtype": DataType.W16A16}
+        gpu = make_xpu_config(GPUType.A100a, num_gpu=1)["GPU"]
+        workload = Workload("rag", (
+            Request("r0", 0, None, 3, (
+                Segment("sys", "shared-sys", 4), Segment("doc", "own-0", 4),
+                Segment("query", "q0", 2)), 10),
+            Request("r1", 0, None, 3, (
+                Segment("sys", "shared-sys", 4), Segment("doc", "own-1", 4),
+                Segment("query", "q1", 2)), 10),), {})
+
+        def stub_runs(op):
+            return [(1e-9 * run[2] * op.numOp, [1.0] * 6)
+                    for run in op.pim_kv_runs]
+
+        def run(wl):
+            plan = build_reuse_plan(wl, "cacheblend", 0.5, 7, (0,), (1, 2, 3), 1)
+            system = System(gpu, toy)
+            system.hetero_name = DeviceType.PIM
+            system.devices["Acc"].pim_type = SimpleNamespace(name="bank")
+            system.devices["Acc"].get_time_and_energy_runs = stub_runs
+            return run_ablation_report(
+                system, wl, plan,
+                resolve_config("A6", None, None, None, policy="cacheblend"),
+                pipe=True, parallel_ff=True, power_constraint=False)
+
+        base = run(workload)
+        hist = run(self._with_history(workload, 16))
+        self.assertEqual(base["memory"]["history_rows"], 0)
+        self.assertEqual(hist["memory"]["history_rows"], 32)
+        self.assertEqual(hist["tiers"][0]["history_rows_per_request"], 16)
+        self.assertGreater(hist["prefill_s"], base["prefill_s"])
+        self.assertGreater(hist["decode_s"], base["decode_s"])
+        self.assertGreater(hist["memory"]["kv_gib"], base["memory"]["kv_gib"])
 
 
 if __name__ == "__main__":

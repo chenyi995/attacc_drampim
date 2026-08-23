@@ -67,3 +67,27 @@
 ### 悬而未决(详见 HANDOFF §4)
 论文正文欠两句(写口过滤、因果丢弃)与 §4.5.3 措辞张力;B4 动态选边未实装;
 放置表/GQA/n_d 配比/行激活输出链路;C-abl-3 sweep 完成后出 `MQ_MICROARCH.md`。
+
+## 2026-08-22(本会话,宸逸 + 助手)— agentic 多轮驻留 KV(history_len)
+
+1. **语义**:每请求 `history_len` = 该 agent 前几轮已算好、常驻 PIM 内存的
+   自有 KV 行数;只被注意力读(attended)、永不重算、不进任何段/共享,
+   不计入 `total_length`。CLI `--history-len` 整体覆盖 JSON 逐请求值。
+2. **解析式(ablation)路径**(上一会话已做,本会话验证):score/softmax
+   `n`、context `k` 各加宽 H;prefill 全重算类 GPU 算新行 + PIM 扫驻留
+   历史;GPU-prefill 放置下历史行计入回读链路;decode 扫描画像三种映射均
+   前置一个 history extent;`memory.history_rows` 入账。
+3. **物理事件 DAG 路径**(本会话补齐):TLB 每层每请求预留一个
+   `<id>::history` 私有 master 块(no-reuse 物理路径为 private 块);
+   绑定为负位置(-H..-1)的 reused 行追加在段绑定之后,因果过滤
+   (`pos <= position`、bank-whole 比较器)天然全可见;split/bank-whole/
+   全重算层/单请求与批量 decode 全部复用现有扫描与 LSE 合并机制,QKV、
+   链路、DRAM store 均不因 H 增长;批量 decode 中历史属私有行,自动落入
+   交集外的私有扫描。全重算分支条件由 `full or not reusable` 改为
+   `not reusable`(H=0 逐位等价)。报告加顶层 `history_rows`。
+4. **legacy 解析路径**(`run_no_reuse_report`/`run_cacheblend_analytic_report`
+   ,老 AttAcc 模拟器不动):history>0 显式报
+   `WorkloadValidationError`,提示走物理 DAG 或 ablation。
+5. **测试**:新增 `AgenticHistoryTests` 6 例(解析/摘要、split prefill +
+   decode 扫描行数、全重算层仍扫历史、物理 no-reuse 加宽、legacy 拒绝、
+   ablation 时间与内存入账);`workload_summary` 增 `total_history_tokens`。

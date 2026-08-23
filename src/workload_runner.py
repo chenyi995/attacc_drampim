@@ -121,6 +121,11 @@ def run_no_reuse_report(system, workload: Workload, *, pipe: bool,
     TLB addresses or GPU--PIM link bytes.  The legacy energy record is decode
     energy per generated step, so it is reported under that precise name.
     """
+    if any(request.history_len for request in workload.requests):
+        raise WorkloadValidationError(
+            "history_len is not modeled by the unchanged legacy latency model; "
+            "use the physical DAG path (--no-reuse-latency-model physical / "
+            "--cacheblend-latency-model physical) or an --ablation config")
     records: List[Any] = []
     tier_reports: List[Dict[str, Any]] = []
     makespan_s = 0.0
@@ -1465,6 +1470,7 @@ def _cacheblend_tlb_rows(workload: Workload, plan: ReusePlan, layer: int,
                      segment.position_delta, reused)
             bindings.append((position, reused, position in corrected, location))
             position += 1
+    bindings.extend(_history_tlb_rows(request, layer, tlb, "master"))
     return bindings
 
 
@@ -1515,6 +1521,13 @@ def _prepare_cacheblend_tlb(workload: Workload, plan: ReusePlan, ndec: int,
             else:
                 _reserve_cacheblend_tlb_rows(workload, plan, layer, request, tlb,
                                              force_fresh=force_fresh)
+            # The agent's own earlier-turn KV: one private resident extent
+            # per request, in the master pool (private under the affine
+            # no-reuse layout).  It is never written during the run.
+            history_fingerprint = _history_fingerprint(request.request_id)
+            for row in range(request.history_len):
+                tlb.reserve(layer, request.request_id, history_fingerprint,
+                            row, "private" if contiguous_no_reuse else "master")
             output_fingerprint = output_fingerprints.get(
                 request.request_id, "{}::output".format(request.request_id))
             for output_row in range(request.lout):
@@ -1532,6 +1545,33 @@ def _contiguous_no_reuse_tlb_rows(request, layer: int, tlb: CacheBlendTLB):
                               "private")
         tlb.bind(request.request_id, layer, position, location, 0, False)
         bindings.append((position, False, False, location))
+    bindings.extend(_history_tlb_rows(request, layer, tlb, "private"))
+    return bindings
+
+
+def _history_fingerprint(request_id: str) -> str:
+    return "{}::history".format(request_id)
+
+
+def _history_tlb_rows(request, layer: int, tlb, kind: str):
+    """Bind an agent's resident earlier-turn KV as one private extent.
+
+    History rows are the agent's own KV from earlier turns: already resident
+    in PIM memory, attended by every query, never recomputed and never
+    corrected.  They are appended after the segment bindings (so positional
+    indexing of ``bindings[0:total_length]`` stays valid) at query positions
+    ``-H..-1``, which precede every prefill position: causal filters
+    (``pos <= position`` grouping, the bank-whole comparator) always keep
+    them visible.  Delta is 0 -- the KV was computed in place by this agent,
+    so no Q rotation variant is required.
+    """
+    bindings = []
+    fingerprint = _history_fingerprint(request.request_id)
+    for row in range(request.history_len):
+        location = tlb.locate(layer, request.request_id, fingerprint, row, kind)
+        tlb.bind(request.request_id, layer, row - request.history_len,
+                 location, 0, True)
+        bindings.append((row - request.history_len, True, False, location))
     return bindings
 
 
@@ -2088,6 +2128,10 @@ def _append_physical_no_reuse_prefill_layer(
     local_hidden = system.model.hdim // system.model.tp
     heads = max(1, system.model.num_heads // system.model.tp)
     positions = range(rows)
+    # The agent's resident earlier-turn KV (bindings flagged reused) extends
+    # the scan but is never computed, transferred, or stored in this run.
+    fresh = [item for item in bindings if not item[1]]
+    history = [location for _, reused, _, location in bindings if reused]
     q = _gpu_layer_event(system, events, qkv, layer=layer, tier=tier,
                          request=request.request_id, name="qkv", rows=rows,
                          deps=initial_deps, positions=positions)
@@ -2101,30 +2145,34 @@ def _append_physical_no_reuse_prefill_layer(
     kv_bytes = 2 * q_bytes
     kv_transfer = _link_layer(x2g, "kv_gpu_to_pim", kv_bytes)
     time_s, energy = system.devices["GPU"].get_time_and_energy(kv_transfer)
-    addresses = [address for _, _, _, location in bindings
+    addresses = [address for _, _, _, location in fresh
                  for address in (location.key_address, location.value_address)]
     kv_link = _cacheblend_event(
         events, layer=layer, tier=tier, request=request.request_id,
         name="kv_gpu_to_pim", device="LINK", rows=rows, time_s=time_s,
         energy=energy, deps=(q,), link_bytes=kv_bytes, positions=positions,
         addresses=addresses)
+    # The scan walks the resident history extent before this turn's rows;
+    # every query sees all history keys (they precede position 0).
+    locations = history + [location for _, _, _, location in fresh]
+    scan_addresses = [address for location in locations
+                      for address in (location.key_address, location.value_address)]
     address_plan = _cacheblend_event(
         events, layer=layer, tier=tier, request=request.request_id,
-        name="contiguous_address_plan", device="ADDR", rows=rows,
+        name="contiguous_address_plan", device="ADDR", rows=rows + len(history),
         time_s=0.0, energy=(), deps=(q_link,),
-        positions=positions, addresses=addresses)
+        positions=positions, addresses=scan_addresses)
     op = deepcopy(score)
-    op.m, op.n, op.k, op.numOp = rows, rows, system.model.dhead, heads
-    locations = [location for _, _, _, location in bindings]
+    op.m, op.n, op.k, op.numOp = rows, rows + len(history), system.model.dhead, heads
     op.pim_kv_runs = tlb.scan_runs(locations)
     op.pim_shared_kv = True
     op.pim_shared_queries = rows
     time_s, energy = system.devices["Acc"].get_time_and_energy(op)
     scan = _cacheblend_event(
         events, layer=layer, tier=tier, request=request.request_id,
-        name="pim_kv_scan_score_softmax_pv", device="PIM", rows=rows,
+        name="pim_kv_scan_score_softmax_pv", device="PIM", rows=rows + len(history),
         time_s=time_s, energy=energy, deps=(address_plan,), positions=positions,
-        addresses=addresses)
+        addresses=scan_addresses)
     ctx_transfer = _link_layer(x2g, "ctx_pim_to_gpu", q_bytes)
     time_s, energy = system.devices["GPU"].get_time_and_energy(ctx_transfer)
     ctx_link = _cacheblend_event(
@@ -2304,9 +2352,16 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         deps=(bitmap_link,))
                     request_ready = tuple(dict.fromkeys(
                         request_ready + (bitmap_load,)))
-                # A partial layer without an old cache is simply an ordinary
-                # GPU prefill; do not fabricate PIM traffic for it.
-                if full or not reusable:
+                # A layer with nothing resident to scan is simply an ordinary
+                # GPU prefill; do not fabricate PIM traffic for it.  A full
+                # recompute layer rebuilds every shared row, but the agent's
+                # own history KV stays valid in every layer, so with history
+                # the layer takes the split path below: the GPU attends the
+                # rebuilt rows to each other while the PIM scans the resident
+                # history extent.  (``full`` forces every segment row fresh,
+                # so at history 0 this condition is identical to the previous
+                # ``full or not reusable``.)
+                if not reusable:
                     q = _gpu_layer_event(system, events, qkv, layer=layer_index,
                                          tier=tier, request=request.request_id,
                                          name="qkv", rows=request.total_length,
@@ -2687,6 +2742,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "pim_pe_freq_ghz": pim_pe_freq_ghz,
         "gemv_buffer_bytes": gemv_buffer_bytes,
         "pim_sweep_query_capacity": mq_query_capacity(gemv_buffer_bytes),
+        # Resident earlier-turn KV rows summed over all agents (per layer);
+        # each agent's extent is scanned by every attention pass but never
+        # computed, transferred, or stored in this run.
+        "history_rows": sum(request.history_len for request in workload.requests),
         "batches": batch_records,
         "overlap_validation": overlap_validation,
         "events": ([event.to_dict() for event in scheduled] if include_events

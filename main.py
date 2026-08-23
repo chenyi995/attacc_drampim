@@ -4,9 +4,10 @@ import argparse
 import csv
 import json
 import os
+from dataclasses import replace
 from src.ablation import (DECODE_ATTN_MODES, KV_MAPPINGS,
                           PREFILL_ATTN_MODES, PRESETS)
-from src.workload import (WorkloadValidationError, build_reuse_plan,
+from src.workload import (Workload, WorkloadValidationError, build_reuse_plan,
                           load_workload, workload_summary)
 
 RAMULATOR = False
@@ -185,6 +186,13 @@ def main():
         "--workload",
         type=str,
         help="path to a RAG legacy-list or supervisor v2-dag workload JSON")
+    parser.add_argument(
+        "--history-len",
+        type=int,
+        default=None,
+        help="agentic multi-turn: pre-existing own-KV rows every agent already "
+             "holds from earlier turns (overrides per-request 'history_len' in "
+             "the workload JSON); attended during prefill/decode, never recomputed")
     parser.add_argument(
         "--reuse",
         choices=("no-reuse", "cacheblend", "epic"),
@@ -366,6 +374,12 @@ def main():
             parser.error("--validate-workload and --workload-plan require --workload")
         try:
             workload = load_workload(args.workload)
+            if args.history_len is not None:
+                if args.history_len < 0:
+                    parser.error("--history-len must be non-negative")
+                workload = Workload(workload.kind, tuple(
+                    replace(request, history_len=args.history_len)
+                    for request in workload.requests), workload.raw)
             reuse_plan = build_reuse_plan(
                 workload, args.reuse, args.cacheblend_recompute_ratio,
                 args.reuse_seed, args.cacheblend_full_layers,
