@@ -1214,7 +1214,8 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
                           "decode_q_gpu_to_pim", "decode_ctx_pim_to_gpu"):
             if event.link_bytes != event.rows * q_bytes_per_row:
                 raise WorkloadValidationError("CacheBlend Q/context link byte count is invalid")
-        elif event.name in ("kv_gpu_to_pim", "decode_kv_gpu_to_pim"):
+        elif event.name in ("kv_gpu_to_pim", "decode_kv_gpu_to_pim",
+                            "kv_pim_to_gpu"):
             if event.link_bytes != event.rows * kv_bytes_per_row:
                 raise WorkloadValidationError("CacheBlend KV link byte count is invalid")
         elif event.name in ("gpu_partial_lse_to_pim", "decode_gpu_partial_lse_to_pim"):
@@ -2244,7 +2245,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             physical_no_reuse: bool = False,
                             rotate_mode: str = "gpu",
                             include_events: bool = True,
-                            pim_prefill_mode: str = "split",
+                            pim_prefill_mode: str = "dynamic",
                             pim_batch_command: str = "replicate",
                             pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
                             gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
@@ -2256,6 +2257,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     templates = {layer.name: layer for layer in system.model.sum_decoder}
     qkv, score, softmax, context = (templates[name] for name in
                                     ("qkv", "score", "softmax", "context"))
+    # Per-request side chosen by the dynamic placement rule (stable across
+    # layers of one request; reported for auditability).
+    dynamic_prefill_sides: Dict[str, str] = {}
     x2g = templates["comm_x2g"]
     post = list(system.model.sum_decoder)
     dbyte, local_hidden = qkv.dbyte, system.model.hdim // system.model.tp
@@ -2281,9 +2285,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     if pim_batch_command not in ("replicate", "mq"):
         raise WorkloadValidationError(
             "--pim-batch-command must be 'replicate' or 'mq'")
-    if pim_prefill_mode not in ("split", "bank-whole"):
+    if pim_prefill_mode not in ("gpu", "pim", "dynamic"):
         raise WorkloadValidationError(
-            "--pim-prefill-mode must be 'split' or 'bank-whole'")
+            "--pim-prefill-mode must be 'gpu', 'pim' or 'dynamic'")
     if pim_pe_freq_ghz <= 0:
         raise WorkloadValidationError("--pe-freq-ghz must be positive")
     if gemv_buffer_bytes < 64:
@@ -2438,7 +2442,72 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     positions=compute_positions, addresses=[address for loc in writes
                                                             for address in (loc.key_address,
                                                                             loc.value_address)])
-                if pim_prefill_mode == "bank-whole":
+                # Prefill-placement menu of the 2026-08-24 ladder: "gpu"
+                # (software prefill: resident rows come back over the link,
+                # the GPU runs one full-context block -- the A1-A4 rung),
+                # "pim" (bank-whole: everything lands and scans in the banks
+                # -- the A5 rung), "dynamic" (Fugue/A6: per-request the two
+                # sides are priced with the same models the branches use and
+                # the cheaper one is committed, ties to the PIM).  The former
+                # GPU/PIM "split" hybrid is abolished.
+                location_deltas = _prefill_location_deltas(request, bindings)
+                masked_prefill_keys = {_address_key(loc.shadow)
+                                       for _, reused_flag, corrected, loc in bindings
+                                       if reused_flag and corrected and
+                                       loc.shadow is not None}
+                old_reads = [loc.shadow if corrected else loc
+                             for _, reused_flag, corrected, loc in bindings
+                             if reused_flag and
+                             (not corrected or loc.shadow is not None)]
+                scan_locations = old_reads + list(writes)
+                readback_rows = [loc for _, reused_flag, corrected, loc in bindings
+                                 if reused_flag and not corrected]
+                if pim_prefill_mode == "dynamic":
+                    prefill_side = dynamic_prefill_sides.get(request.request_id)
+                    if prefill_side is None:
+                        # xPU path: resident-row readback + full-context GPU
+                        # attention block.
+                        t_xpu = 0.0
+                        op = _link_layer(x2g, "kv_pim_to_gpu",
+                                         len(readback_rows) * 2 * local_hidden * dbyte)
+                        t_xpu += system.devices["GPU"].get_time_and_energy(op)[0]
+                        full_rows = len(readback_rows) + len(compute_positions)
+                        for template, wide in ((score, "n"), (softmax, "n"),
+                                               (context, "k")):
+                            op = deepcopy(template)
+                            op.m, op.numOp = len(compute_positions), heads
+                            setattr(op, wide, full_rows)
+                            t_xpu += system.devices["GPU"].get_time_and_energy(op)[0]
+                        # bank path: the same sweep-set the "pim" branch
+                        # prices (Q/ctx links + TLB plan + shared scans).
+                        cap = max(1, min(batch_size,
+                                         mq_query_capacity(gemv_buffer_bytes)))
+                        sweeps = max(1, math.ceil(len(compute_positions) / cap))
+                        est = deepcopy(score)
+                        est.m, est.n, est.k, est.numOp = (
+                            min(cap, len(compute_positions)),
+                            len(scan_locations), system.model.dhead, heads)
+                        est.pim_kv_runs = tlb.scan_runs(scan_locations)
+                        est.pim_shared_kv = est.m > 1
+                        est.pim_shared_queries = est.m
+                        _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)
+                        accelerator = system.devices["Acc"]
+                        if hasattr(accelerator, "get_time_and_energy_runs"):
+                            measured = accelerator.get_time_and_energy_runs(est)
+                        else:
+                            # Aggregate mock-device API of lightweight tests.
+                            measured = [accelerator.get_time_and_energy(est)]
+                        t_bank = sum(item[0] for item in measured) * sweeps
+                        t_bank += _tlb_plan_cost(est.pim_kv_runs)[0] * sweeps
+                        for name in ("q_gpu_to_pim", "ctx_pim_to_gpu"):
+                            op = _link_layer(x2g, name,
+                                             len(compute_positions) * local_hidden * dbyte)
+                            t_bank += system.devices["GPU"].get_time_and_energy(op)[0]
+                        prefill_side = "pim" if t_bank <= t_xpu else "gpu"
+                        dynamic_prefill_sides[request.request_id] = prefill_side
+                else:
+                    prefill_side = pim_prefill_mode
+                if prefill_side == "pim":
                     # (2) Bank-whole prefill with causal drop (2026-08-21):
                     # the batch's own K/V lands in the stack first (Fugue
                     # sec 4.5.2 landing order), every query of the sweep scans
@@ -2455,16 +2524,6 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         locations=writes, dbyte=dbyte, deps=(kv_link,),
                         positions=compute_positions)
                     prefill_store_events.extend(store)
-                    location_deltas = _prefill_location_deltas(request, bindings)
-                    masked_prefill_keys = {_address_key(loc.shadow)
-                                           for _, reused_flag, corrected, loc in bindings
-                                           if reused_flag and corrected and
-                                           loc.shadow is not None}
-                    old_reads = [loc.shadow if corrected else loc
-                                 for _, reused_flag, corrected, loc in bindings
-                                 if reused_flag and
-                                 (not corrected or loc.shadow is not None)]
-                    scan_locations = old_reads + list(writes)
                     scan_addresses = [address for loc in scan_locations
                                       for address in (loc.key_address, loc.value_address)]
                     pim_results = []
@@ -2544,146 +2603,49 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         dependency=ctx_link, positions=compute_positions)
                     request_ready = (post_last,)
                     continue
-                # The GPU attends the fresh rows to each other as one
-                # rectangular block, exactly like an ordinary prefill over
-                # ``len(compute_positions)`` tokens (m = n = fresh rows, the
-                # same convention as the no-reuse path).  Old cache rows are
-                # deliberately excluded from this GPU op: they are scanned by
-                # the PIM and merged at the DIE.  A per-token m = 1 loop would
-                # re-stream the whole fresh K/V from GPU memory for every
-                # query and overstate this stage by more than an order of
-                # magnitude for a mostly-fresh request.
-                fresh_rows = len(compute_positions)
-                local_last = q
-                for template, name in ((score, "gpu_local_score"),
-                                       (softmax, "gpu_local_softmax"),
-                                       (context, "gpu_local_context")):
-                    op = deepcopy(template)
-                    op.m, op.n, op.numOp = fresh_rows, fresh_rows, heads
+                # prefill_side == "gpu": software reuse prefill (the
+                # ladder's A1-A4 placement).  The resident reused/history
+                # rows come back over the link, the GPU runs one ordinary
+                # full-context attention block (fresh queries against
+                # readback + fresh rows), and the fresh K/V still lands in
+                # the banks because decode attention stays on the PIM.
+                # Corrected rows are recomputed on the GPU in this very
+                # layer, so their stale masters are not read back.
+                gpu_last = q
+                if readback_rows:
+                    readback_bytes = len(readback_rows) * 2 * local_hidden * dbyte
+                    op = _link_layer(x2g, "kv_pim_to_gpu", readback_bytes)
                     time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-                    local_last = _cacheblend_event(
+                    gpu_last = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="kv_pim_to_gpu",
+                        device="LINK", rows=len(readback_rows), time_s=time_s,
+                        energy=energy, deps=(q,), link_bytes=readback_bytes,
+                        positions=compute_positions,
+                        addresses=[address for loc in readback_rows
+                                   for address in (loc.key_address,
+                                                   loc.value_address)])
+                full_rows = len(readback_rows) + len(compute_positions)
+                for template, name in ((score, "gpu_prefill_score"),
+                                       (softmax, "gpu_prefill_softmax"),
+                                       (context, "gpu_prefill_context")):
+                    op = deepcopy(template)
+                    op.m, op.numOp = len(compute_positions), heads
+                    if name == "gpu_prefill_context":
+                        op.k = full_rows
+                    else:
+                        op.n = full_rows
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                    gpu_last = _cacheblend_event(
                         events, layer=layer_index, tier=tier,
                         request=request.request_id, name=name, device="GPU",
-                        rows=fresh_rows, time_s=time_s, energy=energy,
-                        deps=(local_last,), positions=compute_positions)
-                # Each fresh query still hands its own local softmax tuple to
-                # the DIE, which merges it with that query's PIM partials.
-                local_tuple_events: List[str] = []
-                tuple_bytes = heads * (system.model.dhead + 2) * dbyte
-                tuple_transfer = _link_layer(x2g, "gpu_partial_lse_to_pim", tuple_bytes)
-                tuple_time_s, tuple_energy = system.devices["GPU"].get_time_and_energy(
-                    tuple_transfer)
-                for position in compute_positions:
-                    local_tuple_events.append(_cacheblend_event(
-                        events, layer=layer_index, tier=tier,
-                        request=request.request_id, name="gpu_partial_lse_to_pim",
-                        device="LINK", rows=1, time_s=tuple_time_s, energy=tuple_energy,
-                        deps=(local_last,), link_bytes=tuple_bytes,
-                        positions=(position,)))
-
-                die_last = q_link
-                pim_results: List[str] = []
-                location_deltas = _prefill_location_deltas(request, bindings)
-                # Group queries with an identical visible old-KV physical run.
-                # This preserves causality (the key includes every visible
-                # location) while issuing one multi-Q Ramulator scan instead
-                # of one process invocation per fresh token.
-                # A prefill scan streams the reused *master* rows visible to
-                # the query.  A corrected row's diff is being computed on the
-                # GPU in this very layer, so only its shadowed master row is
-                # streamed here, and it is masked out of the score.
-                old_groups: Dict[Tuple[Tuple[int, int], ...], List[Tuple[int, int, str, List[KVLocation]]]] = {}
-                masked_prefill_keys = {_address_key(loc.shadow) for _, reused, corrected, loc
-                                       in bindings if reused and corrected and loc.shadow is not None}
-                for ordinal, (position, tuple_event) in enumerate(zip(compute_positions,
-                                                                       local_tuple_events)):
-                    old = [loc.shadow if corrected else loc
-                           for pos, reused, corrected, loc in bindings
-                           if reused and pos <= position and
-                           (not corrected or loc.shadow is not None)]
-                    key = tuple(_address_key(loc) for loc in old)
-                    old_groups.setdefault(key, []).append((ordinal, position, tuple_event, old))
-                prefill_sweep = max(1, min(batch_size,
-                                           mq_query_capacity(gemv_buffer_bytes)))
-                for compatible_queries in old_groups.values():
-                    # Prefill follows the same user-visible admission bound as
-                    # decode, further capped by the per-bank GEMV buffer's
-                    # resident-Q capacity (the sweep splits beyond it).
-                    for first in range(0, len(compatible_queries), prefill_sweep):
-                        grouped = compatible_queries[first:first + prefill_sweep]
-                        old = grouped[0][3]
-                        if not old:
-                            continue
-                        die_qs = []
-                        for _, position, _, _ in grouped:
-                            rotate_ready = _append_q_rotate_distribution(
-                                system, events, x2g, layer=layer_index, tier=tier,
-                                request=request.request_id, q_dependency=q_link,
-                                q_bytes=local_hidden * dbyte, locations=old,
-                                location_deltas=location_deltas, rotate_mode=rotate_mode,
-                                name_prefix="", positions=(position,))
-                            die_q_time = (local_hidden * dbyte) / system.devices["Acc"].softmax_peak_bandwidth
-                            die_qs.append(_cacheblend_event(
-                                events, layer=layer_index, tier=tier, request=request.request_id,
-                                name="die_query_position_transform", device="DIE", rows=1,
-                                time_s=die_q_time,
-                                energy=(local_hidden * dbyte * system.devices["Acc"].energy_table["sram"],),
-                                deps=tuple(dict.fromkeys((die_last, rotate_ready))),
-                                positions=(position,)))
-                        op = deepcopy(score)
-                        op.m, op.n, op.k, op.numOp = len(grouped), len(old), system.model.dhead, heads
-                        # Each contiguous physical TLB run is supplied to
-                        # Ramulator.  Do not collapse a multi-block scan to its
-                        # first K/V base address.
-                        op.pim_kv_runs = tlb.scan_runs(old)
-                        plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
-                        tlb_event = _cacheblend_event(
-                            events, layer=layer_index, tier=tier, request=request.request_id,
-                            name="tlb_lookup_and_bank_plan", device="TLB", rows=len(old),
-                            time_s=plan_time_s, energy=plan_energy,
-                            deps=tuple(die_qs), positions=tuple(item[1] for item in grouped),
-                            addresses=[address for loc in old
-                                       for address in (loc.key_address, loc.value_address)])
-                        op.pim_shared_kv = True
-                        op.pim_shared_queries = len(grouped)
-                        _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
-                        scan = _append_physical_pim_scan(
-                            system, events, op=op, layer=layer_index, tier=tier,
-                            request=request.request_id, name="pim_kv_scan_score_softmax_pv",
-                            rows=len(old), deps=(tlb_event,),
-                            positions=tuple(item[1] for item in grouped),
-                            runs=op.pim_kv_runs,
-                            masked=_masked_rows_per_run(op.pim_kv_runs, masked_prefill_keys,
-                                                        tlb.bytes_per_vector))
-                        for ordinal, position, tuple_event, _ in grouped:
-                            # One local softmax tuple per physical run plus
-                            # the query's GPU tuple.
-                            merge_width = len(scan) + 1
-                            die_merge = _cacheblend_event(
-                                events, layer=layer_index, tier=tier, request=request.request_id,
-                                name="die_lse_merge", device="DIE", rows=1,
-                                time_s=(merge_width * heads * (system.model.dhead + 2) * dbyte /
-                                        system.devices["Acc"].softmax_peak_bandwidth),
-                                energy=(merge_width * heads * (system.model.dhead + 2) * dbyte *
-                                        system.devices["Acc"].energy_table["sram"],),
-                                deps=tuple(scan) + (tuple_event,), positions=(position,))
-                            die_last = die_merge
-                            pim_results.append(die_merge)
-                ctx_bytes = len(compute_positions) * local_hidden * dbyte
-                ctx_transfer = _link_layer(x2g, "ctx_pim_to_gpu", ctx_bytes)
-                time_s, energy = system.devices["GPU"].get_time_and_energy(ctx_transfer)
-                # Rows without an old-cache contribution still require their
-                # GPU local tuple before the aggregate context is usable.
-                context_dep = tuple(dict.fromkeys(pim_results + local_tuple_events))
-                ctx_link = _cacheblend_event(
-                    events, layer=layer_index, tier=tier, request=request.request_id,
-                    name="ctx_pim_to_gpu", device="LINK", rows=len(compute_positions),
-                    time_s=time_s, energy=energy, deps=context_dep, link_bytes=ctx_bytes,
-                    positions=compute_positions)
+                        rows=len(compute_positions), time_s=time_s,
+                        energy=energy, deps=(gpu_last,),
+                        positions=compute_positions)
                 post_last = _post_attention_gpu(
                     system, events, post, layer=layer_index, tier=tier,
                     request=request.request_id, rows=len(compute_positions),
-                    dependency=ctx_link, positions=compute_positions)
+                    dependency=gpu_last, positions=compute_positions)
                 store = _append_channel_kv_stores(
                     system, events, layer=layer_index, tier=tier,
                     request=request.request_id, name="dram_store_diff_and_live",
@@ -2736,6 +2698,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "cacheblend_rotate_mode": rotate_mode,
         "pim_batch_command": pim_batch_command,
         "pim_prefill_mode": pim_prefill_mode,
+        "pim_prefill_sides": dict(sorted(dynamic_prefill_sides.items())),
         "di_bitmap_bytes": di_bitmap_bytes_total,
         "di_write_filter": "master-side score writes at D_i dropped against the "
                            "per-agent bitmap; diff/master arrival order immaterial",
@@ -2777,7 +2740,7 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                       *, pipe: bool = False, cacheblend_batch_size: int = 1,
                       cacheblend_rotate_mode: str = "gpu",
                       include_events: bool = True,
-                      pim_prefill_mode: str = "split",
+                      pim_prefill_mode: str = "dynamic",
                       pim_batch_command: str = "replicate",
                       pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
                       gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:

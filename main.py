@@ -293,13 +293,16 @@ def main():
              "the PIM (--prefill-attn pim/dynamic)")
     parser.add_argument(
         "--pim-prefill-mode",
-        choices=("split", "bank-whole"),
-        default="split",
-        help="reuse-prefill attention placement in the physical DAG.  split "
-             "(default): GPU attends fresh rows to each other, PIM scans the "
-             "reused KV, DIE merges.  bank-whole: the batch's own K/V lands "
-             "first, every query scans the full landed range in the banks and "
-             "the DIE drops non-causal positions (no GPU triangle, no LSE)")
+        choices=("gpu", "pim", "dynamic"),
+        default="dynamic",
+        help="reuse-prefill attention placement in the physical DAG, aligned "
+             "with the A ladder.  gpu: resident rows come back over the link "
+             "and the GPU runs one full-context block (A1-A4 rung).  pim: "
+             "bank-whole -- the batch's own K/V lands first, every query "
+             "scans the full landed range in the banks and the DIE drops "
+             "non-causal positions (A5 rung).  dynamic (default, Fugue/A6): "
+             "per request both sides are priced with the same models and the "
+             "cheaper one is committed, ties to the PIM")
     parser.add_argument(
         "--pim-batch-command",
         choices=("mq", "replicate"),

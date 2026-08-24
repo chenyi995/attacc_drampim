@@ -538,7 +538,7 @@ class WorkloadTests(unittest.TestCase):
         epic = build_reuse_plan(workload, "epic", epic_prefix_recompute_tokens=2)
         validate_reuse_plan(workload, epic, model_layers=3)
 
-    def test_split_prefill_emits_ordered_gpu_pim_link_events(self):
+    def test_prefill_placement_menu_emits_matching_events(self):
         class Device:
             peak_memory_bandwidth = 10**12
             softmax_peak_bandwidth = 10**12
@@ -556,14 +556,52 @@ class WorkloadTests(unittest.TestCase):
 
         workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "epic", epic_prefix_recompute_tokens=1)
-        report = run_reuse_prefill(System(), workload, plan, pipe=True)
-        self.assertEqual(report["policy"], "epic")
-        self.assertGreater(report["link_bytes"], 0)
-        names = [event["name"] for event in report["events"]]
-        self.assertIn("q_gpu_to_pim", names)
-        self.assertIn("ctx_pim_to_gpu", names)
-        self.assertIn("kv_gpu_to_pim", names)
-        self.assertIn("dram_store_diff_and_live", names)
+
+        def prefill_names(report):
+            return {event["name"] for event in report["events"]
+                    if not event["name"].startswith("decode_")}
+
+        # "pim" (bank-whole, the A5 rung): everything scans in the banks.
+        pim = run_reuse_prefill(System(), workload, plan, pipe=True,
+                                pim_prefill_mode="pim")
+        self.assertEqual(pim["policy"], "epic")
+        self.assertGreater(pim["link_bytes"], 0)
+        names = prefill_names(pim)
+        for name in ("q_gpu_to_pim", "ctx_pim_to_gpu", "kv_gpu_to_pim",
+                     "dram_store_diff_and_live", "die_score_assembly"):
+            self.assertIn(name, names)
+        self.assertNotIn("gpu_prefill_score", names)
+        self.assertNotIn("kv_pim_to_gpu", names)
+
+        # "gpu" (software prefill, the A1-A4 rung): readback + local block,
+        # no PIM prefill scan; the fresh K/V still lands for PIM decode.
+        gpu = run_reuse_prefill(System(), workload, plan, pipe=True,
+                                pim_prefill_mode="gpu")
+        names = prefill_names(gpu)
+        for name in ("kv_pim_to_gpu", "gpu_prefill_score",
+                     "gpu_prefill_softmax", "gpu_prefill_context",
+                     "kv_gpu_to_pim", "dram_store_diff_and_live"):
+            self.assertIn(name, names)
+        self.assertNotIn("pim_kv_scan_score_softmax_pv", names)
+        self.assertNotIn("die_score_assembly", names)
+
+        # "dynamic" (default, Fugue/A6): a side is chosen and reported per
+        # request, and the emitted events belong to the chosen side.
+        dyn = run_reuse_prefill(System(), workload, plan, pipe=True)
+        self.assertEqual(dyn["pim_prefill_mode"], "dynamic")
+        sides = dyn["pim_prefill_sides"]
+        self.assertTrue(sides)
+        self.assertTrue(set(sides.values()) <= {"gpu", "pim"})
+        for request_id, side in sides.items():
+            request_names = {event["name"] for event in dyn["events"]
+                             if event["request"] == request_id and
+                             not event["name"].startswith("decode_")}
+            if side == "pim":
+                self.assertIn("die_score_assembly", request_names)
+                self.assertNotIn("gpu_prefill_score", request_names)
+            else:
+                self.assertIn("gpu_prefill_score", request_names)
+                self.assertNotIn("die_score_assembly", request_names)
 
     def test_cacheblend_emits_trace_ordered_tlb_and_physical_addresses(self):
         class GPU:
@@ -594,7 +632,8 @@ class WorkloadTests(unittest.TestCase):
 
         workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
-        report = run_reuse_prefill(System(), workload, plan, pipe=True)
+        report = run_reuse_prefill(System(), workload, plan, pipe=True,
+                                   pim_prefill_mode="pim")
         self.assertEqual(report["cacheblend_batch_size"], 1)
         self.assertEqual(report["batches"], [])
         self.assertEqual(report["overlap_validation"], {
@@ -613,8 +652,9 @@ class WorkloadTests(unittest.TestCase):
         self.assertLess(names.index("tlb_lookup_and_bank_plan"),
                         names.index("pim_kv_scan_score_softmax_pv"))
         self.assertLess(names.index("pim_kv_scan_score_softmax_pv"),
-                        names.index("die_lse_merge"))
-        self.assertLess(names.index("die_lse_merge"), names.index("ctx_pim_to_gpu"))
+                        names.index("die_score_assembly"))
+        self.assertLess(names.index("die_score_assembly"),
+                        names.index("ctx_pim_to_gpu"))
         self.assertEqual(report["tlb"]["channel_sets"],
                          {"master": list(range(8)), "diff": list(range(8, 16))})
         blocks = {block["id"]: block for block in report["tlb"]["blocks"]}
@@ -837,7 +877,8 @@ class WorkloadTests(unittest.TestCase):
 
         def decode_scans(ratio):
             plan = build_reuse_plan(workload, "cacheblend", ratio, 3, (0,), (1,))
-            report = run_reuse_prefill(System(), workload, plan, pipe=True)
+            report = run_reuse_prefill(System(), workload, plan, pipe=True,
+                                       pim_prefill_mode="pim")
             corrected = sum(len(rows) for rows in
                             plan.cacheblend_partial_rows[1].get("r1", {}).values())
             first = min(event["query_positions"][0] for event in report["events"]
@@ -891,14 +932,17 @@ class WorkloadTests(unittest.TestCase):
                 self.assertEqual(location["channel_base"], 8)
             else:
                 self.assertEqual(location["key_address"], owner["key_address"])
-        # Prefill scans of a partial layer stream master only (the diff row
-        # is being computed on the GPU) and mask the corrected rows.
+        # Bank-whole prefill scans of a partial layer stream the shadowed
+        # master rows read-masked plus the freshly landed rows (corrected
+        # rows land in the diff pool, so diff-pool runs may appear too).
         prefill = [event for event in report["events"]
                    if event["request"] == "r1" and event["transformer_layer"] == 1
                    and event["name"] == "pim_kv_scan_score_softmax_pv"]
         self.assertTrue(prefill)
-        self.assertTrue(all(event["device"] == "PIM:pool0-7" for event in prefill))
-        self.assertTrue(any(event["masked_rows"] > 0 for event in prefill))
+        master_prefill = [event for event in prefill
+                          if event["device"] == "PIM:pool0-7"]
+        self.assertTrue(master_prefill)
+        self.assertTrue(any(event["masked_rows"] > 0 for event in master_prefill))
 
     def test_cacheblend_pool_spills_into_next_channel_of_the_same_pool(self):
         """A pool is channel_count x 1 GiB; a full first channel spills within the pool."""
@@ -1077,8 +1121,8 @@ class MQBatchCommandTests(unittest.TestCase):
         report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                    cacheblend_batch_size=4,
                                    pim_batch_command="mq",
-                                   pim_prefill_mode="bank-whole")
-        self.assertEqual(report["pim_prefill_mode"], "bank-whole")
+                                   pim_prefill_mode="pim")
+        self.assertEqual(report["pim_prefill_mode"], "pim")
         events = report["events"]
         by_id = {event["id"]: event for event in events}
         prefill = [event for event in events
@@ -1199,7 +1243,7 @@ class AgenticHistoryTests(unittest.TestCase):
         with self.assertRaises(WorkloadValidationError):
             load_workload(path)
 
-    def test_history_extends_split_prefill_and_decode_scans(self):
+    def test_history_extends_prefill_and_decode_scans(self):
         workload = Workload("rag", (
             Request("r", 0, None, 2, (Segment("sys", "s", 4),), 4),), {})
         base = run_reuse_prefill(self._system(), workload,
@@ -1207,7 +1251,7 @@ class AgenticHistoryTests(unittest.TestCase):
         hist_workload = self._with_history(workload, 3)
         hist = run_reuse_prefill(self._system(), hist_workload,
                                  build_reuse_plan(hist_workload, "epic"),
-                                 pipe=True)
+                                 pipe=True, pim_prefill_mode="pim")
         self.assertEqual(base["history_rows"], 0)
         self.assertEqual(hist["history_rows"], 3)
 
@@ -1216,14 +1260,32 @@ class AgenticHistoryTests(unittest.TestCase):
 
         # Nothing without reuse or history: a plain GPU prefill, no PIM scan.
         self.assertFalse(events(base, "pim_kv_scan_score_softmax_pv"))
-        # With history the layer takes the split path: the GPU still attends
-        # this turn's 4 fresh rows to each other while the PIM scans exactly
-        # the 3 resident history rows -- QKV, KV link, and store stay at 4.
+        # With history the layer is reusable and, on the "pim" rung, the
+        # bank-whole scan covers the 3 resident history rows PLUS this
+        # turn's 4 freshly landed rows -- QKV, KV link, and store stay at 4.
         prefill_scans = events(hist, "pim_kv_scan_score_softmax_pv")
         self.assertTrue(prefill_scans)
-        self.assertTrue(all(event["rows"] == 3 for event in prefill_scans))
+        # A sweep's scan is split into one event per contiguous physical run
+        # (the resident history extent and the freshly landed extent), so the
+        # 7-row coverage shows up as a per-sweep row SUM.
+        sweeps = {}
+        for event in prefill_scans:
+            key = (event["transformer_layer"], tuple(event["query_positions"]))
+            sweeps[key] = sweeps.get(key, 0) + event["rows"]
+        self.assertTrue(sweeps)
+        self.assertTrue(all(total == 7 for total in sweeps.values()))
+        self.assertFalse(events(hist, "gpu_prefill_score"))
+        # On the "gpu" rung the same history comes back over the link and
+        # the GPU runs the block itself -- no PIM prefill scan at all.
+        hist_gpu = run_reuse_prefill(self._system(), hist_workload,
+                                     build_reuse_plan(hist_workload, "epic"),
+                                     pipe=True, pim_prefill_mode="gpu")
+        readbacks = events(hist_gpu, "kv_pim_to_gpu")
+        self.assertTrue(readbacks)
+        self.assertTrue(all(event["rows"] == 3 for event in readbacks))
         self.assertTrue(all(event["rows"] == 4
-                            for event in events(hist, "gpu_local_score")))
+                            for event in events(hist_gpu, "gpu_prefill_score")))
+        self.assertFalse(events(hist_gpu, "pim_kv_scan_score_softmax_pv"))
         for report in (base, hist):
             self.assertTrue(all(event["rows"] == 4
                                 for event in events(report, "qkv")))
@@ -1257,15 +1319,21 @@ class AgenticHistoryTests(unittest.TestCase):
                                        Segment("query", "q1", 2)), 6),), {})
         hist_workload = self._with_history(workload, 2)
         plan = build_reuse_plan(hist_workload, "cacheblend", .5, 7, (0,), (1,))
-        report = run_reuse_prefill(self._system(), hist_workload, plan, pipe=True)
+        report = run_reuse_prefill(self._system(), hist_workload, plan,
+                                   pipe=True, pim_prefill_mode="pim")
         full_layer_scans = [
             event for event in report["events"]
             if event["name"] == "pim_kv_scan_score_softmax_pv" and
             event["transformer_layer"] == 0]
-        # The full-recompute layer rebuilds every segment row on the GPU but
-        # still scans each agent's 2 resident history rows on the PIM.
+        # Even a full-recompute layer keeps the agent's 2 resident history
+        # rows; on the "pim" rung its rebuilt 6 rows land first and the
+        # bank-whole scan covers history + fresh = 8 rows.
         self.assertTrue(full_layer_scans)
-        self.assertTrue(all(event["rows"] == 2 for event in full_layer_scans))
+        sweeps = {}
+        for event in full_layer_scans:
+            key = (event["request"], tuple(event["query_positions"]))
+            sweeps[key] = sweeps.get(key, 0) + event["rows"]
+        self.assertTrue(all(total == 8 for total in sweeps.values()))
         self.assertTrue(all(
             event["rows"] == 6 for event in report["events"]
             if event["name"] == "qkv" and event["transformer_layer"] == 0))
