@@ -38,8 +38,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 RESULTS = os.path.join(HERE, "results")
 
-MAX_CONCURRENT = 16
-RAMULATOR_WORKERS = 4
+MAX_CONCURRENT = 32
+RAMULATOR_WORKERS = 2
 
 WORKLOADS = {
     "mooncake": "workloads/workload_mooncake_toolagent_n40_o0.json",
@@ -93,8 +93,13 @@ def jobs():
     for wl in WORKLOADS:
         for model in ("CACHEBLEND-TINY", "LLAMA-7B"):
             tag = "dag_{}_{}_dynamic".format(wl, model)
+            # The physical path takes the balance-point knobs explicitly
+            # (the ablation presets do not apply to the event DAG).
             result.append((tag, wl, model,
-                           list(LADDER_POLICY[1]) + ["--pim-prefill-mode", "dynamic"]))
+                           list(LADDER_POLICY[1]) +
+                           ["--pim-prefill-mode", "dynamic",
+                            "--pe-freq-ghz", "2.6",
+                            "--gemv-buffer-bytes", "768"]))
     return result
 
 

@@ -301,9 +301,11 @@ def main():
     parser.add_argument(
         "--pim-prefill-query-batch",
         type=int,
-        default=4,
-        help="queries sharing one PIM K/V stream when prefill attention runs on "
-             "the PIM (--prefill-attn pim/dynamic)")
+        default=None,
+        help="queries sharing one PIM K/V stream when prefill attention runs "
+             "on the PIM (--prefill-attn pim/dynamic).  Default: the GEMV "
+             "buffer's resident-Q capacity under the mq command, 4 under "
+             "replicate")
     parser.add_argument(
         "--pim-prefill-mode",
         choices=("gpu", "pim", "dynamic"),
@@ -330,20 +332,24 @@ def main():
     parser.add_argument(
         "--pe-freq-ghz",
         type=float,
-        default=0.666,
-        help="bank GEMV-unit (PE) clock in GHz for the mq batch command; "
-             "0.666 is AttAcc's synthesized point (tCCDS-matched)")
+        default=None,
+        help="bank GEMV-unit (PE) clock in GHz for the mq batch command. "
+             "Default: follow the ablation preset (A5/A6 carry the "
+             "provisional balance point 2.6 GHz) or AttAcc's synthesized "
+             "0.666 otherwise")
     parser.add_argument(
         "--gemv-buffer-bytes",
         type=int,
-        default=512,
+        default=None,
         help="per-bank GEMV input-vector buffer size; one query slice is "
              "64 B, so this caps the queries resident in one sweep (the "
-             "sweep splits beyond it).  512 = AttAcc's 16 x 256-bit buffer")
+             "sweep splits beyond it).  Default: follow the ablation preset "
+             "(A5/A6 carry the provisional 768 B balance point) or AttAcc's "
+             "512 (16 x 256-bit) otherwise")
     parser.add_argument(
         "--kv-pool-split",
         type=int,
-        default=8,
+        default=15,
         help="channels given to the master pool under --kv-mapping master-diff; "
              "the remaining 16 - N channels hold the diff pool")
     parser.add_argument(
@@ -535,8 +541,8 @@ def main():
                         include_events=(args.workload_report_events == "full"),
                         pim_prefill_mode=args.pim_prefill_mode,
                         pim_batch_command=args.pim_batch_command or "mq",
-                        pim_pe_freq_ghz=args.pe_freq_ghz,
-                        gemv_buffer_bytes=args.gemv_buffer_bytes)
+                        pim_pe_freq_ghz=args.pe_freq_ghz or 0.666,
+                        gemv_buffer_bytes=args.gemv_buffer_bytes or 512)
                 elif (args.reuse in ("cacheblend", "epic") and
                       args.cacheblend_latency_model == "analytic"):
                     report = run_cacheblend_analytic_report(
@@ -552,8 +558,8 @@ def main():
                         include_events=(args.workload_report_events == "full"),
                         pim_prefill_mode=args.pim_prefill_mode,
                         pim_batch_command=args.pim_batch_command or "mq",
-                        pim_pe_freq_ghz=args.pe_freq_ghz,
-                        gemv_buffer_bytes=args.gemv_buffer_bytes)
+                        pim_pe_freq_ghz=args.pe_freq_ghz or 0.666,
+                        gemv_buffer_bytes=args.gemv_buffer_bytes or 512)
             except WorkloadValidationError as exc:
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)

@@ -117,6 +117,23 @@
 
 ---
 
+## 处置记录(2026-08-25,宸逸裁决后落地)
+
+- **问题 1 已修**:dynamic 的 xPU 侧估价/入账改为与 gpu 档同一口径
+  (顶层 scale 折算,`_prefill_batch` dynamic 块);
+- **问题 2 已落**:CLAIMS 口径改写 + 选边比例双路径提取;
+- **问题 3a 已修**:两条路径分池改 **15/1**(物理 `_KV_CHANNELS`、解析
+  默认与 `--kv-pool-split` 默认);
+- **问题 3b 已修**:naive 布局改为**逐 chunk 顺序分配 channel 并追踪**
+  (`_naive_channel_pools`),同 channel 冲突串行化(每个占用 channel
+  一个单通道池,decode 取池间 max);
+- **问题 4 已修**:A5/A6 preset 绑定平衡点 **2.6 GHz / 768 B**(代码
+  注释标注 PROVISIONAL、后续还会调),mq 下每波上限跟随
+  `mq_query_capacity`(=12),CLI 默认改为"跟随 preset"。
+- 单点验证(multihop/LLAMA-7B):A3 TBT 6.24 > A4 5.77(naive 惩罚
+  显现、分池不再反向);A5 TTFT 17.85 < A4 18.09(平衡点生效);
+  A6 = min 侧且报 pim_share=1.00。全量矩阵按新代码重跑。
+
 ## 汇总表
 
 | # | 问题 | 归因(commit) | 性质 | 修后需重跑 |

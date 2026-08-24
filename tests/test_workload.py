@@ -442,15 +442,20 @@ class WorkloadTests(unittest.TestCase):
 
         config = resolve_config("A3", None, None, None, policy="cacheblend")
         profile = _batch_scan_profile(workload.requests, plan, 1, 10, 2, 32, config)
-        self.assertEqual(len(profile.pools), 1)
-        self.assertEqual({run[4] for run in profile.pools[0]}, {16})
-        self.assertEqual(sum(run[2] for run in profile.pools[0]), 12)
+        # Tracked-channel naive layout (2026-08-25): every populated channel
+        # is its own serialized single-channel pool; blocks that collide on
+        # one channel queue there instead of streaming at full pool width.
+        self.assertGreater(len(profile.pools), 1)
+        self.assertTrue(all(run[4] == 1
+                            for pool in profile.pools for run in pool))
+        self.assertEqual(sum(run[2] for pool in profile.pools for run in pool),
+                         12)
 
         config = resolve_config("A4", None, None, None, policy="cacheblend")
         profile = _batch_scan_profile(workload.requests, plan, 1, 10, 2, 32, config)
         self.assertEqual(len(profile.pools), 2)
         self.assertEqual({run[3] for run in profile.pools[0]}, {0})
-        self.assertEqual({run[3] for run in profile.pools[1]}, {8})
+        self.assertEqual({run[3] for run in profile.pools[1]}, {15})
         self.assertEqual(sum(run[2] for run in profile.pools[0]), 12)
 
     def test_ladder_couples_batching_and_abolishes_split(self):
@@ -467,6 +472,13 @@ class WorkloadTests(unittest.TestCase):
         a5 = resolve_config("A5", None, None, None, policy="cacheblend")
         self.assertEqual((a5.prefill_attn, a5.pim_batch_command),
                          ("pim", "mq"))
+        # A5/A6 carry the provisional balance-point microarchitecture and
+        # the prefill sweep follows the buffer's resident-Q capacity.
+        self.assertEqual((a5.pim_pe_freq_ghz, a5.gemv_buffer_bytes,
+                          a5.pim_prefill_query_batch), (2.6, 768, 12))
+        stock = resolve_config("A4", None, None, None, policy="cacheblend")
+        self.assertEqual((stock.pim_pe_freq_ghz, stock.gemv_buffer_bytes),
+                         (0.666, 512))
         a6 = resolve_config("A6", None, None, None, policy="cacheblend")
         self.assertEqual((a6.prefill_attn, a6.pim_batch_command),
                          ("dynamic", "mq"))
@@ -692,13 +704,13 @@ class WorkloadTests(unittest.TestCase):
         self.assertLess(names.index("die_score_assembly"),
                         names.index("ctx_pim_to_gpu"))
         self.assertEqual(report["tlb"]["channel_sets"],
-                         {"master": list(range(8)), "diff": list(range(8, 16))})
+                         {"master": list(range(15)), "diff": [15]})
         blocks = {block["id"]: block for block in report["tlb"]["blocks"]}
         self.assertTrue(blocks)
         for block in blocks.values():
             self.assertIn(block["kind"], ("master", "diff"))
-            expected_channels = (range(8) if block["kind"] == "master"
-                                 else range(8, 16))
+            expected_channels = (range(15) if block["kind"] == "master"
+                                 else range(15, 16))
             self.assertIn(block["channel_base"], expected_channels)
             self.assertEqual(block["partition_offset"] % 32, 0)
             self.assertEqual(int(block["value_base"], 0) -
@@ -928,8 +940,8 @@ class WorkloadTests(unittest.TestCase):
 
         plan, report, corrected, scans = decode_scans(0.25)
         self.assertGreater(corrected, 0)
-        master = [event for event in scans if event["device"] == "PIM:pool0-7"]
-        diff = [event for event in scans if event["device"] == "PIM:pool8-15"]
+        master = [event for event in scans if event["device"] == "PIM:pool0-14"]
+        diff = [event for event in scans if event["device"] == "PIM:pool15-15"]
         # The whole 24-row context is streamed from master (shadowed rows
         # included), and only the corrected rows come from the diff pool.
         self.assertEqual(sum(event["rows"] for event in master), 24)
@@ -941,7 +953,7 @@ class WorkloadTests(unittest.TestCase):
         _, _, _, baseline = decode_scans(0.0)
         self.assertEqual(len(master),
                          len([event for event in baseline
-                              if event["device"] == "PIM:pool0-7"]))
+                              if event["device"] == "PIM:pool0-14"]))
         # Every event's rows and masks are consistent and the DIE merge is
         # priced per physical run (one local softmax tuple each) plus the GPU
         # tuple, not per K/V row.
@@ -965,7 +977,7 @@ class WorkloadTests(unittest.TestCase):
             if location["kind"] == "diff":
                 self.assertEqual(location["shadow_master"]["key_address"],
                                  owner["key_address"])
-                self.assertEqual(location["channel_base"], 8)
+                self.assertEqual(location["channel_base"], 15)
             else:
                 self.assertEqual(location["key_address"], owner["key_address"])
         # Bank-whole prefill scans of a partial layer stream the shadowed
@@ -976,7 +988,7 @@ class WorkloadTests(unittest.TestCase):
                    and event["name"] == "pim_kv_scan_score_softmax_pv"]
         self.assertTrue(prefill)
         master_prefill = [event for event in prefill
-                          if event["device"] == "PIM:pool0-7"]
+                          if event["device"] == "PIM:pool0-14"]
         self.assertTrue(master_prefill)
         self.assertTrue(any(event["masked_rows"] > 0 for event in master_prefill))
 
@@ -1001,13 +1013,14 @@ class WorkloadTests(unittest.TestCase):
         self.assertEqual(len(master), 70)
         channels = sorted({int(b["key_base"], 0) // _HBM_CHANNEL_BYTES for b in master})
         self.assertEqual(channels, [0, 1])
-        self.assertTrue(all(b["channel_base"] == 0 and b["channel_count"] == 8 for b in master))
+        self.assertTrue(all(b["channel_base"] == 0 and b["channel_count"] == 15
+                            for b in master))
         self.assertEqual({b["channel_offset"] for b in master}, {0, 1})
         spilled = [b for b in master if b["channel_offset"] == 1]
         self.assertEqual(len(spilled), 6)
         self.assertEqual(int(spilled[0]["key_base"], 0), 1 * _HBM_CHANNEL_BYTES)
         diff = [b for b in blocks if b["kind"] == "diff"]
-        self.assertEqual(int(diff[0]["key_base"], 0) // _HBM_CHANNEL_BYTES, 8)
+        self.assertEqual(int(diff[0]["key_base"], 0) // _HBM_CHANNEL_BYTES, 15)
 
 
 class MQBatchCommandTests(unittest.TestCase):

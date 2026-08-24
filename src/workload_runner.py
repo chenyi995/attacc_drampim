@@ -508,9 +508,14 @@ _ORIGINAL_HEAD_PARTITION_BYTES = 1 << 13
 # placement inside each pool: a PIM trace maps heads over every channel in its
 # pool before reusing a channel at the next 8-KiB partition.  The split is
 # explicit here so it can be replaced by a trace-derived topology.
+# Pool widths (ruling 2026-08-25, audit issue 3a): diff rows are few (a
+# handful of corrected rows per agent), so the diff pool gets ONE channel
+# and the master stream keeps the other fifteen -- the old 8/8 split halved
+# the dominant master bandwidth for almost no diff traffic.  PROVISIONAL:
+# the split may become density-driven (rho_b) later.
 _KV_CHANNELS = {
-    "master": tuple(range(0, 8)),
-    "diff": tuple(range(8, 16)),
+    "master": tuple(range(0, 15)),
+    "diff": tuple(range(15, 16)),
 }
 _ROTATE_MODES = ("gpu", "die", "bank")
 _DIE_ROTATE_CYCLE_S = 1e-9
@@ -713,9 +718,9 @@ class CacheBlendTLB:
         stride = ((self.bytes_per_vector + _HBM_TX_BYTES - 1) //
                   _HBM_TX_BYTES) * _HBM_TX_BYTES
         # CacheBlend retains AttAcc's original head-to-channel striping.
-        # Every master extent spans channels 0--7 and every diff extent spans
-        # channels 8--15.  The cursor is therefore shared by all eight
-        # channels in a pool: head h is placed on base+(h % 8), and only after
+        # Every master extent spans channels 0--14 and every diff extent
+        # spans channel 15.  The cursor is shared by all channels in a
+        # pool: head h is placed on base+(h % pool width), and only after
         # those channels are consumed does the trace advance a partition.
         channel_state = {
             kind: {"tile": 0, "cursor": 0, "offset": 0, "channels": channels}
@@ -826,7 +831,7 @@ class CacheBlendTLB:
 
     def report(self) -> Dict[str, Any]:
         return {"mapping": "Ramulator HBM3-PIM physical byte address",
-                "layout": "master channels 0-7, diff channels 8-15; "
+                "layout": "master channels 0-14, diff channel 15; "
                           "8-KiB partitions with V at K + 8 MiB",
                 "scan": "each pool is streamed sequentially; a diff entry's "
                         "shadow_master row is read in the master stream and "

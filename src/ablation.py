@@ -94,10 +94,19 @@ PRESETS: Dict[str, Dict[str, str]] = {
            "pim_batch_command": "replicate"},
     "A4": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "master-diff",
            "pim_batch_command": "replicate"},
+    # A5/A6 carry the C3 microarchitecture point they are defined with
+    # (ruling 2026-08-25): prefill-on-PIM, attention batching and the
+    # bank-PE design point are ONE package.  Values = the derived balance
+    # point where the PE, the TSV stream and the in-bank area budget meet:
+    # n_cap = 12 resident queries @ nCCDAB floor 6, f* = 12/(6 x 0.769 ns)
+    # ~= 2.6 GHz, buffer = 12 x 64 B = 768 B.  PROVISIONAL -- Chenyi will
+    # retune these knobs later; an explicit CLI value still overrides.
     "A5": {"prefill_attn": "pim", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq"},
+           "pim_batch_command": "mq", "pim_pe_freq_ghz": 2.6,
+           "gemv_buffer_bytes": 768},
     "A6": {"prefill_attn": "dynamic", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq"},
+           "pim_batch_command": "mq", "pim_pe_freq_ghz": 2.6,
+           "gemv_buffer_bytes": 768},
 }
 
 PRESET_LABELS = {
@@ -123,8 +132,10 @@ class AblationConfig:
     # one-query-per-scan decode behaviour applied to prefill.
     pim_prefill_query_batch: int = 4
     # Channels of the 16-channel device given to the master pool; the diff
-    # pool receives the rest.  Only used by ``master-diff``.
-    master_pool_channels: int = 8
+    # pool receives the rest.  Only used by ``master-diff``.  15/1 by the
+    # 2026-08-25 ruling (audit issue 3a): diff rows are few, so the diff
+    # pool must not halve the master stream.
+    master_pool_channels: int = 15
     # Software prefill (A3/A4) reads reused K/V back from PIM over the link.
     prefill_kv_readback: bool = True
     # What the master pool does with a row that a correction has overwritten.
@@ -163,13 +174,14 @@ class AblationConfig:
 
 def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
                    decode_attn: Optional[str], kv_mapping: Optional[str],
-                   *, policy: str, pim_prefill_query_batch: int = 4,
-                   master_pool_channels: int = 8,
+                   *, policy: str,
+                   pim_prefill_query_batch: Optional[int] = None,
+                   master_pool_channels: int = 15,
                    prefill_kv_readback: bool = True,
                    master_shadow: str = "read-mask",
                    pim_batch_command: Optional[str] = None,
-                   pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
-                   gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> AblationConfig:
+                   pim_pe_freq_ghz: Optional[float] = None,
+                   gemv_buffer_bytes: Optional[int] = None) -> AblationConfig:
     """Expand a preset and let explicit switches override it.
 
     ``pim_batch_command=None`` follows the ladder: the preset's coupling
@@ -187,6 +199,20 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
     }
     pim_batch_command = (pim_batch_command or
                          base.get("pim_batch_command", "replicate"))
+    # The microarchitecture knobs follow the rung (A5/A6 carry the balance
+    # point) unless the CLI sets them explicitly; a preset-less run keeps
+    # the stock AttAcc values.  PROVISIONAL values, see PRESETS.
+    if pim_pe_freq_ghz is None:
+        pim_pe_freq_ghz = base.get("pim_pe_freq_ghz", MQ_DEFAULT_PE_FREQ_GHZ)
+    if gemv_buffer_bytes is None:
+        gemv_buffer_bytes = base.get("gemv_buffer_bytes",
+                                     MQ_DEFAULT_GEMV_BUFFER_BYTES)
+    if pim_prefill_query_batch is None:
+        # Under the mq command the prefill sweep is bounded by the GEMV
+        # buffer's resident-Q capacity, not by a separate knob (audit
+        # issue 4); replicate keeps the legacy default of 4.
+        pim_prefill_query_batch = (mq_query_capacity(gemv_buffer_bytes)
+                                   if pim_batch_command == "mq" else 4)
     if resolved["prefill_attn"] not in PREFILL_ATTN_MODES:
         raise WorkloadValidationError("--prefill-attn must be one of {}".format(
             ", ".join(PREFILL_ATTN_MODES)))
@@ -427,6 +453,86 @@ def _runs_from_lengths(lengths: Sequence[int], stride: int, channel_base: int,
     return tuple(runs)
 
 
+def _naive_channel_pools(requests: Sequence[Request], plan: ReusePlan,
+                         layer: int, input_rows: int, tail_rows: int,
+                         stride: int, history_rows: int) -> Tuple[Tuple, int, int]:
+    """Naive layout with per-chunk channel tracking (ruling 2026-08-25).
+
+    The naive allocator is SEQUENTIAL: every block (shared chunk, private
+    segment, per-request correction/history/generated block) takes the next
+    channel in order, wrapping over the 16 channels.  A decode scan touches
+    its blocks on whichever channel they landed: blocks on different
+    channels stream in parallel, blocks that COLLIDE on one channel
+    serialize -- that queueing, not the ACT-scale run boundaries, is the
+    real cost of a non-PIM-aware layout (audit issue 3b).  Each channel's
+    load becomes one single-channel pool, so ``_decode_block_time``'s
+    max-over-pools is exactly the serialized-channel completion time.
+    """
+    cursor = 0
+    channel_of: Dict[Any, int] = {}
+
+    def channel(key):
+        nonlocal cursor
+        if key not in channel_of:
+            channel_of[key] = cursor % _TOTAL_CHANNELS
+            cursor += 1
+        return channel_of[key]
+
+    ordered = sorted(requests, key=lambda item: (item.tier, item.request_id))
+    reused_by_request = {request.request_id: _reused_segments_by_request(plan).get(
+        request.request_id, ()) for request in ordered}
+    # Allocation pass: walk arrival order once so shared chunks get the
+    # owner's channel and every later block advances the cursor.
+    for request in ordered:
+        reused = {index for index, _, _ in reused_by_request[request.request_id]}
+        for index, segment in enumerate(request.segments):
+            if index in reused:
+                channel(("chunk", segment.fingerprint))
+            else:
+                channel(("own", request.request_id, index))
+        channel(("corr", request.request_id))
+        if history_rows:
+            channel(("hist", request.request_id))
+        channel(("tail", request.request_id))
+
+    # Per-request per-channel loads, then the batch mean per channel.
+    loads = [0.0] * _TOTAL_CHANNELS
+    for request in ordered:
+        reused = {index for index, _, _ in reused_by_request[request.request_id]}
+        corrected = _corrected_rows(plan, layer, request.request_id)
+        for index, segment in enumerate(request.segments):
+            patched = len(set(corrected.get(index, ())))
+            if index in reused:
+                # Stale rows under a patch are skipped; patched rows are
+                # read from this request's correction block.
+                loads[channel(("chunk", segment.fingerprint))] += (
+                    segment.length - patched)
+                if patched:
+                    loads[channel(("corr", request.request_id))] += patched
+            else:
+                loads[channel(("own", request.request_id, index))] += segment.length
+        if history_rows:
+            loads[channel(("hist", request.request_id))] += history_rows
+        if tail_rows:
+            loads[channel(("tail", request.request_id))] += tail_rows
+    members = max(1, len(ordered))
+    loads = [value / members for value in loads]
+    # Rescale to the padded per-member scan length the legacy trace carries.
+    target = history_rows + input_rows + tail_rows
+    total = sum(loads)
+    if total <= 0:
+        return ((_private_runs(target, stride),), target, 1)
+    loads = [value * target / total for value in loads]
+    pools = []
+    for index, value in enumerate(loads):
+        rows = int(round(value))
+        if rows <= 0:
+            continue
+        pools.append(_runs_from_lengths([rows], stride, index, 1))
+    rows_total = sum(run[2] for pool in pools for run in pool)
+    return (tuple(pools), rows_total, sum(len(pool) for pool in pools))
+
+
 def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int,
                         input_rows: int, tail_rows: int, stride: int,
                         config: AblationConfig,
@@ -449,15 +555,9 @@ def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int
                            history_rows + input_rows + tail_rows, 1,
                            legacy_shape=True)
     if config.kv_mapping == "naive":
-        lengths = _average_run_lengths(
-            [_naive_run_lengths(request, plan, layer) for request in requests],
-            input_rows)
-        if history_rows > 0:
-            lengths = [history_rows] + list(lengths)
-        if tail_rows > 0:
-            lengths = list(lengths) + [tail_rows]
-        runs = _runs_from_lengths(lengths, stride, 0, _TOTAL_CHANNELS)
-        return ScanProfile((runs,), sum(lengths), len(runs))
+        pools, rows, run_count = _naive_channel_pools(
+            requests, plan, layer, input_rows, tail_rows, stride, history_rows)
+        return ScanProfile(pools, rows, run_count)
     master_channels = config.master_pool_channels
     per_request = [_master_diff_lengths(request, plan, layer, config.master_shadow)
                    for request in requests]
@@ -730,7 +830,6 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
                 # TODO(review): swap the decision input to the paper's
                 # closed-form t_bank/t_xPU if runtime-policy fidelity is
                 # preferred over the oracle model costs.
-                context_rows = scan_rows + queries
                 est_scan, _ = _pim_scan(
                     system, score, rows=scan_rows, queries=queries,
                     heads=heads * batch, runs=_private_runs(scan_rows, stride),
@@ -749,13 +848,16 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
                 op = _link_layer(x2g, "kv_pim_to_gpu", readback_rows, 2 * local_hidden)
                 exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
                 xpu_pieces.append(("link_kv_pim_to_gpu", exec_time, energy))
+                # Price the class's GPU share EXACTLY the way the "gpu" arm
+                # charges it -- the top-loop scale folding (op.m scaled by
+                # the class's recompute fraction, n/k/numOp exactly as the
+                # model built them).  Audit issue 1 (2026-08-25): the
+                # previous per-request op shapes overpriced the xPU path,
+                # so the rule flipped classes to the PIM that A4 beat.
+                class_scale = (rows_batch / padded_rows) if padded_rows else 1.0
                 for name in ("score", "softmax", "context"):
                     op = copy.deepcopy(templates[name])
-                    op.m = max(1, queries)
-                    if name in ("score", "softmax"):
-                        op.n = max(1, context_rows)
-                    else:
-                        op.k = max(1, context_rows)
+                    op.m = max(1, int(round(op.m * class_scale)))
                     exec_time, energy = system.devices["GPU"].get_time_and_energy(op)
                     xpu_pieces.append(("gpu_dynamic_" + name, exec_time, energy))
                 t_xpu = sum(item[1] for item in xpu_pieces)
