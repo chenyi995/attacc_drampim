@@ -2239,6 +2239,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         raise WorkloadValidationError(
             "--gemv-buffer-bytes must hold at least one 64-B query slice")
     batch_records: List[Dict[str, Any]] = []
+    # (1) D_i bitmap loads (master-write filter): EPIC's correction set is
+    # layer-invariant (one load per agent); CacheBlend samples per layer.
+    epic_bitmap_loaded: set = set()
+    di_bitmap_bytes_total = 0
 
     for tier, requests, _, _ in _tier_shapes(workload):
         tier_done: List[str] = []
@@ -2266,6 +2270,37 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         initial_deps=request_ready)
                     continue
                 reusable = [item for item in bindings if item[1]]
+                # (1) D_i bitmap master-write filter (2026-08-21): before this
+                # layer's masked scans, the driver loads a per-agent bitmap of
+                # the overridden positions into the DIE.  Master-side score
+                # writes at D_i are dropped against it, so diff/master arrival
+                # order is immaterial -- the same information the mask gate
+                # consults, given a second (score-side) consumer.
+                bitmap_corrected = any(item[2] for item in bindings if item[1])
+                if (not physical_no_reuse and not full and reusable and
+                        bitmap_corrected and
+                        (plan.config.policy != "epic" or
+                         request.request_id not in epic_bitmap_loaded)):
+                    if plan.config.policy == "epic":
+                        epic_bitmap_loaded.add(request.request_id)
+                    bitmap_bytes = (request.total_length + 7) // 8
+                    di_bitmap_bytes_total += bitmap_bytes
+                    transfer = _link_layer(x2g, "di_bitmap_gpu_to_die", bitmap_bytes)
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(transfer)
+                    bitmap_link = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="di_bitmap_gpu_to_die",
+                        device="LINK", rows=1, time_s=time_s, energy=energy,
+                        deps=request_ready, link_bytes=bitmap_bytes)
+                    bitmap_load = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="die_load_di_bitmap",
+                        device="DIE", rows=1,
+                        time_s=bitmap_bytes / system.devices["Acc"].softmax_peak_bandwidth,
+                        energy=(bitmap_bytes * system.devices["Acc"].energy_table["sram"],),
+                        deps=(bitmap_link,))
+                    request_ready = tuple(dict.fromkeys(
+                        request_ready + (bitmap_load,)))
                 # A partial layer without an old cache is simply an ordinary
                 # GPU prefill; do not fabricate PIM traffic for it.
                 if full or not reusable:
