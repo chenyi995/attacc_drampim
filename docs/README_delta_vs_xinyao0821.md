@@ -17,8 +17,16 @@
 - `ramulator2/trace_gen/gen_trace_attacc_bank.py`(+ 种子副本
   `pim_ramulator_src/` 逐字节同步):`--mq`(一列一条 MAC 服务全部驻留
   Q)、`--shared-kv`、`--phase` 切相、流式 P 注释口径。
-- C++ `HBM3-PIM.cpp`:移动总线方向转向约束(MVSB↔MVGB/WRGB 用
-  nRTW/nWTRL),两处 +7 行;重编译。
+- C++ `HBM3-PIM.cpp`:**新增移动总线掉头 (direction turnaround) 开销**
+  ——xinyao/attacc 原模型里,半双工 TSV/GBUS 通路上 MVSB(bank→die,
+  读向)与 MVGB/WRGB(die→bank,写向)之间的方向切换是**零代价**的;
+  我们在 pseudochannel 级加上 JEDEC 口径的转向约束(MVSB→MVGB/WRGB 收
+  nRTW,反向收 nWTRL,preset 值、YAML 可覆盖),两处 +7 行,重编译,
+  种子副本同步。这是对我们自己的设计**从严**的改动:流式 P 与分数上行
+  共用这条半双工通路,方向切换的真实代价必须计入。实测量级
+  (experiment C-abl-2,`run_pipeline_overlap.py`):JEDEC 默认转向代价
+  ≤0.84%,×4 夸大也只 ≤3.8%——搬运命令大多藏进 MAC 间隔空档,由此
+  裁决关闭了错峰调度与专用窄下行两个备选设计。
 
 ## 2. 事件 DAG 集成(阶段 4–5)
 
