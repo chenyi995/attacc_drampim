@@ -4,9 +4,10 @@ import argparse
 import csv
 import json
 import os
+from dataclasses import replace
 from src.ablation import (DECODE_ATTN_MODES, KV_MAPPINGS,
                           PREFILL_ATTN_MODES, PRESETS)
-from src.workload import (WorkloadValidationError, build_reuse_plan,
+from src.workload import (Workload, WorkloadValidationError, build_reuse_plan,
                           load_workload, workload_summary)
 
 RAMULATOR = False
@@ -186,6 +187,13 @@ def main():
         type=str,
         help="path to a RAG legacy-list or supervisor v2-dag workload JSON")
     parser.add_argument(
+        "--history-len",
+        type=int,
+        default=None,
+        help="agentic multi-turn: pre-existing own-KV rows every agent already "
+             "holds from earlier turns (overrides per-request 'history_len' in "
+             "the workload JSON); attended during prefill/decode, never recomputed")
+    parser.add_argument(
         "--reuse",
         choices=("no-reuse", "cacheblend", "epic"),
         default="no-reuse",
@@ -250,16 +258,22 @@ def main():
     parser.add_argument(
         "--ablation",
         choices=tuple(sorted(PRESETS)),
-        help="named placement configuration of the KV-reuse study: "
-             "A1 pure AttAcc no reuse, A2 pure GPU software reuse, "
-             "A3 software prefill + PIM decode with naive KV mapping, "
-             "A4 same with master/diff pools, A5 prefill attention also on PIM, "
-             "A6 GPU/PIM split prefill.  Individual switches below override it")
+        help="named placement configuration of the KV-reuse study "
+             "(ladder of 2026-08-24): A1 AttAcc no reuse (reference), "
+             "A2 software reuse on the GPU only, A3 software reuse + AttAcc "
+             "with scattered layout (no channel split), A4 same with "
+             "channel-split master/diff pools, A5 all prefill attention on "
+             "the PIM + MQ attention batching, A6 Fugue: A5 + dynamic "
+             "per-class GPU/PIM prefill placement.  Attention batching "
+             "follows the ladder (A1-A4 replicate, A5/A6 mq) unless "
+             "--pim-batch-command overrides it.  Individual switches below "
+             "override single fields")
     parser.add_argument(
         "--prefill-attn",
         choices=PREFILL_ATTN_MODES,
-        help="where prefill attention runs: gpu (pure software), split (GPU "
-             "attends fresh rows, PIM scans reused KV), pim (all on PIM)")
+        help="where prefill attention runs: gpu (pure software), pim (all "
+             "on PIM), dynamic (Fugue: each layer class priced on both sides "
+             "and committed to the cheaper one, ties to the PIM)")
     parser.add_argument(
         "--decode-attn",
         choices=DECODE_ATTN_MODES,
@@ -276,7 +290,40 @@ def main():
         type=int,
         default=4,
         help="queries sharing one PIM K/V stream when prefill attention runs on "
-             "the PIM (--prefill-attn pim/split)")
+             "the PIM (--prefill-attn pim/dynamic)")
+    parser.add_argument(
+        "--pim-prefill-mode",
+        choices=("split", "bank-whole"),
+        default="split",
+        help="reuse-prefill attention placement in the physical DAG.  split "
+             "(default): GPU attends fresh rows to each other, PIM scans the "
+             "reused KV, DIE merges.  bank-whole: the batch's own K/V lands "
+             "first, every query scans the full landed range in the banks and "
+             "the DIE drops non-causal positions (no GPU triangle, no LSE)")
+    parser.add_argument(
+        "--pim-batch-command",
+        choices=("mq", "replicate"),
+        default=None,
+        help="how a multi-query PIM sweep issues its MACs.  Default: follows "
+             "the A-ladder for --ablation runs (A1-A4 replicate, A5/A6 mq) "
+             "and mq for the physical event path.  mq (the "
+             "Fugue design): one MAC_AB per column serves every resident Q; "
+             "the bank PE multiplies internally and the command interval "
+             "carries the n-fold PE time plus the IDD7 power stretch.  "
+             "replicate: legacy one MAC_AB per (column, query)")
+    parser.add_argument(
+        "--pe-freq-ghz",
+        type=float,
+        default=0.666,
+        help="bank GEMV-unit (PE) clock in GHz for the mq batch command; "
+             "0.666 is AttAcc's synthesized point (tCCDS-matched)")
+    parser.add_argument(
+        "--gemv-buffer-bytes",
+        type=int,
+        default=512,
+        help="per-bank GEMV input-vector buffer size; one query slice is "
+             "64 B, so this caps the queries resident in one sweep (the "
+             "sweep splits beyond it).  512 = AttAcc's 16 x 256-bit buffer")
     parser.add_argument(
         "--kv-pool-split",
         type=int,
@@ -292,41 +339,10 @@ def main():
              "the score (contiguous run); skip leaves it out of the address stream "
              "(breaks the run at every correction)")
     parser.add_argument(
-        "--split-attn",
-        choices=("overlap", "serial"),
-        default="overlap",
-        help="under --prefill-attn split, whether the GPU's fresh-row attention "
-             "and the PIM's reused-KV scan run concurrently (overlap: the layer "
-             "costs max of the two branches, matching KVpim-sim's trace) or are "
-             "charged one after the other (serial)")
-    parser.add_argument(
         "--no-prefill-kv-readback",
         action="store_true",
         help="assume software prefill already has the reused KV in GPU memory "
              "instead of reading it back from the PIM over the link")
-    parser.add_argument(
-        "--pim-batch-command",
-        choices=("mq", "replicate"),
-        default="mq",
-        help="how a multi-query PIM sweep issues its MACs.  mq (default, the "
-             "Fugue design): one MAC_AB per column serves every resident Q; "
-             "the bank PE multiplies internally and the command interval "
-             "carries the n-fold PE time (the DRAM cadence is never "
-             "stretched; compute power is accounted separately).  replicate "
-             "reproduces the legacy one-command-per-(column, query) expansion")
-    parser.add_argument(
-        "--pe-freq-ghz",
-        type=float,
-        default=0.666,
-        help="bank GEMV-unit (PE) clock in GHz for the mq batch command; "
-             "0.666 is AttAcc's synthesized point (tCCDS-matched)")
-    parser.add_argument(
-        "--gemv-buffer-bytes",
-        type=int,
-        default=512,
-        help="per-bank GEMV input-vector buffer size; one query slice is "
-             "64 B, so this caps the queries resident in one sweep (the "
-             "sweep splits beyond it).  512 = AttAcc's 16 x 256-bit buffer")
     parser.add_argument(
         "--validate-workload",
         action="store_true",
@@ -358,6 +374,12 @@ def main():
             parser.error("--validate-workload and --workload-plan require --workload")
         try:
             workload = load_workload(args.workload)
+            if args.history_len is not None:
+                if args.history_len < 0:
+                    parser.error("--history-len must be non-negative")
+                workload = Workload(workload.kind, tuple(
+                    replace(request, history_len=args.history_len)
+                    for request in workload.requests), workload.raw)
             reuse_plan = build_reuse_plan(
                 workload, args.reuse, args.cacheblend_recompute_ratio,
                 args.reuse_seed, args.cacheblend_full_layers,
@@ -447,7 +469,9 @@ def main():
                     master_pool_channels=args.kv_pool_split,
                     prefill_kv_readback=not args.no_prefill_kv_readback,
                     master_shadow=args.master_shadow,
-                    split_overlap=(args.split_attn == "overlap"))
+                    pim_batch_command=args.pim_batch_command,
+                    pim_pe_freq_ghz=args.pe_freq_ghz,
+                    gemv_buffer_bytes=args.gemv_buffer_bytes)
                 report = run_ablation_report(
                     system, workload, reuse_plan, ablation, pipe=args.pipeopt,
                     parallel_ff=args.ffopt, power_constraint=args.powerlimit,
@@ -492,7 +516,8 @@ def main():
                         cacheblend_batch_size=args.cacheblend_batch_size,
                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
                         include_events=(args.workload_report_events == "full"),
-                        pim_batch_command=args.pim_batch_command,
+                        pim_prefill_mode=args.pim_prefill_mode,
+                        pim_batch_command=args.pim_batch_command or "mq",
                         pim_pe_freq_ghz=args.pe_freq_ghz,
                         gemv_buffer_bytes=args.gemv_buffer_bytes)
                 elif (args.reuse in ("cacheblend", "epic") and
@@ -508,7 +533,8 @@ def main():
                         cacheblend_batch_size=args.cacheblend_batch_size,
                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
                         include_events=(args.workload_report_events == "full"),
-                        pim_batch_command=args.pim_batch_command,
+                        pim_prefill_mode=args.pim_prefill_mode,
+                        pim_batch_command=args.pim_batch_command or "mq",
                         pim_pe_freq_ghz=args.pe_freq_ghz,
                         gemv_buffer_bytes=args.gemv_buffer_bytes)
             except WorkloadValidationError as exc:

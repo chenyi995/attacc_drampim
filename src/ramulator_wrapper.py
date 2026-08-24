@@ -22,31 +22,6 @@ from src.type import *
 # compute energy into the interval was removed as contrary to both the
 # design intent and the precedent).  PE power is accounted SEPARATELY
 # against the stack budget: see mq_pe_power_w / MQ_POWER_BUDGET_W.
-#
-# Provenance of each constant (audited 2026-08-22; budget added 2026-08-23):
-#   MQ_POWER_BUDGET_W     -- AttAcc paper Fig. 7(a) power-budget red line,
-#                            computed per the JEDEC JESD238 IDD7 all-bank
-#                            interleave-read loop; hand-read from the figure,
-#                            2026-08-23.  Checks the separate PE-power
-#                            account only; never enters the interval.
-#   _MQ_TCK_NS            -- upstream AttAcc simulator's Ramulator.tCK
-#                            (class attribute below, 0.769 ns).  The Ramulator
-#                            preset's tCK_ps=1300 field disagrees (~2% on the
-#                            nRFC conversion only); seconds always follow
-#                            this value (AttAcc convention).
-#   _MQ_NCCDAB_PC / _NPC  -- nCCDAB column of the HBM3_5.2Gbps and
-#                            HBM3_5.2Gbps_NPC preset rows in
-#                            ramulator2/src/dram/impl/HBM3-PIM.cpp (official
-#                            AttAcc pim_ramulator presets).
-#   MQ_DEFAULT_PE_FREQ_GHZ -- AttAcc paper sec 7.1: "The GEMV unit and
-#                            accumulator operate at 666MHz considering tCCDS";
-#                            hand-verified against attacc.pdf, 2026-08-22.
-#   MQ_DEFAULT_GEMV_BUFFER_BYTES -- AttAcc paper sec 5.1: "double-buffered
-#                            16x256-bit buffers" = 512 B per buffer copy;
-#                            hand-verified against attacc.pdf, 2026-08-22.
-#   MQ_QUERY_SLICE_BYTES  -- derived: d_head=128 x 2 B (BF16) spread over the
-#                            4 banks of a bank group = 64 B per bank, i.e.
-#                            two 32-B buffer entries (PLAN_mq_command.md 2.1).
 _MQ_TCK_NS = 0.769                     # command-clock period used everywhere
 _MQ_NCCDAB_PC = 6                      # HBM3_5.2Gbps preset, power-constrained
 _MQ_NCCDAB_NPC = 4                     # HBM3_5.2Gbps_NPC preset
@@ -55,7 +30,11 @@ MQ_DEFAULT_GEMV_BUFFER_BYTES = 512     # AttAcc's 16 x 256-bit GEMV buffer
 # One Q occupies 64 B per bank in the score phase (d_head=128, BF16, split
 # over the 4 banks of a bank group), i.e. two 32-B buffer entries.
 MQ_QUERY_SLICE_BYTES = 64
-MQ_POWER_BUDGET_W = 116                # AttAcc Fig. 7(a) IDD7 budget line
+# Stack-level power budget: the red line of AttAcc Fig. 7(a), computed from
+# the JEDEC JESD238 IDD7 all-bank interleave-read loop (hand-read from the
+# figure, 2026-08-23).  Used only to CHECK the separately-accounted PE
+# power increment (mq_pe_power_w); it does not enter the interval.
+MQ_POWER_BUDGET_W = 116
 # Cell-side microscopic energies (FGDRAM-based ENERGY_TABLE):
 _MQ_E_COL_PJ = ENERGY_TABLE['PIM'][PIMType.BA]['mem'] * 32   # one 32-B read
 _MQ_E_Q_PJ = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +  # 16-lane MAC
@@ -63,7 +42,16 @@ _MQ_E_Q_PJ = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +  # 16-lane MAC
 
 
 def mq_query_capacity(gemv_buffer_bytes=MQ_DEFAULT_GEMV_BUFFER_BYTES):
-    """Resident-Q capacity of one bank's GEMV buffer (the sweep splits beyond)."""
+    """Resident-Q capacity of one bank's GEMV buffer (the sweep splits beyond).
+
+    Q is the ONLY capacity-bound operand (ruling 2026-08-24): a Q slice is
+    reused across every K column of the bank, so it must stay resident and
+    n_q = S/64 -- the stock 512-B buffer holds 8, more queries need a larger
+    buffer (SRAM + PE area/power).  The context-phase P vector has (almost)
+    no per-bank reuse and therefore streams through the double-buffered
+    halves via MV_GB; its bound is the movement-bus bandwidth and direction
+    turnaround (priced physically in the trace), never this capacity.
+    """
     return max(1, int(gemv_buffer_bytes) // MQ_QUERY_SLICE_BYTES)
 
 
@@ -169,9 +157,6 @@ class Ramulator:
                        power_constraint, key_addr, value_addr, channel_count,
                        shared_kv, shared_queries, channel_base=None,
                        mq_command=False, nccdab_override=None):
-        # mq_command / nccdab_override join the cache key: the same scan shape
-        # measures differently under the MQ command stream or a stretched
-        # nCCDAB, so MQ and replicate results must not share cache entries.
         return (
             pim_type.name, run_length, num_ops_per_hbm, dbyte,
             bool(power_constraint), self.dhead, self.num_hbm, channel_count,
