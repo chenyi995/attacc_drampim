@@ -195,9 +195,22 @@ def main():
              "the workload JSON); attended during prefill/decode, never recomputed")
     parser.add_argument(
         "--reuse",
-        choices=("no-reuse", "cacheblend", "epic"),
+        choices=("no-reuse", "cacheblend", "epic", "promptcache",
+                 "cachecraft", "cachetune"),
         default="no-reuse",
-        help="KV reuse policy; independent from workload kind")
+        help="KV reuse policy; independent from workload kind.  promptcache: "
+             "chunk reuse with zero recompute (MLSys'24 baseline).  "
+             "cachecraft: per-chunk boundary prefix sized by context overlap "
+             "(--cachecraft-alpha).  cachetune: CacheBlend-style ratio "
+             "recompute with OFFLINE row selection (no full-recompute "
+             "selection layers)")
+    parser.add_argument(
+        "--cachecraft-alpha",
+        type=float,
+        default=0.05,
+        help="cachecraft only: recompute prefix of a reused chunk = "
+             "ceil(alpha x (1 - context overlap) x chunk length), >= 1 row "
+             "on a shifted boundary")
     parser.add_argument(
         "--no-reuse-latency-model",
         choices=("legacy", "physical"),
@@ -387,7 +400,8 @@ def main():
                 workload, args.reuse, args.cacheblend_recompute_ratio,
                 args.reuse_seed, args.cacheblend_full_layers,
                 args.cacheblend_partial_layers,
-                args.epic_prefix_recompute_tokens)
+                args.epic_prefix_recompute_tokens,
+                cachecraft_alpha=args.cachecraft_alpha)
         except WorkloadValidationError as exc:
             parser.error(str(exc))
         summary = workload_summary(workload, reuse_plan)

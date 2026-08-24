@@ -33,7 +33,20 @@ class WorkloadValidationError(ValueError):
     """Raised when a workload cannot describe a valid inference request."""
 
 
-VALID_REUSE_POLICIES = ("no-reuse", "cacheblend", "epic")
+VALID_REUSE_POLICIES = ("no-reuse", "cacheblend", "epic", "promptcache",
+                        "cachecraft", "cachetune")
+# Policy families (software-upstream enrichment, 2026-08-24): members share
+# the anchor policy's plan machinery and differ in the recompute-selection
+# rule, mirroring the published chunk-reuse family:
+# - cacheblend family: ratio-sampled recompute rows in designated layers.
+#   "cachetune" (arXiv:2605.24022-style) selects the rows OFFLINE, so it has
+#   no full-recompute selection layers and pays no online selection pass.
+# - epic family: per-segment leading-prefix recompute at chunk boundaries.
+#   "promptcache" (MLSys'24) is the zero-recompute endpoint; "cachecraft"
+#   (SIGMOD'25-style) sizes the prefix per chunk from the context overlap
+#   between consumer and owner (knob: cachecraft_alpha).
+CACHEBLEND_FAMILY = ("cacheblend", "cachetune")
+EPIC_FAMILY = ("epic", "promptcache", "cachecraft")
 _LEGACY_REQUIRED = ("sample", "seg_lens", "seg_sha", "seg_role", "L", "lout")
 
 
@@ -97,6 +110,9 @@ class ReuseConfig:
     cacheblend_recompute_ratio: float = 0.0
     epic_prefix_recompute_tokens: int = 1
     random_seed: int = 0
+    # cachecraft only: per-chunk recompute prefix = ceil(alpha * (1 -
+    # context overlap) * chunk length), at least one row when shifted.
+    cachecraft_alpha: float = 0.05
 
 
 @dataclass(frozen=True)
@@ -118,6 +134,7 @@ class ReusePlan:
                 self.config.cacheblend_partial_recompute_layers),
             "cacheblend_recompute_ratio": self.config.cacheblend_recompute_ratio,
             "epic_prefix_recompute_tokens": self.config.epic_prefix_recompute_tokens,
+            "cachecraft_alpha": self.config.cachecraft_alpha,
             "random_seed": self.config.random_seed,
             "fresh_tokens": self.fresh_tokens,
             "reused_tokens": self.reused_tokens,
@@ -351,7 +368,8 @@ def build_reuse_plan(workload: Workload,
                      random_seed: int = 0,
                      cacheblend_full_recompute_layers: Iterable[int] = (),
                      cacheblend_partial_recompute_layers: Iterable[int] = (),
-                     epic_prefix_recompute_tokens: int = 1) -> ReusePlan:
+                     epic_prefix_recompute_tokens: int = 1,
+                     cachecraft_alpha: float = 0.05) -> ReusePlan:
     """Return an auditable policy plan without altering legacy simulation.
 
     Cache ownership is selected deterministically by ``(tier, request id,
@@ -378,6 +396,9 @@ def build_reuse_plan(workload: Workload,
             not isinstance(epic_prefix_recompute_tokens, int) or
             epic_prefix_recompute_tokens < 0):
         raise WorkloadValidationError("EPIC prefix recompute tokens must be non-negative")
+    if (not isinstance(cachecraft_alpha, (int, float)) or
+            isinstance(cachecraft_alpha, bool) or not 0 <= cachecraft_alpha <= 1):
+        raise WorkloadValidationError("cachecraft alpha must be in [0, 1]")
     full_layers = _layer_tuple(cacheblend_full_recompute_layers,
                                "CacheBlend full recompute layers")
     partial_layers = _layer_tuple(cacheblend_partial_recompute_layers,
@@ -387,9 +408,14 @@ def build_reuse_plan(workload: Workload,
         raise WorkloadValidationError(
             "CacheBlend full and partial recompute layers overlap: {}".format(
                 sorted(overlap)))
+    if policy == "cachetune" and full_layers:
+        raise WorkloadValidationError(
+            "cachetune selects recompute rows offline; it has no "
+            "full-recompute selection layers")
     config = ReuseConfig(policy, full_layers, partial_layers,
                          float(cacheblend_recompute_ratio),
-                         epic_prefix_recompute_tokens, random_seed)
+                         epic_prefix_recompute_tokens, random_seed,
+                         cachecraft_alpha=float(cachecraft_alpha))
     rng = random.Random(random_seed)
     owners: Dict[str, Tuple[Request, int]] = {}
     by_request_id = {request.request_id: request for request in workload.requests}
@@ -423,9 +449,34 @@ def build_reuse_plan(workload: Workload,
                        (owner_index >= 0 and
                         segment_offsets[(request.request_id, index)] !=
                         segment_offsets[(owner_request.request_id, owner_index)]))
-            correction = (tuple(range(min(segment.length,
-                                      epic_prefix_recompute_tokens)))
-                          if policy == "epic" and shifted else ())
+            if policy == "epic" and shifted:
+                correction = tuple(range(min(segment.length,
+                                             epic_prefix_recompute_tokens)))
+            elif policy == "cachecraft" and shifted:
+                # Cache-Craft-style variable prefix: the less of the chunk's
+                # original context the consumer preserves, the more boundary
+                # rows are recomputed (Jaccard overlap of the preceding
+                # fingerprint sets; a relay parent has no visible context ->
+                # overlap 0).
+                consumer_prec = {seg.fingerprint
+                                 for seg in request.segments[:index]}
+                owner_prec = ({seg.fingerprint for seg in
+                               owner_request.segments[:owner_index]}
+                              if owner_index >= 0 else set())
+                if consumer_prec or owner_prec:
+                    union = consumer_prec | owner_prec
+                    overlap_frac = len(consumer_prec & owner_prec) / len(union)
+                else:
+                    overlap_frac = 1.0
+                rows = min(segment.length,
+                           max(1, math.ceil(cachecraft_alpha *
+                                            (1.0 - overlap_frac) *
+                                            segment.length)))
+                correction = tuple(range(rows))
+            else:
+                # promptcache reuses the chunk verbatim (zero recompute);
+                # unshifted segments need no boundary fix in any policy.
+                correction = ()
             decisions.append(ReuseDecision(request.request_id, index,
                                            segment.fingerprint, segment.length,
                                            owner_request.request_id,
@@ -433,7 +484,7 @@ def build_reuse_plan(workload: Workload,
 
     reused = sum(decision.length for decision in decisions)
     partial_rows: Dict[int, Dict[str, Dict[int, Tuple[int, ...]]]] = {}
-    if policy == "cacheblend":
+    if policy in CACHEBLEND_FAMILY:
         for layer in partial_layers:
             by_request: Dict[str, Dict[int, Tuple[int, ...]]] = {}
             decisions_by_request: Dict[str, List[ReuseDecision]] = {}
@@ -473,7 +524,7 @@ def validate_reuse_plan(workload: Workload, plan: ReusePlan,
             raise WorkloadValidationError("EPIC recompute rows must be a leading prefix")
         decisions_by_request.setdefault(decision.request_id, {})[decision.segment_index] = decision
 
-    if plan.config.policy == "cacheblend":
+    if plan.config.policy in CACHEBLEND_FAMILY:
         full = set(plan.config.cacheblend_full_recompute_layers)
         partial = set(plan.config.cacheblend_partial_recompute_layers)
         if full.intersection(partial):

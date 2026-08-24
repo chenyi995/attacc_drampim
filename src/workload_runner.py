@@ -18,7 +18,8 @@ from .model import Layer
 from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
                                 MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
 from .type import DeviceType, LayerType
-from .workload import (ReusePlan, Workload, WorkloadValidationError,
+from .workload import (CACHEBLEND_FAMILY, EPIC_FAMILY,
+                       ReusePlan, Workload, WorkloadValidationError,
                        validate_reuse_plan)
 
 
@@ -229,7 +230,7 @@ def run_cacheblend_analytic_report(system, workload: Workload, plan: ReusePlan,
             epic_prefix_by_request.get(decision.request_id, 0) +
             len(decision.epic_prefix_rows))
     config = plan.config
-    if config.policy == "cacheblend":
+    if config.policy in CACHEBLEND_FAMILY:
         recompute_fraction = (
             len(config.cacheblend_full_recompute_layers) +
             config.cacheblend_recompute_ratio * len(config.cacheblend_partial_recompute_layers)
@@ -254,7 +255,7 @@ def run_cacheblend_analytic_report(system, workload: Workload, plan: ReusePlan,
         # removes only the reused rows' skipped work, never the padding, so
         # subtract the saving from the padded batch work rather than
         # rebuilding it from the unpadded token counts.
-        if config.policy == "cacheblend":
+        if config.policy in CACHEBLEND_FAMILY:
             saved_work = reused_work * (1.0 - recompute_fraction)
         else:
             saved_work = reused_work - sum(epic_prefix_by_request.get(member, 0)
@@ -405,7 +406,7 @@ def _run_legacy_reuse_prefill(system, workload: Workload, plan: ReusePlan) -> Di
             reused_rows = sum(decision.length for decision in decisions)
             fresh_rows = request.total_length - reused_rows
             for layer_index in range(system.model.ndec):
-                if plan.config.policy == "cacheblend":
+                if plan.config.policy in CACHEBLEND_FAMILY:
                     full = layer_index in plan.config.cacheblend_full_recompute_layers
                     selected = plan.cacheblend_partial_rows.get(layer_index, {}).get(
                         request.request_id, {})
@@ -1414,13 +1415,13 @@ def _policy_corrected_rows(plan: ReusePlan, layer: int, request) -> set:
     Both policies then share the same address-resolved master/diff DAG.
     """
     corrected = set()
-    if plan.config.policy == "cacheblend":
+    if plan.config.policy in CACHEBLEND_FAMILY:
         by_segment = plan.cacheblend_partial_rows.get(layer, {}).get(
             request.request_id, {})
         for index, rows in by_segment.items():
             offset = sum(segment.length for segment in request.segments[:index])
             corrected.update(offset + row for row in rows)
-    elif plan.config.policy == "epic":
+    elif plan.config.policy in EPIC_FAMILY:
         decisions = {decision.segment_index: decision for decision in plan.reusable
                      if decision.request_id == request.request_id}
         for index, decision in decisions.items():
@@ -1511,7 +1512,7 @@ def _prepare_cacheblend_tlb(workload: Workload, plan: ReusePlan, ndec: int,
                             *, contiguous_no_reuse: bool = False) -> None:
     """Reserve all prefill and decode blocks before assigning physical bytes."""
     for layer in range(ndec):
-        force_fresh = (plan.config.policy == "cacheblend" and
+        force_fresh = (plan.config.policy in CACHEBLEND_FAMILY and
                        layer in plan.config.cacheblend_full_recompute_layers)
         for request in workload.requests:
             if contiguous_no_reuse:
@@ -2311,7 +2312,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
             prefill_store_events: List[str] = []
             prefill_bindings: Dict[int, Sequence[Tuple[int, bool, bool, KVLocation]]] = {}
             for layer_index in range(system.model.ndec):
-                full = (plan.config.policy == "cacheblend" and
+                full = (plan.config.policy in CACHEBLEND_FAMILY and
                         layer_index in plan.config.cacheblend_full_recompute_layers)
                 bindings = (_contiguous_no_reuse_tlb_rows(request, layer_index, tlb)
                             if physical_no_reuse else

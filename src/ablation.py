@@ -22,21 +22,23 @@ Six named configurations (``--ablation``) span the study:
 ===  ==============  ============  ============  =============================
 key  prefill attn    decode attn   KV mapping    meaning
 ===  ==============  ============  ============  =============================
-A1   gpu             pim           private       original AttAcc, no reuse
-A2   gpu             gpu           none          pure GPU running the reuse SW
-A3   gpu             pim           naive         SW prefill, PIM decode, no
-                                                 PIM-aware remap
-A4   gpu             pim           master-diff   SW prefill, PIM decode, master
-                                                 and diff in disjoint pools
-A5   pim             pim           master-diff   projections on GPU, all
-                                                 prefill attention on PIM
-A6   split           pim           master-diff   GPU attends fresh rows, PIM
-                                                 scans reused KV
+A1   gpu             pim           private       AttAcc, no reuse (reference)
+A2   gpu             gpu           none          software reuse on the GPU only
+A3   gpu             pim           naive         SW reuse + AttAcc, scattered
+                                                 layout (no channel split)
+A4   gpu             pim           master-diff   SW reuse + AttAcc, channel-
+                                                 split master/diff pools
+A5   pim             pim           master-diff   A4 + ALL prefill attention on
+                                                 the PIM + MQ batching
+A6   dynamic         pim           master-diff   Fugue: A5 + dynamic per-class
+                                                 GPU/PIM prefill placement
 ===  ==============  ============  ============  =============================
 
-Reuse policy (``--reuse no-reuse|cacheblend|epic``) is independent of the
-placement configuration; ``A1`` is only meaningful with ``no-reuse`` and
-``A3``--``A6`` are only meaningful with a reuse policy.
+The ladder of 2026-08-24; the former "split" A6 (GPU/PIM hybrid prefill) is
+abolished.  Attention batching follows the rung (A1-A4 replicate, A5/A6
+mq).  The reuse policy (``--reuse``, incl. the promptcache/cachecraft/
+cachetune enrichment) is independent of the placement configuration; ``A1``
+is only meaningful with ``no-reuse`` and ``A3``--``A6`` with a reuse policy.
 """
 
 from __future__ import annotations
@@ -51,7 +53,8 @@ from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
                                 MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
 from .system import apply_attacc_pipeline
 from .type import DeviceType, LayerType
-from .workload import ReusePlan, Request, Workload, WorkloadValidationError
+from .workload import (CACHEBLEND_FAMILY, EPIC_FAMILY, ReusePlan, Request,
+                       Workload, WorkloadValidationError)
 from .workload_runner import _tier_shapes
 
 # A channel is one 1-GiB region of the HBM3-PIM address mapper; K starts at an
@@ -264,11 +267,11 @@ def _corrected_rows(plan: ReusePlan, layer: int,
     old K/V unchanged.
     """
     policy = plan.config.policy
-    if policy == "cacheblend":
+    if policy in CACHEBLEND_FAMILY:
         if layer in plan.config.cacheblend_full_recompute_layers:
             return {}
         return dict(plan.cacheblend_partial_rows.get(layer, {}).get(request_id, {}))
-    if policy == "epic":
+    if policy in EPIC_FAMILY:
         return {decision.segment_index: decision.epic_prefix_rows
                 for decision in plan.reusable
                 if decision.request_id == request_id and decision.epic_prefix_rows}
@@ -285,7 +288,7 @@ def _layer_classes(plan: ReusePlan, ndec: int,
     correction in every layer.
     """
     policy = plan.config.policy
-    if policy == "cacheblend":
+    if policy in CACHEBLEND_FAMILY:
         full = tuple(layer for layer in plan.config.cacheblend_full_recompute_layers
                      if layer < ndec)
         partial = tuple(layer for layer in plan.config.cacheblend_partial_recompute_layers
@@ -652,7 +655,7 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
         stride = ((system.model.dhead * dbyte + 31) // 32) * 32
         classes = []  # (layer count, recomputed rows in the batch, carries reuse)
         full_layers = (len(plan.config.cacheblend_full_recompute_layers)
-                       if plan.config.policy == "cacheblend" else 0)
+                       if plan.config.policy in CACHEBLEND_FAMILY else 0)
         full_layers = min(full_layers, ndec)
         if full_layers:
             classes.append((full_layers, padded_rows, False))
@@ -950,7 +953,7 @@ def _memory_report(system, workload: Workload, plan: ReusePlan,
         # A CacheBlend full-recompute layer rebuilds the whole request K/V, so
         # in those layers nothing is shared and no row is a diff.
         full_layers = (len(plan.config.cacheblend_full_recompute_layers)
-                       if plan.config.policy == "cacheblend" else 0)
+                       if plan.config.policy in CACHEBLEND_FAMILY else 0)
         reuse_layers = max(ndec - full_layers, 0)
         diff_rows = 0
         for layer in range(ndec):
@@ -973,7 +976,7 @@ def _memory_report(system, workload: Workload, plan: ReusePlan,
         "shared_master_rows": shared_rows,
         "diff_rows_per_layer": diff_rows,
         "full_recompute_layers": (len(plan.config.cacheblend_full_recompute_layers)
-                                  if plan.config.policy == "cacheblend" else 0),
+                                  if plan.config.policy in CACHEBLEND_FAMILY else 0),
         "generated_rows": generated,
         "history_rows": history_rows,
         "no_reuse_kv_bytes": baseline_bytes,
@@ -1027,7 +1030,7 @@ def run_ablation_report(system, workload: Workload, plan: ReusePlan,
     reused_by_request = _reused_tokens_by_request(plan)
     epic_prefix = _epic_prefix_by_request(plan)
     policy = plan.config.policy
-    if policy == "cacheblend":
+    if policy in CACHEBLEND_FAMILY:
         recompute_fraction = (
             len(plan.config.cacheblend_full_recompute_layers) +
             plan.config.cacheblend_recompute_ratio *
@@ -1069,9 +1072,9 @@ def run_ablation_report(system, workload: Workload, plan: ReusePlan,
         padded_rows = batch * lin
         reused_rows = sum(reused_by_request.get(request.request_id, 0)
                           for request in requests)
-        if policy == "cacheblend":
+        if policy in CACHEBLEND_FAMILY:
             saved_rows = reused_rows * (1.0 - recompute_fraction)
-        elif policy == "epic":
+        elif policy in EPIC_FAMILY:
             saved_rows = reused_rows - sum(epic_prefix.get(request.request_id, 0)
                                            for request in requests)
         else:

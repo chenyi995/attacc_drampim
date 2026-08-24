@@ -528,6 +528,42 @@ class WorkloadTests(unittest.TestCase):
                                kwargs["decode_attn"], kwargs["kv_mapping"],
                                policy=policy)
 
+    def test_software_upstream_policy_family_enrichment(self):
+        """promptcache / cachecraft / cachetune extend the two anchor policies.
+
+        promptcache reuses chunks verbatim (zero recompute rows); cachecraft
+        sizes a per-chunk boundary prefix from the context overlap between
+        consumer and owner; cachetune is CacheBlend-shaped ratio recompute
+        whose rows are selected offline, so it must not carry full-recompute
+        selection layers.
+        """
+        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+
+        zero = build_reuse_plan(workload, "promptcache")
+        self.assertTrue(zero.reusable)
+        self.assertTrue(all(not decision.epic_prefix_rows
+                            for decision in zero.reusable))
+
+        craft = build_reuse_plan(workload, "cachecraft", cachecraft_alpha=0.25)
+        shifted_prefixes = [len(decision.epic_prefix_rows)
+                            for decision in craft.reusable
+                            if decision.epic_prefix_rows]
+        self.assertTrue(shifted_prefixes)
+        validate_reuse_plan(workload, craft, model_layers=3)
+        # A larger alpha never shrinks any chunk's recompute prefix.
+        craft_hi = build_reuse_plan(workload, "cachecraft", cachecraft_alpha=1.0)
+        by_key = {(d.request_id, d.segment_index): len(d.epic_prefix_rows)
+                  for d in craft.reusable}
+        for decision in craft_hi.reusable:
+            key = (decision.request_id, decision.segment_index)
+            self.assertGreaterEqual(len(decision.epic_prefix_rows), by_key[key])
+
+        tune = build_reuse_plan(workload, "cachetune", 0.2, 7, (), (0, 1, 2))
+        validate_reuse_plan(workload, tune, model_layers=3)
+        self.assertEqual(set(tune.cacheblend_partial_rows), {0, 1, 2})
+        with self.assertRaisesRegex(WorkloadValidationError, "offline"):
+            build_reuse_plan(workload, "cachetune", 0.2, 7, (0,), (1, 2))
+
     def test_reuse_structure_checker_covers_layers_and_rows(self):
         workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
         cacheblend = build_reuse_plan(
