@@ -41,6 +41,13 @@ ICLR'25)、TurboRAG/Block-Attention(微调适配)、KVCOMM(锚点偏移
 (KV 压缩流送)、RAGCache(多级缓存)、HCache(存 hidden state、只重算
 KV 投影——恢复代价建模可借鉴)。
 
+**实验口径裁决(宸逸 2026-08-25)**:论文实验矩阵只用**保证重算**的
+选择族——每个成员都重算一部分 token,彼此只差"选哪些"(cacheblend =
+偏差采样 r 比例;**EPIC 算该族的特例:选每个位移段的前 k 个**;
+cachecraft = 重叠度缩放前缀;cachetune = 离线选行 r 比例);零重算端点
+(promptcache)保留实现、**不进实验矩阵**。矩阵见
+`experiments/paper_ladder/`。
+
 选型理由:promptcache/cachecraft/cachetune 三个先进仓库,是因为它们在
 **仿真器可见的代价结构**上与两个锚各有一处真实差异(零修正端点/逐 chunk
 变长前缀/无在线选择层),而不只是精度曲线不同;精度维不在本仿真器口径

@@ -1,0 +1,859 @@
+[
+ {
+  "sample": 0,
+  "seg_lens": [
+   43,
+   2078,
+   1309,
+   1542,
+   47
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-60522cac596f679b",
+   "doc-8b8238409aed64fb",
+   "doc-dfa0d8f99c929098",
+   "q-7256a19521459e00"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 5019,
+  "lout": 5,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 1,
+  "seg_lens": [
+   43,
+   1420,
+   2054,
+   68
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-7849186b069103ac",
+   "doc-0ce61814fd1c6ca4",
+   "q-b72caa0d4ea6782a"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3585,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 2,
+  "seg_lens": [
+   43,
+   1481,
+   1870,
+   52
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-709820b23172ddf1",
+   "doc-4b6898348e792e4c",
+   "q-729c55b1daad7b6f"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3446,
+  "lout": 3,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 3,
+  "seg_lens": [
+   43,
+   2537,
+   3005,
+   37
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-3b1d8b28fff2c5d0",
+   "doc-22a118c168bc9cd5",
+   "q-4e99c08399862b56"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 5622,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 4,
+  "seg_lens": [
+   43,
+   3552,
+   2030,
+   5234,
+   61
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-4839f665c4903f42",
+   "doc-7f6d510ce2b548fe",
+   "doc-c5eed13ad5429973",
+   "q-77c40a58efc0e331"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 10920,
+  "lout": 5,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 5,
+  "seg_lens": [
+   43,
+   1317,
+   1542,
+   42
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-e9d97e6a66d3ee4a",
+   "doc-dfa0d8f99c929098",
+   "q-11fc15a539796637"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 2944,
+  "lout": 5,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 6,
+  "seg_lens": [
+   43,
+   1969,
+   1132,
+   41
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-e534bdc574a9c435",
+   "doc-28b6d2e7f99b5cf0",
+   "q-acd2192e927d6080"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3185,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 7,
+  "seg_lens": [
+   43,
+   3723,
+   2286,
+   55
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-71502148bdf6c78f",
+   "doc-3105245742ac9cd8",
+   "q-4e61988bf6c2620d"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 6107,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 8,
+  "seg_lens": [
+   43,
+   1870,
+   1438,
+   2108,
+   10186,
+   63
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-4b6898348e792e4c",
+   "doc-cdbadceb3ef42a00",
+   "doc-ad41afa77c844969",
+   "doc-99a2dd90e43302a5",
+   "q-ed7eda16ac6a13e2"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 15708,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 9,
+  "seg_lens": [
+   43,
+   1499,
+   1624,
+   1289,
+   47
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-80d381287f2b1b65",
+   "doc-ad56154efa5662e6",
+   "doc-92c4bc380bfae8a6",
+   "q-449bd755e57b448d"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 4502,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 10,
+  "seg_lens": [
+   43,
+   2628,
+   2149,
+   61
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-c0876f083ac3ba17",
+   "doc-0185bf54ff636edd",
+   "q-6d62e2fd5cb74578"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 4881,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 11,
+  "seg_lens": [
+   43,
+   1542,
+   1987,
+   66
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-dfa0d8f99c929098",
+   "doc-027e5e4dd64045d0",
+   "q-60612e65fd1db26a"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3638,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 12,
+  "seg_lens": [
+   43,
+   2361,
+   1088,
+   48
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-a129bb0dd9f61b1d",
+   "doc-166a0e92a8755b18",
+   "q-91396167f7fe74cc"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3540,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 13,
+  "seg_lens": [
+   43,
+   1172,
+   2250,
+   1964,
+   1513,
+   60
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-fb5892e4a4a537d9",
+   "doc-e33ff746e54e3a84",
+   "doc-ea1d90b58238c979",
+   "doc-120e49ac9e162202",
+   "q-8c83022d49b43d0f"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 7002,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 14,
+  "seg_lens": [
+   43,
+   1270,
+   16151,
+   1814,
+   2085,
+   63
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-1e49f80f5fe899df",
+   "doc-1771100180b8c060",
+   "doc-c5c0da27deb3da31",
+   "doc-97bb9ec8327f8776",
+   "q-19885f14185344f1"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 21426,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 15,
+  "seg_lens": [
+   43,
+   10459,
+   2678,
+   1289,
+   64
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-9cdb99d95a03cd1b",
+   "doc-b0f6fdb06b8b2ac2",
+   "doc-92c4bc380bfae8a6",
+   "q-3d82fc0390e0f745"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 14533,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 16,
+  "seg_lens": [
+   43,
+   3561,
+   4130,
+   47
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-45875cbf3469f390",
+   "doc-b6b5538330d6fcda",
+   "q-abfea54b7b6102e1"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 7781,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 17,
+  "seg_lens": [
+   43,
+   2030,
+   1718,
+   1898,
+   58
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-7f6d510ce2b548fe",
+   "doc-6a88ec02a22aa8a9",
+   "doc-74daaaa543f96d12",
+   "q-25a22fbdb7c0aa26"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 5747,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 18,
+  "seg_lens": [
+   43,
+   1328,
+   1830,
+   2066,
+   40
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-c00b2280fd7848d6",
+   "doc-b6211c07b75ea644",
+   "doc-258b366601bb4c08",
+   "q-cef6804d5577715e"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 5307,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 19,
+  "seg_lens": [
+   43,
+   1102,
+   2733,
+   76
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-f1cad62534f0f6b6",
+   "doc-14aff97657130632",
+   "q-a1b74481921dc38f"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3954,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 20,
+  "seg_lens": [
+   43,
+   1134,
+   2977,
+   1517,
+   37
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-bfb4241a65ce6581",
+   "doc-4c4625ca221cf893",
+   "doc-93234e19d0aeb7c1",
+   "q-71d8c4c2e02e05e6"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 5708,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 21,
+  "seg_lens": [
+   43,
+   2678,
+   1581,
+   1289,
+   63
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-b0f6fdb06b8b2ac2",
+   "doc-bce75a8af42c0f7c",
+   "doc-92c4bc380bfae8a6",
+   "q-adc327427eed7bd6"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 5654,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 22,
+  "seg_lens": [
+   43,
+   1503,
+   1487,
+   45
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-6c6c72ca8c2ae5e9",
+   "doc-36139d1675b25a74",
+   "q-ab108944ca92667c"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3078,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 23,
+  "seg_lens": [
+   43,
+   1726,
+   1265,
+   52
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-436883aeb13ca565",
+   "doc-1e0d97801e8e7259",
+   "q-d415ed2a63fa01c2"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3086,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 24,
+  "seg_lens": [
+   43,
+   2537,
+   1926,
+   74
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-27546c8ec22125a6",
+   "doc-e2712dd38443760b",
+   "q-cbf96e1b1febab98"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 4580,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 25,
+  "seg_lens": [
+   43,
+   1499,
+   1624,
+   1289,
+   79
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-80d381287f2b1b65",
+   "doc-ad56154efa5662e6",
+   "doc-92c4bc380bfae8a6",
+   "q-e99f3bcf48a94f88"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 4534,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 26,
+  "seg_lens": [
+   43,
+   4839,
+   3942,
+   2216,
+   54
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-f039f66bc39298f4",
+   "doc-bd5c813079a26a93",
+   "doc-7de26ab6785a51c1",
+   "q-60175f253c5944e2"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 11094,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 27,
+  "seg_lens": [
+   43,
+   1481,
+   1518,
+   1870,
+   44
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-709820b23172ddf1",
+   "doc-0a0c96698554568b",
+   "doc-4b6898348e792e4c",
+   "q-dc1b980f1d0b9294"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 4956,
+  "lout": 3,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 28,
+  "seg_lens": [
+   43,
+   1740,
+   1281,
+   58
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-3fb1309ca828a7d0",
+   "doc-7ba275b3cca7a571",
+   "q-b5f169c0264af69b"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 3122,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "inference_query"
+ },
+ {
+  "sample": 29,
+  "seg_lens": [
+   43,
+   1499,
+   1739,
+   1289,
+   69
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-80d381287f2b1b65",
+   "doc-927248ee056d5d20",
+   "doc-92c4bc380bfae8a6",
+   "q-ed2b29a5b80ade8e"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 4639,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "temporal_query"
+ },
+ {
+  "sample": 30,
+  "seg_lens": [
+   43,
+   10186,
+   1586,
+   61
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-99a2dd90e43302a5",
+   "doc-099cb0130c17eb75",
+   "q-d5f61a831436ea4a"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 11876,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ },
+ {
+  "sample": 31,
+  "seg_lens": [
+   43,
+   2727,
+   3552,
+   5234,
+   55
+  ],
+  "seg_sha": [
+   "sys-62e0bca480d2e55f",
+   "doc-476637a73161c1e1",
+   "doc-4839f665c4903f42",
+   "doc-c5eed13ad5429973",
+   "q-8052d42cc1e26efc"
+  ],
+  "seg_role": [
+   "sys",
+   "doc",
+   "doc",
+   "doc",
+   "query"
+  ],
+  "L": 11611,
+  "lout": 2,
+  "history_len": 0,
+  "question_type": "comparison_query"
+ }
+]

@@ -1,0 +1,143 @@
+{
+  "kind": "supervisor",
+  "requests": 5,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 8,
+    "fresh_tokens": 1150,
+    "policy": "epic",
+    "random_seed": 0,
+    "reusable_segments": [
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [],
+        "fingerprint": "sys0",
+        "length": 400,
+        "owner_tier": 0,
+        "request": "t1w0",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "fingerprint": "out-sup",
+        "length": 150,
+        "owner_tier": 0,
+        "request": "t1w0",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [],
+        "fingerprint": "sys0",
+        "length": 400,
+        "owner_tier": 0,
+        "request": "t1w1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "fingerprint": "out-sup",
+        "length": 150,
+        "owner_tier": 0,
+        "request": "t1w1",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [],
+        "fingerprint": "sys0",
+        "length": 400,
+        "owner_tier": 0,
+        "request": "t1w2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "fingerprint": "out-sup",
+        "length": 150,
+        "owner_tier": 0,
+        "request": "t1w2",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [],
+        "fingerprint": "sys0",
+        "length": 400,
+        "owner_tier": 0,
+        "request": "t1w3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "sup",
+        "epic_prefix_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "fingerprint": "out-sup",
+        "length": 150,
+        "owner_tier": 0,
+        "request": "t1w3",
+        "segment_index": 1
+      }
+    ],
+    "reused_tokens": 2200
+  },
+  "tiers": {
+    "0": [
+      "sup"
+    ],
+    "1": [
+      "t1w0",
+      "t1w1",
+      "t1w2",
+      "t1w3"
+    ]
+  },
+  "total_history_tokens": 15,
+  "total_input_tokens": 3350,
+  "total_output_tokens": 750
+}
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_822/experiments/paper_ladder/results/ladder_relay_LLAMA-7B_A4.json
+REPORT_SUMMARY {"ablation": {"decode_attn": "pim", "gemv_buffer_bytes": 512, "kv_mapping": "master-diff", "label": "software reuse + AttAcc, channel-split master/diff pools", "master_pool_channels": 8, "master_shadow": "read-mask", "pim_batch_command": "replicate", "pim_pe_freq_ghz": 0.666, "pim_prefill_query_batch": 4, "prefill_attn": "gpu", "prefill_kv_readback": true, "preset": "A4"}, "decode_energy_nj": 132037661431.41475, "decode_s": 1.221645958225598, "energy_nj": 141481768125.02628, "kv_bytes_vs_no_reuse": 0.6068043742405832, "kv_gib": 1.21923828125, "makespan_s": 1.249402339461502, "policy": "epic", "prefill_energy_nj": 9444106693.611519, "prefill_s": 0.02775638123590385}

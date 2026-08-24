@@ -2443,6 +2443,11 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     positions=compute_positions, addresses=[address for loc in writes
                                                             for address in (loc.key_address,
                                                                             loc.value_address)])
+                # PAPER TIE (Question 1): the physical event DAG carries
+                # the same placement menu as the analytic A ladder so one
+                # orchestration can be measured on either path and the
+                # paper's placement numbers never depend on which simulator
+                # abstraction produced them.
                 # Prefill-placement menu of the 2026-08-24 ladder: "gpu"
                 # (software prefill: resident rows come back over the link,
                 # the GPU runs one full-context block -- the A1-A4 rung),

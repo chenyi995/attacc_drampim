@@ -1,0 +1,142 @@
+{
+ "meta": {
+  "schema": "v2-dag",
+  "scenario": "relay",
+  "note": "1 supervisor -> 4 workers x 1 tiers; 段长 sys 400 instr 150 lout 150/150"
+ },
+ "agents": [
+  {
+   "id": "sup",
+   "tier": 0,
+   "parent": null,
+   "lout": 150,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "sys0",
+     "len": 400,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "instr",
+     "sha": "i-sup",
+     "len": 150,
+     "src": "online"
+    }
+   ]
+  },
+  {
+   "id": "t1w0",
+   "tier": 1,
+   "parent": "sup",
+   "lout": 150,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "sys0",
+     "len": 400,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "parent_out",
+     "sha": "out-sup",
+     "len": 150,
+     "src": "resident",
+     "delta": -150
+    },
+    {
+     "role": "instr",
+     "sha": "i-t1w0",
+     "len": 150,
+     "src": "online"
+    }
+   ]
+  },
+  {
+   "id": "t1w1",
+   "tier": 1,
+   "parent": "sup",
+   "lout": 150,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "sys0",
+     "len": 400,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "parent_out",
+     "sha": "out-sup",
+     "len": 150,
+     "src": "resident",
+     "delta": -150
+    },
+    {
+     "role": "instr",
+     "sha": "i-t1w1",
+     "len": 150,
+     "src": "online"
+    }
+   ]
+  },
+  {
+   "id": "t1w2",
+   "tier": 1,
+   "parent": "sup",
+   "lout": 150,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "sys0",
+     "len": 400,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "parent_out",
+     "sha": "out-sup",
+     "len": 150,
+     "src": "resident",
+     "delta": -150
+    },
+    {
+     "role": "instr",
+     "sha": "i-t1w2",
+     "len": 150,
+     "src": "online"
+    }
+   ]
+  },
+  {
+   "id": "t1w3",
+   "tier": 1,
+   "parent": "sup",
+   "lout": 150,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "sys0",
+     "len": 400,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "parent_out",
+     "sha": "out-sup",
+     "len": 150,
+     "src": "resident",
+     "delta": -150
+    },
+    {
+     "role": "instr",
+     "sha": "i-t1w3",
+     "len": 150,
+     "src": "online"
+    }
+   ]
+  }
+ ]
+}

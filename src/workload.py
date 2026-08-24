@@ -35,6 +35,15 @@ class WorkloadValidationError(ValueError):
 
 VALID_REUSE_POLICIES = ("no-reuse", "cacheblend", "epic", "promptcache",
                         "cachecraft", "cachetune")
+# PAPER TIE (software upstream): the paper's placement claims must hold
+# under ANY reasonable reuse software, so the upstream is an axis, not a
+# constant.  Experiment ruling (2026-08-25): the EXPERIMENT matrix uses only
+# the guaranteed-recompute selection family -- every member recomputes some
+# tokens and members differ ONLY in which tokens they select (cacheblend =
+# deviation-sampled ratio; epic = the "first k tokens of each shifted
+# segment" special case; cachecraft = overlap-scaled prefix; cachetune =
+# offline-selected ratio).  promptcache (zero recompute) stays implemented
+# as the endpoint baseline but is EXCLUDED from the matrix.
 # Policy families (software-upstream enrichment, 2026-08-24): members share
 # the anchor policy's plan machinery and differ in the recompute-selection
 # rule, mirroring the published chunk-reuse family:

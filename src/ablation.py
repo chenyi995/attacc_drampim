@@ -70,7 +70,14 @@ DECODE_ATTN_MODES = ("gpu", "pim")
 KV_MAPPINGS = ("none", "private", "naive", "master-diff")
 MASTER_SHADOW_MODES = ("read-mask", "skip")
 
-# The A1-A6 ladder (Chenyi's ruling, 2026-08-24).  The former A6 -- the
+# The A1-A6 ladder (Chenyi's ruling, 2026-08-24).  PAPER TIE (Question 1):
+# the paper asks WHERE prefill attention, decode attention and the KV cache
+# should live once requests share KV -- each rung isolates exactly one
+# placement decision, so the ladder differences ARE the paper's evidence:
+# A2-A1 = software reuse alone, A3-A2 = PIM decode + KV residency,
+# A4-A3 = PIM-aware layout, A5-A4 = prefill attention on the PIM (with the
+# batching it enables), A6-A5 = the dynamic per-request rule (Fugue).
+# The former A6 -- the
 # GPU/PIM "split" prefill hybrid (GPU attends the fresh rows, the PIM scans
 # the reused KV, LSE merge at the DIE) -- is ABOLISHED as a ladder point:
 # the design menu is either all-GPU or all-PIM prefill attention, never
@@ -705,8 +712,14 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
                 continue
 
             if carries_reuse and config.prefill_attn == "dynamic":
-                # Fugue placement rule (paper Eq.(placement)), evaluated with
-                # the simulator's own cost model instead of the closed form:
+                # PAPER TIE (Question 1, Fugue rung): a fixed side is
+                # provably wrong in both directions -- a mostly-fresh
+                # request wastes the readback either way while a
+                # mostly-reused one wastes GPU attention over rows the
+                # banks already hold -- so the paper's method decides PER
+                # REQUEST CLASS.  Fugue placement rule (paper
+                # Eq.(placement)), evaluated with the simulator's own cost
+                # model instead of the closed form:
                 # price the bank path (q link + PIM scan + softmax + ctx
                 # link) and the xPU path (read the resident rows back over
                 # the link, then an ordinary GPU attention block over the

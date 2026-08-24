@@ -10,6 +10,13 @@ from src.type import *
 
 
 # --- MQ-MAC batch command timing (PLAN_mq_command.md §2.1; 2026-08-23 rev) --
+# PAPER TIE (Question 2): the paper asks how a bank-level PIM serves n
+# agents that share one KV -- this block is that answer's timing model:
+# one column read serves every resident Q (capacity axis = GEMV buffer,
+# Q only), the PE clock decides how many queries fit in one command
+# interval (rate axis), and the streamed P is priced by the TSV movement
+# bus, so the A5/A6 rungs of the placement ladder inherit exactly the
+# microarchitecture the C series measures.
 # One MAC_AB reads a column once and the bank PE multiplies it against every
 # resident Q internally.  Design principle (Chenyi, 2026-08-23): the DRAM
 # command cadence is NEVER stretched by compute -- the column stream runs at
