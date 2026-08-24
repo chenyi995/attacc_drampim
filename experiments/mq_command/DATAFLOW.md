@@ -7,6 +7,32 @@ AttAcc 原文(§4.2/§5.1/§7.7)+ 本仓库实测(results_c_points.json)。
 
 ---
 
+## ⚠️ 2026-08-24 设计修订:P 流式(streaming P,宸逸裁决)——本节取代下文的 n_c 驻留描述
+
+本页以下正文与三路审计是 **2026-08-21 的 (n_q, n_c) 驻留设计**的存档记录。
+2026-08-24 裁决:**P 不驻留**——P 的一个条目在本 bank 只被两个输出趟各用一次,
+复用近零(Q 则被每个 K 列复用,必须驻留),所以"多条 P 对一段 V"与"一条 P 对
+一段 V"同样都是流;驻留 buffer 买不到东西。由此:
+
+1. **context 相一遍完成**,与 score 相同用 n_q;不再有 n_c 档与 ⌈n_q/n_c⌉ 趟
+   重扫 V(§2.B 步骤 11–14、§1 表 GEMV buffer/累加器行、§3 表 context 行、
+   步骤 60 的"故驻留、不流式"结论均被取代)。
+2. **容量轴只约束 Q**:`mq_query_capacity = S/64`;P 以 MV_GB 流经半双工 TSV
+   进双缓冲半区(现役块 32 B/查询),上限是移动总线带宽+方向转向
+   (nRTW/nWTRL),不是 buffer 容量。平衡条件(推导+实测闭合,误差 3–5%):
+   当前命令序(同 BG 连发,nCCDL=4 tCK)下 **n ≤ interval** 即不拖慢 V 扫描;
+   跨 BG 交错可回到 nBL=2 tCK、翻倍为 n ≤ 2·interval(开点,未动)。
+3. **context 侧硬件**:n_c 条 P 驻留区 + 2×n_c×64 B 累加器 → 每查询一组
+   16×FP16 累加寄存器(n_q×32 B)+ P 现役块 n_q×32 B×双缓冲;buffer 需求
+   与 score 区同为 n_q×64 B,两相统一。
+4. **实现与数据**:`run_c_points.py`(context 单遍,n_q ∈ {8,16,32})、
+   `results_c_points.json`(2026-08-24 重测,加速比全线上修,如 n=16@1.3 GHz
+   2.90×→4.52×)、`src/ramulator_wrapper.py::mq_query_capacity` docstring、
+   trace 生成器 phase 注释。汇总见 `docs/README_mq_design_space.md`
+   §3–§5、§7 第 6–7 条(含"P 跨两输出趟的送法"未裁决项)。
+
+---
+
 ## 1. 分层硬件增量
 
 | 层 | AttAcc 原有 | MQ 之后 | 增量 |

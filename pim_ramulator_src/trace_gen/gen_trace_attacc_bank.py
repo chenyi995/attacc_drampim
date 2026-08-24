@@ -478,14 +478,20 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
 
 
   if phase != "full":
-    # Asymmetric MQ sweeps (PLAN_mq_command.md, extended 2026-08-21): the
-    # score phase runs once with n_q resident queries, the context phase runs
-    # ceil(n_q / n_c) passes with n_c resident probability vectors.  Each
-    # phase is its own Ramulator run with its own --shared-queries, so the
-    # stream is sliced here at the first MVGB: WRGB + score MACs/MVSB + SFM
-    # belong to the score phase, MVGB + context MACs/MVSB to the context
-    # phase.  The two-head pipeline interleaves phases across heads, so the
-    # slice is defined only for a single head-iteration stream.
+    # Per-phase MQ runs (PLAN_mq_command.md; streaming-P revision 2026-08-24):
+    # the score phase runs once with n_q resident queries; the context phase
+    # ALSO runs once with the same n_q -- probability vectors are NOT
+    # resident.  A P entry has (almost) no per-bank reuse (one scalar per V
+    # column per output pass), so each query's P simply streams through the
+    # double-buffered GEMV-buffer halves via MV_GB; its bound is the
+    # movement-bus bandwidth (32 B per nBL tCK per pCH, the stack-level
+    # 1024-bit @ 5.2 Gbps TSV path) plus the MVSB<->MVGB direction
+    # turnaround (nRTW/nWTRL), not the buffer capacity.  Each phase is its
+    # own Ramulator run with its own --shared-queries, so the stream is
+    # sliced here at the first MVGB: WRGB + score MACs/MVSB + SFM belong to
+    # the score phase, MVGB + context MACs/MVSB to the context phase.  The
+    # two-head pipeline interleaves phases across heads, so the slice is
+    # defined only for a single head-iteration stream.
     if math.ceil(n_head_per_hbm / n_channel) > 1:
       raise ValueError("--phase score/context requires nhead <= channels")
     boundary = next((index for index, cmd in enumerate(total_cmd)

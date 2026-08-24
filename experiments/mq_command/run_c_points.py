@@ -11,17 +11,27 @@ The C numbering (user ruling 2026-08-21):
       latency = ceil(N/k) x t1 (analytic from the measured t1),
       storage = k x.  Its concurrency also presupposes idle channels;
       with heads >= channels it degenerates to C1.
-  C3  our asymmetric MQ acceleration: the MQ-MAC command (one MAC_AB per
-      column serves every resident Q) with per-phase residency -- the score
-      phase runs once with n_q resident queries, the context phase runs
-      ceil(n_q/n_c) passes with n_c resident probability vectors -- and a
-      pipelined PE whose clock may be raised above AttAcc's synthesized
-      666 MHz.  storage = 1x; K reads / n_q, V reads / n_c.
+  C3  our MQ acceleration: the MQ-MAC command (one MAC_AB per column serves
+      every resident Q) with a pipelined PE whose clock may be raised above
+      AttAcc's synthesized 666 MHz.  The score phase runs once with n_q
+      resident queries; the context phase ALSO runs once with the same n_q
+      (streaming-P revision, ruling 2026-08-24) -- probability vectors are
+      NOT resident: a P entry has (almost) no per-bank reuse (one scalar per
+      V column per output pass), so each query's P streams through the
+      double-buffered GEMV-buffer halves via MV_GB.  Its bound is the
+      movement-bus bandwidth (32 B per nBL tCK per pCH, the stack-level
+      1024-bit @ 5.2 Gbps TSV path) plus the MVSB<->MVGB direction
+      turnaround (nRTW/nWTRL), all physically priced inside the Ramulator
+      run.  storage = 1x; K and V are each read once for ALL n_q queries.
 
-Buffer bookkeeping behind (n_q, n_c): a Q slice is 64 B/bank, a P slice is
-L/8 B/bank, so a GEMV buffer of S bytes holds n_q = S/64 and n_c = 8S/L.
-(16,2) needs S = 1 KiB (2x AttAcc, ~12.2% die overhead), (32,4) needs
-S = 2 KiB (4x, ~15.0%).
+Buffer bookkeeping behind n_q: only the Q side is capacity-bound -- a Q
+slice is 64 B/bank, so a GEMV buffer of S bytes holds n_q = S/64.  The
+stock 512-B buffer already holds 8 queries at no hardware cost; n_q = 16
+needs S = 1 KiB (2x AttAcc, ~12.2% die overhead), n_q = 32 needs S = 2 KiB
+(4x, ~15.0%) -- the capacity axis costs SRAM + PE area and power.  The
+trace still orders the MV_GB block before the context MACs with a barrier,
+i.e. the context phase is priced load-then-compute (conservative: the real
+double buffer overlaps P delivery with the V scan).
 
 Every measured number is one patched-Ramulator2 run (nhead=1, num_hbm=1,
 power-constrained HBM3_5.2Gbps).
@@ -65,8 +75,9 @@ def main():
                         help="C3 PE clocks; 0.666 GHz is AttAcc's synthesized "
                              "point, everything above is the pipelined-PE "
                              "assumption")
-    parser.add_argument("--points", type=str, nargs="*", default=["16,2", "32,4"],
-                        help="C3 (n_q,n_c) asymmetric residency points")
+    parser.add_argument("--points", type=int, nargs="*", default=[8, 16, 32],
+                        help="C3 resident-query counts n_q (P is streamed, "
+                             "not resident; 8 fits the stock 512-B buffer)")
     parser.add_argument("--c2-copies", type=int, nargs="*", default=[2, 4, 8],
                         help="C2 replication factors k reported per point")
     parser.add_argument("--out", type=str,
@@ -85,31 +96,33 @@ def main():
                            mode="replicate", pe_freq_ghz=0.666)
 
     rows = []
-    for point in args.points:
-        n_q, n_c = (int(part) for part in point.split(","))
-        passes = math.ceil(n_q / n_c)
+    for n_q in args.points:
         c1_ns = n_q * t1_ns
         c2 = {k: round(math.ceil(n_q / k) * t1_ns, 1) for k in args.c2_copies}
         for pe in args.pe_freq_ghz:
             score_ns, score_macs = _scan(ram, n=n_q, length=length,
                                          phase="score", mode="mq",
                                          pe_freq_ghz=pe)
-            ctx_ns, ctx_macs = _scan(ram, n=n_c, length=length,
+            # Streaming-P: ONE context pass with all n_q queries.  The n_q-fold
+            # MV_GB stream (P delivery over the movement bus, direction
+            # turnaround included) is inside this run; the V columns are read
+            # once for all queries.
+            ctx_ns, ctx_macs = _scan(ram, n=n_q, length=length,
                                      phase="context", mode="mq",
                                      pe_freq_ghz=pe)
-            total_ns = score_ns + passes * ctx_ns
+            total_ns = score_ns + ctx_ns
             rows.append({
-                "n_agents": n_q, "n_q": n_q, "n_c": n_c, "L": length,
+                "n_agents": n_q, "n_q": n_q, "L": length,
+                "p_residency": "streamed",
                 "pe_freq_ghz": pe,
-                "buffer_bytes": max(n_q * 64, n_c * length // 8),
-                "interval_score": mq_interval_cycles(n_q, True, pe),
-                "interval_context": mq_interval_cycles(n_c, True, pe),
+                "buffer_bytes": n_q * 64,
+                "interval_cycles": mq_interval_cycles(n_q, True, pe),
                 "c3_score_ns": round(score_ns, 1),
-                "c3_context_pass_ns": round(ctx_ns, 1), "c3_passes": passes,
+                "c3_context_ns": round(ctx_ns, 1),
                 "c3_total_ns": round(total_ns, 1),
                 "c3_per_agent_ns": round(total_ns / n_q, 1),
-                "c3_mac_cmds": score_macs + passes * ctx_macs,
-                "c3_act_allbank": act_rows * (1 + passes),
+                "c3_mac_cmds": score_macs + ctx_macs,
+                "c3_act_allbank": act_rows * 2,
                 "c1_ns": round(c1_ns, 1),
                 "c1_mac_cmds": n_q * t1_macs,
                 "c1_act_allbank": n_q * 2 * act_rows,
@@ -121,10 +134,10 @@ def main():
         json.dump({"t1_ns": t1_ns, "t1_mac_cmds": t1_macs,
                    "c2_model": "ceil(N/k) x t1, storage k-fold",
                    "rows": rows}, handle, indent=2, sort_keys=True)
-    print("C3 point  pe(GHz)  itv(s/c)   score_ns  ctx_ns x passes    total_ns  /agent  vs C1   C2 equal-k")
+    print("C3 n_q  pe(GHz)  itv    score_ns  context_ns    total_ns  /agent  vs C1   C2 equal-k")
     for row in rows:
-        print("({n_q:>2},{n_c:>2})    {pe_freq_ghz:>5}   {interval_score:>2}/{interval_context:<2}   "
-              "{c3_score_ns:>9.0f}  {c3_context_pass_ns:>7.0f} x {c3_passes:<2}   {c3_total_ns:>9.0f}  "
+        print("{n_q:>4}    {pe_freq_ghz:>5}   {interval_cycles:>2}   {c3_score_ns:>9.0f}  "
+              "{c3_context_ns:>10.0f}   {c3_total_ns:>9.0f}  "
               "{c3_per_agent_ns:>6.0f}  {c3_speedup_vs_c1:>5.2f}x   k={c2_equal_latency_copies}".format(**row))
     print("t1 = {:.0f} ns (C1 = N x t1; C2 = ceil(N/k) x t1); wrote {}".format(
         t1_ns, args.out))

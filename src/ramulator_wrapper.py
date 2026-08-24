@@ -42,7 +42,16 @@ _MQ_E_Q_PJ = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +  # 16-lane MAC
 
 
 def mq_query_capacity(gemv_buffer_bytes=MQ_DEFAULT_GEMV_BUFFER_BYTES):
-    """Resident-Q capacity of one bank's GEMV buffer (the sweep splits beyond)."""
+    """Resident-Q capacity of one bank's GEMV buffer (the sweep splits beyond).
+
+    Q is the ONLY capacity-bound operand (ruling 2026-08-24): a Q slice is
+    reused across every K column of the bank, so it must stay resident and
+    n_q = S/64 -- the stock 512-B buffer holds 8, more queries need a larger
+    buffer (SRAM + PE area/power).  The context-phase P vector has (almost)
+    no per-bank reuse and therefore streams through the double-buffered
+    halves via MV_GB; its bound is the movement-bus bandwidth and direction
+    turnaround (priced physically in the trace), never this capacity.
+    """
     return max(1, int(gemv_buffer_bytes) // MQ_QUERY_SLICE_BYTES)
 
 

@@ -21,23 +21,29 @@ MICRO'25:"batching…no reuse due to lack of shared KV")。
 |---|---|---|
 | **C1 compact** | 基线一:AttAcc 原样,KV 存一份,单查询串行扫 | 上游 replicate 命令流 |
 | **C2 多通道** | 基线二:KV 复制 k 份到 k 组通道并行(容量换时间) | 解析上界 `ceil(N/k)×t1`(对 C2 有利的估计) |
-| **C3 非对称 MQ** | 论文主张:MQ-MAC 批命令 + (n_q,n_c) 驻留 + PE 提频,score/context 两相各自定间隔 | `--pim-batch-command mq`、`--phase`、`mq_interval_cycles` |
+| **C3 MQ** | 论文主张:MQ-MAC 批命令 + Q 驻留(容量轴)+ P 流式(TSV 移动总线计价)+ PE 提频;score/context 两相各一遍、同用 n_q(2026-08-24 流式 P 修订) | `--pim-batch-command mq`、`--phase`、`mq_interval_cycles` |
 
 **MQ-MAC 命令**:一条 `PIM_MAC_AB` 列读一次,bank PE 对 n 条驻留查询各做
 一次 16 路 FP16 乘加;只有查询私有搬运(载 Q/搬 score/softmax/搬回 P)
-仍每查询一份。命令间隔按 `mq_interval_cycles` 拉伸 = max(功耗拉伸,
-PE 吞吐 ceil(n/(f·tCK)), 通路下限 4)。设计上有**两个独立的轴**:
-GEMV buffer 容量决定驻留几条查询(64 B/条,面积大头),PE 频率决定
-每次列读间隔能服务几条(面积小头);每档容量 n 有匹配频率
-f\*(n)=n/(功耗地板·tCK):n=8/16/32 → 1.30/2.08/3.20 GHz,超过 f\*
-再提频撞功耗地板无收益。
+仍每查询一份。命令间隔 `mq_interval_cycles` = max(preset 地板 6(功耗
+受限)/4(不受限), PE 吞吐 ceil(n/(f·tCK)))——**计算永不拉长 DRAM
+节拍**(FIMDRAM 先例),PE 功率单独记账(`mq_pe_power_w` 对照 116 W
+预算线)。设计上有**两个独立的轴**:GEMV buffer 容量决定驻留几条查询
+(64 B/条,面积大头;**只约束 Q**——context 相的 P 流式,不驻留,
+2026-08-24 裁决),PE 频率决定每次列读间隔能服务几条(面积小头);
+每档容量 n 有匹配频率 f\*(n)=n/(地板·tCK):n=8/16/32 →
+1.73/3.47/6.93 GHz(6.93 超出 MAC 树流水实测 Fmax≈2.67 GHz,被封顶)。
+P 流的第三条线:context 相 TSV 移动总线,当前命令序下 n ≤ interval
+即不拖慢 V 扫描(推导+实测闭合,见 `README_mq_design_space.md` §4)。
 
-**头条数字**(L=4096、功耗受限,`experiments/mq_command/results_c_points.json`):
+**头条数字**(L=4096、功耗受限,2026-08-24 流式 P 重测,
+`experiments/mq_command/results_c_points.json`):
 
-- C3 (32,4)@1.3 GHz:**每 agent 1.71 µs,3.63× vs C1,列读/行激活 ÷7.1,
-  KV 容量 1×**;同频对照行(0.666 GHz=AttAcc 原生 PE):(16,2) 2.29×、
-  (32,4) 2.90×——这是纯命令/微架构收益,提频部分另有面积代价(C-abl-3);
-- C2 需 k≥8 份拷贝才在延迟上追平,且能耗不降(排除项)。
+- C3 n_q=16@1.3 GHz:**每 agent 1.38 µs,4.52× vs C1,列读/行激活 ÷16,
+  KV 容量 1×**;n_q=8@2.08 GHz(匹配点)5.63×,n_q=16@3.2 GHz 6.63×;
+  同频对照行(0.666 GHz=AttAcc 原生 PE):n=8/16/32 → 2.89/2.91/2.87×
+  ——这是纯命令/微架构收益,提频部分另有面积代价(C-abl-3);
+- C2 需 k≥5–7 份拷贝才在延迟上追平,且读能耗不降(排除项)。
 
 ## 2. 消融与实装
 
@@ -45,7 +51,7 @@ f\*(n)=n/(功耗地板·tCK):n=8/16/32 → 1.30/2.08/3.20 GHz,超过 f\*
 |---|---|---|---|
 | **C-abl-1** | 命令方案消融:MQ vs ×B 复制 vs dense,96 点 | 支撑"为什么是 MQ 命令" | `run_mq_study.py` |
 | **C-abl-2** | 搬运总线方向转向(nRTW/nWTRL 约束)+ 同通道两头流水 | 流水收益 ≤0.84% → **关闭窄下行方案**(设计裁决) | `run_pipeline_overlap.py` |
-| **C-abl-3** | 微架构 RTL sweep:bank PE(基线/(8,1)/(16,2)/(32,4)×频点)+ logic die(AGENTS 8/16/32),N28/Genus 12 点 | 论文 die 面积口径(只报相对 AttAcc bank PE 的倍数);按 AttAcc §7.7 的 in-bank 面积预算,(16,2) 各频点在预算内,(32,4) 从 1.0 GHz 起越线 | `fugue-logic-die-rtl/syn/run_mq_sweep_all.sh` → `collect_mq_results.py` |
+| **C-abl-3** | 微架构 RTL sweep:bank PE(基线/(8,1)/(16,2)/(32,4)×频点)+ logic die(AGENTS 8/16/32),N28/Genus 12 点 | 论文 die 面积口径(只报相对 AttAcc bank PE 的倍数);按 AttAcc §7.7 的 in-bank 面积预算,(16,2) 各频点在预算内,(32,4) 从 1.0 GHz 起越线。**注**:build 名沿用旧 (n_q,n_c) 驻留设计;流式 P 后 n_c 不再是设计参数,面积点待按新结构重扫 | `fugue-logic-die-rtl/syn/run_mq_sweep_all.sh` → `collect_mq_results.py` |
 | **C-impl** | 机制实装:D_i 位图 master 写过滤(到达顺序无关);bank-whole 因果丢弃 prefill | 对应论文 §4.3.2 / §4.5.2 | `--pim-prefill-mode bank-whole`;单测 |
 
 ## 3. 在论文中的意义
@@ -72,7 +78,7 @@ C 系列支撑论文的**微架构与 die 面积章节**(E4 方向)。公平性�
 
 ```sh
 cd /data2/chenyi9/KV-PIM/attacc_drampim_xinyao
-python3 experiments/mq_command/run_c_points.py          # C1/C2/C3 八点
+python3 experiments/mq_command/run_c_points.py          # C1/C2/C3 十二点
 python3 experiments/mq_command/run_mq_study.py --workers 48   # C-abl-1
 python3 experiments/mq_command/run_pipeline_overlap.py  # C-abl-2
 # C-abl-3(RTL 仓库):
