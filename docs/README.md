@@ -1,0 +1,106 @@
+# kvpim-sim(chenyi-822-dirty):GPU–PIM 共享 KV 服务仿真器 —— 项目总览
+
+目标读者:有计算机背景、但不了解本项目/LLM serving/DRAM-PIM 细节的人。
+概念首次出现即解释,关键术语标注英文;各专题另有独立 README(见文末索引)。
+
+## 1. 这个项目是什么
+
+大语言模型 (LLM) 生成回答分两个阶段:**prefill**(预填充:把整段输入
+一次性算完,生成 KV 缓存)与 **decode**(逐词生成:每个新词都要把历史
+KV 缓存从头读一遍做注意力 (attention))。KV 缓存 (KV cache) 指每个历史
+token 存下的一条 K 向量和一条 V 向量。decode 阶段的瓶颈是**内存带宽**:
+把 KV 从显存搬到计算单元的代价远超过计算本身。
+
+AttAcc(ASPLOS'24)把 decode 注意力搬进 HBM 内存的每个 bank(DRAM 的
+独立读写单元)旁边的小计算单元(bank PE, processing element)执行——
+这类结构叫存内计算 (PIM, processing-in-memory)。本仓库在 AttAcc 的开源
+仿真器上扩展,研究 **Fugue**:多智能体 (multi-agent)、多轮 (multi-round)
+场景下,多个请求**共享**同一份 KV(相同的系统提示、共享的文档 chunk、
+上一轮的输出),GPU 与 PIM 怎么分工、KV 怎么摆、一次 DRAM 列读怎么服务
+多条查询。
+
+## 2. 两条仿真路径(同一份编排,两种精度)
+
+一个 workload(编排文件,JSON:多个请求、每个请求由若干段 (segment)
+组成、段带指纹 (fingerprint) 表达跨请求共享、`history_len` 表达多轮
+历史)可以从两条路径跑:
+
+| 路径 | 入口 | 精度/用途 |
+|---|---|---|
+| **解析路径** (analytic) | `main.py --ablation A1..A6` → `src/ablation.py` | 算子级代价模型 + Ramulator 扫描计时;快,用于 A 系列放置消融 |
+| **物理事件路径** (event DAG) | `main.py --reuse ... [--pim-prefill-mode ...]` → `src/workload_runner.py` | 每请求每层展开成带真实时序与依赖的事件图;慢而细,用于机制验证与 C 系列 |
+
+两条路径的放置语义已对齐(2026-08-24):prefill 注意力都在
+{gpu, pim, dynamic} 三选一,decode 注意力恒在 PIM(A2 除外)。
+
+## 3. A1–A6 阶梯(放置消融,2026-08-24 定)
+
+每一档只比上一档多一件事;各档细节见 `README_A1.md` … `README_A6.md`:
+
+| 档 | 含义 | prefill attn | KV 布局 | 批命令 |
+|---|---|---|---|---|
+| A1 | AttAcc 原样,无复用(参照点) | GPU | private | replicate |
+| A2 | 纯 GPU 跑软件复用 | GPU | none(KV 留在 GPU) | replicate |
+| A3 | 软件复用 + AttAcc,乱序布局(不分 channel) | GPU | naive | replicate |
+| A4 | + 分裂 channel(master/diff 分池) | GPU | master-diff | replicate |
+| A5 | + 所有 prefill 注意力进 PIM | PIM | master-diff | **mq** |
+| A6 | **Fugue(我们的方法)**:A5 + 逐请求动态选边 | dynamic | master-diff | **mq** |
+
+关键约定:**attention batching(MQ 批命令,一次列读服务多条驻留查询)
+与"prefill 上 PIM"同步启用**(A5 起);A1–A6 默认都在多轮 agentic 编排
+下运行(`history_len`,由 workload 决定);曾经的"split 混合"档(GPU 算
+新行、PIM 扫旧行、LSE 缝合)已废除。
+
+## 4. 软件上游(复用策略,`--reuse`)
+
+复用策略决定"哪些 KV 可以复用、复用时要重算多少来修正精度"。现有六个,
+分两族(详见 `README_software_upstream.md`):
+
+- **cacheblend 族**(按比例采样重算行):`cacheblend`(EuroSys'25,在线
+  选择,含全重算选择层)、`cachetune`(离线选择,无选择层);
+- **epic 族**(每段边界前缀重算):`epic`(每复用段重算前 k 个 token)、
+  `promptcache`(零重算基线,MLSys'24)、`cachecraft`(前缀长度按上下文
+  重叠度逐 chunk 变化,SIGMOD'25 风格)。
+
+## 5. C 系列(微架构)与 RTL
+
+一次 DRAM 列读服务 n 条查询的 MQ-MAC 批命令、GEMV buffer 容量轴 × PE
+频率速率轴、流式 P(概率向量不驻留、由 TSV 移动总线计价)等微架构内容
+是 **C 系列**,主要文档在 experiment 分支
+(`docs/README_c_series.md`、`docs/README_mq_design_space.md`);RTL 与
+综合在 `fugue-logic-die-rtl` 仓库。本分支的 C3 机制实装(MQ 命令、D_i
+位图、bank-whole prefill)见各 Ax README 的代码定位表。
+
+## 6. 快速上手
+
+```bash
+# 解析路径:A 系列一档(多轮 agentic,历史 3 token/请求)
+python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
+  --workload workload/workload_relay_s400w4t1.json \
+  --reuse epic --epic-prefix-recompute-tokens 1 \
+  --ablation A6 --history-len 3 --pipeopt --workload-report /tmp/a6.json
+
+# 物理事件路径:同一编排直接跑(默认 dynamic 放置)
+python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
+  --workload workload/workload_relay_s400w4t1.json \
+  --reuse epic --epic-prefix-recompute-tokens 1 \
+  --history-len 3 --pipeopt --workload-report /tmp/dag.json
+
+# 回归
+python3 -m unittest discover -s tests     # 40/40
+```
+
+真实 workload(Mooncake / ShareGPT / MultiHop-RAG 等)的获取与转换见
+`README_workloads.md` 与 `/data2/chenyi9/KV-PIM/workload/SOURCES.md`。
+
+## 7. 文档索引
+
+- `README_A1.md` … `README_A6.md`:每档的逐步代码定位
+- `README_software_upstream.md`:复用策略族与文献来源
+- `README_workloads.md`:真实 workload 来源、转换与首批结果
+- `README_delta_vs_xinyao0821.md`:相对 xinyao_0821 基线的全部改动
+- `README_manual_audit_findings.md`:人工审计发现(功耗口径、TLB 常数)
+- `PORTING_PLAN.md`(不入库):干净分支 chenyi-822 的逐步移植计划
+
+分支说明:本分支 (`chenyi-822-dirty`) 是**快速集成分支**;同容将按
+逐步人工审阅规范挪入干净分支 `chenyi-822`。
