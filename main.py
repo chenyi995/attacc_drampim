@@ -305,6 +305,29 @@ def main():
         help="assume software prefill already has the reused KV in GPU memory "
              "instead of reading it back from the PIM over the link")
     parser.add_argument(
+        "--pim-batch-command",
+        choices=("mq", "replicate"),
+        default="mq",
+        help="how a multi-query PIM sweep issues its MACs.  mq (default, the "
+             "Fugue design): one MAC_AB per column serves every resident Q; "
+             "the bank PE multiplies internally and the command interval "
+             "carries the n-fold PE time (the DRAM cadence is never "
+             "stretched; compute power is accounted separately).  replicate "
+             "reproduces the legacy one-command-per-(column, query) expansion")
+    parser.add_argument(
+        "--pe-freq-ghz",
+        type=float,
+        default=0.666,
+        help="bank GEMV-unit (PE) clock in GHz for the mq batch command; "
+             "0.666 is AttAcc's synthesized point (tCCDS-matched)")
+    parser.add_argument(
+        "--gemv-buffer-bytes",
+        type=int,
+        default=512,
+        help="per-bank GEMV input-vector buffer size; one query slice is "
+             "64 B, so this caps the queries resident in one sweep (the "
+             "sweep splits beyond it).  512 = AttAcc's 16 x 256-bit buffer")
+    parser.add_argument(
         "--validate-workload",
         action="store_true",
         help="validate --workload and print its tier/reuse plan without running hardware simulation")
@@ -468,7 +491,10 @@ def main():
                         system, workload, reuse_plan, pipe=args.pipeopt,
                         cacheblend_batch_size=args.cacheblend_batch_size,
                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
-                        include_events=(args.workload_report_events == "full"))
+                        include_events=(args.workload_report_events == "full"),
+                        pim_batch_command=args.pim_batch_command,
+                        pim_pe_freq_ghz=args.pe_freq_ghz,
+                        gemv_buffer_bytes=args.gemv_buffer_bytes)
                 elif (args.reuse in ("cacheblend", "epic") and
                       args.cacheblend_latency_model == "analytic"):
                     report = run_cacheblend_analytic_report(
@@ -481,7 +507,10 @@ def main():
                         system, workload, reuse_plan, pipe=args.pipeopt,
                         cacheblend_batch_size=args.cacheblend_batch_size,
                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
-                        include_events=(args.workload_report_events == "full"))
+                        include_events=(args.workload_report_events == "full"),
+                        pim_batch_command=args.pim_batch_command,
+                        pim_pe_freq_ghz=args.pe_freq_ghz,
+                        gemv_buffer_bytes=args.gemv_buffer_bytes)
             except WorkloadValidationError as exc:
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)

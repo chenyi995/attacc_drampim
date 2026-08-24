@@ -15,6 +15,8 @@ from dataclasses import dataclass, replace
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from .model import Layer
+from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
+                                MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
 from .type import DeviceType, LayerType
 from .workload import (ReusePlan, Workload, WorkloadValidationError,
                        validate_reuse_plan)
@@ -511,8 +513,29 @@ _DIE_ROTATE_CYCLE_S = 1e-9
 # length, pool, mask bit-vector) rather than a lookup per logical row.  The
 # mask itself is applied on the die between QK^T and softmax at no extra
 # modeled cost; the cross-run softmax merge is the DIE LSE-merge event.
+# TODO(manual-audit 2026-08-23, Chenyi): the 5-ns descriptor charge is an
+# unsourced modeling constant (introduced upstream in 47ae0c3 without
+# derivation or measurement), and it double-charges vs the paper's
+# attach-time metadata load (Fugue sec 5.1: the driver loads positions into
+# the die once; scans then consult resident metadata for free).  Direction:
+# conservative, <1% of a decode step; sweep splitting repeats it per pass.
+# Options in docs/README_manual_audit_findings.md -- keep+annotate /
+# attach-load event model / calibrate from the RTL decoder.
 _TLB_DESCRIPTOR_S = 5e-9
 _TLB_DESCRIPTOR_ENERGY = 0.1
+
+
+def _apply_pim_batch(op, batch_command: str, pe_freq_ghz: float) -> None:
+    """Stamp the sweep's batch-command scheme onto a PIM scan op.
+
+    ``replicate`` keeps the legacy one-MAC-per-(column, query) trace.  ``mq``
+    is the MQ-MAC command of PLAN_mq_command.md: one MAC_AB per column serves
+    every resident Q, and the Ramulator wrapper carries the n-fold PE time
+    in the command interval (the DRAM cadence itself is never stretched;
+    compute power is accounted separately, see mq_pe_power_w).
+    """
+    op.pim_batch_command = batch_command
+    op.pim_pe_freq_ghz = pe_freq_ghz
 
 
 def _tlb_plan_cost(runs) -> Tuple[float, Tuple[float, ...]]:
@@ -1083,16 +1106,32 @@ def _annotate_batch_q_arrivals(scheduled: Sequence[SplitEvent],
         arrival = max(event.end_s for event in q_events)
         batch["q_arrival_s"] = arrival
         batch["q_arrival_event_ids"] = [event.event_id for event in q_events]
-        shared_starts = [event.start_s for event in scheduled
-                         if event.request_id == batch["id"] and
-                         event.name == "decode_batch_tlb_lookup_and_bank_plan"]
-        if shared_starts:
-            start = min(shared_starts)
-            if start + 1e-18 < arrival:
-                raise WorkloadValidationError(
-                    "CacheBlend shared-KV batch begins before its final Q arrival")
-            batch["attention_admission_s"] = arrival
-            batch["attention_start_s"] = start
+        arrival_by_member: Dict[str, float] = {}
+        for event in q_events:
+            arrival_by_member[event.request_id] = max(
+                arrival_by_member.get(event.request_id, 0.0), event.end_s)
+        # The admitted batch may be served by several consecutive PIM sweeps
+        # (the GEMV-buffer capacity splits it).  Each sweep needs only its own
+        # members' Q arrivals; audit every sweep against exactly that set.
+        sweep_events = [event for event in scheduled
+                        if event.request_id == batch["id"] and
+                        event.name == "decode_batch_tlb_lookup_and_bank_plan"]
+        if sweep_events:
+            sweeps = []
+            for event in sweep_events:
+                sweep_members = list(event.batch_members) or batch["members"]
+                sweep_arrival = max(arrival_by_member[member]
+                                    for member in sweep_members)
+                if event.start_s + 1e-18 < sweep_arrival:
+                    raise WorkloadValidationError(
+                        "CacheBlend shared-KV sweep begins before its final Q arrival")
+                sweeps.append({"members": sweep_members,
+                               "admission_s": sweep_arrival,
+                               "start_s": event.start_s})
+            batch["sweeps"] = sweeps
+            batch["attention_admission_s"] = max(item["admission_s"]
+                                                 for item in sweeps)
+            batch["attention_start_s"] = min(item["start_s"] for item in sweeps)
             batch["admission"] = "global-q-ready-queue"
         else:
             batch["attention_admission_s"] = None
@@ -1680,7 +1719,10 @@ def _append_cacheblend_decode_batched(
         inputs: Sequence[Tuple[Any, Mapping[int, Sequence[Tuple[int, bool, bool, KVLocation]]],
                                str, Sequence[str]]], batch_size: int,
         batch_records: List[Dict[str, Any]], rotate_mode: str,
-        pipe: bool, contiguous_no_reuse: bool = False) -> Dict[str, Tuple[str, ...]]:
+        pipe: bool, contiguous_no_reuse: bool = False,
+        pim_batch_command: str = "replicate",
+        pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
+        gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Tuple[str, ...]]:
     """Decode a tier, admitting PIM-attention batches by real Q arrival.
 
     Q does not exist until QKV has run, so QKV is first batched by its GPU
@@ -1885,41 +1927,52 @@ def _append_cacheblend_decode_batched(
                                               for request in group))
                 scan_deps: Dict[str, List[str]] = {request.request_id: [] for request in group}
                 if common:
-                    die_qs = []
-                    for request in group:
-                        request_id = request.request_id
-                        position = request.total_length + output_row
-                        die_qs.append(_cacheblend_event(
-                            events, layer=layer_index, tier=tier, request=request_id,
-                            name="decode_die_query_position_transform", device="DIE", rows=1,
-                            time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
-                            energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
-                            deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,)))
                     common_addresses = [address for location in common
                                         for address in (location.key_address, location.value_address)]
-                    op = deepcopy(score)
-                    op.m, op.n, op.k, op.numOp = len(group), len(common), system.model.dhead, heads
-                    op.pim_kv_runs = tlb.scan_runs(common)
-                    plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
-                    tlb_event = _cacheblend_event(
-                        events, layer=layer_index, tier=tier, request=label,
-                        name="decode_batch_tlb_lookup_and_bank_plan", device="TLB",
-                        rows=len(common), time_s=plan_time_s,
-                        energy=plan_energy, deps=tuple(die_qs),
-                        positions=positions, addresses=common_addresses,
-                        batch_members=members)
-                    op.pim_shared_kv = True
-                    op.pim_shared_queries = len(group)
-                    shared_scan = _append_physical_pim_scan(
-                        system, events, op=op, layer=layer_index, tier=tier,
-                        request=label,
-                        name="decode_batch_pim_kv_scan_score_softmax_pv", rows=len(common),
-                        deps=(tlb_event,), positions=positions, runs=op.pim_kv_runs,
-                        batch_members=members,
-                        masked=_masked_rows_per_run(op.pim_kv_runs, common_masked,
-                                                    tlb.bytes_per_vector))
-                    for request in group:
-                        scan_deps[request.request_id].extend(shared_scan)
+                    # A sweep can hold at most the queries whose slices fit
+                    # the per-bank GEMV buffer; a larger admitted batch is
+                    # served by consecutive sweeps over the same rows
+                    # (Fugue: "beyond which the sweep splits").
+                    sweep_cap = mq_query_capacity(gemv_buffer_bytes)
+                    for sweep_start in range(0, len(group), sweep_cap):
+                        sweep = group[sweep_start:sweep_start + sweep_cap]
+                        sweep_members = tuple(request.request_id for request in sweep)
+                        sweep_positions = tuple(request.total_length + output_row
+                                                for request in sweep)
+                        die_qs = []
+                        for request in sweep:
+                            request_id = request.request_id
+                            position = request.total_length + output_row
+                            die_qs.append(_cacheblend_event(
+                                events, layer=layer_index, tier=tier, request=request_id,
+                                name="decode_die_query_position_transform", device="DIE", rows=1,
+                                time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
+                                energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
+                                deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,)))
+                        op = deepcopy(score)
+                        op.m, op.n, op.k, op.numOp = len(sweep), len(common), system.model.dhead, heads
+                        op.pim_kv_runs = tlb.scan_runs(common)
+                        plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
+                        tlb_event = _cacheblend_event(
+                            events, layer=layer_index, tier=tier, request=label,
+                            name="decode_batch_tlb_lookup_and_bank_plan", device="TLB",
+                            rows=len(common), time_s=plan_time_s,
+                            energy=plan_energy, deps=tuple(die_qs),
+                            positions=sweep_positions, addresses=common_addresses,
+                            batch_members=sweep_members)
+                        op.pim_shared_kv = True
+                        op.pim_shared_queries = len(sweep)
+                        _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
+                        shared_scan = _append_physical_pim_scan(
+                            system, events, op=op, layer=layer_index, tier=tier,
+                            request=label,
+                            name="decode_batch_pim_kv_scan_score_softmax_pv", rows=len(common),
+                            deps=(tlb_event,), positions=sweep_positions, runs=op.pim_kv_runs,
+                            batch_members=sweep_members,
+                            masked=_masked_rows_per_run(op.pim_kv_runs, common_masked,
+                                                        tlb.bytes_per_vector))
+                        for request in sweep:
+                            scan_deps[request.request_id].extend(shared_scan)
 
                 for request in group:
                     request_id = request.request_id
@@ -2143,7 +2196,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             *, pipe: bool, batch_size: int = 1,
                             physical_no_reuse: bool = False,
                             rotate_mode: str = "gpu",
-                            include_events: bool = True) -> Dict[str, Any]:
+                            include_events: bool = True,
+                            pim_batch_command: str = "replicate",
+                            pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
+                            gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
     if system.hetero_name != DeviceType.PIM:
         raise WorkloadValidationError("reuse prefill requires --system dgx-attacc")
     validate_reuse_plan(workload, plan, system.model.ndec)
@@ -2174,6 +2230,14 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     if rotate_mode not in _ROTATE_MODES:
         raise WorkloadValidationError("--cacheblend-rotate-mode must be one of {}".format(
             ", ".join(_ROTATE_MODES)))
+    if pim_batch_command not in ("replicate", "mq"):
+        raise WorkloadValidationError(
+            "--pim-batch-command must be 'replicate' or 'mq'")
+    if pim_pe_freq_ghz <= 0:
+        raise WorkloadValidationError("--pe-freq-ghz must be positive")
+    if gemv_buffer_bytes < 64:
+        raise WorkloadValidationError(
+            "--gemv-buffer-bytes must hold at least one 64-B query slice")
     batch_records: List[Dict[str, Any]] = []
 
     for tier, requests, _, _ in _tier_shapes(workload):
@@ -2340,14 +2404,14 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                            (not corrected or loc.shadow is not None)]
                     key = tuple(_address_key(loc) for loc in old)
                     old_groups.setdefault(key, []).append((ordinal, position, tuple_event, old))
+                prefill_sweep = max(1, min(batch_size,
+                                           mq_query_capacity(gemv_buffer_bytes)))
                 for compatible_queries in old_groups.values():
                     # Prefill follows the same user-visible admission bound as
-                    # decode.  Compatibility alone is not permission to make
-                    # an unbounded Q batch: it would exceed the modeled
-                    # per-batch Q/softmax-buffer capacity and turn a request
-                    # with thousands of fresh rows into one giant trace.
-                    for first in range(0, len(compatible_queries), batch_size):
-                        grouped = compatible_queries[first:first + batch_size]
+                    # decode, further capped by the per-bank GEMV buffer's
+                    # resident-Q capacity (the sweep splits beyond it).
+                    for first in range(0, len(compatible_queries), prefill_sweep):
+                        grouped = compatible_queries[first:first + prefill_sweep]
                         old = grouped[0][3]
                         if not old:
                             continue
@@ -2383,6 +2447,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                        for address in (loc.key_address, loc.value_address)])
                         op.pim_shared_kv = True
                         op.pim_shared_queries = len(grouped)
+                        _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
                         scan = _append_physical_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
                             request=request.request_id, name="pim_kv_scan_score_softmax_pv",
@@ -2448,7 +2513,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 system, events, tlb, templates, post, tier=tier, inputs=decode_inputs,
                 batch_size=batch_size, batch_records=batch_records,
                 rotate_mode=rotate_mode, pipe=pipe,
-                contiguous_no_reuse=physical_no_reuse).values() for dep in deps)
+                contiguous_no_reuse=physical_no_reuse,
+                pim_batch_command=pim_batch_command,
+                pim_pe_freq_ghz=pim_pe_freq_ghz,
+                gemv_buffer_bytes=gemv_buffer_bytes).values() for dep in deps)
         previous_tier_done = tuple(tier_done)
 
     validate_cacheblend_events(events, workload, local_hidden=local_hidden,
@@ -2467,6 +2535,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "latency_model": "physical-dag-ramulator" if physical_no_reuse else None,
         "cacheblend_batch_size": batch_size,
         "cacheblend_rotate_mode": rotate_mode,
+        "pim_batch_command": pim_batch_command,
+        "pim_pe_freq_ghz": pim_pe_freq_ghz,
+        "gemv_buffer_bytes": gemv_buffer_bytes,
+        "pim_sweep_query_capacity": mq_query_capacity(gemv_buffer_bytes),
         "batches": batch_records,
         "overlap_validation": overlap_validation,
         "events": ([event.to_dict() for event in scheduled] if include_events
@@ -2497,7 +2569,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
 def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                       *, pipe: bool = False, cacheblend_batch_size: int = 1,
                       cacheblend_rotate_mode: str = "gpu",
-                      include_events: bool = True) -> Dict[str, Any]:
+                      include_events: bool = True,
+                      pim_batch_command: str = "replicate",
+                      pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
+                      gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
     """Dispatch address-resolved CacheBlend and EPIC to the shared DAG.
 
     CacheBlend samples correction rows per layer; EPIC overlays the fixed
@@ -2509,5 +2584,8 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                                        batch_size=cacheblend_batch_size,
                                        physical_no_reuse=(plan.config.policy == "no-reuse"),
                                        rotate_mode=cacheblend_rotate_mode,
-                                       include_events=include_events)
+                                       include_events=include_events,
+                                       pim_batch_command=pim_batch_command,
+                                       pim_pe_freq_ghz=pim_pe_freq_ghz,
+                                       gemv_buffer_bytes=gemv_buffer_bytes)
     return _run_legacy_reuse_prefill(system, workload, plan)

@@ -47,6 +47,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from .model import Layer
+from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
+                                MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
 from .system import apply_attacc_pipeline
 from .type import DeviceType, LayerType
 from .workload import ReusePlan, Request, Workload, WorkloadValidationError
@@ -110,6 +112,17 @@ class AblationConfig:
     # reused-KV scan have no data dependency on each other, so the layer costs
     # max(gpu, pim) rather than their sum.  False restores the serial charge.
     split_overlap: bool = True
+    # How a multi-query PIM sweep issues its MACs (PLAN_mq_command.md).
+    # ``replicate``: one MAC_AB per (column, query), the legacy expansion.
+    # ``mq``: one MAC_AB per column serves every resident Q; the PE multiplies
+    # internally and the command interval carries the n-fold time and the
+    # power stretch.
+    pim_batch_command: str = "replicate"
+    # Bank-PE clock for the MQ command (AttAcc synthesizes 666 MHz).
+    pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ
+    # Per-bank GEMV (input-vector) buffer size; one Q slice is 64 B, so this
+    # caps the queries resident in one sweep (the sweep splits beyond it).
+    gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -123,6 +136,9 @@ class AblationConfig:
             "prefill_kv_readback": self.prefill_kv_readback,
             "master_shadow": self.master_shadow,
             "split_overlap": self.split_overlap,
+            "pim_batch_command": self.pim_batch_command,
+            "pim_pe_freq_ghz": self.pim_pe_freq_ghz,
+            "gemv_buffer_bytes": self.gemv_buffer_bytes,
         }
 
 
@@ -132,7 +148,10 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
                    master_pool_channels: int = 8,
                    prefill_kv_readback: bool = True,
                    master_shadow: str = "read-mask",
-                   split_overlap: bool = True) -> AblationConfig:
+                   split_overlap: bool = True,
+                   pim_batch_command: str = "replicate",
+                   pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
+                   gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> AblationConfig:
     """Expand a preset and let explicit switches override it."""
     base = dict(PRESETS[preset]) if preset else {}
     if not base and not (prefill_attn and decode_attn):
@@ -173,11 +192,22 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
     if master_shadow not in MASTER_SHADOW_MODES:
         raise WorkloadValidationError("--master-shadow must be one of {}".format(
             ", ".join(MASTER_SHADOW_MODES)))
+    if pim_batch_command not in ("replicate", "mq"):
+        raise WorkloadValidationError(
+            "--pim-batch-command must be 'replicate' or 'mq'")
+    if pim_pe_freq_ghz <= 0:
+        raise WorkloadValidationError("--pe-freq-ghz must be positive")
+    if gemv_buffer_bytes < 64:
+        raise WorkloadValidationError(
+            "--gemv-buffer-bytes must hold at least one 64-B query slice")
     return AblationConfig(preset=preset, pim_prefill_query_batch=pim_prefill_query_batch,
                           master_pool_channels=master_pool_channels,
                           prefill_kv_readback=prefill_kv_readback,
                           master_shadow=master_shadow,
-                          split_overlap=split_overlap, **resolved)
+                          split_overlap=split_overlap,
+                          pim_batch_command=pim_batch_command,
+                          pim_pe_freq_ghz=pim_pe_freq_ghz,
+                          gemv_buffer_bytes=gemv_buffer_bytes, **resolved)
 
 
 # ---------------------------------------------------------------------------
@@ -474,7 +504,10 @@ def _link_layer(template: Layer, name: str, rows: int, width: int) -> Layer:
 
 def _pim_scan(system, template: Layer, *, rows: int, queries: int, heads: int,
               runs: Sequence[Tuple[int, int, int, int, int]],
-              query_batch: int) -> Tuple[float, List[float]]:
+              query_batch: int, batch_command: str = "replicate",
+              pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
+              gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES
+              ) -> Tuple[float, List[float]]:
     """Price one PIM attention scan with the original AttAcc Ramulator path.
 
     ``runs`` are the contiguous K/V extents of one channel pool; they are
@@ -488,12 +521,18 @@ def _pim_scan(system, template: Layer, *, rows: int, queries: int, heads: int,
     op = copy.deepcopy(template)
     op.m, op.n, op.k, op.numOp = 1, sum(run[2] for run in runs), template.k, heads
     op.pim_kv_runs = tuple(runs)
-    shared_queries = min(query_batch, max(queries, 1))
+    # The resident-Q count of one sweep is bounded by the per-bank GEMV
+    # buffer whichever batch command is used (both schemes keep every Q of
+    # the sweep loaded); beyond it the sweep splits into more passes.
+    shared_queries = min(query_batch, max(queries, 1),
+                         mq_query_capacity(gemv_buffer_bytes))
     # ``--shared-kv`` puts every head group of a trace on one K/V partition.
     # Only a multi-query scan needs it; a decode scan keeps AttAcc's original
     # per-head-group placement.
     op.pim_shared_kv = shared_queries > 1
     op.pim_shared_queries = shared_queries
+    op.pim_batch_command = batch_command
+    op.pim_pe_freq_ghz = pe_freq_ghz
     measured = system.devices["Acc"].get_time_and_energy_runs(op)
     passes = math.ceil(max(queries, 1) / op.pim_shared_queries)
     time_s = sum(item[0] for item in measured) * passes
@@ -650,7 +689,10 @@ def _prefill_batch(system, plan: ReusePlan, config: AblationConfig,
             pim_time, pim_energy = _pim_scan(
                 system, score, rows=scan_rows, queries=queries,
                 heads=heads * batch, runs=_private_runs(scan_rows, stride),
-                query_batch=config.pim_prefill_query_batch)
+                query_batch=config.pim_prefill_query_batch,
+                batch_command=config.pim_batch_command,
+                pe_freq_ghz=config.pim_pe_freq_ghz,
+                gemv_buffer_bytes=config.gemv_buffer_bytes)
             pim_branch += pim_time
             attn_energy += sum(pim_energy) / 1000.0 * count
             _accumulate(attn_breakdown, "pim_prefill_score", pim_time * count)
@@ -735,7 +777,10 @@ def _decode_block_time(system, config: AblationConfig, block: Sequence[Layer],
                 for pool in profile.pools:
                     time_s, energy = _pim_scan(
                         system, layer, rows=sum(run[2] for run in pool), queries=1,
-                        heads=heads * batch, runs=pool, query_batch=1)
+                        heads=heads * batch, runs=pool, query_batch=1,
+                        batch_command=config.pim_batch_command,
+                        pe_freq_ghz=config.pim_pe_freq_ghz,
+                        gemv_buffer_bytes=config.gemv_buffer_bytes)
                     pool_times.append(time_s)
                     pool_energy += sum(energy) / 1000.0
                 # Disjoint channel pools stream concurrently; extents inside a
