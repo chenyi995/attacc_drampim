@@ -117,6 +117,23 @@
 
 ---
 
+## 问题 5(追加,2026-08-25):压缩率列低估——属主副本双计
+
+- **现象**:multihop 的 `kv_bytes_vs_no_reuse` 报 0.953(省 4.7%),但
+  workload 实际可去重 43,096 token(20.3%,12 个多消费者 chunk)。
+- **代码实际**:`src/ablation.py::_memory_report` 里
+  `private_rows = total − 消费者复用行` **已含属主的那份副本**(属主没有
+  复用决策),`reuse_layer_rows` 又把 `shared_rows`(每个去重 chunk 一份)
+  加了一遍——属主副本计了两次,恰好把省量从 43k 压到 9.8k。
+- **归因**:xinyao,`47ae0c3`(A 系列占用报告引入)。
+- **处置(已修)**:`reuse_layer_rows` 去掉 `shared_rows` 项(报告字段
+  保留),加单测
+  `test_memory_report_stores_shared_chunks_exactly_once` 锁死;新报告带
+  `owner_copy_fix: native` 标记;存量结果用
+  `experiments/paper_ladder/repair_memory_column.py` 纯算术修补
+  (`kv_rows −= shared_master_rows`,与新公式严格等价)——multihop 修补
+  后 0.798 ✓ 与手算一致。
+
 ## 处置记录(2026-08-25,宸逸裁决后落地)
 
 - **问题 1 已修**:dynamic 的 xPU 侧估价/入账改为与 gpu 档同一口径

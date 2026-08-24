@@ -1,0 +1,2037 @@
+{
+ "meta": {
+  "schema": "v2-dag",
+  "scenario": "mooncake-conversation-multiturn",
+  "source": "kvcache-ai/Mooncake conversation_trace.jsonl (FAST'25)",
+  "tokenizer": "native token counts (trace is in tokens)",
+  "note": "rounds chained by drop-last-block hash prefix; history_len grows per round = previous round's full input (ruling 2026-08-25)"
+ },
+ "agents": [
+  {
+   "id": "mc0r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 475,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc611",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc612",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc613",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc614",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc615",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc616",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc617",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc618",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc619",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc620",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc621",
+     "len": 427,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 3000
+  },
+  {
+   "id": "mc0r1",
+   "tier": 1,
+   "parent": "mc0r0",
+   "lout": 442,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc0r0",
+     "len": 475,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc5597-5598",
+     "len": 15,
+     "src": "online"
+    }
+   ],
+   "history_len": 6059,
+   "timestamp": 74999
+  },
+  {
+   "id": "mc0r2",
+   "tier": 2,
+   "parent": "mc0r1",
+   "lout": 495,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc0r1",
+     "len": 442,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc10992-10993",
+     "len": 11,
+     "src": "online"
+    }
+   ],
+   "history_len": 6549,
+   "timestamp": 156000
+  },
+  {
+   "id": "mc1r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 80,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc655",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc656",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc657",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc658",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc659",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc660",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc661",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc662",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc663",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc664",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc665",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc666",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc667",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc668",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc669",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc670",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc671",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc672",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc673",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc674",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc675",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc676",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc677",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc678",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc679",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc680",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc681",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc682",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc683",
+     "len": 324,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 3000
+  },
+  {
+   "id": "mc1r1",
+   "tier": 1,
+   "parent": "mc1r0",
+   "lout": 526,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc1r0",
+     "len": 80,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc5698-5699-5700-5701",
+     "len": 1730,
+     "src": "online"
+    }
+   ],
+   "history_len": 15172,
+   "timestamp": 78000
+  },
+  {
+   "id": "mc1r2",
+   "tier": 2,
+   "parent": "mc1r1",
+   "lout": 564,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc1r1",
+     "len": 526,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc18695-18696-18697-18698",
+     "len": 2775,
+     "src": "online"
+    }
+   ],
+   "history_len": 16982,
+   "timestamp": 278999
+  },
+  {
+   "id": "mc1r3",
+   "tier": 3,
+   "parent": "mc1r2",
+   "lout": 831,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc1r2",
+     "len": 564,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc27512-27513-27514-27515",
+     "len": 1758,
+     "src": "online"
+    }
+   ],
+   "history_len": 20283,
+   "timestamp": 440999
+  },
+  {
+   "id": "mc2r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 370,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc560",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc561",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc562",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc563",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc564",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc565",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc566",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc567",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc568",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc569",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc570",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc571",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc572",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc573",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc574",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc575",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc576",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc577",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc578",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc579",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc580",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc581",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc582",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc583",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc584",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc585",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc586",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc587",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc588",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc589",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc590",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc591",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc592",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc593",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc594",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc595",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc596",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc597",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc598",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc599",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc600",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc601",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc602",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc603",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc604",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc605",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc606",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc607",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc608",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc609",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc610",
+     "len": 241,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 3000
+  },
+  {
+   "id": "mc2r1",
+   "tier": 1,
+   "parent": "mc2r0",
+   "lout": 370,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc2r0",
+     "len": 370,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc7871-7872",
+     "len": 5,
+     "src": "online"
+    }
+   ],
+   "history_len": 26353,
+   "timestamp": 108000
+  },
+  {
+   "id": "mc2r2",
+   "tier": 2,
+   "parent": "mc2r1",
+   "lout": 331,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc2r1",
+     "len": 370,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc31904-31905",
+     "len": 347,
+     "src": "online"
+    }
+   ],
+   "history_len": 26728,
+   "timestamp": 543000
+  },
+  {
+   "id": "mc2r3",
+   "tier": 3,
+   "parent": "mc2r2",
+   "lout": 438,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc2r2",
+     "len": 331,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc46215-46216-46217-46218",
+     "len": 1860,
+     "src": "online"
+    }
+   ],
+   "history_len": 27445,
+   "timestamp": 800999
+  },
+  {
+   "id": "mc2r4",
+   "tier": 4,
+   "parent": "mc2r3",
+   "lout": 244,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc2r3",
+     "len": 438,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc49515-49516-49517-49518",
+     "len": 1872,
+     "src": "online"
+    }
+   ],
+   "history_len": 29636,
+   "timestamp": 869999
+  },
+  {
+   "id": "mc2r5",
+   "tier": 5,
+   "parent": "mc2r4",
+   "lout": 247,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc2r4",
+     "len": 244,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc64947-64948",
+     "len": 216,
+     "src": "online"
+    }
+   ],
+   "history_len": 31946,
+   "timestamp": 1170000
+  },
+  {
+   "id": "mc2r6",
+   "tier": 6,
+   "parent": "mc2r5",
+   "lout": 251,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc2r5",
+     "len": 247,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc80015-80016",
+     "len": 300,
+     "src": "online"
+    }
+   ],
+   "history_len": 32406,
+   "timestamp": 1467000
+  },
+  {
+   "id": "mc3r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 227,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc978",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc979",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc980",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc981",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc982",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc983",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc984",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc985",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc986",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc987",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc988",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc989",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc990",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc991",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc992",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc993",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc994",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc995",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc996",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc997",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc998",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc999",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1000",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1001",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1002",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1003",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc1004",
+     "len": 217,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 12000
+  },
+  {
+   "id": "mc3r1",
+   "tier": 1,
+   "parent": "mc3r0",
+   "lout": 300,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc3r0",
+     "len": 227,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc4762-4763-4764",
+     "len": 965,
+     "src": "online"
+    }
+   ],
+   "history_len": 14041,
+   "timestamp": 65999
+  },
+  {
+   "id": "mc3r2",
+   "tier": 2,
+   "parent": "mc3r1",
+   "lout": 210,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc3r1",
+     "len": 300,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc9887-9888-9889",
+     "len": 445,
+     "src": "online"
+    }
+   ],
+   "history_len": 15233,
+   "timestamp": 141000
+  },
+  {
+   "id": "mc3r3",
+   "tier": 3,
+   "parent": "mc3r2",
+   "lout": 219,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc3r2",
+     "len": 210,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc12070-12071",
+     "len": 262,
+     "src": "online"
+    }
+   ],
+   "history_len": 15978,
+   "timestamp": 171000
+  },
+  {
+   "id": "mc3r4",
+   "tier": 4,
+   "parent": "mc3r3",
+   "lout": 314,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc3r3",
+     "len": 219,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc14740-14741-14742-14743",
+     "len": 1555,
+     "src": "online"
+    }
+   ],
+   "history_len": 16450,
+   "timestamp": 222000
+  },
+  {
+   "id": "mc3r5",
+   "tier": 5,
+   "parent": "mc3r4",
+   "lout": 279,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc3r4",
+     "len": 314,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc17579-17580-17581",
+     "len": 451,
+     "src": "online"
+    }
+   ],
+   "history_len": 18224,
+   "timestamp": 264000
+  },
+  {
+   "id": "mc3r6",
+   "tier": 6,
+   "parent": "mc3r5",
+   "lout": 245,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc3r5",
+     "len": 279,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc20520-20521",
+     "len": 366,
+     "src": "online"
+    }
+   ],
+   "history_len": 18989,
+   "timestamp": 315000
+  },
+  {
+   "id": "mc4r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 524,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc972",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc973",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc974",
+     "len": 502,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 12000
+  },
+  {
+   "id": "mc4r1",
+   "tier": 1,
+   "parent": "mc4r0",
+   "lout": 562,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc4r0",
+     "len": 524,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc12072-12073-12074",
+     "len": 28,
+     "src": "online"
+    }
+   ],
+   "history_len": 2038,
+   "timestamp": 171000
+  },
+  {
+   "id": "mc4r2",
+   "tier": 2,
+   "parent": "mc4r1",
+   "lout": 547,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc4r1",
+     "len": 562,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc21481-21482",
+     "len": 29,
+     "src": "online"
+    }
+   ],
+   "history_len": 2590,
+   "timestamp": 330000
+  },
+  {
+   "id": "mc4r3",
+   "tier": 3,
+   "parent": "mc4r2",
+   "lout": 579,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc4r2",
+     "len": 547,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc36124-36125",
+     "len": 36,
+     "src": "online"
+    }
+   ],
+   "history_len": 3181,
+   "timestamp": 615000
+  },
+  {
+   "id": "mc4r4",
+   "tier": 4,
+   "parent": "mc4r3",
+   "lout": 661,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc4r3",
+     "len": 579,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc42012-42013",
+     "len": 26,
+     "src": "online"
+    }
+   ],
+   "history_len": 3764,
+   "timestamp": 729000
+  },
+  {
+   "id": "mc4r5",
+   "tier": 5,
+   "parent": "mc4r4",
+   "lout": 664,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc4r4",
+     "len": 661,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc50095-50096",
+     "len": 35,
+     "src": "online"
+    }
+   ],
+   "history_len": 4369,
+   "timestamp": 885000
+  },
+  {
+   "id": "mc4r6",
+   "tier": 6,
+   "parent": "mc4r5",
+   "lout": 558,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc4r5",
+     "len": 664,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc55989-55990-55991",
+     "len": 64,
+     "src": "online"
+    }
+   ],
+   "history_len": 5065,
+   "timestamp": 1002000
+  },
+  {
+   "id": "mc4r7",
+   "tier": 7,
+   "parent": "mc4r6",
+   "lout": 602,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc4r6",
+     "len": 558,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc64014-64015",
+     "len": 45,
+     "src": "online"
+    }
+   ],
+   "history_len": 5793,
+   "timestamp": 1155000
+  },
+  {
+   "id": "mc5r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 324,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1028",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc1029",
+     "len": 42,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 12000
+  },
+  {
+   "id": "mc5r1",
+   "tier": 1,
+   "parent": "mc5r0",
+   "lout": 269,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc5r0",
+     "len": 324,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc28059-28060",
+     "len": 348,
+     "src": "online"
+    }
+   ],
+   "history_len": 1066,
+   "timestamp": 452999
+  },
+  {
+   "id": "mc5r2",
+   "tier": 2,
+   "parent": "mc5r1",
+   "lout": 339,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc5r1",
+     "len": 269,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc41955",
+     "len": 19,
+     "src": "online"
+    }
+   ],
+   "history_len": 1738,
+   "timestamp": 725999
+  },
+  {
+   "id": "mc5r3",
+   "tier": 3,
+   "parent": "mc5r2",
+   "lout": 478,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc5r2",
+     "len": 339,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc50582-50583-50584-50585",
+     "len": 4247,
+     "src": "online"
+    }
+   ],
+   "history_len": 2026,
+   "timestamp": 893999
+  },
+  {
+   "id": "mc5r4",
+   "tier": 4,
+   "parent": "mc5r3",
+   "lout": 184,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc5r3",
+     "len": 478,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc52421-52422-52423-52424",
+     "len": 1953,
+     "src": "online"
+    }
+   ],
+   "history_len": 6612,
+   "timestamp": 930000
+  },
+  {
+   "id": "mc5r5",
+   "tier": 5,
+   "parent": "mc5r4",
+   "lout": 1919,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc5r4",
+     "len": 184,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc89960-89961-89962-89963",
+     "len": 1954,
+     "src": "online"
+    }
+   ],
+   "history_len": 9043,
+   "timestamp": 1662000
+  },
+  {
+   "id": "mc6r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 534,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1469",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1470",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1471",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1472",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1473",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1474",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1475",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1476",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1477",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1478",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1479",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1480",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1481",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1482",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1483",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1484",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1485",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1486",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1487",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1488",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1489",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1490",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1491",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1492",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1493",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1494",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc1495",
+     "len": 62,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 18000
+  },
+  {
+   "id": "mc6r1",
+   "tier": 1,
+   "parent": "mc6r0",
+   "lout": 385,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc6r0",
+     "len": 534,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc7422-7423",
+     "len": 14,
+     "src": "online"
+    }
+   ],
+   "history_len": 13886,
+   "timestamp": 99000
+  },
+  {
+   "id": "mc6r2",
+   "tier": 2,
+   "parent": "mc6r1",
+   "lout": 669,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc6r1",
+     "len": 385,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc17595-17596",
+     "len": 35,
+     "src": "online"
+    }
+   ],
+   "history_len": 14434,
+   "timestamp": 264000
+  },
+  {
+   "id": "mc6r3",
+   "tier": 3,
+   "parent": "mc6r2",
+   "lout": 536,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc6r2",
+     "len": 669,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc21693-21694",
+     "len": 17,
+     "src": "online"
+    }
+   ],
+   "history_len": 14854,
+   "timestamp": 333000
+  },
+  {
+   "id": "mc6r4",
+   "tier": 4,
+   "parent": "mc6r3",
+   "lout": 388,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc6r3",
+     "len": 536,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc27893-27894",
+     "len": 111,
+     "src": "online"
+    }
+   ],
+   "history_len": 15540,
+   "timestamp": 452999
+  },
+  {
+   "id": "mc7r0",
+   "tier": 0,
+   "parent": null,
+   "lout": 366,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "mc0",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1541",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1542",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1543",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "doc",
+     "sha": "mc1544",
+     "len": 512,
+     "src": "shared",
+     "delta": 0
+    },
+    {
+     "role": "query",
+     "sha": "mc1545",
+     "len": 91,
+     "src": "online",
+     "delta": 0
+    }
+   ],
+   "history_len": 0,
+   "timestamp": 21000
+  },
+  {
+   "id": "mc7r1",
+   "tier": 1,
+   "parent": "mc7r0",
+   "lout": 111,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc7r0",
+     "len": 366,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc3753",
+     "len": 7,
+     "src": "online"
+    }
+   ],
+   "history_len": 2651,
+   "timestamp": 48000
+  },
+  {
+   "id": "mc7r2",
+   "tier": 2,
+   "parent": "mc7r1",
+   "lout": 398,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "out-mc7r1",
+     "len": 111,
+     "src": "resident",
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "mc7306-7307",
+     "len": 7,
+     "src": "online"
+    }
+   ],
+   "history_len": 3024,
+   "timestamp": 95999
+  }
+ ]
+}

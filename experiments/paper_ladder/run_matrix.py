@@ -46,6 +46,10 @@ WORKLOADS = {
     "sharegpt": "workloads/workload_sharegpt_c10_r3-8_o0.json",
     "multihop": "workloads/workload_multihoprag_n32_o0.json",
     "relay": "workloads/workload_relay_s400w4t1.json",
+    # TRUE multi-turn case (ruling 2026-08-25): Mooncake conversation
+    # rounds chained into supervisor tiers, history growing per round
+    # from zero (the flat --history-len 3 elsewhere is nominal).
+    "mooncakemt": "workloads/workload_mooncakemt_c8_r3-8.json",
 }
 MODELS = {"LLAMA-7B": 32, "LLAMA-65B": 80, "GPT-175B": 96}  # name -> ndec
 RUNGS = ("A1", "A2", "A3", "A4", "A5", "A6")
@@ -99,7 +103,11 @@ def jobs():
                            list(LADDER_POLICY[1]) +
                            ["--pim-prefill-mode", "dynamic",
                             "--pe-freq-ghz", "2.6",
-                            "--gemv-buffer-bytes", "768"]))
+                            "--gemv-buffer-bytes", "768",
+                            # Keep the report summary-sized: the full event
+                            # dump of a big DAG run is gigabytes and the
+                            # side fractions live in pim_prefill_sides.
+                            "--workload-report-events", "summary"]))
     return result
 
 
@@ -115,9 +123,15 @@ def run_one(job, timeout_s):
            "--ramulator-workers", str(RAMULATOR_WORKERS),
            "--workload-report", out] + extra
     log = os.path.join(RESULTS, tag + ".log")
+    # Pin every job to single-threaded math kernels: numpy/pandas otherwise
+    # spawn a machine-wide OpenBLAS/OMP pool PER JOB (128 threads each),
+    # blowing far past the 64-core budget on this shared box.
+    env = dict(os.environ,
+               OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
+               MKL_NUM_THREADS="1", NUMEXPR_NUM_THREADS="1")
     with open(log, "w") as handle:
         proc = subprocess.run(cmd, cwd=REPO, stdout=handle, stderr=handle,
-                              timeout=timeout_s)
+                              timeout=timeout_s, env=env)
     if proc.returncode != 0 or not os.path.exists(out):
         return tag, "FAILED(rc={})".format(proc.returncode)
     return tag, "ok"

@@ -1076,7 +1076,13 @@ def _memory_report(system, workload: Workload, plan: ReusePlan,
                 diff_rows += sum(len(set(rows)) for rows in
                                  _corrected_rows(plan, layer, request.request_id).values())
         diff_rows = diff_rows / max(ndec, 1)
-        reuse_layer_rows = shared_rows + private_rows + diff_rows * ndec / max(reuse_layers, 1)
+        # ``private_rows`` (total minus consumer-side reused tokens) already
+        # CONTAINS the owner's single copy of every shared chunk -- the
+        # owner has no reuse decision.  Adding ``shared_rows`` on top
+        # double-counted those owner copies and understated the capacity
+        # saving (audit 2026-08-25: multihop showed 4.7% saved instead of
+        # the true 20.3%).  ``shared_rows`` stays as a reporting field.
+        reuse_layer_rows = private_rows + diff_rows * ndec / max(reuse_layers, 1)
         stored_rows = ((reuse_layers * reuse_layer_rows +
                         full_layers * total_tokens) / max(ndec, 1) + generated +
                        history_rows)
@@ -1096,6 +1102,9 @@ def _memory_report(system, workload: Workload, plan: ReusePlan,
         "history_rows": history_rows,
         "no_reuse_kv_bytes": baseline_bytes,
         "kv_bytes_vs_no_reuse": kv_bytes / baseline_bytes if baseline_bytes else None,
+        # Marks reports produced after the owner-copy double-count fix
+        # (2026-08-25) so repair_memory_column.py leaves them alone.
+        "owner_copy_fix": "native",
         "bytes_per_token_all_layers": bytes_per_row,
         "resident_in": "GPU HBM" if config.decode_attn == "gpu" else "AttAcc HBM",
     }

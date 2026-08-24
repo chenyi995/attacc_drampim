@@ -540,6 +540,37 @@ class WorkloadTests(unittest.TestCase):
                                kwargs["decode_attn"], kwargs["kv_mapping"],
                                policy=policy)
 
+    def test_memory_report_stores_shared_chunks_exactly_once(self):
+        """Capacity accounting: the owner's copy must not be counted twice.
+
+        Two agents share one 100-token chunk under promptcache (zero diff
+        rows, so the arithmetic is exact): the store holds one copy of the
+        chunk plus both agents' private tails and outputs -- the consumer's
+        avoided copy is the whole saving (audit 2026-08-25: adding the
+        stored-once shared rows on top of the private rows double-counted
+        the owner copy and understated the saving).
+        """
+        toy = {"name": "toy", "ndec": 2, "num_heads": 4, "hdim": 16,
+               "dhead": 4, "ff_scale": 4, "gqa_size": 1,
+               "dtype": DataType.W16A16}
+        gpu = make_xpu_config(GPUType.A100a, num_gpu=1)["GPU"]
+        workload = Workload("rag", (
+            Request("r0", 0, None, 4, (Segment("sys", "shared", 100),
+                                       Segment("query", "q0", 20)), 120),
+            Request("r1", 0, None, 4, (Segment("sys", "shared", 100),
+                                       Segment("query", "q1", 20)), 120),), {})
+        plan = build_reuse_plan(workload, "promptcache")
+        system = System(gpu, toy)
+        system.hetero_name = DeviceType.PIM
+        from src.ablation import _memory_report
+        report = _memory_report(system, workload, plan,
+                                resolve_config("A4", None, None, None,
+                                               policy="promptcache"))
+        # stored = 240 total - 100 avoided consumer copy + 8 outputs.
+        self.assertEqual(round(report["kv_rows"]), 148)
+        self.assertAlmostEqual(report["kv_bytes_vs_no_reuse"],
+                               148 / 248, places=9)
+
     def test_software_upstream_policy_family_enrichment(self):
         """promptcache / cachecraft / cachetune extend the two anchor policies.
 
