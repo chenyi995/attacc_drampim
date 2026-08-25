@@ -1217,6 +1217,27 @@ def run_ablation_report(system, workload: Workload, plan: ReusePlan,
         decode_breakdown: Dict[str, float] = {}
         scan_profiles: Dict[str, Any] = {}
         classes = _layer_classes(plan, ndec, requests)
+        # Legacy-shape decode pricing issues ONE Ramulator run per decode
+        # step, serially -- on a long-output workload that is thousands of
+        # multi-minute simulations in a row.  The steps are independent, so
+        # warm the wrapper's shape cache in PARALLEL first (ruling
+        # 2026-08-25: one task may use up to 32 cores); the serial loop
+        # below then serves every step from the in-memory cache.  Only the
+        # private (legacy-shape) mapping takes this path -- the reuse
+        # mappings go through the address-resolved signature cache instead.
+        if config.decode_attn == "pim" and config.kv_mapping == "private":
+            accelerator = system.devices["Acc"]
+            if hasattr(accelerator, "ramulator"):
+                warm_layers = [copy.deepcopy(layer)
+                               for block in system.model.gen_decoder
+                               for layer in block
+                               if layer.name == "score" and
+                               layer.type == LayerType.MATMUL]
+                if len(warm_layers) > 8:
+                    from concurrent.futures import ThreadPoolExecutor
+                    with ThreadPoolExecutor(max_workers=32) as warm_pool:
+                        list(warm_pool.map(accelerator.get_time_and_energy,
+                                           warm_layers))
         for step_index, block in enumerate(system.model.gen_decoder):
             context_rows = lin + step_index + 1
             for representative, count in classes:

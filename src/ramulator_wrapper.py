@@ -121,6 +121,9 @@ class Ramulator:
         # aggregation below.
         self.workers = workers
         self._trace_name_lock = Lock()
+        # The legacy shape cache (self.df) is appended from the parallel
+        # pre-warm (ruling 2026-08-25); guard the read-modify-write.
+        self._df_lock = Lock()
         self._trace_call_index = 0
         # Cache only TLB-resolved reuse runs.  The original no-reuse path
         # continues to use AttAcc's existing CSV cache unchanged.
@@ -249,26 +252,27 @@ class Ramulator:
             f.write(line)
 
     def update_log_file(self, log):
-        if self.df.empty:
-            if os.path.exists(self.output_log):
-                df = pd.read_csv(self.output_log)
-            else:
-                columns = [
-                    'L', 'nhead', 'dhead', 'dbyte', 'pim_type',
-                    'power_constraint', 'cycle', 'mac', 'softmax', 'mvgb',
-                    'mvsb', 'wrgb'
-                ]
-                df = pd.DataFrame(columns=columns)
-        else:
-            df = self.df
-        if len(df.columns) > 12:
-            import pdb
-            pdb.set_trace()
-        new_df = pd.DataFrame(columns=df.columns)
-        new_df.loc[0] = log
-        df = pd.concat([df, new_df]).drop_duplicates()
-        self.df = df
-        self.df.to_csv(self.output_log, index=False)
+      with self._df_lock:
+          if self.df.empty:
+              if os.path.exists(self.output_log):
+                  df = pd.read_csv(self.output_log)
+              else:
+                  columns = [
+                      'L', 'nhead', 'dhead', 'dbyte', 'pim_type',
+                      'power_constraint', 'cycle', 'mac', 'softmax', 'mvgb',
+                      'mvsb', 'wrgb'
+                  ]
+                  df = pd.DataFrame(columns=columns)
+          else:
+              df = self.df
+          if len(df.columns) > 12:
+              import pdb
+              pdb.set_trace()
+          new_df = pd.DataFrame(columns=df.columns)
+          new_df.loc[0] = log
+          df = pd.concat([df, new_df]).drop_duplicates()
+          self.df = df
+          self.df.to_csv(self.output_log, index=False)
 
     #def run_ramulator(self):
     def run_ramulator(self, pim_type: PIMType, l, num_ops_per_hbm, dbyte,
