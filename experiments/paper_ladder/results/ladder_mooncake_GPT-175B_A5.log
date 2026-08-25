@@ -1566,3 +1566,6 @@
   "total_input_tokens": 479301,
   "total_output_tokens": 10202
 }
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_822/experiments/paper_ladder/results/ladder_mooncake_GPT-175B_A5.json
+REPORT_SUMMARY {"ablation": {"decode_attn": "pim", "gemv_buffer_bytes": 768, "kv_mapping": "master-diff", "label": "A4 + all prefill attention on the PIM + MQ attention batching", "master_pool_channels": 15, "master_shadow": "read-mask", "pim_batch_command": "mq", "pim_pe_freq_ghz": 2.6, "pim_prefill_query_batch": 12, "prefill_attn": "pim", "prefill_kv_readback": true, "preset": "A5"}, "decode_energy_nj": 85731350769440.38, "decode_s": 86.03156742962288, "energy_nj": 1184298738444090.0, "kv_bytes_vs_no_reuse": 0.8253676808483261, "kv_gib": 1775.91357421875, "makespan_s": 2504.8248599576477, "policy": "epic", "prefill_energy_nj": 1098567387674649.5, "prefill_s": 2418.7932925280247}

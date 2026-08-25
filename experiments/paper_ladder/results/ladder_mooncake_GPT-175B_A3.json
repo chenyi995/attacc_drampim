@@ -1,0 +1,1854 @@
+{
+  "ablation": {
+    "decode_attn": "pim",
+    "gemv_buffer_bytes": 512,
+    "kv_mapping": "naive",
+    "label": "software reuse + AttAcc, scattered layout (no channel split)",
+    "master_pool_channels": 15,
+    "master_shadow": "read-mask",
+    "pim_batch_command": "replicate",
+    "pim_pe_freq_ghz": 0.666,
+    "pim_prefill_query_batch": 4,
+    "prefill_attn": "gpu",
+    "prefill_kv_readback": true,
+    "preset": "A3"
+  },
+  "batch_size": null,
+  "decode_energy_nj": 85760811299811.33,
+  "decode_s": 90.76158664418153,
+  "energy_nj": 1824130108891551.8,
+  "energy_unit": "nJ",
+  "gpu_model": "legacy",
+  "latency_model": "legacy-attacc-ablation",
+  "makespan_s": 2187.0108814705295,
+  "memory": {
+    "attacc_capacity_bytes": 687194767360,
+    "attacc_capacity_used": 2.7748649597167967,
+    "bytes_per_token_all_layers": 4718592,
+    "diff_rows_per_layer": 0.0,
+    "full_recompute_layers": 0,
+    "generated_rows": 10202,
+    "gpu_capacity_bytes": 687194767360,
+    "gpu_capacity_used": 0.7556425094604492,
+    "gpu_temp_kv_bytes_per_layer": 171381227520,
+    "gpu_weight_bytes": 347892350976,
+    "history_rows": 120,
+    "kv_bytes": 1906872680448.0,
+    "kv_bytes_vs_no_reuse": 0.8253676808483261,
+    "kv_gib": 1775.91357421875,
+    "kv_rows": 404119.0,
+    "no_reuse_kv_bytes": 2310331170816,
+    "owner_copy_fix": "native",
+    "resident_in": "AttAcc HBM",
+    "shared_master_rows": 9216.0
+  },
+  "policy": "epic",
+  "prefill_energy_nj": 1738369297591740.5,
+  "prefill_s": 2096.249294826348,
+  "ramulator_signature_cache": {
+    "enabled": true,
+    "entries": 3895,
+    "hits": 10953,
+    "misses": 3895,
+    "ramulator_invocations": 3895
+  },
+  "recompute_fraction_per_reused_row": null,
+  "scheduling": "one legacy rectangular batch per dependency tier; tiers serial",
+  "tiers": [
+    {
+      "batch_size": 40,
+      "decode_breakdown_s": {
+        "comm_g2g": 8.937564733440146,
+        "comm_x2g": 0.14596177920000047,
+        "context": 0.0,
+        "ff1": 5.363296212584579,
+        "ff2": 5.363296212584579,
+        "gelu": 0.7566998738117809,
+        "norm1": 0.807045070730688,
+        "norm2": 0.807045070730688,
+        "proj": 1.3667587543675555,
+        "qkv": 3.583215164307114,
+        "score": 68.30197816214394,
+        "softmax": 5.589995593317421
+      },
+      "decode_energy_nj": 85760811299811.33,
+      "decode_per_token_s": 0.09780343388381631,
+      "decode_s": 90.76158664418153,
+      "decode_scan_profile": {
+        "layer_0": {
+          "layers": 96,
+          "legacy_shape": false,
+          "pools": [
+            [
+              {
+                "channel_base": 0,
+                "channels": 1,
+                "rows": 5398
+              }
+            ],
+            [
+              {
+                "channel_base": 1,
+                "channels": 1,
+                "rows": 7137
+              }
+            ],
+            [
+              {
+                "channel_base": 2,
+                "channels": 1,
+                "rows": 4126
+              }
+            ],
+            [
+              {
+                "channel_base": 3,
+                "channels": 1,
+                "rows": 4299
+              }
+            ],
+            [
+              {
+                "channel_base": 4,
+                "channels": 1,
+                "rows": 4564
+              }
+            ],
+            [
+              {
+                "channel_base": 5,
+                "channels": 1,
+                "rows": 5390
+              }
+            ],
+            [
+              {
+                "channel_base": 6,
+                "channels": 1,
+                "rows": 6219
+              }
+            ],
+            [
+              {
+                "channel_base": 7,
+                "channels": 1,
+                "rows": 5882
+              }
+            ],
+            [
+              {
+                "channel_base": 8,
+                "channels": 1,
+                "rows": 5740
+              }
+            ],
+            [
+              {
+                "channel_base": 9,
+                "channels": 1,
+                "rows": 5867
+              }
+            ],
+            [
+              {
+                "channel_base": 10,
+                "channels": 1,
+                "rows": 5689
+              }
+            ],
+            [
+              {
+                "channel_base": 11,
+                "channels": 1,
+                "rows": 5756
+              }
+            ],
+            [
+              {
+                "channel_base": 12,
+                "channels": 1,
+                "rows": 5477
+              }
+            ],
+            [
+              {
+                "channel_base": 13,
+                "channels": 1,
+                "rows": 5182
+              }
+            ],
+            [
+              {
+                "channel_base": 14,
+                "channels": 1,
+                "rows": 5220
+              }
+            ],
+            [
+              {
+                "channel_base": 15,
+                "channels": 1,
+                "rows": 5228
+              }
+            ]
+          ],
+          "rows_read": 87174,
+          "run_count": 16
+        }
+      },
+      "decode_steps": 928,
+      "duration_s": 2187.0108814705295,
+      "effective_prefill_tokens": 3401256,
+      "energy_nj": 1824130108891551.8,
+      "history_rows_per_request": 3,
+      "lin": 87169,
+      "lout": 929,
+      "members": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39"
+      ],
+      "padded_prefill_tokens": 3486760,
+      "prefill_breakdown_s": {
+        "gpu_comm_g2g": 126.39511703347199,
+        "gpu_comm_x2g": 6.6871413964799995,
+        "gpu_context": 394.1074766060308,
+        "gpu_ff1": 197.55016831776462,
+        "gpu_ff2": 197.53205031112304,
+        "gpu_gelu": 6.944339142498462,
+        "gpu_norm1": 17.869212043863975,
+        "gpu_norm2": 17.869212043863975,
+        "gpu_proj": 49.38301257778076,
+        "gpu_qkv": 148.1793507700131,
+        "gpu_score": 394.1074766060308,
+        "gpu_softmax": 539.456394343507,
+        "link_kv_pim_to_gpu": 0.16834363392
+      },
+      "prefill_energy_breakdown_nj": {
+        "gpu_comm_g2g": 1335288394049.1265,
+        "gpu_comm_x2g": 166911049256.1408,
+        "gpu_context": 399278659149754.8,
+        "gpu_ff1": 180119240111177.1,
+        "gpu_ff2": 180853302285104.6,
+        "gpu_gelu": 2104844625956.0444,
+        "gpu_norm1": 6278583805720.658,
+        "gpu_norm2": 6278583805720.658,
+        "gpu_proj": 46748323245446.93,
+        "gpu_qkv": 134859476700191.78,
+        "gpu_score": 423288916383363.56,
+        "gpu_softmax": 357052966178896.25,
+        "link_kv_pim_to_gpu": 4201857102.6432
+      },
+      "prefill_energy_nj": 1738369297591740.5,
+      "prefill_s": 2096.249294826348,
+      "prefill_scale": 0.9754775206782228,
+      "reused_prefill_tokens": 85504,
+      "tier": 0
+    }
+  ],
+  "workload": {
+    "kind": "rag",
+    "requests": 40,
+    "reuse": {
+      "cacheblend_full_recompute_layers": [],
+      "cacheblend_partial_recompute_layers": [],
+      "cacheblend_partial_rows": {},
+      "cacheblend_recompute_ratio": 0.0,
+      "cachecraft_alpha": 0.05,
+      "epic_prefix_recompute_tokens": 8,
+      "fresh_tokens": 393797,
+      "policy": "epic",
+      "random_seed": 0,
+      "reusable_segments": [
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "1",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "10",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "11",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "12",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "15",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "16",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "18",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "19",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "2",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc74",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc75",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc76",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc77",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc78",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc74",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "22",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc75",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "22",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc76",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "22",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc77",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "22",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc78",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "22",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc74",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "24",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc75",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "24",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc76",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "24",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc77",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "24",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc78",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "24",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "25",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "27",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "28",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "29",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "3",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "30",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "31",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "32",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "33",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "34",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "35",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "36",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "37",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "38",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "39",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc46",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc47",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc48",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc49",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc50",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc51",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 5
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc52",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 6
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc53",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 7
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc54",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 8
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc55",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 9
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc56",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 10
+        },
+        {
+          "cache_owner": "13",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc57",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 11
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "6",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc74",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "7",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc75",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "7",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc76",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "7",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc77",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "7",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc78",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "7",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc0",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "8",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc74",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc75",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc76",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc77",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "20",
+          "epic_prefix_rows": [],
+          "fingerprint": "mc78",
+          "length": 512,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 4
+        }
+      ],
+      "reused_tokens": 85504
+    },
+    "tiers": {
+      "0": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39"
+      ]
+    },
+    "total_history_tokens": 120,
+    "total_input_tokens": 479301,
+    "total_output_tokens": 10202
+  }
+}

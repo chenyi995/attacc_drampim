@@ -1,0 +1,93 @@
+{
+  "kind": "supervisor",
+  "requests": 52,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 1,
+    "fresh_tokens": 12923,
+    "policy": "no-reuse",
+    "random_seed": 0,
+    "reusable_segments": [],
+    "reused_tokens": 0
+  },
+  "tiers": {
+    "0": [
+      "c0r0",
+      "c1r0",
+      "c2r0",
+      "c3r0",
+      "c4r0",
+      "c5r0",
+      "c6r0",
+      "c7r0",
+      "c8r0",
+      "c9r0"
+    ],
+    "1": [
+      "c0r1",
+      "c1r1",
+      "c2r1",
+      "c3r1",
+      "c4r1",
+      "c5r1",
+      "c6r1",
+      "c7r1",
+      "c8r1",
+      "c9r1"
+    ],
+    "2": [
+      "c0r2",
+      "c1r2",
+      "c2r2",
+      "c3r2",
+      "c4r2",
+      "c5r2",
+      "c6r2",
+      "c7r2",
+      "c8r2",
+      "c9r2"
+    ],
+    "3": [
+      "c0r3",
+      "c1r3",
+      "c2r3",
+      "c4r3",
+      "c5r3",
+      "c8r3",
+      "c9r3"
+    ],
+    "4": [
+      "c0r4",
+      "c1r4",
+      "c4r4",
+      "c5r4",
+      "c8r4",
+      "c9r4"
+    ],
+    "5": [
+      "c0r5",
+      "c1r5",
+      "c4r5",
+      "c5r5",
+      "c8r5",
+      "c9r5"
+    ],
+    "6": [
+      "c5r6",
+      "c9r6"
+    ],
+    "7": [
+      "c5r7"
+    ]
+  },
+  "total_history_tokens": 156,
+  "total_input_tokens": 12923,
+  "total_output_tokens": 14414
+}
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_822/experiments/paper_ladder/results/ladder_sharegpt_LLAMA-7B_A1.json
+REPORT_SUMMARY {"ablation": {"decode_attn": "pim", "gemv_buffer_bytes": 512, "kv_mapping": "private", "label": "AttAcc, no reuse (reference)", "master_pool_channels": 15, "master_shadow": "read-mask", "pim_batch_command": "replicate", "pim_pe_freq_ghz": 0.666, "pim_prefill_query_batch": 4, "prefill_attn": "gpu", "prefill_kv_readback": true, "preset": "A1"}, "decode_energy_nj": 1968458742415.5347, "decode_s": 16.616092627748944, "energy_nj": 2140267192368.7258, "kv_bytes_vs_no_reuse": 1.0, "kv_gib": 13.42431640625, "makespan_s": 16.96572519060701, "policy": "no-reuse", "prefill_energy_nj": 171808449953.19125, "prefill_s": 0.3496325628580704}

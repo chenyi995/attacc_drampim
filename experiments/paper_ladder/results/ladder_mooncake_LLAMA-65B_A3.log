@@ -1566,3 +1566,6 @@
   "total_input_tokens": 479301,
   "total_output_tokens": 10202
 }
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to experiments/paper_ladder/results/ladder_mooncake_LLAMA-65B_A3.json
+REPORT_SUMMARY {"ablation": {"decode_attn": "pim", "gemv_buffer_bytes": 512, "kv_mapping": "naive", "label": "software reuse + AttAcc, scattered layout (no channel split)", "master_pool_channels": 15, "master_shadow": "read-mask", "pim_batch_command": "replicate", "pim_pe_freq_ghz": 0.666, "pim_prefill_query_batch": 4, "prefill_attn": "gpu", "prefill_kv_readback": true, "preset": "A3"}, "decode_energy_nj": 44712424676630.67, "decode_s": 51.61620519703454, "energy_nj": 911627397770079.5, "kv_bytes_vs_no_reuse": 0.8253676808483261, "kv_gib": 986.61865234375, "makespan_s": 1031.782909152745, "policy": "epic", "prefill_energy_nj": 866914973093448.9, "prefill_s": 980.1667039557105}

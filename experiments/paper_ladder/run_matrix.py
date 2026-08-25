@@ -107,7 +107,7 @@ def jobs():
                             # Keep the report summary-sized: the full event
                             # dump of a big DAG run is gigabytes and the
                             # side fractions live in pim_prefill_sides.
-                            "--workload-report-events", "summary"]))
+                            "--workload-report-events", "none"]))
     return result
 
 

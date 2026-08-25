@@ -1,0 +1,806 @@
+{
+  "ablation": {
+    "decode_attn": "pim",
+    "gemv_buffer_bytes": 768,
+    "kv_mapping": "master-diff",
+    "label": "A4 + all prefill attention on the PIM + MQ attention batching",
+    "master_pool_channels": 15,
+    "master_shadow": "read-mask",
+    "pim_batch_command": "mq",
+    "pim_pe_freq_ghz": 2.6,
+    "pim_prefill_query_batch": 12,
+    "prefill_attn": "pim",
+    "prefill_kv_readback": true,
+    "preset": "A5"
+  },
+  "batch_size": null,
+  "decode_energy_nj": 9689021582.986444,
+  "decode_s": 0.023094215502322827,
+  "energy_nj": 7436310884386.987,
+  "energy_unit": "nJ",
+  "gpu_model": "legacy",
+  "latency_model": "legacy-attacc-ablation",
+  "makespan_s": 17.8737090002118,
+  "memory": {
+    "attacc_capacity_bytes": 687194767360,
+    "attacc_capacity_used": 0.1296722412109375,
+    "bytes_per_token_all_layers": 524288,
+    "diff_pool_channels": 1,
+    "diff_rows_per_layer": 104.0,
+    "full_recompute_layers": 0,
+    "generated_rows": 75,
+    "gpu_capacity_bytes": 687194767360,
+    "gpu_capacity_used": 0.03509674072265625,
+    "gpu_temp_kv_bytes_per_layer": 11233394688,
+    "gpu_weight_bytes": 12884901888.0,
+    "history_rows": 96,
+    "kv_bytes": 89110085632.0,
+    "kv_bytes_vs_no_reuse": 0.7981179210728977,
+    "kv_gib": 82.990234375,
+    "kv_rows": 169964.0,
+    "master_pool_channels": 15,
+    "no_reuse_kv_bytes": 111650275328,
+    "owner_copy_fix": "native",
+    "resident_in": "AttAcc HBM",
+    "shared_master_rows": 33028.0
+  },
+  "policy": "epic",
+  "prefill_energy_nj": 7426621862804.001,
+  "prefill_s": 17.850614784709478,
+  "ramulator_signature_cache": {
+    "enabled": true,
+    "entries": 9,
+    "hits": 12,
+    "misses": 9,
+    "ramulator_invocations": 9
+  },
+  "recompute_fraction_per_reused_row": null,
+  "scheduling": "one legacy rectangular batch per dependency tier; tiers serial",
+  "tiers": [
+    {
+      "batch_size": 32,
+      "decode_breakdown_s": {
+        "comm_g2g": 0.011388002304000002,
+        "comm_x2g": 5.592405333333333e-05,
+        "context": 0.0,
+        "ff1": 0.0006507361546774452,
+        "ff2": 0.0006507361546774452,
+        "ff3": 0.000874426707847817,
+        "glu": 0.001068077989966205,
+        "norm1": 0.0009540766707780429,
+        "norm2": 0.0009540766707780429,
+        "proj": 0.0003403308493612242,
+        "qkv": 0.000654163919696757,
+        "score": 0.006291478144,
+        "softmax": 0.000523767446300716
+      },
+      "decode_energy_nj": 9689021582.986444,
+      "decode_per_token_s": 0.005773553875580707,
+      "decode_s": 0.023094215502322827,
+      "decode_scan_profile": {
+        "layer_0": {
+          "layers": 32,
+          "legacy_shape": false,
+          "pools": [
+            [
+              {
+                "channel_base": 0,
+                "channels": 15,
+                "rows": 3
+              },
+              {
+                "channel_base": 0,
+                "channels": 15,
+                "rows": 3291
+              },
+              {
+                "channel_base": 0,
+                "channels": 15,
+                "rows": 18135
+              },
+              {
+                "channel_base": 0,
+                "channels": 15,
+                "rows": 1
+              }
+            ],
+            [
+              {
+                "channel_base": 15,
+                "channels": 1,
+                "rows": 3
+              }
+            ]
+          ],
+          "rows_read": 21433,
+          "run_count": 5
+        }
+      },
+      "decode_steps": 4,
+      "duration_s": 17.8737090002118,
+      "effective_prefill_tokens": 642640,
+      "energy_nj": 7436310884386.987,
+      "history_rows_per_request": 3,
+      "lin": 21426,
+      "lout": 5,
+      "members": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31"
+      ],
+      "padded_prefill_tokens": 685632,
+      "prefill_breakdown_s": {
+        "gpu_comm_g2g": 2.65602634752,
+        "gpu_comm_x2g": 0.14038685013333332,
+        "gpu_ff1": 0.9215136829264956,
+        "gpu_ff2": 0.9215136829264956,
+        "gpu_ff3": 0.9215136829264956,
+        "gpu_glu": 0.10933975827692309,
+        "gpu_norm1": 0.37534422522501193,
+        "gpu_norm2": 0.37534422522501193,
+        "gpu_proj": 0.3455676310974359,
+        "gpu_qkv": 1.0367028932923077,
+        "link_ctx_pim_to_gpu": 0.07019342506666666,
+        "link_q_gpu_to_pim": 0.07019342506666666,
+        "pim_prefill_score": 7.27770723264,
+        "pim_prefill_softmax": 2.629267722386635
+      },
+      "prefill_energy_breakdown_nj": {
+        "gpu_comm_g2g": 28032446234.624,
+        "gpu_comm_x2g": 3504055779.328,
+        "gpu_ff1": 869190651084.8,
+        "gpu_ff2": 869190651084.8,
+        "gpu_ff3": 877144475966.2865,
+        "gpu_glu": 44080347847.065605,
+        "gpu_norm1": 131809775137.5872,
+        "gpu_norm2": 131809775137.5872,
+        "gpu_proj": 356220382153.27747,
+        "gpu_qkv": 970641666568.3557,
+        "link_ctx_pim_to_gpu": 1752027889.664,
+        "link_q_gpu_to_pim": 1752027889.664,
+        "pim_prefill_score": 3130020771586.376,
+        "pim_prefill_softmax": 11472808444.585577
+      },
+      "prefill_energy_nj": 7426621862804.001,
+      "prefill_s": 17.850614784709478,
+      "prefill_scale": 0.937295808830393,
+      "reused_prefill_tokens": 43096,
+      "tier": 0
+    }
+  ],
+  "workload": {
+    "kind": "rag",
+    "requests": 32,
+    "reuse": {
+      "cacheblend_full_recompute_layers": [],
+      "cacheblend_partial_recompute_layers": [],
+      "cacheblend_partial_rows": {},
+      "cacheblend_recompute_ratio": 0.0,
+      "cachecraft_alpha": 0.05,
+      "epic_prefix_recompute_tokens": 8,
+      "fresh_tokens": 169689,
+      "policy": "epic",
+      "random_seed": 0,
+      "reusable_segments": [
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "1",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "10",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "11",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-dfa0d8f99c929098",
+          "length": 1542,
+          "owner_tier": 0,
+          "request": "11",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "12",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "13",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "14",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "15",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "16",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "17",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "18",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "19",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "2",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "20",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "15",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-b0f6fdb06b8b2ac2",
+          "length": 2678,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "15",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-92c4bc380bfae8a6",
+          "length": 1289,
+          "owner_tier": 0,
+          "request": "21",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "22",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "23",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "24",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "25",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "15",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-92c4bc380bfae8a6",
+          "length": 1289,
+          "owner_tier": 0,
+          "request": "25",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "26",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "27",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "2",
+          "epic_prefix_rows": [],
+          "fingerprint": "doc-709820b23172ddf1",
+          "length": 1481,
+          "owner_tier": 0,
+          "request": "27",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "2",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-4b6898348e792e4c",
+          "length": 1870,
+          "owner_tier": 0,
+          "request": "27",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "28",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "29",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "25",
+          "epic_prefix_rows": [],
+          "fingerprint": "doc-80d381287f2b1b65",
+          "length": 1499,
+          "owner_tier": 0,
+          "request": "29",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "15",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-92c4bc380bfae8a6",
+          "length": 1289,
+          "owner_tier": 0,
+          "request": "29",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "3",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "30",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "31",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "31",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-4839f665c4903f42",
+          "length": 3552,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "17",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-7f6d510ce2b548fe",
+          "length": 2030,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "31",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-c5eed13ad5429973",
+          "length": 5234,
+          "owner_tier": 0,
+          "request": "4",
+          "segment_index": 3
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-dfa0d8f99c929098",
+          "length": 1542,
+          "owner_tier": 0,
+          "request": "5",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "6",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "7",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "8",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "2",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-4b6898348e792e4c",
+          "length": 1870,
+          "owner_tier": 0,
+          "request": "8",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "30",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-99a2dd90e43302a5",
+          "length": 10186,
+          "owner_tier": 0,
+          "request": "8",
+          "segment_index": 4
+        },
+        {
+          "cache_owner": "0",
+          "epic_prefix_rows": [],
+          "fingerprint": "sys-62e0bca480d2e55f",
+          "length": 43,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 0
+        },
+        {
+          "cache_owner": "25",
+          "epic_prefix_rows": [],
+          "fingerprint": "doc-80d381287f2b1b65",
+          "length": 1499,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 1
+        },
+        {
+          "cache_owner": "25",
+          "epic_prefix_rows": [],
+          "fingerprint": "doc-ad56154efa5662e6",
+          "length": 1624,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 2
+        },
+        {
+          "cache_owner": "15",
+          "epic_prefix_rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "fingerprint": "doc-92c4bc380bfae8a6",
+          "length": 1289,
+          "owner_tier": 0,
+          "request": "9",
+          "segment_index": 3
+        }
+      ],
+      "reused_tokens": 43096
+    },
+    "tiers": {
+      "0": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31"
+      ]
+    },
+    "total_history_tokens": 96,
+    "total_input_tokens": 212785,
+    "total_output_tokens": 75
+  }
+}

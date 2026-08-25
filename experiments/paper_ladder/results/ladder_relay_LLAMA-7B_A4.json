@@ -4,7 +4,7 @@
     "gemv_buffer_bytes": 512,
     "kv_mapping": "master-diff",
     "label": "software reuse + AttAcc, channel-split master/diff pools",
-    "master_pool_channels": 8,
+    "master_pool_channels": 15,
     "master_shadow": "read-mask",
     "pim_batch_command": "replicate",
     "pim_pe_freq_ghz": 0.666,
@@ -14,18 +14,18 @@
     "preset": "A4"
   },
   "batch_size": null,
-  "decode_energy_nj": 132037661431.41475,
+  "decode_energy_nj": 132039380047.47874,
   "decode_s": 1.221645958225598,
-  "energy_nj": 141481768125.02628,
+  "energy_nj": 141483486741.09027,
   "energy_unit": "nJ",
   "gpu_model": "legacy",
   "latency_model": "legacy-attacc-ablation",
   "makespan_s": 1.249402339461502,
   "memory": {
     "attacc_capacity_bytes": 687194767360,
-    "attacc_capacity_used": 0.001905059814453125,
+    "attacc_capacity_used": 0.001485443115234375,
     "bytes_per_token_all_layers": 524288,
-    "diff_pool_channels": 8,
+    "diff_pool_channels": 1,
     "diff_rows_per_layer": 32.0,
     "full_recompute_layers": 0,
     "generated_rows": 750,
@@ -34,12 +34,13 @@
     "gpu_temp_kv_bytes_per_layer": 45875200,
     "gpu_weight_bytes": 12884901888.0,
     "history_rows": 15,
-    "kv_bytes": 1309147136.0,
-    "kv_bytes_vs_no_reuse": 0.6068043742405832,
-    "kv_gib": 1.21923828125,
-    "kv_rows": 2497.0,
-    "master_pool_channels": 8,
+    "kv_bytes": 1020788736.0,
+    "kv_bytes_vs_no_reuse": 0.47314702308626977,
+    "kv_gib": 0.95068359375,
+    "kv_rows": 1947.0,
+    "master_pool_channels": 15,
     "no_reuse_kv_bytes": 2157445120,
+    "owner_copy_fix": "native",
     "resident_in": "AttAcc HBM",
     "shared_master_rows": 550.0
   },
@@ -84,17 +85,17 @@
             [
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 3
               },
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 550
               },
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 1
               }
             ]
@@ -169,7 +170,7 @@
         "score": 0.0052580651839999985,
         "softmax": 8.85323150357995e-05
       },
-      "decode_energy_nj": 68370964303.950645,
+      "decode_energy_nj": 68372682920.01464,
       "decode_per_token_s": 0.004109479123674598,
       "decode_s": 0.6123123894275152,
       "decode_scan_profile": {
@@ -180,34 +181,34 @@
             [
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 3
               },
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 400
               },
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 150
               },
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 150
               },
               {
                 "channel_base": 0,
-                "channels": 8,
+                "channels": 15,
                 "rows": 1
               }
             ],
             [
               {
-                "channel_base": 8,
-                "channels": 8,
+                "channel_base": 15,
+                "channels": 1,
                 "rows": 8
               }
             ]
@@ -219,7 +220,7 @@
       "decode_steps": 149,
       "duration_s": 0.6261209223906851,
       "effective_prefill_tokens": 632,
-      "energy_nj": 73417334870.01273,
+      "energy_nj": 73419053486.07672,
       "history_rows_per_request": 3,
       "lin": 700,
       "lout": 150,

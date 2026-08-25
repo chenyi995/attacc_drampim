@@ -1566,3 +1566,6 @@
   "total_input_tokens": 479301,
   "total_output_tokens": 10202
 }
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_822/experiments/paper_ladder/results/ladder_mooncake_LLAMA-7B_A6.json
+REPORT_SUMMARY {"ablation": {"decode_attn": "pim", "gemv_buffer_bytes": 768, "kv_mapping": "master-diff", "label": "Fugue: A5 + dynamic per-class GPU/PIM prefill placement", "master_pool_channels": 15, "master_shadow": "read-mask", "pim_batch_command": "mq", "pim_pe_freq_ghz": 2.6, "pim_prefill_query_batch": 12, "prefill_attn": "dynamic", "prefill_kv_readback": true, "preset": "A6"}, "decode_energy_nj": 8352711087630.06, "decode_s": 12.978905470742534, "energy_nj": 162147173884143.44, "kv_bytes_vs_no_reuse": 0.8253676808483261, "kv_gib": 197.32373046875, "makespan_s": 231.32795139054093, "policy": "epic", "prefill_energy_nj": 153794462796513.38, "prefill_s": 218.34904591979839}

@@ -17,17 +17,12 @@
 分片、Azure/BurstGPT 到达率 trace(无会话结构,只可做长度/到达边缘
 分布)。未获取:LMSYS-Chat-1M、GAIA(HF 门禁)。
 
-## 2. 首批结果(CACHEBLEND-TINY,EPIC k=8,A6,`--pipeopt`)
+## 2. 结果
 
-| workload | makespan (s) | 备注 |
-|---|---|---|
-| mooncake_toolagent_n40 | 20.564 | 块哈希天然给出 85.5k 可复用 token |
-| sharegpt_c10_r3-8 | 1.795 | 多轮:22,172 历史 token 全程参与扫描 |
-| multihoprag_n32 | 1.227 | 43.1k 可复用 token(共享文档) |
-
-(数字为 dirty 分支冒烟口径:小模型、单点;正式扫描待模型/参数定型。)
-ShareGPT 上的 A1–A6 全阶梯对比在后台跑,结果落
-`scratchpad/sg_A*.json`,汇总后补入。
+首批冒烟数字已被 **145 作业全矩阵**取代:同一批 workload × A1–A6 ×
+LLAMA-7B/65B/GPT-175B,三维指标(TTFT/TBT/压缩率)与 A6 选边比例见
+`../experiments/paper_ladder/results/summary.json` 与
+`../experiments/paper_ladder/CLAIMS_CHECK.md`(逐 claim 判定)。
 
 ## 3. 复现
 

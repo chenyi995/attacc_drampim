@@ -1,0 +1,67 @@
+{
+  "kind": "rag",
+  "requests": 40,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 1,
+    "fresh_tokens": 479301,
+    "policy": "no-reuse",
+    "random_seed": 0,
+    "reusable_segments": [],
+    "reused_tokens": 0
+  },
+  "tiers": {
+    "0": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "22",
+      "23",
+      "24",
+      "25",
+      "26",
+      "27",
+      "28",
+      "29",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "39"
+    ]
+  },
+  "total_history_tokens": 120,
+  "total_input_tokens": 479301,
+  "total_output_tokens": 10202
+}
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to experiments/paper_ladder/results/ladder_mooncake_LLAMA-7B_A1.json
+REPORT_SUMMARY {"ablation": {"decode_attn": "pim", "gemv_buffer_bytes": 512, "kv_mapping": "private", "label": "AttAcc, no reuse (reference)", "master_pool_channels": 15, "master_shadow": "read-mask", "pim_batch_command": "replicate", "pim_pe_freq_ghz": 0.666, "pim_prefill_query_batch": 4, "prefill_attn": "gpu", "prefill_kv_readback": true, "preset": "A1"}, "decode_energy_nj": 8344521050583.99, "decode_s": 9.922200308246547, "energy_nj": 166016359521004.03, "kv_bytes_vs_no_reuse": 1.0, "kv_gib": 239.07373046875, "makespan_s": 233.72792278733053, "policy": "no-reuse", "prefill_energy_nj": 157671838470420.03, "prefill_s": 223.80572247908398}
