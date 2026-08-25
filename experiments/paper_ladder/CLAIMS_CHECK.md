@@ -19,7 +19,6 @@
 | C1d prefill 上 PIM + batching 拿 TTFT(A5 vs A4) | 同上 | **TTFT** 为主 | ladder_* |
 | C1e 动态规则两头都不吃亏(A6 ≥ max(A4,A5) 侧) | A6 vs A4/A5 + 选边比例 | TTFT + 比例 | ladder_* + dag_* |
 | C1f 复用不牺牲容量(压缩率 <1 且随共享度变化) | kv_vs_no_reuse 全矩阵 | 压缩率 | ladder_* |
-| C1g 放置结论对选择规则不敏感 | A6 × 4 个选择变体 | TTFT/TBT | select_* |
 | C2(微架构) | C 系列实测表 | 加速比/列读/ACT | experiment 分支 `results_c_points.json` |
 
 ## 2. 核对结果(2026-08-25,145/145 全矩阵,修复后数据;`results/summary.json`)
@@ -34,7 +33,6 @@
 | C1d A5 = 强制全 PIM 对照 | **按新口径支撑** | A5 只在真多轮/小中模型赢 TTFT(mooncakemt/7B **−11.4%**、/65B −1.0%、multihop/7B −1.3%),大模型最多 +22%(mooncakemt/175B)——"固定放置两头都错"成立 |
 | C1e A6 贴住便宜侧 | **强支撑(修复后零反例)** | 15/15 格 A6 = min(A4, A5),且 mooncakemt/65B A6 47.86 < min(48.38, 47.88)(逐类混选优于两个极端) |
 | C1f 复用不牺牲容量 | **支撑(owner-copy 修复后)** | 压缩率全 <1:relay 0.473 / sharegpt 0.601 / multihop 0.798 / mooncake 0.825 / mooncakemt 0.875,随共享度单调 |
-| C1g 放置结论对选择规则不敏感 | **支撑** | A6 × {epic k8, cacheblend r.15, cachecraft α.1, cachetune r.15}:TTFT 差 ≤1.5%,TBT 差 ≤0.1 ms(65B 五个 workload 全测) |
 | C2 微架构 | 由 C 系列支撑(experiment 分支,流式 P 重测) | n=16@3.2 GHz 6.63× 等;A5/A6 消费其平衡点 2.6 GHz/768 B |
 
 ### A6 的 prefill 给 PIM 的份额(问题 1 的核心分析点)
@@ -52,6 +50,13 @@
 物理 DAG(逐请求份额,平衡点旋钮):mooncakemt/7B 14%(6/43)、sharegpt/7B 17%(9/52)、mooncake 5%、multihop/relay 0%。
 
 读法:**没有固定放置在所有格子上正确**——份额横跨 0–100%,模型越大越偏 GPU,真多轮/高复用越偏 PIM,同一 run 内部逐请求/逐类真混选(sharegpt 34%、relay/175B 27%)。这正是 dynamic 的立论数据;两条路径口径(逐类时间份额 vs 逐请求计数)并列报告。
+
+### 撤销记录(宸逸 2026-08-25)
+
+原 C1g("放置结论对选择规则不敏感")及其 A6 × 选择变体扫**撤销**:
+仿真器的代价只由重算 token **数量**决定,选择算法的身份本来就不进模型,
+该"检验"是构造使然而非实验发现;上游软件不构成实验轴。select_* 结果
+已从仓库移除,矩阵驱动不再生成。
 
 ### 残留注意事项
 

@@ -16,9 +16,9 @@
 ## 2. A 矩阵的做法(固定流程)
 
 1. **轴**:同一批 workload(4 真实 + 1 合成,阶梯间完全相同)×
-   3 个模型(LLAMA-7B/65B/GPT-175B)× A1–A6;软件上游只用**保证重算**
-   的选择族(EPIC=选前 k 的族内特例;零重算 promptcache 不进矩阵),
-   阶梯行固定 EPIC k=8 使档间差只归因放置,A6 点另扫 3 个选择变体;
+   3 个模型(LLAMA-7B/65B/GPT-175B)× A1–A6;软件上游**不是实验轴**
+   (2026-08-25 裁决:仿真代价只由重算 token 数量决定,选择算法身份不
+   进模型);阶梯行固定 EPIC k=8 使档间差只归因放置;
 2. **跑**:`python3 run_matrix.py`(断点续跑;32 并发 × 每作业 2 个
    Ramulator worker ≈ 64 核;每作业钉 `OMP/OPENBLAS/..._NUM_THREADS=1`
    防 BLAS 线程池超订);物理 DAG 作业只出 summary 报告(全事件转储

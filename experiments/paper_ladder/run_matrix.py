@@ -18,9 +18,10 @@ Axes (ruling 2026-08-25):
   tokens are selected.  EPIC counts as the family's "first k tokens per
   shifted segment" special case.  The zero-recompute endpoint
   (promptcache) is implemented in the simulator but EXCLUDED from the
-  matrix by ruling.  The selection variants (cacheblend deviation-r /
-  epic first-k / cachecraft overlap-scaled prefix / cachetune offline-r)
-  sweep at the A6 point where the paper's method lives.
+  matrix by ruling.  Ruling 2026-08-25: the simulator's
+  cost depends ONLY on the recompute-token count, never on which tokens
+  a selection algorithm picks -- so the upstream is NOT an experiment
+  axis (the former A6 selection-variant sweep is withdrawn).
 
 Budget: 64 cores = MAX_CONCURRENT runs x RAMULATOR_WORKERS each.
 Restartable: a run whose result JSON already exists is skipped.
@@ -86,12 +87,6 @@ def jobs():
         else:
             reuse = list(LADDER_POLICY[1])
         result.append((tag, wl, model, ["--ablation", rung] + reuse))
-    # 2) Selection-variant sweep at the paper's point (A6).
-    for wl, model, policy in itertools.product(
-            WORKLOADS, MODELS, ("cacheblend", "cachecraft", "cachetune")):
-        tag = "select_{}_{}_A6_{}".format(wl, model, policy)
-        result.append((tag, wl, model,
-                       ["--ablation", "A6"] + policy_args(policy, MODELS[model])))
     # 3) Physical-DAG dynamic-side fraction (event path; small models only,
     #    the event DAG on 80-96 layer models is out of smoke budget).
     for wl in WORKLOADS:
