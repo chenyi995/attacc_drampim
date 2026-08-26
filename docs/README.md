@@ -27,20 +27,24 @@ AttAcc(ASPLOS'24)把 decode 注意力搬进 HBM 内存的每个 bank(DRAM 的
 
 | 路径 | 入口 | 精度/用途 |
 |---|---|---|
-| **解析路径** (analytic) | `main.py --ablation A1..A6` → `src/ablation.py` | 算子级代价模型 + Ramulator 扫描计时;快,用于 A 系列放置消融 |
-| **物理事件路径** (event DAG) | `main.py --reuse ... [--pim-prefill-mode ...]` → `src/workload_runner.py` | 每请求每层展开成带真实时序与依赖的事件图;慢而细,用于机制验证与 C 系列 |
+| **解析引擎** (analytic) | `main.py --ablation A1..A6`(`--engine analytic`,默认)→ `src/ablation.py` | 算子级封闭式代价模型 + Ramulator 形状缓存;快,用于**快速预估与两引擎交叉校验** |
+| **物理事件引擎** (event DAG) | `main.py --ablation A1..A6 --engine dag` → `src/workload_runner.py` | 每请求每层展开成带真实时序、依赖与资源排队的事件图;**2026-08-26 起覆盖全部六档**,重叠/排队由排程涌现而非公式假设 |
 
-两条路径的放置语义已对齐(2026-08-24):prefill 注意力都在
-{gpu, pim, dynamic} 三选一,decode 注意力恒在 PIM(A2 除外)。
+裁决(chenyi9 2026-08-26):**真实 workload 一律默认走物理事件引擎出数,
+解析引擎不单独出数**(只作预估与校验)。放置语义两引擎一致:prefill
+注意力 {gpu, pim, dynamic} 三选一;decode 注意力恒在 PIM,唯 A2 例外
+——A2 的 decode 在 GPU,KV 放**远端哑存储**(经 NVLink/PCIe 的
+GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
+"KV 在 GPU 本地"旧口径,见总台账 U3)。
 
 ## 3. A1–A6 阶梯(放置消融,2026-08-24 定)
 
-每一档只比上一档多一件事;各档细节见 `README_A1.md` … `README_A6.md`:
+每一档只比上一档多一件事;各档细节见 `intro/README_A1.md` … `intro/README_A6.md`:
 
 | 档 | 含义 | prefill attn | KV 布局 | 批命令 |
 |---|---|---|---|---|
 | A1 | AttAcc 原样,无复用(参照点) | GPU | private | replicate |
-| A2 | 纯 GPU 跑软件复用 | GPU | none(KV 留在 GPU) | replicate |
+| A2 | 纯软件复用,无 PIM 算力 | GPU(decode 也在 GPU) | none(KV 在**远端哑存储**,R10;解析引擎旧口径见 U3) | replicate |
 | A3 | 软件复用 + AttAcc,乱序布局(不分 channel) | GPU | naive | replicate |
 | A4 | + 分裂 channel(master/diff 分池) | GPU | master-diff | replicate |
 | A5 | + 所有 prefill 注意力进 PIM | PIM | master-diff | **mq** |
@@ -74,32 +78,45 @@ AttAcc(ASPLOS'24)把 decode 注意力搬进 HBM 内存的每个 bank(DRAM 的
 ## 6. 快速上手
 
 ```bash
-# 解析路径:A 系列一档(多轮 agentic,历史 3 token/请求)
-python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
-  --workload workload/workload_relay_s400w4t1.json \
-  --reuse epic --epic-prefix-recompute-tokens 1 \
-  --ablation A6 --history-len 3 --pipeopt --workload-report /tmp/a6.json
+# 一键六档(推荐,默认口径):指定一个 workload JSON,DAG 引擎跑 A1–A6,
+# 产出 output/<时间戳>_<负载>_<模型>/dag_ladder.csv(每部件能耗 +
+# prefill 归边普查);A1 用 no-reuse,A2–A6 用 EPIC k=8
+bash experiments/run_dag_ladder.sh workload/wl_tiny.json LLAMA-7B
 
-# 物理事件路径:同一编排直接跑(默认 dynamic 放置)
-python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
-  --workload workload/workload_relay_s400w4t1.json \
-  --reuse epic --epic-prefix-recompute-tokens 1 \
-  --history-len 3 --pipeopt --workload-report /tmp/dag.json
+# 单档物理事件引擎(真实 workload 的默认出数方式)
+python3 main.py --system dgx-attacc --model LLAMA-7B \
+  --workload workload/wl_tiny.json \
+  --reuse epic --epic-prefix-recompute-tokens 8 \
+  --ablation A6 --engine dag --ramulator-workers 64 \
+  --workload-report-events none --workload-report /tmp/a6_dag.json
+
+# 解析引擎快扫(仅预估/交叉校验,不单独出数;--engine 默认 analytic)
+python3 main.py --system dgx-attacc --model LLAMA-7B \
+  --workload workload/wl_tiny.json \
+  --reuse epic --epic-prefix-recompute-tokens 8 \
+  --ablation A6 --workload-report /tmp/a6_analytic.json
 
 # 回归
-python3 -m unittest discover -s tests     # 40/40
+python3 -m unittest discover -s tests     # 41/41
 ```
 
-真实 workload(Mooncake / ShareGPT / MultiHop-RAG 等)的获取与转换见
-`README_workloads.md` 与 `/data2/chenyi9/KV-PIM/workload/SOURCES.md`。
+目录约定(2026-08-26):自造 workload 放本仓库 `workload/`;运行输出放
+`output/<时间戳>_<负载>_<模型>/`;Ramulator 签名缓存落盘在
+`ramulator2/signature_cache.jsonl`(首跑建缓存 ≤64 核,复跑秒级起步)。
 
-## 7. 文档索引
+真实 workload 的准入标准与现存源见
+`/data2/chenyi9/KV-PIM/workload/README.md` 与其 `SOURCES.md`
+(旧版五负载文档已归档:`archived/README_workloads.md`)。
 
-- `README_A1.md` … `README_A6.md`:每档的逐步代码定位
+## 7. 文档索引(2026-08-26 重组:intro/ 收 A 档,archived/ 收弃用件)
+
+- `intro/README_A1.md` … `intro/README_A6.md`:每档的逐步代码定位
 - `README_software_upstream.md`:复用策略族与文献来源
-- `README_workloads.md`:真实 workload 来源、转换与首批结果
 - `README_delta_vs_xinyao0821.md`:相对 xinyao_0821 基线的全部改动
-- `README_manual_audit_findings.md`:人工审计发现(功耗口径、TLB 常数)
+- `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
+  流程裁决、阶梯诊断与 workload 有效性附录)
+- `README_experiments.md`:矩阵怎么跑
+- `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit
 - `PORTING_PLAN.md`(不入库):干净分支 chenyi-822 的逐步移植计划
 
 分支说明:本分支 (`chenyi-822-dirty`) 是**快速集成分支**;同容将按

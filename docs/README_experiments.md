@@ -52,5 +52,5 @@ python3 -m unittest discover -s tests     # 回归(仓库根目录)
 ```
 
 外部库与数据源(只留链接):`../external/README.md`;真实 workload 的
-获取与转换:`README_workloads.md` 与
-`/data2/chenyi9/KV-PIM/workload/SOURCES.md`。
+准入标准与现存源:`/data2/chenyi9/KV-PIM/workload/README.md` 与其
+`SOURCES.md`(旧版负载文档已归档:`archived/README_workloads.md`)。
