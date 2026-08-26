@@ -9,6 +9,7 @@
 | 站 | 文件 | 一句话职责 |
 |---|---|---|
 | 0 | (跑法)`main.py` 的命令行 | 怎么把仿真跑起来:两条路径的入口命令与全部旋钮 |
+| 0.5 | 上游数据源仓库(`/data2/chenyi9/KV-PIM/workload/`,链接清单 `external/README.md`) | **软件侧的源头**:Mooncake/ShareGPT/MultiHop-RAG 等 GitHub/HF 仓库,各自的原始输出格式,及我们的转换器 `convert_*.py` 把它改写成 workload JSON |
 | 1 | `experiments/paper_ladder/workloads/*.json` | **输入**:软件侧的输出=仿真的输入;两种 schema(rag 列表 / v2-dag) |
 | 2 | `src/workload.py` | 收 JSON → `Workload/Request/Segment`;`build_reuse_plan` 把策略变成"哪些行复用、哪些行重算" |
 | 3 | `src/config.py` | 收 `--model/--gpu` → 模型维度表与设备参数(带宽/能量表/功耗档) |
