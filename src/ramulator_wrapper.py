@@ -1,5 +1,6 @@
 import pandas as pd
 import subprocess
+import json
 import math
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -133,6 +134,45 @@ class Ramulator:
         self._signature_cache_hits = 0
         self._signature_cache_misses = 0
         self._ramulator_invocations = 0
+        # Ruling (chenyi9 2026-08-26): "Ramulator: cache first (up to 64
+        # cores), then run."  The in-memory signature cache dies with the
+        # process, so it is persisted as append-only JSON lines next to the
+        # Ramulator checkout: a later invocation starts from every signature
+        # any earlier run simulated, and only new signatures reach a
+        # Ramulator subprocess.  Keys are already primitive (see
+        # _run_signature); duplicate lines are harmless (same value).
+        self._signature_cache_path = (os.path.join(
+            ramulator_dir, "signature_cache.jsonl") if ramulator_dir else "")
+        if (self.signature_cache_enabled and self._signature_cache_path and
+                os.path.exists(self._signature_cache_path)):
+            with open(self._signature_cache_path) as handle:
+                for line in handle:
+                    try:
+                        signature, result = json.loads(line)
+                    except ValueError:
+                        continue
+                    self._signature_cache[self._tuplify(signature)] = (
+                        self._tuplify(result))
+
+    @classmethod
+    def _tuplify(cls, value):
+        if isinstance(value, list):
+            return tuple(cls._tuplify(item) for item in value)
+        return value
+
+    @classmethod
+    def _listify(cls, value):
+        if isinstance(value, tuple):
+            return [cls._listify(item) for item in value]
+        return value
+
+    def _persist_signature(self, signature, result):
+        if not (self.signature_cache_enabled and self._signature_cache_path):
+            return
+        line = json.dumps([self._listify(signature), self._listify(result)])
+        with self._signature_cache_lock:
+            with open(self._signature_cache_path, "a") as handle:
+                handle.write(line + "\n")
 
     @staticmethod
     def _address_mapping_signature(address):
@@ -500,6 +540,7 @@ class Ramulator:
                 if use_signature_cache:
                     with self._signature_cache_lock:
                         self._signature_cache[signature] = frozen
+                    self._persist_signature(signature, frozen)
                 for index, *_ in equivalent_runs:
                     cached_results[index] = frozen
             results = [cached_results[index] for index in range(len(kv_runs))]
