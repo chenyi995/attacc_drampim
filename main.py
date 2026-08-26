@@ -307,6 +307,19 @@ def main():
              "buffer's resident-Q capacity under the mq command, 4 under "
              "replicate")
     parser.add_argument(
+        "--engine",
+        choices=("analytic", "dag"),
+        default="analytic",
+        help="which solver evaluates an --ablation rung (2026-08-26): "
+             "'analytic' = the closed-form ladder model (src/ablation.py; "
+             "the historical default -- keeps every existing command "
+             "byte-identical); 'dag' = the physical event-DAG engine "
+             "(src/workload_runner.py), now covering all six rungs: A1 "
+             "private no-reuse layout, A2 GPU-only (KV stays in GPU memory), "
+             "A3 naive scattered layout, A4-A6 master-diff with the "
+             "gpu/pim/dynamic prefill menu.  Ignored without ablation flags "
+             "(the plain physical path is unchanged)")
+    parser.add_argument(
         "--pim-prefill-mode",
         choices=("gpu", "pim", "dynamic"),
         default="dynamic",
@@ -495,10 +508,35 @@ def main():
                     pim_batch_command=args.pim_batch_command,
                     pim_pe_freq_ghz=args.pe_freq_ghz,
                     gemv_buffer_bytes=args.gemv_buffer_bytes)
-                report = run_ablation_report(
-                    system, workload, reuse_plan, ablation, pipe=args.pipeopt,
-                    parallel_ff=args.ffopt, power_constraint=args.powerlimit,
-                    batch_size=args.tier_batch_size or None)
+                if args.engine == "dag":
+                    # 2026-08-26: the physical event DAG covers every rung.
+                    # A1 is the private no-reuse layout, so its plan must be
+                    # the no-reuse plan (exactly how the matrix runs A1).
+                    if (ablation.kv_mapping == "private"
+                            and args.reuse != "no-reuse"):
+                        raise WorkloadValidationError(
+                            "--ablation A1 --engine dag needs --reuse no-reuse")
+                    report = run_reuse_prefill(
+                        system, workload, reuse_plan, pipe=args.pipeopt,
+                        cacheblend_batch_size=args.cacheblend_batch_size,
+                        cacheblend_rotate_mode=args.cacheblend_rotate_mode,
+                        include_events=(args.workload_report_events == "full"),
+                        pim_prefill_mode=ablation.prefill_attn,
+                        pim_batch_command=(args.pim_batch_command or
+                                           ablation.pim_batch_command),
+                        pim_pe_freq_ghz=(args.pe_freq_ghz or
+                                         ablation.pim_pe_freq_ghz),
+                        gemv_buffer_bytes=(args.gemv_buffer_bytes or
+                                           ablation.gemv_buffer_bytes),
+                        decode_attn=ablation.decode_attn,
+                        kv_mapping=ablation.kv_mapping)
+                    report["engine"] = "dag"
+                    report["ablation"] = ablation.to_dict()
+                else:
+                    report = run_ablation_report(
+                        system, workload, reuse_plan, ablation, pipe=args.pipeopt,
+                        parallel_ff=args.ffopt, power_constraint=args.powerlimit,
+                        batch_size=args.tier_batch_size or None)
             except WorkloadValidationError as exc:
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)
@@ -506,12 +544,20 @@ def main():
                 json.dump(report, report_file, indent=2, sort_keys=True)
                 report_file.write("\n")
             print("Wrote ablation report to {}".format(args.workload_report))
-            headline = {key: report.get(key) for key in
-                        ("policy", "makespan_s", "prefill_s", "decode_s",
-                         "energy_nj", "prefill_energy_nj", "decode_energy_nj")}
-            headline["ablation"] = report["ablation"]
-            headline["kv_gib"] = report["memory"]["kv_gib"]
-            headline["kv_bytes_vs_no_reuse"] = report["memory"]["kv_bytes_vs_no_reuse"]
+            if args.engine == "dag":
+                headline = {key: report.get(key) for key in
+                            ("policy", "makespan_s", "energy_nj", "link_bytes",
+                             "event_count", "kv_mapping", "decode_attn",
+                             "pim_prefill_mode")}
+                headline["ablation"] = report["ablation"]["preset"]
+                headline["engine"] = "dag"
+            else:
+                headline = {key: report.get(key) for key in
+                            ("policy", "makespan_s", "prefill_s", "decode_s",
+                             "energy_nj", "prefill_energy_nj", "decode_energy_nj")}
+                headline["ablation"] = report["ablation"]
+                headline["kv_gib"] = report["memory"]["kv_gib"]
+                headline["kv_bytes_vs_no_reuse"] = report["memory"]["kv_bytes_vs_no_reuse"]
             print("REPORT_SUMMARY " + json.dumps(headline, sort_keys=True))
             return
         if args.reuse == "no-reuse" and args.no_reuse_latency_model == "legacy":

@@ -936,6 +936,66 @@ class NoReuseKVLayout:
                 "entries": self.entries}
 
 
+class NaiveKVLayout(CacheBlendTLB):
+    """Scattered software-order KV placement -- the A3 rung (audit issue 3b).
+
+    No master/diff channel split: every ownership block (master, diff and
+    live alike) is allocated WHOLE to one channel, round-robin in first-
+    reservation (= software chunk) order.  A consumer's scan therefore
+    touches as many single-channel pools as its chunks landed on, and blocks
+    that share a channel serialize on that channel's ``PIM:poolC-C``
+    timeline: the fragmentation penalty of a PIM-oblivious allocator emerges
+    from the schedule instead of being the analytic max-over-pools term.
+    """
+
+    def finalize(self) -> None:
+        if self._blocks:
+            return
+        stride = ((self.bytes_per_vector + _HBM_TX_BYTES - 1) //
+                  _HBM_TX_BYTES) * _HBM_TX_BYTES
+        channel_state = {channel: {"tile": 0, "cursor": 0}
+                         for channel in range(16)}
+        tiles_per_channel = _HBM_CHANNEL_BYTES // (2 * _ORIGINAL_KV_GAP_BYTES)
+        # Python dicts preserve insertion order, so iterating the reservation
+        # dict directly walks blocks in software (first-reservation) order --
+        # the very order a PIM-oblivious allocator would write them.
+        for index, key in enumerate(self._reserved_rows):
+            layer, owner, fingerprint, kind = key
+            rows = tuple(sorted(self._reserved_rows[key]))
+            span = len(rows) * stride
+            if span > _ORIGINAL_KV_GAP_BYTES:
+                raise WorkloadValidationError(
+                    "naive KV block exceeds the 8-MiB original-AttAcc K partition")
+            channel = index % 16
+            state = channel_state[channel]
+            if state["cursor"] + span > _ORIGINAL_KV_GAP_BYTES:
+                state["tile"] += 1
+                state["cursor"] = 0
+            if state["tile"] >= tiles_per_channel:
+                raise WorkloadValidationError(
+                    "naive KV allocation exceeds channel {} capacity".format(channel))
+            key_base = (channel * _HBM_CHANNEL_BYTES +
+                        state["tile"] * (2 * _ORIGINAL_KV_GAP_BYTES) +
+                        state["cursor"])
+            self._blocks[key] = KVBlock(
+                "nvb-{:06d}".format(index), layer, owner, fingerprint, kind,
+                rows, key_base, key_base + _ORIGINAL_KV_GAP_BYTES, stride,
+                channel, 1, state["tile"], state["cursor"], 0)
+            state["cursor"] += span
+
+    def report(self) -> Dict[str, Any]:
+        return {"mapping": "Ramulator HBM3-PIM physical byte address",
+                "layout": "naive scattered (A3): whole ownership blocks "
+                          "round-robin over 16 single-channel pools in "
+                          "software chunk order; no master/diff split",
+                "channel_capacity_bytes": _HBM_CHANNEL_BYTES,
+                "transaction_bytes": _HBM_TX_BYTES,
+                "channel_sets": {"naive": list(range(16))},
+                "blocks": [block.to_dict()
+                           for _, block in sorted(self._blocks.items())],
+                "entries": self.entries}
+
+
 def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                       request: str, name: str, device: str, rows: int,
                       time_s: float, energy: Iterable[float],
@@ -2198,6 +2258,26 @@ def _append_physical_no_reuse_prefill_layer(
     return post_last, store
 
 
+def _energy_breakdown(scheduled: Sequence[SplitEvent]) -> Dict[str, Any]:
+    """Per-part energy of a scheduled DAG (nJ), two granularities.
+
+    ``by_class`` folds the device string into GPU / LINK / PIM (plain and
+    per-pool) / DIE / TLB; ``by_event`` keys by event name so e.g. the PIM
+    scan, the KV stores and each link direction can be read separately
+    (chenyi9 order 2026-08-26: the ladder CSV needs every part's energy).
+    """
+    by_class: Dict[str, float] = {}
+    by_event: Dict[str, float] = {}
+    for event in scheduled:
+        device = event.device
+        device_class = ("PIM" if device == "PIM" or device.startswith("PIM:")
+                        else device)
+        by_class[device_class] = by_class.get(device_class, 0.0) + event.energy_nj
+        by_event[event.name] = by_event.get(event.name, 0.0) + event.energy_nj
+    return {"by_class": {key: by_class[key] for key in sorted(by_class)},
+            "by_event": {key: by_event[key] for key in sorted(by_event)}}
+
+
 def summarize_cacheblend_schedule(scheduled: Sequence[SplitEvent],
                                   workload: Workload) -> Dict[str, Any]:
     """Compact per-request / per-tier completion times of a scheduled DAG.
@@ -2246,9 +2326,254 @@ def summarize_cacheblend_schedule(scheduled: Sequence[SplitEvent],
     return {"requests": per_request, "tiers": tiers}
 
 
+def _software_reuse_rows(plan: ReusePlan, layer: int, request):
+    """Classify one request's rows for a GPU-resident-KV layer (A2 rung).
+
+    Returns ``(compute_positions, reused_row_count)``: positions the GPU must
+    (re)compute -- fresh rows plus policy-corrected rows -- and the count of
+    rows served straight from the GPU-resident KV cache.  Mirrors the
+    ``(position, reused, corrected)`` classification of
+    ``_cacheblend_tlb_rows`` without materializing TLB locations.
+    """
+    decisions = {d.segment_index for d in plan.reusable
+                 if d.request_id == request.request_id}
+    corrected = _policy_corrected_rows(plan, layer, request)
+    compute: List[int] = []
+    reused_rows = 0
+    position = 0
+    for index, segment in enumerate(request.segments):
+        reused_segment = index in decisions
+        for _ in range(segment.length):
+            if reused_segment and position not in corrected:
+                reused_rows += 1
+            else:
+                compute.append(position)
+            position += 1
+    return compute, reused_rows
+
+
+def _prefill_side_summary(workload: Workload,
+                          prefill_attn_rows: Mapping[str, Mapping[str, int]]
+                          ) -> Tuple[Dict[str, int], Dict[str, str]]:
+    """Uniform-denominator prefill-attention accounting for the ladder CSV.
+
+    Returns (total attention rows per side, per-request class over EVERY
+    workload request): "pim" / "gpu" / "mixed" (layers on both sides) /
+    "none" (a fully reused, zero-correction request runs no prefill
+    attention at all).
+    """
+    sides: Dict[str, str] = {}
+    totals = {"pim": 0, "gpu": 0}
+    for request in workload.requests:
+        rows = prefill_attn_rows.get(request.request_id, {"pim": 0, "gpu": 0})
+        totals["pim"] += rows["pim"]
+        totals["gpu"] += rows["gpu"]
+        sides[request.request_id] = ("mixed" if rows["pim"] and rows["gpu"]
+                                     else "pim" if rows["pim"]
+                                     else "gpu" if rows["gpu"] else "none")
+    return totals, sides
+
+
+def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
+                           *, pipe: bool, include_events: bool = True) -> Dict[str, Any]:
+    """A2 rung of the ladder on the event DAG: software reuse, GPU compute,
+    KV cache in REMOTE DUMB STORAGE.
+
+    Ruling (chenyi9 2026-08-26): the link-bytes metric counts the GPU <->
+    remote-storage interconnect (NVLink/PCIe; the remote side may be
+    PIM-HBM or plain DRAM), and in A2 the KV cache lives ENTIRELY in that
+    remote storage with no PIM compute.  Consequences per layer/step:
+
+    * prefill: fresh/corrected rows are computed on the GPU and their K/V is
+      written out over the link (``kv_gpu_to_remote``); reused rows and the
+      agent's resident history K/V stream BACK over the link
+      (``kv_remote_to_gpu``) before the full-context GPU attention;
+    * decode: every generated token streams the whole per-layer context K/V
+      back over the link (one aggregated ``kv_remote_to_gpu`` event per step,
+      bytes x ndec layers) before the GPU generation block, then writes the
+      new row's K/V out.  The link, not the GPU, is expected to dominate --
+      that is the point of this rung.
+
+    The remote DRAM's own access time is folded into the link event (the
+    interconnect is far slower than the remote stack's internal bandwidth).
+    Requests of one tier contend on the single GPU resource; tiers keep the
+    engine's tier-barrier convention.  NOTE two deliberate differences from
+    the analytic A2 (which is still the GPU-local-KV model of the matrix):
+    KV residency (remote here, GPU-local there) and decode batching
+    (per-request batch 1 here, padded tier batch there).
+    """
+    validate_reuse_plan(workload, plan, system.model.ndec)
+    _validate_layer_config(plan, system.model.ndec)
+    system.model.build(1, 1, 2, True)
+    templates = {layer.name: layer for layer in system.model.sum_decoder}
+    qkv, score, softmax, context = (templates[name] for name in
+                                    ("qkv", "score", "softmax", "context"))
+    post = list(system.model.sum_decoder)
+    x2g = templates["comm_x2g"]
+    heads = max(1, system.model.num_heads // system.model.tp)
+    ndec = system.model.ndec
+    dbyte = qkv.dbyte
+    local_hidden = system.model.hdim // system.model.tp
+    kv_row_bytes = 2 * local_hidden * dbyte     # one K row + one V row
+
+    def link_event(name, byte_count, *, layer, tier, request, rows, deps):
+        op = _link_layer(x2g, name, byte_count)
+        time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+        return _cacheblend_event(events, layer=layer, tier=tier,
+                                 request=request, name=name, device="LINK",
+                                 rows=rows, time_s=time_s, energy=energy,
+                                 deps=deps, link_bytes=byte_count)
+
+    events: List[SplitEvent] = []
+    prefill_attn_rows: Dict[str, Dict[str, int]] = {}
+    previous_tier_done: Tuple[str, ...] = ()
+    for tier, requests, _, _ in _tier_shapes(workload):
+        tier_done: List[str] = []
+        for request in requests:
+            request_ready: Tuple[str, ...] = previous_tier_done
+            total_rows = request.total_length + request.history_len
+            prefill_store_events: List[str] = []
+            for layer_index in range(ndec):
+                full = (plan.config.policy in CACHEBLEND_FAMILY and
+                        layer_index in plan.config.cacheblend_full_recompute_layers)
+                if full:
+                    compute, reused_rows = list(range(request.total_length)), 0
+                else:
+                    compute, reused_rows = _software_reuse_rows(
+                        plan, layer_index, request)
+                if compute:
+                    prefill_attn_rows.setdefault(
+                        request.request_id,
+                        {"pim": 0, "gpu": 0})["gpu"] += len(compute)
+                if not compute:
+                    # Every row of this layer is reused with no correction
+                    # (e.g. the same instance re-run): nothing to recompute
+                    # or store; decode streams the remote rows later anyway.
+                    continue
+                q = _gpu_layer_event(
+                    system, events, qkv, layer=layer_index, tier=tier,
+                    request=request.request_id, name="qkv", rows=len(compute),
+                    deps=request_ready, positions=compute)
+                # Reused rows and the agent's resident history K/V live in the
+                # remote store: stream them back before the GPU can attend.
+                remote_resident = reused_rows + request.history_len
+                attn_deps = (q,)
+                if remote_resident:
+                    readback = link_event(
+                        "kv_remote_to_gpu", remote_resident * kv_row_bytes,
+                        layer=layer_index, tier=tier,
+                        request=request.request_id, rows=remote_resident,
+                        deps=request_ready)
+                    attn_deps = (q, readback)
+                gpu_last = None
+                for template, name, wide in ((score, "gpu_prefill_score", "n"),
+                                             (softmax, "gpu_prefill_softmax", "n"),
+                                             (context, "gpu_prefill_context", "k")):
+                    op = deepcopy(template)
+                    op.m, op.numOp = len(compute), heads
+                    setattr(op, wide, total_rows)
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                    gpu_last = _cacheblend_event(
+                        events, layer=layer_index, tier=tier,
+                        request=request.request_id, name=name, device="GPU",
+                        rows=len(compute), time_s=time_s, energy=energy,
+                        deps=(attn_deps if gpu_last is None else (gpu_last,)),
+                        positions=compute)
+                # Fresh/corrected K/V leaves for the remote store as soon as
+                # QKV produced it; the write overlaps the attention block and
+                # is joined before decode first reads the completed cache.
+                prefill_store_events.append(link_event(
+                    "kv_gpu_to_remote", len(compute) * kv_row_bytes,
+                    layer=layer_index, tier=tier, request=request.request_id,
+                    rows=len(compute), deps=(q,)))
+                request_ready = (_post_attention_gpu(
+                    system, events, post, layer=layer_index, tier=tier,
+                    request=request.request_id, rows=len(compute),
+                    dependency=gpu_last, positions=compute),)
+            request_ready = tuple(dict.fromkeys(request_ready +
+                                                 tuple(prefill_store_events)))
+            # Decode: per generated token, the whole per-layer context K/V
+            # streams back over the link (aggregated across the ndec layers
+            # into one read event), the GPU runs one generation block (per-
+            # layer ops are identical, so one layer is priced and multiplied
+            # by ndec), and the new row's K/V is written back out.
+            last = request_ready
+            final_write: Tuple[str, ...] = ()
+            for step in range(request.lout):
+                context_rows = total_rows + step + 1
+                read = link_event(
+                    "kv_remote_to_gpu", context_rows * kv_row_bytes * ndec,
+                    layer=ndec - 1, tier=tier, request=request.request_id,
+                    rows=context_rows, deps=last)
+                step_time = 0.0
+                step_energy = 0.0
+                for template in system.model.sum_decoder:
+                    if template.name == "comm_x2g":
+                        continue  # the remote link is modeled by the explicit
+                                  # kv_remote_to_gpu / kv_gpu_to_remote events
+                    op = deepcopy(template)
+                    if template.name in ("score", "softmax"):
+                        op.m, op.n, op.numOp = 1, context_rows, heads
+                    elif template.name == "context":
+                        op.m, op.k, op.numOp = 1, context_rows, heads
+                    else:
+                        op.m = 1
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                    step_time += time_s
+                    step_energy += sum(energy)
+                compute_event = _cacheblend_event(
+                    events, layer=ndec - 1, tier=tier,
+                    request=request.request_id, name="gpu_decode_step",
+                    device="GPU", rows=1, time_s=step_time * ndec,
+                    energy=(step_energy * ndec,), deps=(read,))
+                final_write = (link_event(
+                    "kv_gpu_to_remote", kv_row_bytes * ndec,
+                    layer=ndec - 1, tier=tier, request=request.request_id,
+                    rows=1, deps=(compute_event,)),)
+                last = (compute_event,)
+            tier_done.extend(tuple(dict.fromkeys(last + final_write)))
+        previous_tier_done = tuple(tier_done)
+
+    # validate_split_events checks the split-era GPU/PIM naming contract and
+    # does not apply to a GPU-only stream; keep only its shape sanity part.
+    for event in events:
+        if event.rows <= 0 or event.time_s < 0 or event.energy_nj < 0:
+            raise WorkloadValidationError(
+                "GPU-only event has an invalid shape or cost")
+    scheduled = _schedule_cacheblend(events, pipe=pipe)
+    attn_rows_total, attn_sides = _prefill_side_summary(workload,
+                                                        prefill_attn_rows)
+    return {
+        "policy": plan.config.policy,
+        "latency_model": "physical-dag-gpu-remote-kv",
+        "decode_attn": "gpu",
+        "kv_mapping": "none",
+        "prefill_attention_rows": attn_rows_total,
+        "prefill_attention_sides": attn_sides,
+        "kv_residency": "remote-dumb-storage (ruling 2026-08-26: link bytes "
+                        "= GPU <-> remote storage over NVLink/PCIe)",
+        "pim_prefill_mode": "gpu",
+        "history_rows": sum(request.history_len for request in workload.requests),
+        "events": ([event.to_dict() for event in scheduled] if include_events
+                   else None),
+        "event_count": len(scheduled),
+        "summary": summarize_cacheblend_schedule(scheduled, workload),
+        "link_bytes": sum(event.link_bytes for event in scheduled),
+        "makespan_s": max((event.end_s for event in scheduled), default=0.0),
+        "gpu_time_s_unoverlapped": sum(event.time_s for event in scheduled
+                                        if event.device == "GPU"),
+        "pim_pool_time_s_unoverlapped": 0.0,
+        "die_time_s_unoverlapped": 0.0,
+        "energy_nj": sum(event.energy_nj for event in scheduled),
+        "energy_breakdown_nj": _energy_breakdown(scheduled),
+        "energy_unit": "nJ",
+    }
+
+
 def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             *, pipe: bool, batch_size: int = 1,
                             physical_no_reuse: bool = False,
+                            kv_mapping: str = "master-diff",
                             rotate_mode: str = "gpu",
                             include_events: bool = True,
                             pim_prefill_mode: str = "dynamic",
@@ -2266,6 +2591,13 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     # Per-request side chosen by the dynamic placement rule (stable across
     # layers of one request; reported for auditability).
     dynamic_prefill_sides: Dict[str, str] = {}
+    # Where prefill attention ACTUALLY ran, in attention rows summed over
+    # layers (ruling chenyi9 2026-08-26): the dynamic decision record alone
+    # under-counts -- an all-fresh request takes the ordinary-GPU branch and
+    # a fully-reused zero-correction request runs no prefill attention at
+    # all, yet both must appear in the ladder statistic with a uniform
+    # denominator (every request of the workload).
+    prefill_attn_rows: Dict[str, Dict[str, int]] = {}
     x2g = templates["comm_x2g"]
     post = list(system.model.sum_decoder)
     dbyte, local_hidden = qkv.dbyte, system.model.hdim // system.model.tp
@@ -2275,8 +2607,19 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     # Using the concatenated local-hidden vector here would consume one K/V
     # address interval per *all-head* token and incorrectly overflow the
     # fixed 8-MiB K-to-V window for long contexts.
-    tlb = (NoReuseKVLayout(system.model.dhead * dbyte)
-           if physical_no_reuse else CacheBlendTLB(system.model.dhead * dbyte))
+    if kv_mapping not in ("master-diff", "naive", "private"):
+        raise WorkloadValidationError(
+            "physical decode-on-PIM needs --kv-mapping master-diff, naive or "
+            "private, got '{}'".format(kv_mapping))
+    if kv_mapping == "private" and not physical_no_reuse:
+        raise WorkloadValidationError(
+            "--kv-mapping private is the no-reuse layout; use --reuse no-reuse")
+    if physical_no_reuse:
+        tlb = NoReuseKVLayout(system.model.dhead * dbyte)
+    elif kv_mapping == "naive":
+        tlb = NaiveKVLayout(system.model.dhead * dbyte)
+    else:
+        tlb = CacheBlendTLB(system.model.dhead * dbyte)
     events: List[SplitEvent] = []
     previous_tier_done: Tuple[str, ...] = ()
     parent_output_fingerprints = _parent_output_fingerprints(workload)
@@ -2324,7 +2667,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             _cacheblend_tlb_rows(workload, plan, layer_index,
                                                  request, tlb, force_fresh=full))
                 prefill_bindings[layer_index] = bindings
+                side_rows = prefill_attn_rows.setdefault(
+                    request.request_id, {"pim": 0, "gpu": 0})
                 if physical_no_reuse:
+                    side_rows["gpu"] += request.total_length
                     request_ready = _append_physical_no_reuse_prefill_layer(
                         system, events, tlb, templates, post, layer=layer_index,
                         tier=tier, request=request, bindings=bindings,
@@ -2372,6 +2718,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 # so at history 0 this condition is identical to the previous
                 # ``full or not reusable``.)
                 if not reusable:
+                    side_rows["gpu"] += request.total_length
                     q = _gpu_layer_event(system, events, qkv, layer=layer_index,
                                          tier=tier, request=request.request_id,
                                          name="qkv", rows=request.total_length,
@@ -2420,6 +2767,12 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
 
                 compute_positions = [position for position, reused, corrected, _ in bindings
                                      if not reused or corrected]
+                if not compute_positions:
+                    # Fully reused layer with zero corrections (e.g. the same
+                    # instance re-run under a second model): no fresh rows to
+                    # compute, transfer or store -- the resident rows serve
+                    # decode directly.
+                    continue
                 q = _gpu_layer_event(system, events, qkv, layer=layer_index,
                                      tier=tier, request=request.request_id,
                                      name="qkv", rows=len(compute_positions),
@@ -2518,6 +2871,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         dynamic_prefill_sides[request.request_id] = prefill_side
                 else:
                     prefill_side = pim_prefill_mode
+                side_rows["pim" if prefill_side == "pim" else "gpu"] += (
+                    len(compute_positions))
                 if prefill_side == "pim":
                     # (2) Bank-whole prefill with causal drop (2026-08-21):
                     # the batch's own K/V lands in the stack first (Fugue
@@ -2709,7 +3064,13 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "cacheblend_rotate_mode": rotate_mode,
         "pim_batch_command": pim_batch_command,
         "pim_prefill_mode": pim_prefill_mode,
+        "kv_mapping": "private" if physical_no_reuse else kv_mapping,
+        "decode_attn": "pim",
         "pim_prefill_sides": dict(sorted(dynamic_prefill_sides.items())),
+        "prefill_attention_rows": _prefill_side_summary(
+            workload, prefill_attn_rows)[0],
+        "prefill_attention_sides": _prefill_side_summary(
+            workload, prefill_attn_rows)[1],
         "di_bitmap_bytes": di_bitmap_bytes_total,
         "di_write_filter": "master-side score writes at D_i dropped against the "
                            "per-agent bitmap; diff/master arrival order immaterial",
@@ -2739,6 +3100,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "die_time_s_unoverlapped": sum(event.time_s for event in scheduled
                                         if event.device == "DIE"),
         "energy_nj": sum(event.energy_nj for event in scheduled),
+        "energy_breakdown_nj": _energy_breakdown(scheduled),
         "energy_unit": "nJ",
     }
     ramulator = getattr(system.devices.get("Acc"), "ramulator", None)
@@ -2754,17 +3116,36 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                       pim_prefill_mode: str = "dynamic",
                       pim_batch_command: str = "replicate",
                       pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
-                      gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
+                      gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES,
+                      decode_attn: str = "pim",
+                      kv_mapping: str = "master-diff") -> Dict[str, Any]:
     """Dispatch address-resolved CacheBlend and EPIC to the shared DAG.
 
     CacheBlend samples correction rows per layer; EPIC overlays the fixed
     leading prefix of each shifted segment.  Both use one GPU/PIM/DIE/TLB/link
-    event path and the same physical master/diff KV layout.
+    event path.  ``kv_mapping``/``decode_attn`` carry the remaining ladder
+    axes onto the event DAG (2026-08-26): master-diff = A4-A6 layout, naive =
+    A3 scattered layout, private = A1 no-reuse layout, and decode_attn "gpu"
+    (+ kv_mapping "none") = the A2 GPU-only rung.
     """
+    if decode_attn not in ("pim", "gpu"):
+        raise WorkloadValidationError("--decode-attn must be 'pim' or 'gpu'")
+    if decode_attn == "gpu":
+        if kv_mapping != "none":
+            raise WorkloadValidationError(
+                "--decode-attn gpu keeps the KV cache in GPU memory; "
+                "use --kv-mapping none")
+        if plan.config.policy not in ("cacheblend", "epic", "no-reuse",
+                                      "promptcache", "cachecraft", "cachetune"):
+            raise WorkloadValidationError(
+                "unknown reuse policy for the GPU-only event path")
+        return _run_gpu_software_only(system, workload, plan, pipe=pipe,
+                                      include_events=include_events)
     if plan.config.policy in ("cacheblend", "epic", "no-reuse"):
         return _run_cacheblend_prefill(system, workload, plan, pipe=pipe,
                                        batch_size=cacheblend_batch_size,
                                        physical_no_reuse=(plan.config.policy == "no-reuse"),
+                                       kv_mapping=kv_mapping,
                                        rotate_mode=cacheblend_rotate_mode,
                                        include_events=include_events,
                                        pim_prefill_mode=pim_prefill_mode,
