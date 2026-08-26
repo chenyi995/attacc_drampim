@@ -513,7 +513,7 @@ _DIE_ROTATE_CYCLE_S = 1e-9
 # length, pool, mask bit-vector) rather than a lookup per logical row.  The
 # mask itself is applied on the die between QK^T and softmax at no extra
 # modeled cost; the cross-run softmax merge is the DIE LSE-merge event.
-# TODO(manual-audit 2026-08-23, Chenyi): the 5-ns descriptor charge is an
+# TODO(manual-audit 2026-08-23, the user): the 5-ns descriptor charge is an
 # unsourced modeling constant (introduced upstream in 47ae0c3 without
 # derivation or measurement), and it double-charges vs the paper's
 # attach-time metadata load (Fugue sec 5.1: the driver loads positions into

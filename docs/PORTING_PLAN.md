@@ -1,6 +1,6 @@
 # chenyi-822 migration plan: reviewed re-derivation of chenyi-822-dirty
 
-(Tracked in the chenyi-822 repository by Chenyi's instruction,
+(Tracked in the chenyi-822 repository by the user's instruction,
 2026-08-25 -- superseding the earlier never-commit rule for this file.)
 
 Working copies (2026-08-25 layout):
@@ -17,7 +17,7 @@ Reference: every step's "target text" is taken from dirty HEAD 3b330c8
 superseded (split-mode 5.L2 insertion form, (n_q,n_c) wording, selection
 sweep) are NOT ported -- each phase lands directly in its final form.
 
-## Working rules (unchanged, fixed by Chenyi 2026-08-22/23)
+## Working rules (unchanged, fixed by the user 2026-08-22/23)
 
 1. Per step: file, function, exact original text -> new text with line
    numbers, full code (no diff-only), why, verification command.
