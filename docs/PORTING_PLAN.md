@@ -48,7 +48,8 @@ sweep) are NOT ported -- each phase lands directly in its final form.
 | M9 | Audited fixes (b649674 + 0305d4c): (a) 15/1 pools both paths; (b) naive tracked-channel pools + same-channel serialization; (c) balance-point presets (2.6 GHz/768 B, PROVISIONAL) + query-batch follows capacity; (d) memory owner-copy fix + unit test (+ native marker); each with its PAPER-TIE comments | 4L+1T | 41/41 |
 | M10 | Legacy-path parallel pre-warm (dfde565): df lock + 32-thread warm block; bit-identity check on relay/7B/A1 | 2L | 41/41 |
 | M11 | Docs set (batched): README + A1-A6 + software_upstream + workloads + experiments + external/ + delta-vs-xinyao + audit ladder issues + consolidated findings ledger + turnaround entry (f4cc6dc…3b330c8 doc states, final wording) | 3 doc steps | 41/41 |
-| M12 | paper_ladder: MATRIX/CLAIMS_CHECK/TABLES + drivers (run_matrix, collect, repair) + workloads snapshot + results (data copy, one step; .gitignore logs); mooncakemt workload file | 2 | 41/41 |
+| M12 | paper_ladder infrastructure: MATRIX/CLAIMS_CHECK/TABLES + drivers (run_matrix, collect, repair) + workloads snapshot (incl. mooncakemt); .gitignore logs | 2 | 41/41 |
+| **M12b** | **Full matrix RE-RUN on this branch** (2026-08-25 ruling): `run_matrix.py` all 135 jobs (90 ladder + 10 DAG + baseline extras) with the same knobs, 64 cores; then compare `summary.json` cell by cell against the dirty results (expect bit-identical TTFT/TBT/compression/sides).  The re-run results are what gets COMMITTED here -- the clean branch carries numbers it produced itself; dirty results serve only as the comparison oracle | 2 | 41/41 + matrix parity |
 | Close | Comment-stripped parity diff vs 3b330c8 (all ported files, expect zero); push on instruction | 1 | — |
 
 ## Notes
@@ -60,6 +61,9 @@ sweep) are NOT ported -- each phase lands directly in its final form.
   charge, audit issue 1) -- the buggy intermediate never lands.
 - The C1/C2 comparison drivers and the selection-variant sweep are NOT
   ported (rulings 2026-08-24/25).
+- M12b makes the clean branch self-verifying: identical code (parity
+  diff) x identical inputs => identical numbers; any cell mismatch is a
+  migration bug found BEFORE the push.  Budget ~4-6 h wall on 64 cores.
 - mooncakemt converter lives outside the repo
   (`/data2/chenyi9/KV-PIM/workload/convert_mooncake_multiturn.py`);
   only the emitted workload JSON snapshot is ported (M12).
