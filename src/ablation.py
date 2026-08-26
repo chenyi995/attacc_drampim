@@ -70,7 +70,7 @@ DECODE_ATTN_MODES = ("gpu", "pim")
 KV_MAPPINGS = ("none", "private", "naive", "master-diff")
 MASTER_SHADOW_MODES = ("read-mask", "skip")
 
-# The A1-A6 ladder (the user's ruling, 2026-08-24).  PAPER TIE (Question 1):
+# The A1-A6 ladder (chenyi9's ruling, 2026-08-24).  PAPER TIE (Question 1):
 # the paper asks WHERE prefill attention, decode attention and the KV cache
 # should live once requests share KV -- each rung isolates exactly one
 # placement decision, so the ladder differences ARE the paper's evidence:

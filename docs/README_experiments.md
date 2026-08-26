@@ -27,7 +27,7 @@
    步数加权;压缩率 = `memory.kv_bytes_vs_no_reuse`(owner-copy 修复
    口径);A6 另报 **PIM/GPU 选边比例**(解析=时间份额,DAG=请求/事件
    份额);`collect_results.py` 一键汇总;
-4. **结果保留纪律(用户 2026-08-25)**:模型修复后**只保留重跑的新
+4. **结果保留纪律(chenyi9 2026-08-25)**:模型修复后**只保留重跑的新
    结果**,旧 run 一律作废删除;修复不便重跑的纯报告字段用等价算术
    修补并打标(`repair_memory_column.py`,`owner_copy_fix`);
 5. **核对**:每个 claim 在 `CLAIMS_CHECK.md` 里对着数据形状过一遍,

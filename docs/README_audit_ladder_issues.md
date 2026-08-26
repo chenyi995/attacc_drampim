@@ -111,7 +111,7 @@
      `47ae0c3`)——prefill 每波被 min(4, 容量 8) 卡在 4,即使 buffer
      容量是 8;batching 开启时这个独立旋钮应让位于容量。
 - **修复方向**:A5/A6 preset(或矩阵)绑定微架构档——buffer 与匹配
-  频率取哪一档(512 B/1.73 GHz?768 B/2.6 GHz 平衡点?)由用户定;
+  频率取哪一档(512 B/1.73 GHz?768 B/2.6 GHz 平衡点?)由chenyi9 定;
   `pim_prefill_query_batch` 在 mq 下默认改为跟随 `mq_query_capacity`。
   修后 A5/A6 两列重跑。
 
@@ -134,7 +134,7 @@
   (`kv_rows −= shared_master_rows`,与新公式严格等价)——multihop 修补
   后 0.798 ✓ 与手算一致。
 
-## 处置记录(2026-08-25,用户裁决后落地)
+## 处置记录(2026-08-25,chenyi9 裁决后落地)
 
 - **问题 1 已修**:dynamic 的 xPU 侧估价/入账改为与 gpu 档同一口径
   (顶层 scale 折算,`_prefill_batch` dynamic 块);
