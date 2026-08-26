@@ -70,7 +70,7 @@ DECODE_ATTN_MODES = ("gpu", "pim")
 KV_MAPPINGS = ("none", "private", "naive", "master-diff")
 MASTER_SHADOW_MODES = ("read-mask", "skip")
 
-# The A1-A6 ladder (Chenyi's ruling, 2026-08-24).  PAPER TIE (Question 1):
+# The A1-A6 ladder (the user's ruling, 2026-08-24).  PAPER TIE (Question 1):
 # the paper asks WHERE prefill attention, decode attention and the KV cache
 # should live once requests share KV -- each rung isolates exactly one
 # placement decision, so the ladder differences ARE the paper's evidence:
@@ -99,7 +99,7 @@ PRESETS: Dict[str, Dict[str, str]] = {
     # bank-PE design point are ONE package.  Values = the derived balance
     # point where the PE, the TSV stream and the in-bank area budget meet:
     # n_cap = 12 resident queries @ nCCDAB floor 6, f* = 12/(6 x 0.769 ns)
-    # ~= 2.6 GHz, buffer = 12 x 64 B = 768 B.  PROVISIONAL -- Chenyi will
+    # ~= 2.6 GHz, buffer = 12 x 64 B = 768 B.  PROVISIONAL -- the user will
     # retune these knobs later; an explicit CLI value still overrides.
     "A5": {"prefill_attn": "pim", "decode_attn": "pim", "kv_mapping": "master-diff",
            "pim_batch_command": "mq", "pim_pe_freq_ghz": 2.6,

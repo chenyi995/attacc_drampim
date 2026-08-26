@@ -18,7 +18,7 @@ from src.type import *
 # bus, so the A5/A6 rungs of the placement ladder inherit exactly the
 # microarchitecture the C series measures.
 # One MAC_AB reads a column once and the bank PE multiplies it against every
-# resident Q internally.  Design principle (Chenyi, 2026-08-23): the DRAM
+# resident Q internally.  Design principle (the user, 2026-08-23): the DRAM
 # command cadence is NEVER stretched by compute -- the column stream runs at
 # the preset nCCDAB and the PE computes in the slack, raising its clock as
 # needed.  Precedent: Samsung's FIMDRAM executes PIM ops strictly off the

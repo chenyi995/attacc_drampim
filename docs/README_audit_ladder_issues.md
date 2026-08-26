@@ -2,7 +2,7 @@
 
 对象:`experiments/paper_ladder/` 首批 ~49 个作业的核对结论(见
 `CLAIMS_CHECK.md`)中不支撑/反向的四条。每条给:现象 → 应该的样子
-(宸逸口径)→ 代码里实际的样子(文件:函数)→ **谁在哪个 commit 弄成
+(用户口径)→ 代码里实际的样子(文件:函数)→ **谁在哪个 commit 弄成
 这样**(attacc / xinyao(xw338)/ chenyi(Allan))→ 修复方向。
 **均未动手,待逐条裁决。**
 
@@ -33,7 +33,7 @@
 
 - **现象**:A5 在全部已完成 workload 上 TTFT 都劣于 A4(multihop/7B
   +42%,mooncake/7B +65%)。
-- **宸逸口径**:prefill attention 也是 memory-bound,但**全都压进 PIM
+- **用户口径**:prefill attention 也是 memory-bound,但**全都压进 PIM
   也不行**——这正是要 dynamic 的原因。A4/A5/A6 三档并排就是"prefill
   放哪"的对比:A4=全 GPU、A5=全 PIM、A6=逐请求选。**不需要**再造
   "交叉点以下"的专门设计点;A6 选完后报一个比例(多少 prefill 事件走
@@ -50,7 +50,7 @@
 - **现象**:A4 TBT 反而劣于 A3(multihop/65B 22.3→28.5 ms;
   mooncake/7B 10.5→17.1 ms)。直接原因:master 池只有 8 条 channel,
   **主扫描流带宽减半**;而 diff 行(EPIC k=8)极少,却独占 8 条。
-- **应该的样子**(宸逸口径):16 条 channel 里 diff 池应该**很少**
+- **应该的样子**(用户口径):16 条 channel 里 diff 池应该**很少**
   (够放紧凑 diff 即可),其余全归 master。
 - **代码实际**:两处硬口径——
   1. 物理 TLB:`src/workload_runner.py` 固定
@@ -68,7 +68,7 @@
 ## 问题 3b:naive 布局为什么看不到碎片惩罚
 
 - **现象**:A3 的 TBT ≈ A1(22.335 vs 22.393 ms)——乱序布局零代价。
-- **宸逸的问题**:Ramulator 不是按命令流仿真、乱序读和顺序读时间不同
+- **用户的问题**:Ramulator 不是按命令流仿真、乱序读和顺序读时间不同
   吗?为什么没体现?
 - **代码实际**(两层原因):
   1. **碎片的物理代价本来就小而模型也只收这部分**:
@@ -98,7 +98,7 @@
 
 - **现象**:矩阵里 A5/A6 的 bank 路是 PE 0.666 GHz、GEMV buffer 512 B、
   每波 4 条查询——没吃满 C3 微架构。
-- **宸逸口径**:prefill attention 上 PIM 与微架构、attention batching
+- **用户口径**:prefill attention 上 PIM 与微架构、attention batching
   是**一起使用**的,A5/A6 应该带上匹配的微架构参数。
 - **代码实际**(三处叠加):
   1. `654aeee`(chenyi)把批命令耦合进 preset(A5/A6 = mq),但
@@ -111,7 +111,7 @@
      `47ae0c3`)——prefill 每波被 min(4, 容量 8) 卡在 4,即使 buffer
      容量是 8;batching 开启时这个独立旋钮应让位于容量。
 - **修复方向**:A5/A6 preset(或矩阵)绑定微架构档——buffer 与匹配
-  频率取哪一档(512 B/1.73 GHz?768 B/2.6 GHz 平衡点?)由宸逸定;
+  频率取哪一档(512 B/1.73 GHz?768 B/2.6 GHz 平衡点?)由用户定;
   `pim_prefill_query_batch` 在 mq 下默认改为跟随 `mq_query_capacity`。
   修后 A5/A6 两列重跑。
 
@@ -134,7 +134,7 @@
   (`kv_rows −= shared_master_rows`,与新公式严格等价)——multihop 修补
   后 0.798 ✓ 与手算一致。
 
-## 处置记录(2026-08-25,宸逸裁决后落地)
+## 处置记录(2026-08-25,用户裁决后落地)
 
 - **问题 1 已修**:dynamic 的 xPU 侧估价/入账改为与 gpu 档同一口径
   (顶层 scale 折算,`_prefill_batch` dynamic 块);
