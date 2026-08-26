@@ -1,0 +1,35 @@
+{
+  "kind": "supervisor",
+  "requests": 4,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 1,
+    "fresh_tokens": 4413,
+    "policy": "no-reuse",
+    "random_seed": 0,
+    "reusable_segments": [],
+    "reused_tokens": 0
+  },
+  "tiers": {
+    "0": [
+      "iterative__dvc-3462~0.s0",
+      "iterative__dvc-3462~1.s0"
+    ],
+    "1": [
+      "iterative__dvc-3462~1.s1"
+    ],
+    "2": [
+      "iterative__dvc-3462~1.s2"
+    ]
+  },
+  "total_history_tokens": 4317,
+  "total_input_tokens": 4413,
+  "total_output_tokens": 288
+}
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_822/output/20260826-141955_wl_tiny_LLAMA-7B/dag_A1.json
+REPORT_SUMMARY {"ablation": "A1", "decode_attn": "pim", "energy_nj": 183165689619.69437, "engine": "dag", "event_count": 215744, "kv_mapping": "private", "link_bytes": 625754112, "makespan_s": 1.5700163435052508, "pim_prefill_mode": "gpu", "policy": "no-reuse-physical"}

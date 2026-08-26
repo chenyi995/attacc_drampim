@@ -1,0 +1,112 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "source": "hf:nebius/SWE-agent-trajectories (shard train-00000-of-00012.parquet, CC-BY-4.0)",
+  "generator": "convert_swe_agent.py",
+  "generated": "2026-08-26",
+  "tokenizer": "llama",
+  "selection": {
+   "repo": "iterative__dvc",
+   "num_traj": 2,
+   "max_steps": 3,
+   "instance_ids": [
+    {
+     "instance_id": "iterative__dvc-3462",
+     "occurrence": 0,
+     "model_name": "swe-agent-llama-70b"
+    },
+    {
+     "instance_id": "iterative__dvc-3462",
+     "occurrence": 1,
+     "model_name": "swe-agent-llama-70b"
+    }
+   ]
+  },
+  "conversion_counters": {
+   "clamped_lout": 0,
+   "skipped_empty_segs": 0,
+   "skipped_empty_steps": 0,
+   "dropped_trailing_user": 0
+  }
+ },
+ "agents": [
+  {
+   "id": "iterative__dvc-3462~0.s0",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "bfc71085e702e602",
+     "len": 1270
+    },
+    {
+     "role": "user",
+     "sha": "8d186078f2b524fd",
+     "len": 817
+    }
+   ],
+   "lout": 75
+  },
+  {
+   "id": "iterative__dvc-3462~1.s0",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "bfc71085e702e602",
+     "len": 1270
+    },
+    {
+     "role": "user",
+     "sha": "8d186078f2b524fd",
+     "len": 817
+    }
+   ],
+   "lout": 93
+  },
+  {
+   "id": "iterative__dvc-3462~1.s1",
+   "tier": 1,
+   "parent": "iterative__dvc-3462~1.s0",
+   "history_len": 2087,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "919ef85ce9446dbc",
+     "len": 93,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "fd83c11e4e5591bf",
+     "len": 50
+    }
+   ],
+   "lout": 57
+  },
+  {
+   "id": "iterative__dvc-3462~1.s2",
+   "tier": 2,
+   "parent": "iterative__dvc-3462~1.s1",
+   "history_len": 2230,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "77db92c853559feb",
+     "len": 57,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "09263e6610aab70b",
+     "len": 39
+    }
+   ],
+   "lout": 63
+  }
+ ]
+}
