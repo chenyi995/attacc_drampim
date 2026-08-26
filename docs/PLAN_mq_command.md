@@ -1,6 +1,6 @@
 # 计划:多 Q 单命令(MQ-MAC)批处理改造 — 大纲 + 详细计划
 
-宸逸 2026-08-21 定的命令语义(以下称 **MQ 模式**,multi-query MAC):
+用户 2026-08-21 定的命令语义(以下称 **MQ 模式**,multi-query MAC):
 
 1. `ACT_AB` 不变:仍是把一个 row 拉进 row buffer(感放)。
 2. **一条 `MAC_AB` = GEMV buffer 里的全部 n 条 Q 轮流与这个 col 里的 K 片段做乘加**
@@ -112,14 +112,14 @@ n_cap = min( floor(gemv_buffer_bytes / 64),   # score 相:每条 Q 切片 64 B/b
    指标:每步扫描 latency、ACT 次数(按行数从 run 几何推出,并注明口径)、
    能耗、PE 利用率(= n×MAC 命令数 / (扫描时长×f_PE))。
    理由:Fugue 正文 §4.5.3 Eq.(actcost) 正是 "n_act ≈ n_row(1+ρ_b N_ag) vs
-   dense N_ag·n_row" 的对比;latency-vs-dense 是宸逸定的目标口径。
+   dense N_ag·n_row" 的对比;latency-vs-dense 是用户定的目标口径。
 3. **prefill 多 Q**:复用 L=4096,计算 token 数 n_r∈{4,8,16,32},按 n_cap=8 分组
    拆 sweep;同样三方案对照。
    理由:Fugue 正文 §4.5.3 "a prefill supplies the n_r queries of its computed
    tokens" — 与 decode 用同一行内批处理机制。
 4. 端到端冒烟:relay workload 走 main.py 默认(mq)跑通;27 个单测全绿。
 
-### 2.5 与 Fugue 正文的对照(实现完成后要向宸逸报告的两处正文张力,不代改稿)
+### 2.5 与 Fugue 正文的对照(实现完成后要向用户报告的两处正文张力,不代改稿)
 
 - 正文 §4.5.3 "…while **the column accesses** its MACs consume **grow with n_r**":
   MQ 下列访问不再随 n 增长(改为 PE op 随 n 增长)。

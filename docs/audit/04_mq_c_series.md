@@ -1,6 +1,6 @@
 # 块 04:C 系列——MQ-MAC 批命令、非对称相位、D_i 位图、bank-whole、总线转向
 
-归属:宸逸+助手会话(2026-08-21,分支 chenyi-experiment-821),四个 commit:
+归属:用户+助手会话(2026-08-21,分支 chenyi-experiment-821),四个 commit:
 `9d6fc7b`(MQ-MAC + 相位 + 审计文档)、`264d14a`(总线转向 C++)、
 `3e338e6`(D_i 位图 + bank-whole prefill)、`711ae25`(严格论文模式)。
 设计计划见 `docs/PLAN_mq_command.md`,数据流与三路审计见

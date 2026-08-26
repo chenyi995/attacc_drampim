@@ -35,7 +35,7 @@
 | `experiments/_archive/` | 非论文历史实验(cacheblend_tier_batch、end_to_end_20260814),仅存档 |
 | `tests/test_workload.py` | 32 个单测(27 上游回归 + 5 个 MQ/C 层) |
 | `docs/` | 本目录:索引 / 实验总纲 / 交接 / 日志 + 四份设计文档(下行) |
-| `docs/OUTPUT_SPEC.md` | **给宸逸的输出格式规范**(读者假设/首现即释/多维度/数字纪律/实验须注论文落点/自检清单)——写任何文档前先读 |
+| `docs/OUTPUT_SPEC.md` | **给用户的输出格式规范**(读者假设/首现即释/多维度/数字纪律/实验须注论文落点/自检清单)——写任何文档前先读 |
 | `docs/audit/` | **整个项目的分块审计**(01 上游 AttAcc / 02 复用栈 / 03 A 系列 / 04 C 系列 / 05 history / 06 面积平衡点),含归属考证与逐块 file:line 代码地图,入口 `docs/audit/README.md` |
 | `docs/README_mq_design_space.md` | **MQ 两轴设计空间零基础版**:容量轴×速率轴、匹配频率 f\*、in-bank 面积预算线 |
 | `docs/README_fugue_dataflow.md` | **零基础全数据流**:每步 GEMM 的 M/K/N、哪级切哪个维、五级累加、两处合并、三种"轮转" |

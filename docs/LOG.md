@@ -28,7 +28,7 @@
   (47ae0c3);拐点表:EPIC p*(11745e1/9467de5)与 p*-L 无关(34d3cd7)。
   分支 `xinyao_0821`。
 
-## 2026-08-21(本会话,宸逸 + 助手)— 审计、MQ 微架构、C 系列、严格论文模式
+## 2026-08-21(本会话,用户 + 助手)— 审计、MQ 微架构、C 系列、严格论文模式
 1. **环境**:切 `xinyao_0821`(旧工作区 stash + `ramulator2.local_backup_0821/`
    备份);gcc-toolset-11 重编 Ramulator2;论文仓库 pull 至 b3a38cb。
 2. **审计**:通读论文正文与仿真器,产出 `docs/SIM_VS_PAPER_AUDIT_0821.md` 与
@@ -68,7 +68,7 @@
 论文正文欠两句(写口过滤、因果丢弃)与 §4.5.3 措辞张力;B4 动态选边未实装;
 放置表/GQA/n_d 配比/行激活输出链路;C-abl-3 sweep 完成后出 `MQ_MICROARCH.md`。
 
-## 2026-08-22(本会话,宸逸 + 助手)— agentic 多轮驻留 KV(history_len)
+## 2026-08-22(本会话,用户 + 助手)— agentic 多轮驻留 KV(history_len)
 
 1. **语义**:每请求 `history_len` = 该 agent 前几轮已算好、常驻 PIM 内存的
    自有 KV 行数;只被注意力读(attended)、永不重算、不进任何段/共享,
