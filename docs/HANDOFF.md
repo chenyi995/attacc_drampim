@@ -63,7 +63,7 @@ python3 collect_mq_results.py     # 汇总 12 点面积/时序/功耗
 
 ## 4. 未完成 / 已知开口(接手优先级)
 
-1. **论文正文欠两句**(机制已实装,措辞待用户定):§4.3.2 写口的 D_i 过滤
+1. **论文正文欠两句**(机制已实装,措辞待chenyi9 定):§4.3.2 写口的 D_i 过滤
    (到达顺序无关);§4.5.2 bank-whole 的因果丢弃。另 §4.5.3 "column accesses
    grow with n_r" 与 MQ 语义有张力(MQ 下列访问不随 n 长,PE op 才随 n 长)。
 2. **B4(Eq. placement 动态选边)未实装**——论文 §6 的 Fugue 行依赖它;

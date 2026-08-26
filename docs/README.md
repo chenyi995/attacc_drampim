@@ -8,7 +8,7 @@
 
 - **论文仓库**:`/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027`(Fugue: A GPU–PIM
   Memory System for Efficient Shared-KV Serving;主文件 `main.tex`,章节
-  `sections/01–09`,用户裁决与写作规则在其 `outline/` 与 `CLAUDE.md`——在那边
+  `sections/01–09`,chenyi9 裁决与写作规则在其 `outline/` 与 `CLAUDE.md`——在那边
   工作以那边的规则为准,数字进正文前须用户手动复现)。
 - **RTL 仓库**:`/data2/chenyi9/KV-PIM/fugue-logic-die-rtl`(logic die + in-bank PE
   的 N28/Genus 综合,C 系列 RTL sweep 所在)。

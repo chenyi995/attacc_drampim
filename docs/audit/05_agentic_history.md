@@ -72,14 +72,14 @@
 
 把论文场景从"单轮多 agent 共享 KV"扩展到"**多轮** agent 自有历史
 驻留"的建模能力。**目前论文没有对应的实验编号**(严格论文模式下
-A/C 之外不设新系列须用户裁决),也没有带 `history_len` 的 workload
+A/C 之外不设新系列须chenyi9 裁决),也没有带 `history_len` 的 workload
 JSON——属于能力储备,不入当前正文。
 
 ## 6. 悬置
 
 - 尚无带 `history_len` 的实验系列与 workload JSON(现有 JSON 全 H=0,
   行为逐位不变);
-- 未提交——提交时机与拆分待用户裁决;
+- 未提交——提交时机与拆分待chenyi9 裁决;
 - 历史块的 8 MiB 单块上限(TLB 分配器约束)⇒ 单请求 H ≤ 8 MiB/stride
   行(LLAMA-7B 口径 32768 行),超限报 `WorkloadValidationError`,未做
   多块分裂。

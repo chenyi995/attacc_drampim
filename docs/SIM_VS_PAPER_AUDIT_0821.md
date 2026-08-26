@@ -15,7 +15,7 @@
 
 ---
 
-## 1. 用户提出的专项:AttAcc 单 Q GEMV → Fugue 多 Q GEMM(bank 侧 buffer)
+## 1. chenyi9 提出的专项:AttAcc 单 Q GEMV → Fugue 多 Q GEMM(bank 侧 buffer)
 
 **用户观点**:AttAcc 一个 bank 的 GEMV buffer 驻一个 Q、对多行 K 做 GEMV;Fugue 批多个
 agent 的 Q 复用同一行 K,必须"看两次 ACT 之间能做多少次乘法 → 决定塞几个 Q 进 buffer →

@@ -7,7 +7,7 @@ AttAcc 原文(§4.2/§5.1/§7.7)+ 本仓库实测(results_c_points.json)。
 
 ---
 
-## ⚠️ 2026-08-24 设计修订:P 流式(streaming P,用户裁决)——本节取代下文的 n_c 驻留描述
+## ⚠️ 2026-08-24 设计修订:P 流式(streaming P,chenyi9 裁决)——本节取代下文的 n_c 驻留描述
 
 本页以下正文与三路审计是 **2026-08-21 的 (n_q, n_c) 驻留设计**的存档记录。
 2026-08-24 裁决:**P 不驻留**——P 的一个条目在本 bank 只被两个输出趟各用一次,
@@ -153,16 +153,16 @@ AttAcc 原文(§4.2/§5.1/§7.7)+ 本仓库实测(results_c_points.json)。
   ②PE >2 GHz 在 1z DRAM 工艺的可综合性(且其价值随 MVSB 地板出现而贬值);
   ③nRFC/tCK 换算口径矛盾(全局 ~2%,既有问题,建议一并修)。
 
-## 6. 三个裁决项的处置建议(2026-08-21 查证,待用户裁决)
+## 6. 三个裁决项的处置建议(2026-08-21 查证,待chenyi9 裁决)
 
-1. **diff/master 写序 —— 已实装(2026-08-21,用户裁决采纳)**:per-agent D_i 位图
+1. **diff/master 写序 —— 已实装(2026-08-21,chenyi9 裁决采纳)**:per-agent D_i 位图
    做 **master 端写过滤**(命中 D_i 即丢),diff 经写口直写,到达顺序无关;与
    mask gate 同源信息。仿真器:attach/prefill 时新增 `di_bitmap_gpu_to_die`
    (LINK,⌈context/8⌉ B)与 `die_load_di_bitmap`(DIE)事件,EPIC 每 agent 一次、
    CacheBlend 每 partial 层一次,层内含掩码的扫描依赖位图装载;报表含
    `di_bitmap_bytes` 与机制说明。RTL 落点:E4 位图 + master 写路查询口;
    论文 §4.3.2 一句(待写)。
-2. **prefill 批内下三角 —— 已实装(2026-08-21,用户裁决采纳)**:新模式
+2. **prefill 批内下三角 —— 已实装(2026-08-21,chenyi9 裁决采纳)**:新模式
    `--pim-prefill-mode bank-whole`(默认仍 split):本层 fresh/corrected K/V
    **先落地**(store 事件为扫描的前置依赖),每个 ≤cap 的 Q 子批扫**全落地范围**
    (read-mask 的 master + 全部 fresh 行,行数 +s,上三角被扫即被计费),DIE 以

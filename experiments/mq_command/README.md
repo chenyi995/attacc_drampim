@@ -5,7 +5,7 @@
 `docs/EXPERIMENTS.md`。设计文档:`DATAFLOW.md`(硬件增量、全数据流、三路审计、
 裁决记录);零基础数据流讲解:`docs/README_fugue_dataflow.md`。
 
-## C 编号定义(用户 2026-08-21 定名)
+## C 编号定义(chenyi9 2026-08-21 定名)
 
 | 编号 | 含义 | 存储 | 频率 |
 |---|---|---|---|
