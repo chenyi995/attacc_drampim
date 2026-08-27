@@ -121,6 +121,16 @@ class ReuseConfig:
     cacheblend_recompute_ratio: float = 0.0
     epic_prefix_recompute_tokens: int = 1
     random_seed: int = 0
+    # recompute policy only (ruling chenyi9 2026-08-27, option 1): when the
+    # serving layout is position-INSENSITIVE (masked/diff-pool layouts and
+    # the GPU-gather A2 -- everything except the maskless naive A3), the k
+    # recomputed rows are placed CANONICALLY at the chunk head: the cost
+    # structure is identical (a masked row is streamed-and-dropped wherever
+    # it sits; a diff row lives in its own pool either way) while the
+    # physical scan shapes collapse back onto the shared signature cache.
+    # Only A3, whose run splits physically depend on the positions, keeps
+    # the true random draw.
+    recompute_canonical: bool = False
     # cachecraft only: per-chunk recompute prefix = ceil(alpha * (1 -
     # context overlap) * chunk length), at least one row when shifted.
     cachecraft_alpha: float = 0.05
@@ -145,6 +155,7 @@ class ReusePlan:
                 self.config.cacheblend_partial_recompute_layers),
             "cacheblend_recompute_ratio": self.config.cacheblend_recompute_ratio,
             "epic_prefix_recompute_tokens": self.config.epic_prefix_recompute_tokens,
+            "recompute_canonical": self.config.recompute_canonical,
             "cachecraft_alpha": self.config.cachecraft_alpha,
             "random_seed": self.config.random_seed,
             "fresh_tokens": self.fresh_tokens,
@@ -380,7 +391,8 @@ def build_reuse_plan(workload: Workload,
                      cacheblend_full_recompute_layers: Iterable[int] = (),
                      cacheblend_partial_recompute_layers: Iterable[int] = (),
                      epic_prefix_recompute_tokens: int = 1,
-                     cachecraft_alpha: float = 0.05) -> ReusePlan:
+                     cachecraft_alpha: float = 0.05,
+                     recompute_canonical: bool = False) -> ReusePlan:
     """Return an auditable policy plan without altering legacy simulation.
 
     Cache ownership is selected deterministically by ``(tier, request id,
@@ -426,7 +438,8 @@ def build_reuse_plan(workload: Workload,
     config = ReuseConfig(policy, full_layers, partial_layers,
                          float(cacheblend_recompute_ratio),
                          epic_prefix_recompute_tokens, random_seed,
-                         cachecraft_alpha=float(cachecraft_alpha))
+                         cachecraft_alpha=float(cachecraft_alpha),
+                         recompute_canonical=bool(recompute_canonical))
     rng = random.Random(random_seed)
     owners: Dict[str, Tuple[Request, int]] = {}
     by_request_id = {request.request_id: request for request in workload.requests}
@@ -473,8 +486,11 @@ def build_reuse_plan(workload: Workload,
                 # master run at every recomputed row).  Deterministic via
                 # the plan's random seed.
                 count = min(segment.length, epic_prefix_recompute_tokens)
-                correction = tuple(sorted(rng.sample(range(segment.length),
-                                                     count)))
+                if recompute_canonical:
+                    correction = tuple(range(count))
+                else:
+                    correction = tuple(sorted(rng.sample(range(segment.length),
+                                                         count)))
             elif policy == "cachecraft" and shifted:
                 # Cache-Craft-style variable prefix: the less of the chunk's
                 # original context the consumer preserves, the more boundary

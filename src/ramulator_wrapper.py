@@ -141,8 +141,11 @@ class Ramulator:
         # any earlier run simulated, and only new signatures reach a
         # Ramulator subprocess.  Keys are already primitive (see
         # _run_signature); duplicate lines are harmless (same value).
+        # v2 file since the head->HBM remap (2026-08-27): entries simulated
+        # under the old head-per-channel semantics must not be reused; the
+        # old signature_cache.jsonl stays on disk as an archive.
         self._signature_cache_path = (os.path.join(
-            ramulator_dir, "signature_cache.jsonl") if ramulator_dir else "")
+            ramulator_dir, "signature_cache_v2_headhbm.jsonl") if ramulator_dir else "")
         if (self.signature_cache_enabled and self._signature_cache_path and
                 os.path.exists(self._signature_cache_path)):
             with open(self._signature_cache_path) as handle:
@@ -208,6 +211,7 @@ class Ramulator:
                        shared_kv, shared_queries, channel_base=None,
                        mq_command=False, nccdab_override=None):
         return (
+            "hbmstripe1",  # mapping-semantics version (head->HBM, 2026-08-27)
             pim_type.name, run_length, num_ops_per_hbm, dbyte,
             bool(power_constraint), self.dhead, self.num_hbm, channel_count,
             bool(shared_kv), shared_queries, channel_base,
@@ -328,6 +332,9 @@ class Ramulator:
             "trace_gen/gen_trace_attacc_{}.py".format(pim_type_name))
         trace_args = "--dhead {} --nhead {} --seqlen {} --dbyte {} --output {}".format(
             self.dhead, num_ops_per_hbm, l, dbyte, trace_file)
+        # head->HBM remap (ruling chenyi9 2026-08-27): channels carry the
+        # head's own token stripes; nhead = heads resident on this HBM.
+        trace_args += " --head-hbm-stripe"
         if key_addr is not None:
             trace_args += " --key-addr 0x{:x}".format(key_addr)
         if value_addr is not None:

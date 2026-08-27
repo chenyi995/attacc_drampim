@@ -13,7 +13,7 @@
 
 结构:一、已解决(R);二、未解决(U);三、流程性裁决记录;附录 A/B。
 
-## 一、已解决(17 条)
+## 一、已解决(18 条)
 
 | # | 问题 | 修复 | 位置 / commit |
 |---|---|---|---|
@@ -34,6 +34,7 @@
 | R15 | **naive 白得 Fugue 的读掩**(mask 是 die 侧硬件特性) | `shadow_reads` 拆分:**A3 无掩断流**(重算行处 master run 劈开:act 段-act 行-act 段)/**新档 A3a 可掩不断流**(`NaiveMaskKVLayout`);gpu-prefill 读回补 **DRAM 侧读事件**(散页在 prefill 也收费);阶梯变七档 | `6b05a22` |
 | R16 | **decode batch=1 埋没全部布局差异**(权重流按并发数虚增,PIM 扫描全藏其下;AttAcc 原版本就重叠) | **全档 decode 服务批宽 8**(GPU 权重一遍服务全波,KV 每查询各自拉;A2 重写为同构波结构);**MQ n_cap 顶格 8**(512 B/1.733 GHz 配平,修订 R7 的 12 档;MQ 仅 A5/A6,其余档连 prefill 也不开);wl_tiny 实测 A2 1.81→1.51 s、A4 1.29→0.98 s | `c163936` |
 | R17 | **重算 token 取块头与"随机抽取"裁决不符**(EPIC 前缀是该策略本义,不许动) | **新增独立策略 `--reuse recompute`**:每位移块内**均匀随机抽 k 个 token**(种子可复现;归 EPIC_FAMILY 复用逐段记账/diff/位图机制);随机位置在物理上只影响 A3(断口散布);ladder A2–A6 改用之,比例轴 k∈{2,4,8,16,32} | 工作树(2026-08-27 提交) |
+| R18 | **head↔channel 映射不自洽**(trace 层沿用 AttAcc 上游"一个 head 一个 channel":7B/TP8 下 `n_head_per_hbm=1` → 单 channel 扫全 L、15/16 channel 闲置;多 channel 池 run 把同一列样式按"幻影 head"逐 channel 复制,能耗虚增 ~15×;与上层 TLB 的 channel 条带布局两层各说各话。chenyi9 发现) | **head→HBM 条带重映射**:一个 head 住一个 HBM,run 的各 channel 载该 head 自己的 token 条带(`stripe_width = channels // heads_per_hbm`,`L_per_channel = ceil(L/stripe_width)`,`num_itr=1`,head 并行为 trace 外 HBM 并发);trace 加 `--head-hbm-stripe`(wrapper 恒传);签名版本 `hbmstripe1` + 缓存轮换 `signature_cache_v2_headhbm.jsonl`;落 KV 事件改 per-HBM 带宽份额、D_i 位图按广播计;trace 对照 64 MAC_AB@ch0 → 4×16 守恒;**此前全部 PIM 侧数字作废,套件重跑**。归因三层:上游 `c1540de`(jwchoi)放置假设 + `47ae0c3`(xw338)带进池化路径 + 本线(chenyi9)退化配置出数;全文见 `README_head_hbm_remap.md` | 工作树(未 commit) |
 
 另有设计裁决(非 bug,已落地):老 A6"split 混合 prefill"废除、物理 DAG 与 A 阶梯同菜单(`654aeee`/`0755694`);TSV 窄下行经实测关闭(转向代价 ≤0.84%,experiment C-abl-2)。
 

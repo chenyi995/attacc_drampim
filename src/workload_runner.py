@@ -1166,7 +1166,13 @@ def _append_channel_kv_stores(system, events: List[SplitEvent], *, layer: int,
     result = []
     for (channel, channel_count), channel_locations in sorted(by_channel.items()):
         byte_count = sum(2 * location.bytes_per_vector for location in channel_locations)
-        bandwidth = (system.devices["Acc"].peak_memory_bandwidth *
+        # head->HBM remap (2026-08-27): a pool event carries ONE head's bytes
+        # on ONE HBM's channels; the concurrent copies on the other stacks
+        # are the head-parallel dimension, so the wall time uses the
+        # PER-HBM bandwidth share, not the aggregate.
+        accelerator = system.devices["Acc"]
+        bandwidth = (accelerator.peak_memory_bandwidth /
+                     max(1, getattr(accelerator, "num_hbm", 1)) *
                      channel_count / 16)
         result.append(_cacheblend_event(
             events, layer=layer, tier=tier, request=request, name=name,
@@ -2832,8 +2838,18 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         events, layer=layer_index, tier=tier,
                         request=request.request_id, name="die_load_di_bitmap",
                         device="DIE", rows=1,
-                        time_s=bitmap_bytes / system.devices["Acc"].softmax_peak_bandwidth,
-                        energy=(bitmap_bytes * system.devices["Acc"].energy_table["sram"],),
+                        # Broadcast, not split: every stack's die stores the
+                        # SAME bitmap for its own head, so the wall time uses
+                        # one die's bandwidth share and the energy counts one
+                        # copy per stack (head->HBM remap, 2026-08-27).
+                        time_s=(bitmap_bytes /
+                                (system.devices["Acc"].softmax_peak_bandwidth /
+                                 max(1, getattr(system.devices["Acc"],
+                                                "num_hbm", 1)))),
+                        energy=(bitmap_bytes *
+                                max(1, getattr(system.devices["Acc"],
+                                               "num_hbm", 1)) *
+                                system.devices["Acc"].energy_table["sram"],),
                         deps=(bitmap_link,))
                     request_ready = tuple(dict.fromkeys(
                         request_ready + (bitmap_load,)))

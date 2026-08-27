@@ -14,6 +14,14 @@ max_n_hbm = 8
 n_hbm = 5
 n_channel = 16
 n_channel_total = 16
+# head->HBM remap (ruling chenyi9 2026-08-27): one head owns one HBM; the
+# channels a run spans carry the head's OWN token stripes (L divides across
+# channels) instead of replicating the same columns per channel as extra
+# heads.  n_head_per_hbm then means "heads resident on this HBM" and only
+# shrinks each head's channel share; head parallelism across HBMs is a
+# multiplier outside the trace.
+head_hbm_stripe = False
+n_head_per_hbm = 1  # overwritten in main() from --nhead; used by the stripe rule
 n_pch = 2
 n_rank = 2
 n_bank = 4
@@ -222,12 +230,14 @@ def _shared_query_attention_commands(n_head_per_hbm, L, key_base, value_base,
   continues through the legacy command interleaving below, preserving the
   original AttAcc trace exactly.
   """
+  if head_hbm_stripe:
+    L = math.ceil(L / max(1, n_channel // max(1, n_head_per_hbm)))
   partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
-  num_itr = math.ceil(n_head_per_hbm / n_channel)
+  num_itr = 1 if head_hbm_stripe else math.ceil(n_head_per_hbm / n_channel)
   cmd_list_reset()
   for itr in range(num_itr):
     remainder = 0
-    if n_head_per_hbm / ((itr + 1) * n_channel) < 1:
+    if not head_hbm_stripe and n_head_per_hbm / ((itr + 1) * n_channel) < 1:
       remainder = n_head_per_hbm % n_channel
     valid_channel = n_channel if remainder == 0 else remainder
     offset = 0  # The TLB base already names the one shared resident segment.
@@ -294,6 +304,13 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
   if phase not in ("full", "score", "context"):
     raise ValueError("--phase must be full, score, or context")
 
+  if head_hbm_stripe:
+    # head->HBM remap (chenyi9 2026-08-27): the run's channels hold this
+    # head's OWN token stripes, so every per-channel command count below
+    # (generation and assembly alike) is derived from the striped length.
+    stripe_width = max(1, n_channel // max(1, n_head_per_hbm))
+    L = math.ceil(L / stripe_width)
+
   partition_size = math.ceil(max_L * dhead / (n_pch * n_rank * n_bg * n_bank))
   head_offset = partition_size
   v_offset = pow(2, 23) 
@@ -301,10 +318,10 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
 
   cmd_list_reset()
   ##-- Generate Commands --##
-  num_itr = math.ceil(n_head_per_hbm / (n_channel))
+  num_itr = 1 if head_hbm_stripe else math.ceil(n_head_per_hbm / (n_channel))
   for itr in range(num_itr):
     remainder = 0
-    if (n_head_per_hbm / ((itr+1) * n_channel) < 1):
+    if not head_hbm_stripe and (n_head_per_hbm / ((itr+1) * n_channel) < 1):
       remainder = n_head_per_hbm % n_channel
     # CacheBlend supplies TLB-resolved physical byte addresses.  The old
     # synthetic placement remains the default for every legacy invocation.
@@ -529,7 +546,7 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
       trace_file.write(cmd + "\n")
 
 def main():
-  global dhead, max_L, data_size, n_mac, n_channel, pool_base
+  global dhead, max_L, data_size, n_mac, n_channel, pool_base, n_head_per_hbm
 
 
   parser = argparse.ArgumentParser(description="Output path and operation infos",
@@ -567,6 +584,10 @@ def main():
                            "per query.")
   parser.add_argument("--channels", type=int, default=16,
                       help="number of contiguous physical channels assigned to this KV class")
+  parser.add_argument("--head-hbm-stripe", action="store_true",
+                      help="head->HBM remap: channels carry the head's own "
+                           "token stripes (L splits across the run's "
+                           "channels); nhead = heads resident on this HBM")
   parser.add_argument("--pool-base", type=int, default=None,
                       help="first channel of that KV class's pool; heads then wrap inside "
                            "[pool-base, pool-base + channels) instead of striping past it")
@@ -576,7 +597,9 @@ def main():
   dhead = args.dhead
   max_L = args.maxlen
   L = args.seqlen
-  n_head_per_hbm = args.nhead 
+  n_head_per_hbm = args.nhead
+  global head_hbm_stripe
+  head_hbm_stripe = bool(getattr(args, "head_hbm_stripe", False)) 
 
   data_size = args.dbyte
   n_mac = int(HBM_GS['col'] / data_size)

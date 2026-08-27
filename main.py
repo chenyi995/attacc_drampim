@@ -422,12 +422,22 @@ def main():
                 workload = Workload(workload.kind, tuple(
                     replace(request, history_len=args.history_len)
                     for request in workload.requests), workload.raw)
+            # Option-1 canonicalization (chenyi9 2026-08-27): random in-chunk
+            # rows are physically meaningful ONLY for the maskless naive
+            # layout (A3); every other layout gets the canonical head
+            # placement so scan shapes stay cache-shared.
+            _kv_for_canonical = args.kv_mapping
+            if not _kv_for_canonical and args.ablation:
+                _kv_for_canonical = PRESETS[args.ablation].get("kv_mapping")
+            recompute_canonical = (args.reuse == "recompute" and
+                                   _kv_for_canonical != "naive")
             reuse_plan = build_reuse_plan(
                 workload, args.reuse, args.cacheblend_recompute_ratio,
                 args.reuse_seed, args.cacheblend_full_layers,
                 args.cacheblend_partial_layers,
                 args.epic_prefix_recompute_tokens,
-                cachecraft_alpha=args.cachecraft_alpha)
+                cachecraft_alpha=args.cachecraft_alpha,
+                recompute_canonical=recompute_canonical)
         except WorkloadValidationError as exc:
             parser.error(str(exc))
         summary = workload_summary(workload, reuse_plan)
