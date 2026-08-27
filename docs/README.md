@@ -115,7 +115,10 @@ python3 -m unittest discover -s tests     # 41/41
 - `README_delta_vs_xinyao0821.md`:相对 xinyao_0821 基线的全部改动
 - `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
   流程裁决、阶梯诊断与 workload 有效性附录)
-- `README_experiments.md`:矩阵怎么跑
+- `README_run_experiments.md`:**当前主线实验怎么跑**(四组拓扑负载 ×
+  DAG 六档 × 重算比例,一键脚本与图)
+- `README_experiments.md`:论文证据矩阵怎么跑
+- `sessions/`:每日调整记录(chenyi9 裁决时间线)
 - `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit
 - `PORTING_PLAN.md`(不入库):干净分支 chenyi-822 的逐步移植计划
 
