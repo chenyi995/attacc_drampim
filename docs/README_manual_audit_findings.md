@@ -13,7 +13,7 @@
 
 结构:一、已解决(R);二、未解决(U);三、流程性裁决记录;附录 A/B。
 
-## 一、已解决(18 条)
+## 一、已解决(19 条)
 
 | # | 问题 | 修复 | 位置 / commit |
 |---|---|---|---|
@@ -23,7 +23,7 @@
 | R4 | **A6 dynamic 估价口径不对称**(xPU 路按每请求算子估价,比 gpu 档实际入账贵 → 偏选 PIM) | 估价改为与 gpu 档同一口径(顶层 scale 折算),估=入账两侧对称;multihop/65B 上 A6 = min(A4,A5) 验证 | `src/ablation.py::_prefill_batch`;`b649674` |
 | R5 | **分池 8/8**(diff 行极少却独占一半带宽,A4 反劣于 A3)——即"channel 划分不是对半分"裁决 | 两条路径同步改 **15/1**(物理 `_KV_CHANNELS` master 0–14 / diff 15 + 解析默认 + `--kv-pool-split`);注释留"后续可按 diff 密度 ρ_b 自动定宽" | `b649674` |
 | R6 | **naive 布局无 channel 冲突模型**(每 run 摊满 16 channel 理想并行,乱序零代价) | 解析:逐 chunk **顺序分配 channel 并追踪**,同 channel 冲突**串行化**(`_naive_channel_pools`,decode 取池间 max);物理:见 R11 的 `NaiveKVLayout` | `src/ablation.py`;`b649674` |
-| R7 | **A5/A6 没挂微架构参数**(PE 0.666 GHz / 512 B / 每波 4) | preset 绑定平衡点 **2.6 GHz / 768 B(=12 驻留)**,标 PROVISIONAL;mq 下每波跟随 `mq_query_capacity` | `src/ablation.py::PRESETS`;`b649674`。**2026-08-26 修订:MQ max n_cap=8 → 512 B/1.733 GHz(R16)** |
+| R7 | **A5/A6 没挂微架构参数**(PE 0.666 GHz / 512 B / 每波 4) | preset 绑定平衡点 **2.6 GHz / 768 B(=12 驻留)**,标 PROVISIONAL;mq 下每波跟随 `mq_query_capacity` | `src/ablation.py::PRESETS`;`b649674`。**2026-08-26 修订:MQ max n_cap=8 → 512 B/1.733 GHz(R16);2026-08-27 再修:1.3004 GHz/8 tCK(R19)** |
 | R8 | **压缩率列低估**:`_memory_report` 把共享 chunk 的属主副本双计(multihop 报省 4.7%,实际 20.3%) | 公式去重 + 单测锁死 + `owner_copy_fix` 标记;存量结果 `repair_memory_column.py` 修补(multihop → 0.798 ✓) | `src/ablation.py::_memory_report`;`0305d4c` |
 | R9 | **多轮历史口径**(名义 `--history-len` 一开始就满长) | Mooncake conversation 去尾块链轮,history 逐轮从 0 累积;进矩阵为 `mooncakemt` | `convert_mooncake_multiturn.py`;`0305d4c`。(注:mooncakemt 后判不可用,见附录 B) |
 | R10 | **A2 的 KV 驻留口径**:GPU-only 档 KV 原实现留在 GPU 本地 HBM,链路字节=0 | 裁决(chenyi9 2026-08-26):链路字节 = **GPU↔远端存储**(HBM 或哑 DRAM)经 NVLink/PCIe 的流量;**A2 的 KV 全放远端哑存储**——prefill 写出/复用与 history 行读回,decode 每步整上下文×全层拖回再写回(wl_tiny 实测链路 42.1 GB、makespan 1.671→1.811 s)。**解析引擎 A2 未对齐 → U3** | `src/workload_runner.py::_run_gpu_software_only`;`8b58fe7` |
@@ -35,6 +35,7 @@
 | R16 | **decode batch=1 埋没全部布局差异**(权重流按并发数虚增,PIM 扫描全藏其下;AttAcc 原版本就重叠) | **全档 decode 服务批宽 8**(GPU 权重一遍服务全波,KV 每查询各自拉;A2 重写为同构波结构);**MQ n_cap 顶格 8**(512 B/1.733 GHz 配平,修订 R7 的 12 档;MQ 仅 A5/A6,其余档连 prefill 也不开);wl_tiny 实测 A2 1.81→1.51 s、A4 1.29→0.98 s | `c163936` |
 | R17 | **重算 token 取块头与"随机抽取"裁决不符**(EPIC 前缀是该策略本义,不许动) | **新增独立策略 `--reuse recompute`**:每位移块内**均匀随机抽 k 个 token**(种子可复现;归 EPIC_FAMILY 复用逐段记账/diff/位图机制);随机位置在物理上只影响 A3(断口散布);ladder A2–A6 改用之,比例轴 k∈{2,4,8,16,32} | 工作树(2026-08-27 提交) |
 | R18 | **head↔channel 映射不自洽**(trace 层沿用 AttAcc 上游"一个 head 一个 channel":7B/TP8 下 `n_head_per_hbm=1` → 单 channel 扫全 L、15/16 channel 闲置;多 channel 池 run 把同一列样式按"幻影 head"逐 channel 复制,能耗虚增 ~15×;与上层 TLB 的 channel 条带布局两层各说各话。chenyi9 发现) | **head→HBM 条带重映射**:一个 head 住一个 HBM,run 的各 channel 载该 head 自己的 token 条带(`stripe_width = channels // heads_per_hbm`,`L_per_channel = ceil(L/stripe_width)`,`num_itr=1`,head 并行为 trace 外 HBM 并发);trace 加 `--head-hbm-stripe`(wrapper 恒传);签名版本 `hbmstripe1` + 缓存轮换 `signature_cache_v2_headhbm.jsonl`;落 KV 事件改 per-HBM 带宽份额、D_i 位图按广播计;trace 对照 64 MAC_AB@ch0 → 4×16 守恒;**此前全部 PIM 侧数字作废,套件重跑**。归因三层:上游 `c1540de`(jwchoi)放置假设 + `47ae0c3`(xw338)带进池化路径 + 本线(chenyi9)退化配置出数;全文见 `README_head_hbm_remap.md` | 工作树(未 commit) |
+| R19 | **MQ 配平缺能量项**(C 模型 interval = max(地板, PE 项),把 PC 的 6-tCK 地板当纯协议常数;实为**每窗口能量预算**(E₆=列读 140.8+一次 MAC 5.23 pJ,即 n=1 命令顶红线的口径),n=8 命令多花 8×E_op 必须拉长间隔;另 preset 1.733 GHz 比配平点差 0.04% 被 ceil 罚成 7 tCK;RTL 侧(kvpim-rtl/docs/Fugue-asplos2027,ASAP7 14 频点综合)证据判 RTL 对) | `mq_interval_cycles` 增 **PC 能量钳位** `ceil(6·(E_col+n·E_op·ê)/E₆)`(ê 保守取 1;n=8 → **8 tCK** 对任意频率鲁棒;n=1 → 6 保持 AttAcc;NPC 保持无约束);A5/A6 preset **1.3004 GHz(=1/tCK,每拍一次 MAC)**;**--powerlimit 默认开**(--no-powerlimit 显式关);活文档五处同步;**此前全部 NPC/7-tCK 结果作废重跑** | 工作树(未 commit) |
 
 另有设计裁决(非 bug,已落地):老 A6"split 混合 prefill"废除、物理 DAG 与 A 阶梯同菜单(`654aeee`/`0755694`);TSV 窄下行经实测关闭(转向代价 ≤0.84%,experiment C-abl-2)。
 

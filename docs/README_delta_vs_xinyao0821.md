@@ -149,7 +149,8 @@
   (重算行处 master run 劈开),新档 **A3a** 可掩不断流;gpu-prefill
   读回补 DRAM 侧读事件;**阶梯七档**;
 - **decode 服务批化 + MQ 顶格 8**(R16):全档批宽 8(GPU 权重一遍服务
-  全波、KV 每查询各自拉;A2 重写为同构波结构);A5/A6 = 512 B/1.733 GHz,
+  全波、KV 每查询各自拉;A2 重写为同构波结构);A5/A6 = 512 B/1.3004 GHz
+  (PC 能量钳位 8 tCK,R19),
   MQ 仅在"prefill attention in PIM"档启用;
 - **通用 `recompute` 策略**(R17):位移块内均匀随机抽 k 个 token 重算
   (EPIC 等原有分支不动);ladder A2–A6 用之,比例轴 k∈{2,4,8,16,32};

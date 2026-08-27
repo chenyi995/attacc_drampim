@@ -64,6 +64,7 @@ A5 对 A4:隔离"prefill 上 PIM + batching"的贡献(省掉回读与 GPU 大块
 
 ## 状态更新(2026-08-26/27,详见总台账 R14–R17 与 sessions/)
 
-- MQ 设计点按裁决改 **n_cap=8**:GEMV buffer 512 B、PE 1.733 GHz 配平
+- MQ 设计点按裁决改 **n_cap=8**:GEMV buffer 512 B、PE **1.3004 GHz**
+  (=1/tCK,每命令拍一次 MAC;PC 能量钳位使间隔为 8 tCK,R19)
   (R16,替代 12 驻留/768 B/2.6 GHz);
 - decode 服务批宽 8(与各档一致);MQ 批命令仅本档与 A6 启用。

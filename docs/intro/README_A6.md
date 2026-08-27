@@ -77,5 +77,6 @@ python3 -c "import json;print(json.load(open('/tmp/a6_dag.json'))['pim_prefill_s
 
 ## 状态更新(2026-08-26/27,详见总台账 R14–R17 与 sessions/)
 
-- MQ 设计点同 A5 改 **n_cap=8**(512 B/1.733 GHz,R16);
+- MQ 设计点同 A5 改 **n_cap=8**(512 B/1.3004 GHz,能量钳位 8 tCK,
+  R16→R19 修订);
 - decode 服务批宽 8;动态判决与入账同口径(R4)不变。

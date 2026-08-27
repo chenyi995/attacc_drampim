@@ -37,7 +37,8 @@
   本身;我们 = A6(Fugue);
 - **七档运行语义(2026-08-26/27)**:decode 服务批宽 8 全档默认(GPU
   权重一遍服务全波,KV 每查询各拉);**MQ 批命令仅 A5/A6**(n_cap 顶格
-  8:512 B / 1.733 GHz 配平),A1–A4/A3a 一律 replicate,prefill 也不开。
+  8:512 B / 1.3004 GHz,PC 能量钳位 8 tCK,R19),A1–A4/A3a 一律
+  replicate,prefill 也不开;功耗约束 (PC) 默认开启。
 
 ## 2. 一键跑法
 

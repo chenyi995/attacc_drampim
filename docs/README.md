@@ -48,7 +48,7 @@ GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
 | A3 | 软件复用 + AttAcc,乱序布局(不分 channel) | GPU | naive | replicate |
 | **A3a** | A3 布局但**可掩**(陈旧行随流读出被掩,run 不断;2026-08-26 增) | GPU | naive-mask | replicate |
 | A4 | + 分裂 channel(master/diff 分池) | GPU | master-diff | replicate |
-| A5 | + 所有 prefill 注意力进 PIM(MQ n_cap=8:512 B/1.733 GHz) | PIM | master-diff | **mq** |
+| A5 | + 所有 prefill 注意力进 PIM(MQ n_cap=8:512 B/1.3004 GHz,能量钳位 8 tCK) | PIM | master-diff | **mq** |
 | A6 | **Fugue(我们的方法)**:A5 + 逐请求动态选边 | dynamic | master-diff | **mq** |
 
 关键约定:**attention batching(MQ 批命令,一次列读服务多条驻留查询)
