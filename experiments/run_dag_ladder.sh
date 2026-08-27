@@ -37,8 +37,18 @@ RAMU_WORKERS=${RAMU_WORKERS:-14}
 # Recompute-ratio knob (chenyi9 2026-08-26: run several ratios, prefer
 # lower recompute): EPIC prefix tokens per shifted segment for A2-A6.
 EPIC_K=${EPIC_K:-8}
+# A1 dedup (chenyi9 2026-08-27): A1 is no-reuse -- its invocation is
+# LITERALLY the same command at every EPIC_K, so k!=2 batches may skip it
+# and copy the k=2 batch's dag_A1.json (bit-identical by determinism).
+# SKIP_A1=1 requires A1_JSON=<path to an existing dag_A1.json>.
+RUNGS="A1 A2 A3 A3a A4 A5 A6"
+if [ -n "${SKIP_A1:-}" ]; then
+    RUNGS="A2 A3 A3a A4 A5 A6"
+    : "${A1_JSON:?SKIP_A1=1 requires A1_JSON=<path to dag_A1.json>}"
+    [ -f "$A1_JSON" ] || { echo "A1_JSON not found: $A1_JSON" >&2; exit 1; }
+fi
 declare -A PID
-for A in A1 A2 A3 A3a A4 A5 A6; do
+for A in $RUNGS; do
     REUSE=recompute
     EXTRA=(--epic-prefix-recompute-tokens "$EPIC_K")
     if [ "$A" = A1 ]; then REUSE=no-reuse; EXTRA=(); fi
@@ -56,7 +66,7 @@ for A in A1 A2 A3 A3a A4 A5 A6; do
     PID[$A]=$!
 done
 FAILED=0
-for A in A1 A2 A3 A3a A4 A5 A6; do
+for A in $RUNGS; do
     if wait "${PID[$A]}"; then
         echo "=== done $A $(date +%H:%M:%S) ==="
         grep -h REPORT_SUMMARY "$OUT/dag_${A}.log" || true
@@ -67,5 +77,8 @@ for A in A1 A2 A3 A3a A4 A5 A6; do
 done
 [ "$FAILED" = 0 ] || exit 1
 
+if [ -n "${SKIP_A1:-}" ]; then
+    cp "$A1_JSON" "$OUT/dag_A1.json"
+fi
 python3 "$SCRIPT_DIR/collect_dag_ladder.py" "$OUT" "$WL" "$MODEL"
 echo "CSV: $OUT/dag_ladder.csv"
