@@ -265,7 +265,7 @@ def make_pim_config(pim_type: PIMType,
                     num_attacc=8,
                     num_hbm=5,
                     bw_scale=None,
-                    power_constraint=False):
+                    power_constraint=True):
     config = {}
     config["PIM_TYPE"] = pim_type
     config["POWER_CONSTRAINT"] = power_constraint

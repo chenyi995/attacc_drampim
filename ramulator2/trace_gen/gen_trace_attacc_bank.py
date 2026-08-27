@@ -50,7 +50,9 @@ HBM_GS['attacc']  = max_n_hbm * HBM_GS['hbm']
 ## bits  |     4       |   1   |   1   | 2  | 2  |     14      |        5       |          5           |       ##
 
 ## ----------------------------  Commands -------------------------------##
-## MACAB: 8tCK (tCCDLx 2)
+## MACAB cadence is governed by the simulator preset nCCDAB (6 PC / 4 NPC),
+## or the per-run yaml override for MQ (energy-clamped: 8 tCK at n=8).
+## The old "8tCK (tCCDLx2)" annotation was upstream AttAcc's, not enforced.
 ##  WRGB: 4tCK (write to SRAM not DRAM)
 ##  MVSB: 4tCK
 ##  MVGB: 4tCK

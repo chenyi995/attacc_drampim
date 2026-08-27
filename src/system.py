@@ -136,7 +136,7 @@ class System:
                  perfs=None,
                  pipe=False,
                  parallel_ff=False,
-                 power_constraint=False,
+                 power_constraint=True,
                  num_reqs=0):
 
         def add_infos(name, infos, time, energy, bound):

@@ -475,9 +475,10 @@ class WorkloadTests(unittest.TestCase):
         # A5/A6 carry the provisional balance-point microarchitecture and
         # the prefill sweep follows the buffer's resident-Q capacity.
         # Ruling chenyi9 2026-08-26: MQ max n_cap = 8 -> 512 B buffer,
-        # matched PE clock f* = 8/(6 x 0.769 ns) ~= 1.733 GHz.
+        # balance-point PE clock f* = 1/tCK = 1.3004 GHz (PC energy clamp
+        # pins the n=8 interval at 8 tCK; ruling chenyi9 2026-08-27).
         self.assertEqual((a5.pim_pe_freq_ghz, a5.gemv_buffer_bytes,
-                          a5.pim_prefill_query_batch), (1.733, 512, 8))
+                          a5.pim_prefill_query_batch), (1.3004, 512, 8))
         stock = resolve_config("A4", None, None, None, policy="cacheblend")
         self.assertEqual((stock.pim_pe_freq_ghz, stock.gemv_buffer_bytes),
                          (0.666, 512))
@@ -1063,11 +1064,18 @@ class MQBatchCommandTests(unittest.TestCase):
         from src.ramulator_wrapper import (MQ_POWER_BUDGET_W,
                                            mq_interval_cycles, mq_pe_power_w,
                                            mq_query_capacity)
-        # 2026-08-23 model revision: the DRAM cadence is never stretched by
-        # compute (FIMDRAM precedent).  interval = max(preset floor, PE term).
+        # 2026-08-27 model revision (R19, RTL-backed): under PC the floor is
+        # a per-window ENERGY budget -- interval = max(floor, PE term,
+        # ceil(6*(E_col+n*E_op)/E6)).  n=1 keeps the plain 6-tCK floor.
         self.assertEqual(mq_interval_cycles(1, True, 1.3), 6)
-        self.assertEqual(mq_interval_cycles(4, True, 1.3), 6)   # was 7 under
-        self.assertEqual(mq_interval_cycles(8, True, 1.3), 9)   # the stretch
+        # n=4 already overruns the window budget by ~10% -> 7 tCK.
+        self.assertEqual(mq_interval_cycles(4, True, 1.3), 7)
+        # Flat 1.3 GHz misses one MAC/tCK by 0.03% -> PE term 9; the
+        # balance-point preset 1.3004 GHz (= 1/tCK) lands the clamp's 8.
+        self.assertEqual(mq_interval_cycles(8, True, 1.3), 9)
+        self.assertEqual(mq_interval_cycles(8, True, 1.3004), 8)
+        # The clamp is frequency-independent: a 3 GHz PE stays at 8 tCK.
+        self.assertEqual(mq_interval_cycles(8, True, 3.0), 8)
         # At AttAcc's synthesized 666 MHz the PE throughput term dominates.
         self.assertEqual(mq_interval_cycles(4, True, 0.666), 8)
         self.assertEqual(mq_interval_cycles(8, True, 0.666), 16)

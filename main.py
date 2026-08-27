@@ -73,7 +73,7 @@ def run(system: System,
         batch,
         lin,
         lout,
-        power_constraint=False,
+        power_constraint=True,
         pipe=0,
         parallel=False,
         output_file=None):
@@ -147,9 +147,14 @@ def main():
                         type=str,
                         default='bank',
                         help="pim mode. list: bank, bg, buffer")
+    # Power constraint DEFAULT ON (ruling chenyi9 2026-08-27): the paper
+    # operating point is the PC balance (energy-clamped MQ interval);
+    # --no-powerlimit selects the unconstrained NPC preset explicitly.
     parser.add_argument("--powerlimit",
-                        action='store_true',
-                        help="power constraint for PIM ")
+                        action=argparse.BooleanOptionalAction,
+                        default=True,
+                        help="power constraint for PIM (default on; "
+                             "--no-powerlimit for NPC)")
     parser.add_argument("--ffopt",
                         action='store_true',
                         help="apply feedforward parallel optimization")

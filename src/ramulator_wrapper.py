@@ -19,17 +19,20 @@ from src.type import *
 # bus, so the A5/A6 rungs of the placement ladder inherit exactly the
 # microarchitecture the C series measures.
 # One MAC_AB reads a column once and the bank PE multiplies it against every
-# resident Q internally.  Design principle (chenyi9, 2026-08-23): the DRAM
-# command cadence is NEVER stretched by compute -- the column stream runs at
-# the preset nCCDAB and the PE computes in the slack, raising its clock as
-# needed.  Precedent: Samsung's FIMDRAM executes PIM ops strictly off the
-# command stream ("each memory command increments the CRF PC") and its
-# official PIMSimulator carries no PIM-specific timing at all (standard
-# tCCDL=4).  The nCCDAB presets (6 PC / 4 NPC) are DRAM-read-side
-# constraints with no compute term (the earlier equal-power stretch of
-# compute energy into the interval was removed as contrary to both the
-# design intent and the precedent).  PE power is accounted SEPARATELY
-# against the stack budget: see mq_pe_power_w / MQ_POWER_BUDGET_W.
+# resident Q internally.  Interval model (revised chenyi9 2026-08-27, RTL
+# evidence kvpim-rtl/docs/Fugue-asplos2027): under the power-constrained
+# (PC) preset the nCCDAB=6 floor IS a per-window ENERGY budget calibrated
+# at the n=1 command (E6 = one column read + one MAC); an MQ command
+# carrying n MACs spends E_col + n*E_op and the SAME red line stretches
+# the interval -> ceil(6 * E_cmd / E6) tCK ("energy clamp").  At n=8 this
+# gives 8 tCK regardless of PE frequency (robust even at flat energy/op),
+# so the balance-point PE clock is f* = 1/tCK = 1.3004 GHz -- one MAC per
+# command cycle, 8 MACs per interval.  This is NOT the old equal-power
+# stretch removed on 2026-08-23 (that one wrongly priced compute energy
+# into every interval; the clamp is a window-budget ceiling, ASAP7
+# synthesis-backed).  NPC remains genuinely unconstrained (floor 4 +
+# compute term only).  The stack-level 116 W check (mq_pe_power_w /
+# MQ_POWER_BUDGET_W) stays a separately-reported diagnostic.
 _MQ_TCK_NS = 0.769                     # command-clock period used everywhere
 _MQ_NCCDAB_PC = 6                      # HBM3_5.2Gbps preset, power-constrained
 _MQ_NCCDAB_NPC = 4                     # HBM3_5.2Gbps_NPC preset
@@ -47,6 +50,9 @@ MQ_POWER_BUDGET_W = 116
 _MQ_E_COL_PJ = ENERGY_TABLE['PIM'][PIMType.BA]['mem'] * 32   # one 32-B read
 _MQ_E_Q_PJ = (16 * ENERGY_TABLE['PIM'][PIMType.BA]['alu'] +  # 16-lane MAC
               32 * ENERGY_TABLE['PIM'][PIMType.BA]['sram'])  # buffer read
+# Per-window energy budget of the PC floor, calibrated at the n=1 command
+# (AttAcc sits on the red line at nCCDAB=6 with one MAC per column read).
+_MQ_E6_PJ = _MQ_E_COL_PJ + _MQ_E_Q_PJ
 
 
 def mq_query_capacity(gemv_buffer_bytes=MQ_DEFAULT_GEMV_BUFFER_BYTES):
@@ -64,20 +70,33 @@ def mq_query_capacity(gemv_buffer_bytes=MQ_DEFAULT_GEMV_BUFFER_BYTES):
 
 
 def mq_interval_cycles(shared_queries, power_constraint,
-                       pe_freq_ghz=MQ_DEFAULT_PE_FREQ_GHZ):
+                       pe_freq_ghz=MQ_DEFAULT_PE_FREQ_GHZ,
+                       pe_energy_scale=1.0):
     """Effective nCCDAB (in command cycles) of one MQ-MAC command.
 
-    interval = max(preset floor, PE-throughput term).  The preset floor
-    (6 PC / 4 NPC) is a DRAM-read-side constraint and is NEVER stretched
-    by compute; the PE term ceil(n/(f*tCK)) only matters when the PE is
-    slower than the matching requirement f*(n) = n/(floor*tCK) -- e.g.
-    AttAcc's stock 666 MHz PE running MQ unchanged.  Compute power is
-    accounted separately (mq_pe_power_w vs MQ_POWER_BUDGET_W).
+    interval = max(floor, PE-throughput term, PC energy clamp).
+    * floor: 6 PC / 4 NPC preset.
+    * PE term: ceil(n / (f * tCK)) -- n MACs must finish inside the
+      interval (e.g. AttAcc's stock 666 MHz PE needs 16 tCK at n=8).
+    * energy clamp (PC only; RTL-backed, 2026-08-27): the PC floor is a
+      per-window energy budget E6 = E_col + E_op calibrated at the n=1
+      command; an MQ command spends E_col + n*E_op*e_hat, so
+      ceil(6 * E_cmd / E6) tCK.  n=8 -> 8 tCK for any e_hat in [0.7, 1]
+      (pe_energy_scale is the synthesized energy/op shape; 1.0 is the
+      conservative flat default).  n=1 reproduces the plain 6-tCK floor.
+    NPC stays genuinely unconstrained (no clamp).  The stack-level 116 W
+    check (mq_pe_power_w vs MQ_POWER_BUDGET_W) remains a separately
+    reported diagnostic.
     """
     n = max(1, int(shared_queries))
     pe_cycles = math.ceil(n / (float(pe_freq_ghz) * _MQ_TCK_NS))
-    floor = _MQ_NCCDAB_PC if power_constraint else _MQ_NCCDAB_NPC
-    return max(floor, pe_cycles)
+    if not power_constraint:
+        return max(_MQ_NCCDAB_NPC, pe_cycles)
+    energy_cycles = math.ceil(
+        _MQ_NCCDAB_PC *
+        (_MQ_E_COL_PJ + n * _MQ_E_Q_PJ * float(pe_energy_scale)) /
+        _MQ_E6_PJ)
+    return max(_MQ_NCCDAB_PC, pe_cycles, energy_cycles)
 
 
 def mq_pe_power_w(shared_queries, interval_cycles, active_banks=16 * 64):

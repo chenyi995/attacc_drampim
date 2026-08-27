@@ -103,16 +103,19 @@ PRESETS: Dict[str, Dict[str, str]] = {
     # (ruling 2026-08-25): prefill-on-PIM, attention batching and the
     # bank-PE design point are ONE package.  Capacity re-ruled (chenyi9
     # 2026-08-26): **MQ runs at max n_cap = 8 resident queries** -- buffer =
-    # 8 x 64 B = 512 B, matched PE clock at the nCCDAB floor of 6:
-    # f* = 8/(6 x 0.769 ns) ~= 1.733 GHz.  The MQ command belongs ONLY to
-    # the rungs that add prefill attention on the PIM (A5/A6); every earlier
-    # rung stays replicate even where prefill could have batched.
-    # PROVISIONAL -- an explicit CLI value still overrides.
+    # 8 x 64 B = 512 B; balance-point PE clock (RTL-verified, chenyi9
+    # 2026-08-27, kvpim-rtl/docs/Fugue-asplos2027): the PC energy clamp
+    # pins the MQ interval at 8 tCK for n=8, so f* = 1/tCK = 1.3004 GHz
+    # -- one MAC per command cycle, 8 MACs per interval; the old
+    # 6-tCK pairing (1.733 GHz) is unreachable under the window budget.
+    # The MQ command belongs ONLY to the rungs that add prefill attention
+    # on the PIM (A5/A6); every earlier rung stays replicate even where
+    # prefill could have batched.  An explicit CLI value still overrides.
     "A5": {"prefill_attn": "pim", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.733,
+           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.3004,
            "gemv_buffer_bytes": 512},
     "A6": {"prefill_attn": "dynamic", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.733,
+           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.3004,
            "gemv_buffer_bytes": 512},
 }
 
