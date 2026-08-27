@@ -416,6 +416,15 @@ class Ramulator:
             dbyte = layer.dbyte
             num_ops_per_attacc = layer.numOp
             num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
+            # Sequence split across HBMs (ruling chenyi9 2026-08-27): with
+            # fewer resident (KV) heads than HBM stacks each head owns
+            # hbm_per_head stacks exclusively and its K/V divides into that
+            # many sequence segments scanned concurrently, so the per-HBM
+            # trace covers ceil(L / hbm_per_head) tokens.  5 stacks with
+            # >=4 heads keeps the factor at 1 (legacy behaviour and
+            # signature-cache keys unchanged).
+            hbm_per_head = max(1, self.num_hbm // max(1, num_ops_per_attacc)) \
+                if num_ops_per_attacc < self.num_hbm else 1
             num_ops_group = 1
             if self.fast_mode:
                 minimum_heads = 64
@@ -476,6 +485,7 @@ class Ramulator:
                     channel_base = None
                 else:
                     key_addr, value_addr, run_length, channel_base, channel_count = run
+                run_length = math.ceil(run_length / hbm_per_head)
                 signature = self._run_signature(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     power_constraint, key_addr, value_addr, channel_count,
@@ -601,13 +611,16 @@ class Ramulator:
 
         num_ops_per_attacc = layer.numOp
         num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
+        # Sequence split (2026-08-27): mirror of the reuse-path rule above.
+        hbm_per_head = max(1, self.num_hbm // max(1, num_ops_per_attacc)) \
+            if num_ops_per_attacc < self.num_hbm else 1
         num_ops_group = 1
         if self.fast_mode:
             minimum_heads = 64
             num_ops_group = math.ceil(num_ops_per_hbm / minimum_heads)
             num_ops_per_hbm = minimum_heads
 
-        l = layer.n
+        l = math.ceil(layer.n / hbm_per_head)
         dhead = layer.k
         dbyte = layer.dbyte
         row = self.df[(self.df['L'] == l) & (self.df['nhead'] == num_ops_per_hbm) & \

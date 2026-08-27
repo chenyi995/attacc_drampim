@@ -50,6 +50,7 @@ for A in A1 A2 A3 A3a A4 A5 A6; do
         --workload-report "$OUT/dag_${A}.json" \
         --workload-report-events none \
         --cacheblend-batch-size 8 \
+        ${NUM_HBM:+--num-hbm "$NUM_HBM"} \
         ${NO_WARM:+--no-warm} \
         --ramulator-workers "$RAMU_WORKERS") > "$OUT/dag_${A}.log" 2>&1 &
     PID[$A]=$!

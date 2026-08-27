@@ -111,6 +111,7 @@ class System:
         self.hetero_name = name
         if self.hetero_name == DeviceType.PIM:
             ramulator = Ramulator(modelinfos, RAMPATH, RAMLOG,
+                                  num_hbm=config['NUM_HBM'],
                                   workers=ramulator_workers)
             self.devices['Acc'] = PIM(config,
                                       self.scaling_factor,

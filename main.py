@@ -266,6 +266,14 @@ def main():
         default=1,
         help="host CPU workers for independent Ramulator trace jobs; does not alter simulated hardware")
     parser.add_argument(
+        "--num-hbm",
+        type=int,
+        default=5,
+        help="PIM-side HBM stacks per accelerator (the remote KV storage; "
+             "GPU HBM is unaffected).  Heads own stacks exclusively; with "
+             "fewer KV heads than stacks each head sequence-splits across "
+             "num_hbm // kv_heads stacks (ruling chenyi9 2026-08-27)")
+    parser.add_argument(
         "--epic-prefix-recompute-tokens",
         type=int,
         default=1,
@@ -408,6 +416,8 @@ def main():
     args = parser.parse_args()
     if args.ramulator_workers < 1:
         parser.error("--ramulator-workers must be at least 1")
+    if args.num_hbm < 1:
+        parser.error("--num-hbm must be at least 1")
 
     workload = None
     reuse_plan = None
@@ -500,6 +510,7 @@ def main():
             pim_type = PIMType.BA
         pim_config = make_pim_config(pim_type,
                                      pim_link,
+                                     num_hbm=args.num_hbm,
                                      power_constraint=args.powerlimit)
         system.set_accelerator(modelinfos, DeviceType.PIM, pim_config,
                                ramulator_workers=args.ramulator_workers)
