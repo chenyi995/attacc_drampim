@@ -306,6 +306,9 @@ def make_model_config(name, dtype):
     model_table['GPT-89B'] = [48, 12288, 96, 128, 4, 1]
     model_table['GPT-13B'] = [40, 5120, 40, 128, 4, 1]
     model_table['LLAMA-7B'] = [32, 4096, 32, 128, 8 / 3, 1]
+    # GQA sibling of LLAMA-7B (ruling chenyi9 2026-08-27): LLaMA-3-8B
+    # geometry -- 32 Q heads sharing 8 KV heads (group 4), FFN 14336.
+    model_table['LLAMA3-8B'] = [32, 4096, 32, 128, 3.5, 4]
     model_table['LLAMA-65B'] = [80, 8192, 64, 128, 8 / 3, 1]
     model_table['MT-76B'] = [60, 10240, 40, 128, 4, 1]
     model_table['MT-146B'] = [80, 12288, 80, 128, 4, 1]

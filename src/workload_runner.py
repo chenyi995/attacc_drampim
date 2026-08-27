@@ -968,6 +968,32 @@ _NAIVE_PAGE_ROWS = 256
 _DECODE_SERVE_WAVE = 8
 
 
+def _gqa_group(system) -> int:
+    """Q heads per shared KV head (1 = MHA; ruling chenyi9 2026-08-27)."""
+    return max(1, int(getattr(system.model, "gqa_size", 1) or 1))
+
+
+def _gqa_kv_heads_local(system, q_heads_local: int) -> int:
+    """Local resident KV heads for a local Q-head count."""
+    return max(1, int(q_heads_local) // _gqa_group(system))
+
+
+def _hbm_seq_split(system) -> int:
+    """HBM stacks owned by ONE resident KV head (head-exclusive stacks;
+    ruling chenyi9 2026-08-27): with fewer KV heads than PIM stacks a
+    head's K/V sequence-splits across num_hbm // kv_heads stacks.  1
+    whenever KV heads >= stacks (the legacy shape)."""
+    accelerator = system.devices.get("Acc") if isinstance(
+        getattr(system, "devices", None), dict) else None
+    if accelerator is None:
+        return 1
+    num_hbm = max(1, int(getattr(accelerator, "num_hbm", 1) or 1))
+    q_local = max(1, int(getattr(system.model, "num_heads", 1)) //
+                  max(1, int(getattr(system.model, "tp", 1))))
+    kv_local = _gqa_kv_heads_local(system, q_local)
+    return max(1, num_hbm // kv_local) if kv_local < num_hbm else 1
+
+
 class NaiveKVLayout(CacheBlendTLB):
     """Scattered software-order PAGED KV placement -- the A3 rung.
 
@@ -1171,8 +1197,11 @@ def _append_channel_kv_stores(system, events: List[SplitEvent], *, layer: int,
         # are the head-parallel dimension, so the wall time uses the
         # PER-HBM bandwidth share, not the aggregate.
         accelerator = system.devices["Acc"]
-        bandwidth = (accelerator.peak_memory_bandwidth /
-                     max(1, getattr(accelerator, "num_hbm", 1)) *
+        num_hbm = max(1, getattr(accelerator, "num_hbm", 1))
+        # A sequence-split head owns several stacks and its store lands on
+        # all of them concurrently (ruling chenyi9 2026-08-27).
+        bandwidth = (accelerator.peak_memory_bandwidth / num_hbm *
+                     min(_hbm_seq_split(system), num_hbm) *
                      channel_count / 16)
         result.append(_cacheblend_event(
             events, layer=layer, tier=tier, request=request, name=name,
@@ -1859,7 +1888,13 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
                     deps=(rotate_ready,), positions=(request.total_length + output_row,))
                 op = deepcopy(score)
-                op.m, op.n, op.k, op.numOp = 1, len(reads), system.model.dhead, heads
+                op.m, op.n, op.k, op.numOp = (1, len(reads), system.model.dhead,
+                                              _gqa_kv_heads_local(system, heads))
+                if _gqa_group(system) > 1:
+                    # GQA: the group's Q heads are resident queries against
+                    # the ONE shared KV head.
+                    op.pim_shared_kv = True
+                    op.pim_shared_queries = _gqa_group(system)
                 op.pim_kv_runs = tlb.scan_runs(reads)
                 plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                 address_plan = _cacheblend_event(
@@ -1882,7 +1917,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                                                 tlb.bytes_per_vector))
                 # Every physical run yields one local softmax tuple; the DIE
                 # merges those with the GPU tuple.
-                merge_width = len(scan) + 1
+                merge_width = len(scan) * _hbm_seq_split(system) + 1
                 die_merge = _cacheblend_event(
                     events, layer=layer_index, tier=tier, request=request.request_id,
                     name="decode_die_lse_merge", device="DIE", rows=1,
@@ -2137,7 +2172,8 @@ def _append_cacheblend_decode_batched(
                     # the per-bank GEMV buffer; a larger admitted batch is
                     # served by consecutive sweeps over the same rows
                     # (Fugue: "beyond which the sweep splits").
-                    sweep_cap = mq_query_capacity(gemv_buffer_bytes)
+                    sweep_cap = max(1, mq_query_capacity(gemv_buffer_bytes) //
+                                    _gqa_group(system))
                     for sweep_start in range(0, len(group), sweep_cap):
                         sweep = group[sweep_start:sweep_start + sweep_cap]
                         sweep_members = tuple(request.request_id for request in sweep)
@@ -2154,7 +2190,9 @@ def _append_cacheblend_decode_batched(
                                 energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
                                 deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,)))
                         op = deepcopy(score)
-                        op.m, op.n, op.k, op.numOp = len(sweep), len(common), system.model.dhead, heads
+                        op.m, op.n, op.k, op.numOp = (len(sweep), len(common),
+                                                      system.model.dhead,
+                                                      _gqa_kv_heads_local(system, heads))
                         op.pim_kv_runs = tlb.scan_runs(common)
                         plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                         tlb_event = _cacheblend_event(
@@ -2165,7 +2203,7 @@ def _append_cacheblend_decode_batched(
                             positions=sweep_positions, addresses=common_addresses,
                             batch_members=sweep_members)
                         op.pim_shared_kv = True
-                        op.pim_shared_queries = len(sweep)
+                        op.pim_shared_queries = len(sweep) * _gqa_group(system)
                         _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
                         shared_scan = _append_physical_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
@@ -2194,7 +2232,12 @@ def _append_cacheblend_decode_batched(
                         addresses = [address for location in private
                                      for address in (location.key_address, location.value_address)]
                         op = deepcopy(score)
-                        op.m, op.n, op.k, op.numOp = 1, len(private), system.model.dhead, heads
+                        op.m, op.n, op.k, op.numOp = (1, len(private),
+                                                      system.model.dhead,
+                                                      _gqa_kv_heads_local(system, heads))
+                        if _gqa_group(system) > 1:
+                            op.pim_shared_kv = True
+                            op.pim_shared_queries = _gqa_group(system)
                         op.pim_kv_runs = tlb.scan_runs(private)
                         plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                         address_plan = _cacheblend_event(
@@ -2221,7 +2264,8 @@ def _append_cacheblend_decode_batched(
                     if contribution:
                         # One local softmax tuple per physical run plus the
                         # GPU tuple.
-                        merge_width = len(contribution) + 1
+                        merge_width = (len(contribution) *
+                                       _hbm_seq_split(system) + 1)
                         merge = _cacheblend_event(
                             events, layer=layer_index, tier=tier, request=request_id,
                             name="decode_die_lse_merge", device="DIE", rows=1,
@@ -2328,10 +2372,12 @@ def _append_physical_no_reuse_prefill_layer(
         time_s=0.0, energy=(), deps=(q_link,),
         positions=positions, addresses=scan_addresses)
     op = deepcopy(score)
-    op.m, op.n, op.k, op.numOp = rows, rows + len(history), system.model.dhead, heads
+    op.m, op.n, op.k, op.numOp = (rows, rows + len(history),
+                                  system.model.dhead,
+                                  _gqa_kv_heads_local(system, heads))
     op.pim_kv_runs = tlb.scan_runs(locations)
     op.pim_shared_kv = True
-    op.pim_shared_queries = rows
+    op.pim_shared_queries = rows * _gqa_group(system)
     time_s, energy = system.devices["Acc"].get_time_and_energy(op)
     scan = _cacheblend_event(
         events, layer=layer, tier=tier, request=request.request_id,
@@ -2512,7 +2558,8 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
     ndec = system.model.ndec
     dbyte = qkv.dbyte
     local_hidden = system.model.hdim // system.model.tp
-    kv_row_bytes = 2 * local_hidden * dbyte     # one K row + one V row
+    kv_row_bytes = (2 * max(1, local_hidden // _gqa_group(system)) *
+                    dbyte)  # one K row + one V row (KV heads only)
 
     def link_event(name, byte_count, *, layer, tier, request, rows, deps):
         op = _link_layer(x2g, name, byte_count)
@@ -2998,15 +3045,17 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         # bank path: the same sweep-set the "pim" branch
                         # prices (Q/ctx links + TLB plan + shared scans).
                         cap = max(1, min(batch_size,
-                                         mq_query_capacity(gemv_buffer_bytes)))
+                                         mq_query_capacity(gemv_buffer_bytes) //
+                                         _gqa_group(system)))
                         sweeps = max(1, math.ceil(len(compute_positions) / cap))
                         est = deepcopy(score)
                         est.m, est.n, est.k, est.numOp = (
                             min(cap, len(compute_positions)),
-                            len(scan_locations), system.model.dhead, heads)
+                            len(scan_locations), system.model.dhead,
+                            _gqa_kv_heads_local(system, heads))
                         est.pim_kv_runs = tlb.scan_runs(scan_locations)
-                        est.pim_shared_kv = est.m > 1
-                        est.pim_shared_queries = est.m
+                        est.pim_shared_kv = est.m * _gqa_group(system) > 1
+                        est.pim_shared_queries = est.m * _gqa_group(system)
                         _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)
                         accelerator = system.devices["Acc"]
                         if hasattr(accelerator, "get_time_and_energy_runs"):
@@ -3047,7 +3096,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                       for address in (loc.key_address, loc.value_address)]
                     pim_results = []
                     sweep_cap = max(1, min(batch_size,
-                                           mq_query_capacity(gemv_buffer_bytes)))
+                                           mq_query_capacity(gemv_buffer_bytes) //
+                                           _gqa_group(system)))
                     for first in range(0, len(compute_positions), sweep_cap):
                         grouped_positions = compute_positions[first:first + sweep_cap]
                         die_qs = []
@@ -3073,7 +3123,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         op = deepcopy(score)
                         op.m, op.n, op.k, op.numOp = (len(grouped_positions),
                                                       len(scan_locations),
-                                                      system.model.dhead, heads)
+                                                      system.model.dhead,
+                                                      _gqa_kv_heads_local(system, heads))
                         op.pim_kv_runs = tlb.scan_runs(scan_locations)
                         plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                         tlb_event = _cacheblend_event(
@@ -3084,8 +3135,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             energy=plan_energy, deps=tuple(die_qs),
                             positions=tuple(grouped_positions),
                             addresses=scan_addresses)
-                        op.pim_shared_kv = len(grouped_positions) > 1
-                        op.pim_shared_queries = len(grouped_positions)
+                        op.pim_shared_kv = (len(grouped_positions) *
+                                            _gqa_group(system)) > 1
+                        op.pim_shared_queries = (len(grouped_positions) *
+                                                 _gqa_group(system))
                         _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
                         scan = _append_physical_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
