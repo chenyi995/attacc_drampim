@@ -960,6 +960,13 @@ class NoReuseKVLayout:
 # channel -- the row conflicts must come from the rotation itself.
 _NAIVE_PAGE_ROWS = 256
 
+# Serving batch width for concurrent decodes (ruling chenyi9 2026-08-26):
+# the GPU weight pass always batches across concurrently decoding requests
+# (standard serving behavior, every rung); capped at the MQ residency max
+# n_cap = 8 so the GPU wave and the A5/A6 PIM wave describe the same
+# concurrency.
+_DECODE_SERVE_WAVE = 8
+
 
 class NaiveKVLayout(CacheBlendTLB):
     """Scattered software-order PAGED KV placement -- the A3 rung.
@@ -2514,6 +2521,8 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
     previous_tier_done: Tuple[str, ...] = ()
     for tier, requests, _, _ in _tier_shapes(workload):
         tier_done: List[str] = []
+        decode_ready: Dict[str, Tuple[str, ...]] = {}
+        decode_totals: Dict[str, int] = {}
         for request in requests:
             request_ready: Tuple[str, ...] = previous_tier_done
             total_rows = request.total_length + request.history_len
@@ -2577,47 +2586,80 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                     dependency=gpu_last, positions=compute),)
             request_ready = tuple(dict.fromkeys(request_ready +
                                                  tuple(prefill_store_events)))
-            # Decode: per generated token, the whole per-layer context K/V
-            # streams back over the link (aggregated across the ndec layers
-            # into one read event), the GPU runs one generation block (per-
-            # layer ops are identical, so one layer is priced and multiplied
-            # by ndec), and the new row's K/V is written back out.
-            last = request_ready
-            final_write: Tuple[str, ...] = ()
-            for step in range(request.lout):
-                context_rows = total_rows + step + 1
-                read = link_event(
-                    "kv_remote_to_gpu", context_rows * kv_row_bytes * ndec,
-                    layer=ndec - 1, tier=tier, request=request.request_id,
-                    rows=context_rows, deps=last)
+            decode_ready[request.request_id] = request_ready
+            decode_totals[request.request_id] = total_rows
+        # Decode, BATCHED across the tier's concurrent requests (ruling
+        # chenyi9 2026-08-26: the weight pass is always GPU work and always
+        # batches as far as possible -- one weight pass serves the whole
+        # wave, while each query still streams its OWN context K/V back
+        # over the link and pays its own attention).  Wave width follows
+        # the serving batch (8).  Per wave and step: per-request read link
+        # -> one batched GPU generation block -> per-request write-back.
+        last = dict(decode_ready)
+        last_write: Dict[str, str] = {}
+        max_lout = max((request.lout for request in requests), default=0)
+        for step in range(max_lout):
+            active = [request for request in requests if step < request.lout]
+            for start in range(0, len(active), _DECODE_SERVE_WAVE):
+                group = active[start:start + _DECODE_SERVE_WAVE]
+                members = tuple(request.request_id for request in group)
+                positions = tuple(decode_totals[request.request_id] + step
+                                  for request in group)
+                reads = []
+                for request in group:
+                    context_rows = decode_totals[request.request_id] + step + 1
+                    reads.append(link_event(
+                        "kv_remote_to_gpu", context_rows * kv_row_bytes * ndec,
+                        layer=ndec - 1, tier=tier, request=request.request_id,
+                        rows=context_rows, deps=last[request.request_id]))
                 step_time = 0.0
                 step_energy = 0.0
                 for template in system.model.sum_decoder:
                     if template.name == "comm_x2g":
                         continue  # the remote link is modeled by the explicit
                                   # kv_remote_to_gpu / kv_gpu_to_remote events
-                    op = deepcopy(template)
-                    if template.name in ("score", "softmax"):
-                        op.m, op.n, op.numOp = 1, context_rows, heads
-                    elif template.name == "context":
-                        op.m, op.k, op.numOp = 1, context_rows, heads
+                    if template.name in ("score", "softmax", "context"):
+                        # Attention is per query (own context width).
+                        for request in group:
+                            context_rows = (decode_totals[request.request_id] +
+                                            step + 1)
+                            op = deepcopy(template)
+                            if template.name == "context":
+                                op.m, op.k, op.numOp = 1, context_rows, heads
+                            else:
+                                op.m, op.n, op.numOp = 1, context_rows, heads
+                            time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                            step_time += time_s
+                            step_energy += sum(energy)
                     else:
-                        op.m = 1
-                    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-                    step_time += time_s
-                    step_energy += sum(energy)
+                        # Weight work: ONE pass serves the whole wave.
+                        op = deepcopy(template)
+                        op.m = len(group)
+                        time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                        step_time += time_s
+                        step_energy += sum(energy)
                 compute_event = _cacheblend_event(
                     events, layer=ndec - 1, tier=tier,
-                    request=request.request_id, name="gpu_decode_step",
-                    device="GPU", rows=1, time_s=step_time * ndec,
-                    energy=(step_energy * ndec,), deps=(read,))
-                final_write = (link_event(
-                    "kv_gpu_to_remote", kv_row_bytes * ndec,
-                    layer=ndec - 1, tier=tier, request=request.request_id,
-                    rows=1, deps=(compute_event,)),)
-                last = (compute_event,)
-            tier_done.extend(tuple(dict.fromkeys(last + final_write)))
-        previous_tier_done = tuple(tier_done)
+                    request="gpu-decode-t{}-s{}-w{}".format(tier, step,
+                                                            start // _DECODE_SERVE_WAVE),
+                    name="decode_gpu_step_batch", device="GPU",
+                    rows=len(group), time_s=step_time * ndec,
+                    energy=(step_energy * ndec,),
+                    deps=tuple(dict.fromkeys(tuple(reads))),
+                    positions=positions, batch_members=members)
+                for request in group:
+                    last[request.request_id] = (compute_event,)
+                    last_write[request.request_id] = link_event(
+                        "kv_gpu_to_remote", kv_row_bytes * ndec,
+                        layer=ndec - 1, tier=tier,
+                        request=request.request_id, rows=1,
+                        deps=(compute_event,))
+        for request in requests:
+            tier_done.extend(dict.fromkeys(
+                last[request.request_id] +
+                ((last_write[request.request_id],)
+                 if request.request_id in last_write else ())))
+        previous_tier_done = tuple(dict.fromkeys(tier_done))
 
     # validate_split_events checks the split-era GPU/PIM naming contract and
     # does not apply to a GPU-only stream; keep only its shape sanity part.

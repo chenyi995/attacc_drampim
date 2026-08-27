@@ -101,17 +101,19 @@ PRESETS: Dict[str, Dict[str, str]] = {
            "pim_batch_command": "replicate"},
     # A5/A6 carry the C3 microarchitecture point they are defined with
     # (ruling 2026-08-25): prefill-on-PIM, attention batching and the
-    # bank-PE design point are ONE package.  Values = the derived balance
-    # point where the PE, the TSV stream and the in-bank area budget meet:
-    # n_cap = 12 resident queries @ nCCDAB floor 6, f* = 12/(6 x 0.769 ns)
-    # ~= 2.6 GHz, buffer = 12 x 64 B = 768 B.  PROVISIONAL -- the user will
-    # retune these knobs later; an explicit CLI value still overrides.
+    # bank-PE design point are ONE package.  Capacity re-ruled (chenyi9
+    # 2026-08-26): **MQ runs at max n_cap = 8 resident queries** -- buffer =
+    # 8 x 64 B = 512 B, matched PE clock at the nCCDAB floor of 6:
+    # f* = 8/(6 x 0.769 ns) ~= 1.733 GHz.  The MQ command belongs ONLY to
+    # the rungs that add prefill attention on the PIM (A5/A6); every earlier
+    # rung stays replicate even where prefill could have batched.
+    # PROVISIONAL -- an explicit CLI value still overrides.
     "A5": {"prefill_attn": "pim", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq", "pim_pe_freq_ghz": 2.6,
-           "gemv_buffer_bytes": 768},
+           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.733,
+           "gemv_buffer_bytes": 512},
     "A6": {"prefill_attn": "dynamic", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq", "pim_pe_freq_ghz": 2.6,
-           "gemv_buffer_bytes": 768},
+           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.733,
+           "gemv_buffer_bytes": 512},
 }
 
 PRESET_LABELS = {
