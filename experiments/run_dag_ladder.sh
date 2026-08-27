@@ -26,21 +26,35 @@ STEM=$(basename "$WL" .json)
 OUT=${3:-$REPO/output/$(date +%Y%m%d-%H%M%S)_${STEM}_${MODEL}}
 mkdir -p "$OUT"
 
+# All six rungs launch IN PARALLEL (ruling chenyi9 2026-08-26).  Each rung
+# runs its own warm phase; the persistent signature cache on disk is shared,
+# so rungs feed each other whatever they finish first.
+declare -A PID
 for A in A1 A2 A3 A4 A5 A6; do
     REUSE=epic
     EXTRA=(--epic-prefix-recompute-tokens 8)
     if [ "$A" = A1 ]; then REUSE=no-reuse; EXTRA=(); fi
-    echo "=== $A (reuse=$REUSE) $(date +%H:%M:%S) ==="
+    echo "=== launch $A (reuse=$REUSE) $(date +%H:%M:%S) ==="
     (cd "$REPO" && python3 main.py \
         --system dgx-attacc --model "$MODEL" \
         --workload "$WL" --reuse "$REUSE" ${EXTRA[@]+"${EXTRA[@]}"} \
         --ablation "$A" --engine dag \
         --workload-report "$OUT/dag_${A}.json" \
         --workload-report-events none \
-        --ramulator-workers 64) > "$OUT/dag_${A}.log" 2>&1 || {
-            echo "$A FAILED -- see $OUT/dag_${A}.log" >&2; exit 1; }
-    grep -h REPORT_SUMMARY "$OUT/dag_${A}.log" || true
+        --ramulator-workers 64) > "$OUT/dag_${A}.log" 2>&1 &
+    PID[$A]=$!
 done
+FAILED=0
+for A in A1 A2 A3 A4 A5 A6; do
+    if wait "${PID[$A]}"; then
+        echo "=== done $A $(date +%H:%M:%S) ==="
+        grep -h REPORT_SUMMARY "$OUT/dag_${A}.log" || true
+    else
+        echo "$A FAILED -- see $OUT/dag_${A}.log" >&2
+        FAILED=1
+    fi
+done
+[ "$FAILED" = 0 ] || exit 1
 
 python3 "$SCRIPT_DIR/collect_dag_ladder.py" "$OUT" "$WL" "$MODEL"
 echo "CSV: $OUT/dag_ladder.csv"

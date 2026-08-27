@@ -1,0 +1,627 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "kind": "theoretical (mechanism illustration; NOT evidence-grade)",
+  "scenario": "3 debaters x 3 rounds over one shared document + judge",
+  "references": [
+   "Du et al. arXiv:2305.14325 (ICML'24)",
+   "Mixture-of-Agents arXiv:2406.04692"
+  ],
+  "assumed_token_lengths": {
+   "debaters": 3,
+   "rounds": 3,
+   "chunks": 8,
+   "shared_tokens": 2048,
+   "sys_tokens": 300,
+   "question_tokens": 100,
+   "answer_tokens": 256,
+   "verdict_tokens": 128,
+   "out": null
+  },
+  "generator": "gen_debate.py"
+ },
+ "agents": [
+  {
+   "id": "d0.r0",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "9fc62215192ede1d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a5646ca10d7fc969",
+     "len": 100
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d1.r0",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "9fc62215192ede1d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a5646ca10d7fc969",
+     "len": 100
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d2.r0",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "9fc62215192ede1d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a5646ca10d7fc969",
+     "len": 100
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d0.r1",
+   "tier": 1,
+   "parent": "d0.r0",
+   "history_len": 2448,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "1164f294d76ad367",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "3f408cc3000cd6f8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7851b41fea28524a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d1.r1",
+   "tier": 1,
+   "parent": "d1.r0",
+   "history_len": 2448,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "3f408cc3000cd6f8",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "1164f294d76ad367",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7851b41fea28524a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d2.r1",
+   "tier": 1,
+   "parent": "d2.r0",
+   "history_len": 2448,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "7851b41fea28524a",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "1164f294d76ad367",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "3f408cc3000cd6f8",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d0.r2",
+   "tier": 2,
+   "parent": "d0.r1",
+   "history_len": 5264,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "d2f771c4592a8a35",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "056fc0b42a1bd8ec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1fd5efdb8338d7e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d1.r2",
+   "tier": 2,
+   "parent": "d1.r1",
+   "history_len": 5264,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "056fc0b42a1bd8ec",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "d2f771c4592a8a35",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1fd5efdb8338d7e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "d2.r2",
+   "tier": 2,
+   "parent": "d2.r1",
+   "history_len": 5264,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "f1fd5efdb8338d7e",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "d2f771c4592a8a35",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "056fc0b42a1bd8ec",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "173f77422b3aca6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25cc8cd8a6360c41",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a24d833ce77269fd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "71c190096acd6433",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "fef361162327d754",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "276d06962ab722d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7e73ece24bb93834",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8850a73c2483934",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "judge",
+   "tier": 3,
+   "parent": "d0.r2",
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "98ad5e0e0d1a0991",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "f01219a905a11b3c",
+     "len": 300
+    },
+    {
+     "role": "user",
+     "sha": "a5646ca10d7fc969",
+     "len": 100
+    },
+    {
+     "role": "user",
+     "sha": "835f2f6330af4c07",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "3745a4701ee9f11e",
+     "len": 256
+    }
+   ],
+   "lout": 128
+  }
+ ]
+}

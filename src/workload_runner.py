@@ -3142,14 +3142,102 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
         return _run_gpu_software_only(system, workload, plan, pipe=pipe,
                                       include_events=include_events)
     if plan.config.policy in ("cacheblend", "epic", "no-reuse"):
-        return _run_cacheblend_prefill(system, workload, plan, pipe=pipe,
-                                       batch_size=cacheblend_batch_size,
-                                       physical_no_reuse=(plan.config.policy == "no-reuse"),
-                                       kv_mapping=kv_mapping,
-                                       rotate_mode=cacheblend_rotate_mode,
+        run_kwargs = dict(pipe=pipe,
+                          batch_size=cacheblend_batch_size,
+                          physical_no_reuse=(plan.config.policy == "no-reuse"),
+                          kv_mapping=kv_mapping,
+                          rotate_mode=cacheblend_rotate_mode,
+                          pim_prefill_mode=pim_prefill_mode,
+                          pim_batch_command=pim_batch_command,
+                          pim_pe_freq_ghz=pim_pe_freq_ghz,
+                          gemv_buffer_bytes=gemv_buffer_bytes)
+        _warm_scan_signature_cache(system, workload, plan, run_kwargs)
+        return _run_cacheblend_prefill(system, workload, plan,
                                        include_events=include_events,
-                                       pim_prefill_mode=pim_prefill_mode,
-                                       pim_batch_command=pim_batch_command,
-                                       pim_pe_freq_ghz=pim_pe_freq_ghz,
-                                       gemv_buffer_bytes=gemv_buffer_bytes)
+                                       **run_kwargs)
     return _run_legacy_reuse_prefill(system, workload, plan)
+
+
+def _warm_scan_signature_cache(system, workload: Workload, plan: ReusePlan,
+                               run_kwargs: Mapping[str, Any]) -> None:
+    """Cache-first phase for the physical path (ruling chenyi9 2026-08-26).
+
+    Event construction prices each PIM scan with one serial Ramulator call
+    that carries only one or two independent jobs, so ``--ramulator-workers``
+    alone cannot engage: on a decode-heavy workload thousands of multi-second
+    simulations run back to back.  The scan set, however, is fully determined
+    by (workload, plan, config) before any timing is known.  So: run the
+    SAME construction once with the accelerator's scan entry point replaced
+    by a collector that records a deepcopy of every op and returns
+    zero-duration placeholders (the throwaway pass mutates only its own TLB
+    and event list), then simulate every collected op on up to 64 host
+    threads -- the wrapper's persistent signature cache absorbs the results
+    -- and let the real construction that follows hit the warm cache.
+    Best-effort: any error in the throwaway pass is swallowed; ops collected
+    up to that point still warm the cache.
+    """
+    accelerator = system.devices.get("Acc") if hasattr(system, "devices") else None
+    if accelerator is None or not hasattr(accelerator, "get_time_and_energy_runs"):
+        return
+    workers = getattr(getattr(accelerator, "ramulator", None), "workers", 1)
+    if workers <= 1:
+        return
+    import sys as _sys
+    import time as _time
+    from concurrent.futures import ThreadPoolExecutor
+    # The throwaway pass prices Acc work through TWO entry points: the
+    # address-resolved scans via get_time_and_energy_runs AND the legacy
+    # aggregate entry get_time_and_energy (e.g. the no-reuse prefill
+    # layers).  Both must be intercepted -- patching only the former left
+    # the throwaway pass simulating serially on the main thread
+    # (py-spy-diagnosed, 2026-08-26).
+    pending: List[Tuple[str, Layer]] = []
+    original_runs = accelerator.get_time_and_energy_runs
+    original_agg = accelerator.get_time_and_energy
+
+    def _collect_runs(op):
+        pending.append(("runs", deepcopy(op)))
+        runs = getattr(op, "pim_kv_runs", None) or ((0, 0, 1, 0, 16),)
+        return [(0.0, (0.0,)) for _ in runs]
+
+    def _collect_agg(op):
+        pending.append(("agg", deepcopy(op)))
+        return (0.0, (0.0,))
+
+    accelerator.get_time_and_energy_runs = _collect_runs
+    accelerator.get_time_and_energy = _collect_agg
+    started = _time.time()
+    try:
+        _run_cacheblend_prefill(system, workload, plan,
+                                include_events=False, **run_kwargs)
+    except Exception:
+        pass          # zero-duration placeholders may trip late validators;
+                      # the ops collected before that still warm the cache
+    finally:
+        accelerator.get_time_and_energy_runs = original_runs
+        accelerator.get_time_and_energy = original_agg
+    # Exact-repeat dedupe: the aggregate (legacy shape) entry repeats the
+    # same shape across requests/layers, the scan entry repeats identical
+    # run lists across layers.  Conservative key = everything that can
+    # influence the simulation.
+    unique: Dict[Tuple, Tuple[str, Layer]] = {}
+    for kind, op in pending:
+        key = (kind, getattr(op, "name", ""), op.m, op.n, op.k,
+               getattr(op, "numOp", 1), getattr(op, "dbyte", 2),
+               tuple(getattr(op, "pim_kv_runs", ()) or ()),
+               getattr(op, "pim_shared_kv", False),
+               getattr(op, "pim_shared_queries", 1),
+               getattr(op, "pim_batch_command", None),
+               getattr(op, "pim_pe_freq_ghz", None))
+        unique.setdefault(key, (kind, op))
+    jobs = list(unique.values())
+    print("[warm] collected {} Acc ops -> {} unique shapes "
+          "(throwaway pass {:.0f}s); simulating with up to 64 workers".format(
+              len(pending), len(jobs), _time.time() - started),
+          file=_sys.stderr, flush=True)
+    if jobs:
+        fire = {"runs": original_runs, "agg": original_agg}
+        with ThreadPoolExecutor(max_workers=min(64, len(jobs))) as pool:
+            list(pool.map(lambda item: fire[item[0]](item[1]), jobs))
+    print("[warm] cache ready after {:.0f}s total".format(
+        _time.time() - started), file=_sys.stderr, flush=True)

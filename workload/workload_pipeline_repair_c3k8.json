@@ -1,0 +1,505 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "kind": "theoretical (mechanism illustration; NOT evidence-grade)",
+  "scenario": "waterfall repair chain: architect -> (engineer <-> reviewer) x 3 -> tester",
+  "references": [
+   "MetaGPT arXiv:2308.00352 (ICLR'24)",
+   "ChatDev arXiv:2307.07924 (ACL'24)"
+  ],
+  "assumed_token_lengths": {
+   "cycles": 3,
+   "chunks": 8,
+   "shared_tokens": 2048,
+   "sys_tokens": 300,
+   "task_tokens": 200,
+   "plan_tokens": 256,
+   "patch_tokens": 256,
+   "review_tokens": 128,
+   "report_tokens": 128,
+   "out": null
+  },
+  "generator": "gen_pipeline_repair.py"
+ },
+ "agents": [
+  {
+   "id": "architect",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "be329c9b7b463fdf",
+     "len": 300
+    },
+    {
+     "role": "user",
+     "sha": "6844c8c689b09d61",
+     "len": 200
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "engineer.c0",
+   "tier": 1,
+   "parent": "architect",
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "502d6ac53c58df59",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "12254cf62447c5f8",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "reviewer.c0",
+   "tier": 2,
+   "parent": "engineer.c0",
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "15977e9d71490118",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "4a94037da58fd01b",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 128
+  },
+  {
+   "id": "engineer.c1",
+   "tier": 3,
+   "parent": "reviewer.c0",
+   "history_len": 2604,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "a55a05d8fcbd1fc5",
+     "len": 128,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "12254cf62447c5f8",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "reviewer.c1",
+   "tier": 4,
+   "parent": "engineer.c1",
+   "history_len": 2604,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "ed9620b4b157193f",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "4a94037da58fd01b",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 128
+  },
+  {
+   "id": "engineer.c2",
+   "tier": 5,
+   "parent": "reviewer.c1",
+   "history_len": 5080,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "1f0262c157a7f43f",
+     "len": 128,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "12254cf62447c5f8",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 256
+  },
+  {
+   "id": "reviewer.c2",
+   "tier": 6,
+   "parent": "engineer.c2",
+   "history_len": 5208,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "9a05e6c11d0118a6",
+     "len": 256,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "4a94037da58fd01b",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 128
+  },
+  {
+   "id": "tester",
+   "tier": 7,
+   "parent": "reviewer.c2",
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "8828d9651694699d",
+     "len": 128,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "22318f0ceaec67e8",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "e30e7f3e32cc7675",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "46e1f25013f58b80",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "851f3d9074e0570a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d9429d02c5b014fc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "598b613b506df977",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8281812b4377861",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "169f43e8691f7f9d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c7d4a3f9b85874a9",
+     "len": 256
+    }
+   ],
+   "lout": 128
+  }
+ ]
+}
