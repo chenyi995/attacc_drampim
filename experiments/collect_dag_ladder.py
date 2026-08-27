@@ -85,6 +85,65 @@ def main():
     with open(csv_path) as handle:
         sys.stdout.write(handle.read())
 
+    # Per-tier ladder (chenyi9 order 2026-08-27): one e2e number hides the
+    # cache-growth axis -- as the shared pool accretes tier by tier, each
+    # rung separates on a different tier band, so the ladder is also folded
+    # per tier from the decode batch records (batch ids carry the request
+    # tier; timestamps are DAG times).  cum_end_s is the step curve
+    # ("time until tier t is fully decoded"); span_s = last - first
+    # attention timestamp inside the tier (tiers may overlap under
+    # pipelining, so spans need not sum to the makespan).
+    tier_rows = []
+    for rung in RUNGS:
+        path = os.path.join(outdir, "dag_{}.json".format(rung))
+        with open(path) as handle:
+            batches = json.load(handle).get("batches", []) or []
+        by_tier = {}
+        for batch in batches:
+            tier = batch.get("tier")
+            if tier is None:
+                continue
+            stamps = [batch.get(k) for k in ("q_arrival_s", "attention_start_s")]
+            stamps = [s for s in stamps if s is not None]
+            if not stamps:
+                continue
+            first, last = min(stamps), max(stamps)
+            slot = by_tier.setdefault(tier, [first, last, 0])
+            slot[0] = min(slot[0], first)
+            slot[1] = max(slot[1], last)
+            slot[2] += 1
+        # Three metrics per tier (chenyi9 2026-08-27): a rung only needs to
+        # separate on ONE of prefill / decode / e2e at a tier.
+        #   prefill_s ~= gap from the previous tier's last decode stamp to
+        #                this tier's first Q arrival (tier t's requests can
+        #                only prefill after their parents decode);
+        #   decode_s  = span of the tier's own decode batches;
+        #   e2e: tier_total_s = prefill_s + decode_s, cum_end_s = step curve.
+        prev_last = 0.0
+        for tier in sorted(by_tier):
+            first, last, count = by_tier[tier]
+            prefill_s = max(0.0, first - prev_last)
+            tier_rows.append({
+                "workload": os.path.basename(workload_path),
+                "ablation": rung,
+                "tier": tier,
+                "prefill_s": prefill_s,
+                "decode_s": last - first,
+                "tier_total_s": prefill_s + (last - first),
+                "first_s": first,
+                "last_s": last,
+                "cum_end_s": last,
+                "decode_batches": count,
+            })
+            prev_last = last
+    if tier_rows:
+        tier_csv = os.path.join(outdir, "dag_ladder_tiers.csv")
+        with open(tier_csv, "w", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(tier_rows[0]))
+            writer.writeheader()
+            writer.writerows(tier_rows)
+        sys.stdout.write("TIER_CSV: {}\n".format(tier_csv))
+
 
 if __name__ == "__main__":
     main()
