@@ -254,6 +254,13 @@ def main():
         default="gpu",
         help="where CacheBlend emits position-shifted Q variants")
     parser.add_argument(
+        "--no-warm",
+        action="store_true",
+        help="skip the cache-first throwaway pass of the physical engine "
+             "(2026-08-27: for ratio-variant re-runs whose signatures are "
+             "already on disk, construction runs once and rare misses "
+             "simulate inline)")
+    parser.add_argument(
         "--ramulator-workers",
         type=int,
         default=1,
@@ -529,7 +536,8 @@ def main():
                         gemv_buffer_bytes=(args.gemv_buffer_bytes or
                                            ablation.gemv_buffer_bytes),
                         decode_attn=ablation.decode_attn,
-                        kv_mapping=ablation.kv_mapping)
+                        kv_mapping=ablation.kv_mapping,
+                        warm=not args.no_warm)
                     report["engine"] = "dag"
                     report["ablation"] = ablation.to_dict()
                 else:
@@ -588,7 +596,8 @@ def main():
                         pim_prefill_mode=args.pim_prefill_mode,
                         pim_batch_command=args.pim_batch_command or "mq",
                         pim_pe_freq_ghz=args.pe_freq_ghz or 0.666,
-                        gemv_buffer_bytes=args.gemv_buffer_bytes or 512)
+                        gemv_buffer_bytes=args.gemv_buffer_bytes or 512,
+                        warm=not args.no_warm)
                 elif (args.reuse in ("cacheblend", "epic") and
                       args.cacheblend_latency_model == "analytic"):
                     report = run_cacheblend_analytic_report(
@@ -605,7 +614,8 @@ def main():
                         pim_prefill_mode=args.pim_prefill_mode,
                         pim_batch_command=args.pim_batch_command or "mq",
                         pim_pe_freq_ghz=args.pe_freq_ghz or 0.666,
-                        gemv_buffer_bytes=args.gemv_buffer_bytes or 512)
+                        gemv_buffer_bytes=args.gemv_buffer_bytes or 512,
+                        warm=not args.no_warm)
             except WorkloadValidationError as exc:
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)

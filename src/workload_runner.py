@@ -3264,7 +3264,8 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                       pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
                       gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES,
                       decode_attn: str = "pim",
-                      kv_mapping: str = "master-diff") -> Dict[str, Any]:
+                      kv_mapping: str = "master-diff",
+                      warm: bool = True) -> Dict[str, Any]:
     """Dispatch address-resolved CacheBlend and EPIC to the shared DAG.
 
     CacheBlend samples correction rows per layer; EPIC overlays the fixed
@@ -3298,7 +3299,8 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                           pim_batch_command=pim_batch_command,
                           pim_pe_freq_ghz=pim_pe_freq_ghz,
                           gemv_buffer_bytes=gemv_buffer_bytes)
-        _warm_scan_signature_cache(system, workload, plan, run_kwargs)
+        if warm:
+            _warm_scan_signature_cache(system, workload, plan, run_kwargs)
         return _run_cacheblend_prefill(system, workload, plan,
                                        include_events=include_events,
                                        **run_kwargs)

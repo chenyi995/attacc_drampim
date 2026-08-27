@@ -542,9 +542,16 @@ def validate_reuse_plan(workload: Workload, plan: ReusePlan,
             raise WorkloadValidationError("reuse decision segment shape/fingerprint mismatch")
         if any(row < 0 or row >= decision.length for row in decision.epic_prefix_rows):
             raise WorkloadValidationError("EPIC recompute row is outside its segment")
-        expected_prefix = tuple(range(len(decision.epic_prefix_rows)))
-        if decision.epic_prefix_rows != expected_prefix:
-            raise WorkloadValidationError("EPIC recompute rows must be a leading prefix")
+        if plan.config.policy == "recompute":
+            # The general count policy (2026-08-27) draws its rows uniformly
+            # at random inside the chunk: sorted and unique, not a prefix.
+            if decision.epic_prefix_rows != tuple(sorted(set(decision.epic_prefix_rows))):
+                raise WorkloadValidationError(
+                    "recompute rows must be sorted unique positions")
+        else:
+            expected_prefix = tuple(range(len(decision.epic_prefix_rows)))
+            if decision.epic_prefix_rows != expected_prefix:
+                raise WorkloadValidationError("EPIC recompute rows must be a leading prefix")
         decisions_by_request.setdefault(decision.request_id, {})[decision.segment_index] = decision
 
     if plan.config.policy in CACHEBLEND_FAMILY:

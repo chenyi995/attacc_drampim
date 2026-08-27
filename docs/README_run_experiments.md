@@ -42,6 +42,13 @@
 ## 2. 一键跑法
 
 ```bash
+# 全套件(推荐,2026-08-27):25 批作业池 3 路并行,k=2 留预热优先跑,
+# 其余比例 --no-warm;核预算 3x6x4+21=93<=96
+bash experiments/run_dag_suite.sh LLAMA-7B
+```
+
+
+```bash
 # 单负载 × 七档(并行发射)× 一个重算比例:
 EPIC_K=2 bash experiments/run_dag_ladder.sh workload/workload_star_repair_r5w3k47.json LLAMA-7B
 # 全套 5 负载 × 5 比例:
@@ -59,7 +66,9 @@ done; done
   **分组主图** `python3 experiments/plot_motiv_groups.py <输出stem>
   star=<csv> pipeline=<csv> debate=<csv> mapreduce=<csv> multisource=<csv>`;
 - 旋钮:`EPIC_K`(重算比例,默认 8)、`RAMU_WORKERS`(每档 Ramulator
-  worker 数,默认 14 = **96 核预算**:6 个 PIM 档×14 仿真 + 7 构图)。
+  worker 数;单批独跑默认 14 = 6 个 PIM 档×14+7 构图 ≤96,套件并行时
+  由 `run_dag_suite.sh` 压到 4)、`NO_WARM=1`(跳过空跑收集遍,适用
+  签名已落盘的变体批)、`N_PAR`(套件在飞批数,默认 3)。
 
 ## 3. 引擎与缓存行为(为什么第一遍慢、之后快)
 
