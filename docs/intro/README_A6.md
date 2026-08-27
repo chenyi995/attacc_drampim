@@ -72,3 +72,10 @@ python3 -c "import json;print(json.load(open('/tmp/a6_dag.json'))['pim_prefill_s
   次优判例,差距是论文可报的鲁棒性数据点(TODO,待裁决);
 - 与 C3 的关系:A6 的 bank 路吃满 C3 微架构(MQ 命令、容量拆波、流式
   P);C 系列在固定放置下测微架构本身,A6 在系统层面把它用起来。
+
+---
+
+## 状态更新(2026-08-26/27,详见总台账 R14–R17 与 sessions/)
+
+- MQ 设计点同 A5 改 **n_cap=8**(512 B/1.733 GHz,R16);
+- decode 服务批宽 8;动态判决与入账同口径(R4)不变。

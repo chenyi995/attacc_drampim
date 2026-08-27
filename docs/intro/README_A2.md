@@ -51,3 +51,14 @@ python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
 A2 对 A1:隔离"软件复用"的贡献(但 decode 回到 GPU,带宽瓶颈重现);
 A2 对 A3:同样的软件复用,decode 搬进 PIM、KV 进 PIM(naive 布局)——
 隔离"PIM decode + KV 驻留"的贡献。
+
+---
+
+## 状态更新(2026-08-26/27,详见总台账 R14–R17 与 sessions/)
+
+- KV 驻留改为**远端哑存储**(R10):prefill 写出/读回、decode 每 token
+  整上下文×全层经 NVLink/PCIe 拖回;链路字节=GPU↔远端存储流量;
+- decode 已按**服务批宽 8** 波结构重写(R16):每波一遍权重服务全组、
+  KV 每查询各拉;
+- 布局归类口径:语义属 A3a 类(GPU 可掩),建模仅按字节÷链路带宽计价,
+  远端页/行激活未建模(瓶颈在互连)。

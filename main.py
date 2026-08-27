@@ -195,7 +195,7 @@ def main():
              "the workload JSON); attended during prefill/decode, never recomputed")
     parser.add_argument(
         "--reuse",
-        choices=("no-reuse", "cacheblend", "epic", "promptcache",
+        choices=("no-reuse", "cacheblend", "epic", "recompute", "promptcache",
                  "cachecraft", "cachetune"),
         default="no-reuse",
         help="KV reuse policy; independent from workload kind.  promptcache: "

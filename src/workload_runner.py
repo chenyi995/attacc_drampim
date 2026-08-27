@@ -2815,9 +2815,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 bitmap_corrected = any(item[2] for item in bindings if item[1])
                 if (not physical_no_reuse and not full and reusable and
                         bitmap_corrected and
-                        (plan.config.policy != "epic" or
+                        (plan.config.policy not in ("epic", "recompute") or
                          request.request_id not in epic_bitmap_loaded)):
-                    if plan.config.policy == "epic":
+                    if plan.config.policy in ("epic", "recompute"):
                         epic_bitmap_loaded.add(request.request_id)
                     bitmap_bytes = (request.total_length + 7) // 8
                     di_bitmap_bytes_total += bitmap_bytes
@@ -3281,13 +3281,14 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
             raise WorkloadValidationError(
                 "--decode-attn gpu keeps the KV cache in GPU memory; "
                 "use --kv-mapping none")
-        if plan.config.policy not in ("cacheblend", "epic", "no-reuse",
-                                      "promptcache", "cachecraft", "cachetune"):
+        if plan.config.policy not in ("cacheblend", "epic", "recompute",
+                                      "no-reuse", "promptcache", "cachecraft",
+                                      "cachetune"):
             raise WorkloadValidationError(
                 "unknown reuse policy for the GPU-only event path")
         return _run_gpu_software_only(system, workload, plan, pipe=pipe,
                                       include_events=include_events)
-    if plan.config.policy in ("cacheblend", "epic", "no-reuse"):
+    if plan.config.policy in ("cacheblend", "epic", "recompute", "no-reuse"):
         run_kwargs = dict(pipe=pipe,
                           batch_size=cacheblend_batch_size,
                           physical_no_reuse=(plan.config.policy == "no-reuse"),

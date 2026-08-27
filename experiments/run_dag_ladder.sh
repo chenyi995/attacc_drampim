@@ -39,7 +39,7 @@ RAMU_WORKERS=${RAMU_WORKERS:-14}
 EPIC_K=${EPIC_K:-8}
 declare -A PID
 for A in A1 A2 A3 A3a A4 A5 A6; do
-    REUSE=epic
+    REUSE=recompute
     EXTRA=(--epic-prefix-recompute-tokens "$EPIC_K")
     if [ "$A" = A1 ]; then REUSE=no-reuse; EXTRA=(); fi
     echo "=== launch $A (reuse=$REUSE) $(date +%H:%M:%S) ==="

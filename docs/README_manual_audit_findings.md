@@ -13,7 +13,7 @@
 
 结构:一、已解决(R);二、未解决(U);三、流程性裁决记录;附录 A/B。
 
-## 一、已解决(13 条)
+## 一、已解决(17 条)
 
 | # | 问题 | 修复 | 位置 / commit |
 |---|---|---|---|
@@ -23,13 +23,17 @@
 | R4 | **A6 dynamic 估价口径不对称**(xPU 路按每请求算子估价,比 gpu 档实际入账贵 → 偏选 PIM) | 估价改为与 gpu 档同一口径(顶层 scale 折算),估=入账两侧对称;multihop/65B 上 A6 = min(A4,A5) 验证 | `src/ablation.py::_prefill_batch`;`b649674` |
 | R5 | **分池 8/8**(diff 行极少却独占一半带宽,A4 反劣于 A3)——即"channel 划分不是对半分"裁决 | 两条路径同步改 **15/1**(物理 `_KV_CHANNELS` master 0–14 / diff 15 + 解析默认 + `--kv-pool-split`);注释留"后续可按 diff 密度 ρ_b 自动定宽" | `b649674` |
 | R6 | **naive 布局无 channel 冲突模型**(每 run 摊满 16 channel 理想并行,乱序零代价) | 解析:逐 chunk **顺序分配 channel 并追踪**,同 channel 冲突**串行化**(`_naive_channel_pools`,decode 取池间 max);物理:见 R11 的 `NaiveKVLayout` | `src/ablation.py`;`b649674` |
-| R7 | **A5/A6 没挂微架构参数**(PE 0.666 GHz / 512 B / 每波 4) | preset 绑定平衡点 **2.6 GHz / 768 B(=12 驻留)**,标 PROVISIONAL;mq 下每波跟随 `mq_query_capacity` | `src/ablation.py::PRESETS`;`b649674` |
+| R7 | **A5/A6 没挂微架构参数**(PE 0.666 GHz / 512 B / 每波 4) | preset 绑定平衡点 **2.6 GHz / 768 B(=12 驻留)**,标 PROVISIONAL;mq 下每波跟随 `mq_query_capacity` | `src/ablation.py::PRESETS`;`b649674`。**2026-08-26 修订:MQ max n_cap=8 → 512 B/1.733 GHz(R16)** |
 | R8 | **压缩率列低估**:`_memory_report` 把共享 chunk 的属主副本双计(multihop 报省 4.7%,实际 20.3%) | 公式去重 + 单测锁死 + `owner_copy_fix` 标记;存量结果 `repair_memory_column.py` 修补(multihop → 0.798 ✓) | `src/ablation.py::_memory_report`;`0305d4c` |
 | R9 | **多轮历史口径**(名义 `--history-len` 一开始就满长) | Mooncake conversation 去尾块链轮,history 逐轮从 0 累积;进矩阵为 `mooncakemt` | `convert_mooncake_multiturn.py`;`0305d4c`。(注:mooncakemt 后判不可用,见附录 B) |
 | R10 | **A2 的 KV 驻留口径**:GPU-only 档 KV 原实现留在 GPU 本地 HBM,链路字节=0 | 裁决(chenyi9 2026-08-26):链路字节 = **GPU↔远端存储**(HBM 或哑 DRAM)经 NVLink/PCIe 的流量;**A2 的 KV 全放远端哑存储**——prefill 写出/复用与 history 行读回,decode 每步整上下文×全层拖回再写回(wl_tiny 实测链路 42.1 GB、makespan 1.671→1.811 s)。**解析引擎 A2 未对齐 → U3** | `src/workload_runner.py::_run_gpu_software_only`;`8b58fe7` |
 | R11 | **物理 DAG 引擎只覆盖 ≈A4/A5/A6**(decode 事件词汇只有 PIM;KV 布局只有 master-diff 与 private;`--ablation` 强制走解析引擎) | 新增 `--engine {analytic,dag}`:`--ablation Ax --engine dag` 六档全通——A2 新 GPU-only 事件路径(含 R10 远端模型)、A3 新 `NaiveKVLayout`(块按软件序轮转 16 个单 channel 池,碎片惩罚由排程涌现)、A1 接通已有 private 物理路径、A4–A6 preset 布线(A1–A4 replicate,A5/A6 mq+2.6 GHz/768 B)。顺带修:整层复用零修正请求致 qkv m=0 除零(两分支加护栏);A2 不再套 split 时代事件命名校验器。wl_tiny 六档验证:A6=min(A4,A5) 逐字节成立;**A5 语义分叉 → U4** | `main.py`、`src/workload_runner.py`;`8b58fe7` |
 | R12 | **prefill attention 归边统计口径混用**(A6 列只数走到动态判决器的请求,分母与 A1–A5 不一致;A5 的"4/4"也虚——全新请求实际走 GPU 分支;chenyi9 发现) | 统一为**事件流实际行数**统计:每请求记 PIM/GPU 注意力行数,share = PIM 行/(PIM+GPU) 行;普查列 pim/gpu/mixed/**none**(none=整层复用零修正、prefill attention 未发生),分母恒为全部请求 | `_prefill_side_summary` + `collect_dag_ladder.py`;`8b58fe7`/`c8e39c9` |
 | R13 | **Ramulator 签名缓存纯进程内存**("先 cache 再跑"跨进程不成立,每次运行重付全部仿真) | 裁决(chenyi9 2026-08-26):cache 阶段最多 64 核。签名缓存落盘 `<ramulator_dir>/signature_cache.jsonl`(append-only JSONL,启动即载);`--ramulator-workers 64`;解析路径预热池 32→64。实测:六档首建 ~32 min,暖缓存复跑 2 min 11 s | `src/ramulator_wrapper.py`、`src/ablation.py`;`4e582cb` |
+| R14 | **naive 布局三处失真**(块数可调造惩罚;大段整段挤单 channel;共享块一次性连续引入抹掉混叠) | 裁决落地(chenyi9 2026-08-26):①共享内容按**自然 256-token 块**;②`NaiveKVLayout` **页化**——一切预留(含 history/live 大段)先切 256-token 页再按 append 序轮换,大段 30k 行实测摊满 16 channel;③共享内容**分轮引入**(首用定 append 位,混叠只由负载产生) | `94f8f46` |
+| R15 | **naive 白得 Fugue 的读掩**(mask 是 die 侧硬件特性) | `shadow_reads` 拆分:**A3 无掩断流**(重算行处 master run 劈开:act 段-act 行-act 段)/**新档 A3a 可掩不断流**(`NaiveMaskKVLayout`);gpu-prefill 读回补 **DRAM 侧读事件**(散页在 prefill 也收费);阶梯变七档 | `6b05a22` |
+| R16 | **decode batch=1 埋没全部布局差异**(权重流按并发数虚增,PIM 扫描全藏其下;AttAcc 原版本就重叠) | **全档 decode 服务批宽 8**(GPU 权重一遍服务全波,KV 每查询各自拉;A2 重写为同构波结构);**MQ n_cap 顶格 8**(512 B/1.733 GHz 配平,修订 R7 的 12 档;MQ 仅 A5/A6,其余档连 prefill 也不开);wl_tiny 实测 A2 1.81→1.51 s、A4 1.29→0.98 s | `c163936` |
+| R17 | **重算 token 取块头与"随机抽取"裁决不符**(EPIC 前缀是该策略本义,不许动) | **新增独立策略 `--reuse recompute`**:每位移块内**均匀随机抽 k 个 token**(种子可复现;归 EPIC_FAMILY 复用逐段记账/diff/位图机制);随机位置在物理上只影响 A3(断口散布);ladder A2–A6 改用之,比例轴 k∈{2,4,8,16,32} | 工作树(2026-08-27 提交) |
 
 另有设计裁决(非 bug,已落地):老 A6"split 混合 prefill"废除、物理 DAG 与 A 阶梯同菜单(`654aeee`/`0755694`);TSV 窄下行经实测关闭(转向代价 ≤0.84%,experiment C-abl-2)。
 
@@ -112,6 +116,9 @@
 | 2026-08-26 | **A2 的 KV 放远端哑存储**(R10;解析侧遗留 U3) |
 | 2026-08-26 | 自造 workload 放 `<repo>/workload/`;输出放 `<repo>/output/<时间戳>_<负载>_<模型>/`;`/data2/chenyi9/KV-PIM/workload/` 仅作真实负载源数据暂存区(准入标准见其 README.md) |
 | 2026-08-26 | prefill 归边统计统一分母(R12);TLB overlap 只分析不修改(U1) |
+| 2026-08-26 | **256-token 自然块**;naive 冲突只许轮换自撞;共享内容分轮引入;**8-MiB K 窗口 = bank 级硬限制不许动,上下文扩展走加 HBM 数量**(拆段方案作废) |
+| 2026-08-26 | **七档一起跑**(A3a 加档);**MQ max=8 且仅 A5/A6**;decode 服务批宽 8 全档默认;重算比例轴 k∈{2,4,8,16,32},A2–A6 用 `recompute` 策略 |
+| 2026-08-27 | **口径注记:A2 的远端布局语义属 A3a 类**(GPU 可掩,无断流问题),但建模上远端为哑存储、读写仅按字节÷链路带宽计价,页布局/行激活未建模(瓶颈在互连)——A2 收的是逐 token 整上下文过链路的账 |
 
 ---
 

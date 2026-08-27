@@ -28,7 +28,7 @@ AttAcc(ASPLOS'24)把 decode 注意力搬进 HBM 内存的每个 bank(DRAM 的
 | 路径 | 入口 | 精度/用途 |
 |---|---|---|
 | **解析引擎** (analytic) | `main.py --ablation A1..A6`(`--engine analytic`,默认)→ `src/ablation.py` | 算子级封闭式代价模型 + Ramulator 形状缓存;快,用于**快速预估与两引擎交叉校验** |
-| **物理事件引擎** (event DAG) | `main.py --ablation A1..A6 --engine dag` → `src/workload_runner.py` | 每请求每层展开成带真实时序、依赖与资源排队的事件图;**2026-08-26 起覆盖全部六档**,重叠/排队由排程涌现而非公式假设 |
+| **物理事件引擎** (event DAG) | `main.py --ablation A1..A6 --engine dag` → `src/workload_runner.py` | 每请求每层展开成带真实时序、依赖与资源排队的事件图;**2026-08-26 起覆盖全部七档(含 A3a)**,重叠/排队由排程涌现而非公式假设 |
 
 裁决(chenyi9 2026-08-26):**真实 workload 一律默认走物理事件引擎出数,
 解析引擎不单独出数**(只作预估与校验)。放置语义两引擎一致:prefill
@@ -39,15 +39,16 @@ GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
 
 ## 3. A1–A6 阶梯(放置消融,2026-08-24 定)
 
-每一档只比上一档多一件事;各档细节见 `intro/README_A1.md` … `intro/README_A6.md`:
+每一档只比上一档多一件事(2026-08-26 起共**七档**,A3a 见下表);各档细节见 `intro/`:
 
 | 档 | 含义 | prefill attn | KV 布局 | 批命令 |
 |---|---|---|---|---|
 | A1 | AttAcc 原样,无复用(参照点) | GPU | private | replicate |
 | A2 | 纯软件复用,无 PIM 算力 | GPU(decode 也在 GPU) | none(KV 在**远端哑存储**,R10;解析引擎旧口径见 U3) | replicate |
 | A3 | 软件复用 + AttAcc,乱序布局(不分 channel) | GPU | naive | replicate |
+| **A3a** | A3 布局但**可掩**(陈旧行随流读出被掩,run 不断;2026-08-26 增) | GPU | naive-mask | replicate |
 | A4 | + 分裂 channel(master/diff 分池) | GPU | master-diff | replicate |
-| A5 | + 所有 prefill 注意力进 PIM | PIM | master-diff | **mq** |
+| A5 | + 所有 prefill 注意力进 PIM(MQ n_cap=8:512 B/1.733 GHz) | PIM | master-diff | **mq** |
 | A6 | **Fugue(我们的方法)**:A5 + 逐请求动态选边 | dynamic | master-diff | **mq** |
 
 关键约定:**attention batching(MQ 批命令,一次列读服务多条驻留查询)
@@ -62,7 +63,9 @@ GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
 
 - **cacheblend 族**(按比例采样重算行):`cacheblend`(EuroSys'25,在线
   选择,含全重算选择层)、`cachetune`(离线选择,无选择层);
-- **epic 族**(每段边界前缀重算):`epic`(每复用段重算前 k 个 token)、
+- **epic 族**(逐段修正行):`epic`(每复用段重算**前** k 个 token)、
+  `recompute`(2026-08-27 增,**通用计数策略**:每位移段内**随机**抽 k
+  个 token 重算,阶梯实验默认用它)、
   `promptcache`(零重算基线,MLSys'24)、`cachecraft`(前缀长度按上下文
   重叠度逐 chunk 变化,SIGMOD'25 风格)。
 
@@ -78,22 +81,22 @@ GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
 ## 6. 快速上手
 
 ```bash
-# 一键六档(推荐,默认口径):指定一个 workload JSON,DAG 引擎跑 A1–A6,
-# 产出 output/<时间戳>_<负载>_<模型>/dag_ladder.csv(每部件能耗 +
-# prefill 归边普查);A1 用 no-reuse,A2–A6 用 EPIC k=8
+# 一键七档(推荐,默认口径):指定一个 workload JSON,DAG 引擎跑
+# A1/A2/A3/A3a/A4/A5/A6,产出 output/<时间戳>_<负载>_<模型>_k<比例>/
+# dag_ladder.csv;A1 用 no-reuse,A2–A6 用 recompute(EPIC_K 定 k)
 bash experiments/run_dag_ladder.sh workload/wl_tiny.json LLAMA-7B
 
 # 单档物理事件引擎(真实 workload 的默认出数方式)
 python3 main.py --system dgx-attacc --model LLAMA-7B \
   --workload workload/wl_tiny.json \
-  --reuse epic --epic-prefix-recompute-tokens 8 \
-  --ablation A6 --engine dag --ramulator-workers 64 \
+  --reuse recompute --epic-prefix-recompute-tokens 8 \
+  --ablation A6 --engine dag --ramulator-workers 14 --cacheblend-batch-size 8 \
   --workload-report-events none --workload-report /tmp/a6_dag.json
 
 # 解析引擎快扫(仅预估/交叉校验,不单独出数;--engine 默认 analytic)
 python3 main.py --system dgx-attacc --model LLAMA-7B \
   --workload workload/wl_tiny.json \
-  --reuse epic --epic-prefix-recompute-tokens 8 \
+  --reuse recompute --epic-prefix-recompute-tokens 8 \
   --ablation A6 --workload-report /tmp/a6_analytic.json
 
 # 回归
@@ -110,13 +113,13 @@ python3 -m unittest discover -s tests     # 41/41
 
 ## 7. 文档索引(2026-08-26 重组:intro/ 收 A 档,archived/ 收弃用件)
 
-- `intro/README_A1.md` … `intro/README_A6.md`:每档的逐步代码定位
+- `intro/README_A1.md` … `README_A6.md` + `README_A3a.md`:每档定位
 - `README_software_upstream.md`:复用策略族与文献来源
 - `README_delta_vs_xinyao0821.md`:相对 xinyao_0821 基线的全部改动
 - `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
   流程裁决、阶梯诊断与 workload 有效性附录)
-- `README_run_experiments.md`:**当前主线实验怎么跑**(四组拓扑负载 ×
-  DAG 六档 × 重算比例,一键脚本与图)
+- `README_run_experiments.md`:**当前主线实验怎么跑**(五组拓扑负载 ×
+  DAG 七档 × 五个重算比例,一键脚本与图)
 - `README_experiments.md`:论文证据矩阵怎么跑
 - `sessions/`:每日调整记录(chenyi9 裁决时间线)
 - `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit

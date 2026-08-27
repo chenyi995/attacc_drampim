@@ -474,8 +474,10 @@ class WorkloadTests(unittest.TestCase):
                          ("pim", "mq"))
         # A5/A6 carry the provisional balance-point microarchitecture and
         # the prefill sweep follows the buffer's resident-Q capacity.
+        # Ruling chenyi9 2026-08-26: MQ max n_cap = 8 -> 512 B buffer,
+        # matched PE clock f* = 8/(6 x 0.769 ns) ~= 1.733 GHz.
         self.assertEqual((a5.pim_pe_freq_ghz, a5.gemv_buffer_bytes,
-                          a5.pim_prefill_query_batch), (2.6, 768, 12))
+                          a5.pim_prefill_query_batch), (1.733, 512, 8))
         stock = resolve_config("A4", None, None, None, policy="cacheblend")
         self.assertEqual((stock.pim_pe_freq_ghz, stock.gemv_buffer_bytes),
                          (0.666, 512))

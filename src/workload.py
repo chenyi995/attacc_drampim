@@ -33,7 +33,7 @@ class WorkloadValidationError(ValueError):
     """Raised when a workload cannot describe a valid inference request."""
 
 
-VALID_REUSE_POLICIES = ("no-reuse", "cacheblend", "epic", "promptcache",
+VALID_REUSE_POLICIES = ("no-reuse", "cacheblend", "epic", "recompute", "promptcache",
                         "cachecraft", "cachetune")
 # PAPER TIE (software upstream): the paper's placement claims must hold
 # under ANY reasonable reuse software, so the upstream is an axis, not a
@@ -55,7 +55,9 @@ VALID_REUSE_POLICIES = ("no-reuse", "cacheblend", "epic", "promptcache",
 #   (SIGMOD'25-style) sizes the prefix per chunk from the context overlap
 #   between consumer and owner (knob: cachecraft_alpha).
 CACHEBLEND_FAMILY = ("cacheblend", "cachetune")
-EPIC_FAMILY = ("epic", "promptcache", "cachecraft")
+# "recompute" (2026-08-27): general count-based policy, k random rows per
+# shifted chunk; structurally EPIC-family (per-segment corrected rows).
+EPIC_FAMILY = ("epic", "recompute", "promptcache", "cachecraft")
 _LEGACY_REQUIRED = ("sample", "seg_lens", "seg_sha", "seg_role", "L", "lout")
 
 
@@ -461,6 +463,18 @@ def build_reuse_plan(workload: Workload,
             if policy == "epic" and shifted:
                 correction = tuple(range(min(segment.length,
                                              epic_prefix_recompute_tokens)))
+            elif policy == "recompute" and shifted:
+                # General count-based recompute (chenyi9 2026-08-27, its own
+                # policy -- the existing branches stay untouched): k tokens
+                # drawn UNIFORMLY AT RANDOM inside the shifted chunk (count
+                # shares the epic_prefix_recompute_tokens knob).  Upstream
+                # only the COUNT matters (C0 ruling); the in-chunk positions
+                # physically matter only to a maskless layout (A3 splits its
+                # master run at every recomputed row).  Deterministic via
+                # the plan's random seed.
+                count = min(segment.length, epic_prefix_recompute_tokens)
+                correction = tuple(sorted(rng.sample(range(segment.length),
+                                                     count)))
             elif policy == "cachecraft" and shifted:
                 # Cache-Craft-style variable prefix: the less of the chunk's
                 # original context the consumer preserves, the more boundary

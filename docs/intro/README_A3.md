@@ -48,3 +48,14 @@ python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
 A3 对 A2:隔离"decode 进 PIM + KV 驻留"的收益(代价是 prefill 回读);
 A3 对 A4:同一切,只把布局换成 master/diff 分池——隔离"PIM 感知布局"
 本身的价值(run 数、行激活次数、掩码读的差异)。
+
+---
+
+## 状态更新(2026-08-26/27,详见总台账 R14–R17 与 sessions/)
+
+- 布局改为**页化 naive**(R14):一切预留(含 history/live 大段)先切
+  256-token 页再按 append 序轮换,无 master/diff 之分;
+- **无掩断流语义**(R15,`shadow_reads=False`):重算行的 master 副本被
+  跳过,run 在缺口处劈开(act 段-act 行-act 段),重算行从自己 append
+  位置单行激活读取;与新档 **A3a**(可掩不断流)构成一对;
+- gpu-prefill 读回补 DRAM 侧读事件;decode 波内共享扫描、命令 replicate。
