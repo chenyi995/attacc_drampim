@@ -640,6 +640,14 @@ def _address_key(location: KVLocation) -> Tuple[int, int]:
     return (location.key_address, location.value_address)
 
 
+def _pool_reads(tlb, locations: Sequence[KVLocation]) -> Tuple[List[KVLocation], set]:
+    """Physical read stream per the layout's mask capability (see
+    CacheBlendTLB.shadow_reads)."""
+    if getattr(tlb, "shadow_reads", True):
+        return _physical_reads(locations)
+    return list(locations), set()
+
+
 def _physical_reads(locations: Sequence[KVLocation]) -> Tuple[List[KVLocation], set]:
     """Expand consumer-visible K/V rows into the rows the PIM actually reads.
 
@@ -680,6 +688,14 @@ def _masked_rows_per_run(runs: Sequence[Tuple[int, int, int, int, int]],
 class CacheBlendTLB:
     """Logical-position to concrete HBM-K/V mapping used by CacheBlend.
 
+    ``shadow_reads`` declares the die-side read-mask gate: the master pool
+    streams THROUGH a corrected row and masks it out of the score.  This is
+    a Fugue hardware feature -- layouts without the gate (naive) must set it
+    False, and their scans then SKIP the corrected master row: the enclosing
+    run splits at the gap and the corrected row is read from its own page
+    elsewhere (act a run, act one row, act the next run -- ruling chenyi9
+    2026-08-26).
+
     Master rows hold first/full recomputations and immutable reused K/V.  A
     corrected partial-layer row receives a ``diff`` row and shadows the master
     entry in the consumer's TLB; it never overwrites a producer's cache line.
@@ -690,6 +706,8 @@ class CacheBlendTLB:
     shadowed row instead would break the master stream into one cold-start
     PIM run per correction.
     """
+
+    shadow_reads = True
 
     def __init__(self, bytes_per_vector: int):
         self.bytes_per_vector = bytes_per_vector
@@ -936,17 +954,33 @@ class NoReuseKVLayout:
                 "entries": self.entries}
 
 
-class NaiveKVLayout(CacheBlendTLB):
-    """Scattered software-order KV placement -- the A3 rung (audit issue 3b).
+# Naive/software stores are PAGE-granular (ruling chenyi9 2026-08-26): large
+# segments are chunked into 256-token pages BEFORE placement, exactly like a
+# vLLM-style paged KV store, so no monolithic extent ever monopolizes one
+# channel -- the row conflicts must come from the rotation itself.
+_NAIVE_PAGE_ROWS = 256
 
-    No master/diff channel split: every ownership block (master, diff and
-    live alike) is allocated WHOLE to one channel, round-robin in first-
-    reservation (= software chunk) order.  A consumer's scan therefore
-    touches as many single-channel pools as its chunks landed on, and blocks
-    that share a channel serialize on that channel's ``PIM:poolC-C``
-    timeline: the fragmentation penalty of a PIM-oblivious allocator emerges
-    from the schedule instead of being the analytic max-over-pools term.
+
+class NaiveKVLayout(CacheBlendTLB):
+    """Scattered software-order PAGED KV placement -- the A3 rung.
+
+    No die-side mask gate (``shadow_reads = False``): a corrected row's
+    master copy is skipped, splitting the master run, and the corrected row
+    is a separate single-row activation at its own append position.
+
+    No master/diff channel split and no PIM-aware remap: every reservation
+    (master, diff and live alike, INCLUDING large history/live extents) is
+    first split into 256-token pages, and the pages are appended round-robin
+    over the 16 channels in reservation (= software append) order.  A scan
+    of one logical context therefore touches many single-channel pools; the
+    pages that share a channel sit at non-adjacent addresses (other
+    requests' pages appended between them), so each one is a separate
+    physical run with its own row activation -- the row-conflict penalty of
+    a PIM-oblivious paged store emerges from the rotation, never from a
+    constructed layout.
     """
+
+    shadow_reads = False
 
     def finalize(self) -> None:
         if self._blocks:
@@ -956,43 +990,77 @@ class NaiveKVLayout(CacheBlendTLB):
         channel_state = {channel: {"tile": 0, "cursor": 0}
                          for channel in range(16)}
         tiles_per_channel = _HBM_CHANNEL_BYTES // (2 * _ORIGINAL_KV_GAP_BYTES)
+        self._pages: Dict[Tuple, Dict[int, KVBlock]] = {}
+        rotation = 0
         # Python dicts preserve insertion order, so iterating the reservation
-        # dict directly walks blocks in software (first-reservation) order --
-        # the very order a PIM-oblivious allocator would write them.
+        # dict walks pages in software append order.
         for index, key in enumerate(self._reserved_rows):
             layer, owner, fingerprint, kind = key
             rows = tuple(sorted(self._reserved_rows[key]))
-            span = len(rows) * stride
-            if span > _ORIGINAL_KV_GAP_BYTES:
-                raise WorkloadValidationError(
-                    "naive KV block exceeds the 8-MiB original-AttAcc K partition")
-            channel = index % 16
-            state = channel_state[channel]
-            if state["cursor"] + span > _ORIGINAL_KV_GAP_BYTES:
-                state["tile"] += 1
-                state["cursor"] = 0
-            if state["tile"] >= tiles_per_channel:
-                raise WorkloadValidationError(
-                    "naive KV allocation exceeds channel {} capacity".format(channel))
-            key_base = (channel * _HBM_CHANNEL_BYTES +
-                        state["tile"] * (2 * _ORIGINAL_KV_GAP_BYTES) +
-                        state["cursor"])
-            self._blocks[key] = KVBlock(
-                "nvb-{:06d}".format(index), layer, owner, fingerprint, kind,
-                rows, key_base, key_base + _ORIGINAL_KV_GAP_BYTES, stride,
-                channel, 1, state["tile"], state["cursor"], 0)
-            state["cursor"] += span
+            page_map: Dict[int, KVBlock] = {}
+            for page_index, start in enumerate(
+                    range(0, len(rows), _NAIVE_PAGE_ROWS)):
+                page_rows = rows[start:start + _NAIVE_PAGE_ROWS]
+                span = len(page_rows) * stride
+                channel = rotation % 16
+                rotation += 1
+                state = channel_state[channel]
+                if state["cursor"] + span > _ORIGINAL_KV_GAP_BYTES:
+                    state["tile"] += 1
+                    state["cursor"] = 0
+                if state["tile"] >= tiles_per_channel:
+                    raise WorkloadValidationError(
+                        "naive KV allocation exceeds channel {} capacity".format(
+                            channel))
+                key_base = (channel * _HBM_CHANNEL_BYTES +
+                            state["tile"] * (2 * _ORIGINAL_KV_GAP_BYTES) +
+                            state["cursor"])
+                block = KVBlock(
+                    "nvp-{:06d}-{:03d}".format(index, page_index),
+                    layer, owner, fingerprint, kind, page_rows,
+                    key_base, key_base + _ORIGINAL_KV_GAP_BYTES, stride,
+                    channel, 1, state["tile"], state["cursor"], 0)
+                state["cursor"] += span
+                self._blocks[(layer, owner, fingerprint, kind,
+                              page_index)] = block
+                for row in page_rows:
+                    page_map[row] = block
+            self._pages[key] = page_map
+
+    def locate(self, layer: int, owner: str, fingerprint: str, owner_row: int,
+               kind: str) -> KVLocation:
+        cache_key = (layer, owner, fingerprint, owner_row, kind)
+        location = self._locations.get(cache_key)
+        if location is not None:
+            return location
+        page_map = getattr(self, "_pages", {}).get(
+            (layer, owner, fingerprint, kind))
+        if page_map is None or owner_row not in page_map:
+            raise WorkloadValidationError(
+                "naive KV page requested before it was reserved: {}".format(
+                    (layer, owner, fingerprint, kind, owner_row)))
+        block = page_map[owner_row]
+        token_offset = block.token_offset(owner_row)
+        location = KVLocation(
+            layer, owner, fingerprint, owner_row, kind,
+            block.key_base + token_offset * block.vector_stride,
+            block.value_base + token_offset * block.vector_stride,
+            self.bytes_per_vector, block.block_id, token_offset,
+            block.channel_base, block.channel_count)
+        self._locations[cache_key] = location
+        return location
 
     def report(self) -> Dict[str, Any]:
         return {"mapping": "Ramulator HBM3-PIM physical byte address",
-                "layout": "naive scattered (A3): whole ownership blocks "
+                "layout": "naive scattered PAGED (A3): every reservation "
+                          "split into 256-token pages, pages appended "
                           "round-robin over 16 single-channel pools in "
-                          "software chunk order; no master/diff split",
+                          "software order; no master/diff split",
+                "page_rows": _NAIVE_PAGE_ROWS,
                 "channel_capacity_bytes": _HBM_CHANNEL_BYTES,
                 "transaction_bytes": _HBM_TX_BYTES,
                 "channel_sets": {"naive": list(range(16))},
-                "blocks": [block.to_dict()
-                           for _, block in sorted(self._blocks.items())],
+                "page_count": len(self._blocks),
                 "entries": self.entries}
 
 
@@ -1745,7 +1813,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             # ``old`` is the consumer-visible KV (one entry per position);
             # ``reads`` is what the master/diff pools physically stream, with
             # shadowed master rows masked rather than skipped.
-            reads, masked_keys = _physical_reads(old)
+            reads, masked_keys = _pool_reads(tlb, old)
             context_ready = local_last
             if old:
                 rotate_ready = _append_q_rotate_distribution(
@@ -1935,7 +2003,7 @@ def _append_cacheblend_decode_batched(
             # Physical master/diff streams per request (masked shadow rows
             # included) -- see ``_physical_reads``.
             reads_by_request = {
-                request.request_id: _physical_reads(old_by_request[request.request_id])
+                request.request_id: _pool_reads(tlb, old_by_request[request.request_id])
                 for request in active
             }
             # GPU rotation creates additional Q variants that have their own
@@ -2815,14 +2883,22 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 # the cheaper one is committed, ties to the PIM).  The former
                 # GPU/PIM "split" hybrid is abolished.
                 location_deltas = _prefill_location_deltas(request, bindings)
-                masked_prefill_keys = {_address_key(loc.shadow)
-                                       for _, reused_flag, corrected, loc in bindings
-                                       if reused_flag and corrected and
-                                       loc.shadow is not None}
-                old_reads = [loc.shadow if corrected else loc
-                             for _, reused_flag, corrected, loc in bindings
-                             if reused_flag and
-                             (not corrected or loc.shadow is not None)]
+                if getattr(tlb, "shadow_reads", True):
+                    masked_prefill_keys = {_address_key(loc.shadow)
+                                           for _, reused_flag, corrected, loc in bindings
+                                           if reused_flag and corrected and
+                                           loc.shadow is not None}
+                    old_reads = [loc.shadow if corrected else loc
+                                 for _, reused_flag, corrected, loc in bindings
+                                 if reused_flag and
+                                 (not corrected or loc.shadow is not None)]
+                else:
+                    # No mask gate (naive): read the corrected row from its
+                    # own page and SKIP the master copy -- the master run
+                    # splits at the gap (act a run, act one row, act on).
+                    masked_prefill_keys = set()
+                    old_reads = [loc for _, reused_flag, _, loc in bindings
+                                 if reused_flag]
                 scan_locations = old_reads + list(writes)
                 readback_rows = [loc for _, reused_flag, corrected, loc in bindings
                                  if reused_flag and not corrected]
@@ -2979,6 +3055,15 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 # layer, so their stale masters are not read back.
                 gpu_last = q
                 if readback_rows:
+                    # DRAM-side read of the resident rows feeding the link
+                    # (ruling chenyi9 2026-08-26): a scattered layout pays
+                    # its activations here too -- per-channel pool events,
+                    # so naive fragmentation surfaces in the readback.
+                    dram_reads = _append_channel_kv_stores(
+                        system, events, layer=layer_index, tier=tier,
+                        request=request.request_id, name="dram_read_resident",
+                        locations=readback_rows, dbyte=dbyte,
+                        deps=request_ready, positions=compute_positions)
                     readback_bytes = len(readback_rows) * 2 * local_hidden * dbyte
                     op = _link_layer(x2g, "kv_pim_to_gpu", readback_bytes)
                     time_s, energy = system.devices["GPU"].get_time_and_energy(op)
@@ -2986,7 +3071,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         events, layer=layer_index, tier=tier,
                         request=request.request_id, name="kv_pim_to_gpu",
                         device="LINK", rows=len(readback_rows), time_s=time_s,
-                        energy=energy, deps=(q,), link_bytes=readback_bytes,
+                        energy=energy, deps=(q,) + tuple(dram_reads), link_bytes=readback_bytes,
                         positions=compute_positions,
                         addresses=[address for loc in readback_rows
                                    for address in (loc.key_address,
@@ -3232,12 +3317,28 @@ def _warm_scan_signature_cache(system, workload: Workload, plan: ReusePlan,
         unique.setdefault(key, (kind, op))
     jobs = list(unique.values())
     print("[warm] collected {} Acc ops -> {} unique shapes "
-          "(throwaway pass {:.0f}s); simulating with up to 64 workers".format(
-              len(pending), len(jobs), _time.time() - started),
+          "(throwaway pass {:.0f}s); simulating with up to {} workers".format(
+              len(pending), len(jobs), _time.time() - started, workers),
           file=_sys.stderr, flush=True)
     if jobs:
         fire = {"runs": original_runs, "agg": original_agg}
-        with ThreadPoolExecutor(max_workers=min(64, len(jobs))) as pool:
-            list(pool.map(lambda item: fire[item[0]](item[1]), jobs))
+        # Pool width follows --ramulator-workers so a global core budget
+        # (ruling chenyi9 2026-08-26: at most 96 cores total) can be split
+        # across concurrently running rungs.  While THIS outer pool runs,
+        # the wrapper's per-call inner pool must be suppressed: a prefill
+        # scan carries many physical runs, and outer x inner nesting
+        # multiplied the subprocess count past the budget (observed load
+        # ~500 under the 96-core cap).  The real pass afterwards restores
+        # the inner width for its serial residual calls.
+        ramulator = getattr(accelerator, "ramulator", None)
+        saved_inner = getattr(ramulator, "workers", None)
+        if ramulator is not None:
+            ramulator.workers = 1
+        try:
+            with ThreadPoolExecutor(max_workers=min(workers, len(jobs))) as pool:
+                list(pool.map(lambda item: fire[item[0]](item[1]), jobs))
+        finally:
+            if ramulator is not None and saved_inner is not None:
+                ramulator.workers = saved_inner
     print("[warm] cache ready after {:.0f}s total".format(
         _time.time() - started), file=_sys.stderr, flush=True)

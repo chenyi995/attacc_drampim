@@ -27,10 +27,13 @@ def sha16(text: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--cycles", type=int, default=3,
+    # Defaults re-sized 2026-08-26 (chenyi9: longer contexts, more rounds).
+    parser.add_argument("--cycles", type=int, default=5,
                         help="engineer<->reviewer review cycles")
-    parser.add_argument("--chunks", type=int, default=8)
-    parser.add_argument("--shared-tokens", type=int, default=2048,
+    # 256-token natural KV-block granularity (ruling chenyi9 2026-08-26):
+    # one block per channel in the naive rotation; conflicts only from wrap.
+    parser.add_argument("--chunk-tokens", type=int, default=256)
+    parser.add_argument("--shared-tokens", type=int, default=12800,
                         help="shared SPEC document tokens")
     parser.add_argument("--sys-tokens", type=int, default=300)
     parser.add_argument("--task-tokens", type=int, default=200)
@@ -41,10 +44,11 @@ def main():
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
 
-    base, rem = divmod(args.shared_tokens, args.chunks)
+    chunks = max(1, -(-args.shared_tokens // args.chunk_tokens))
+    base, rem = divmod(args.shared_tokens, chunks)
     spec = [{"role": "doc", "sha": sha16(f"spec-chunk-{i}"),
              "len": base + (1 if i < rem else 0)}
-            for i in range(args.chunks)]
+            for i in range(chunks)]
     spec = [seg for seg in spec if seg["len"] > 0]
 
     def sys_seg(role):
@@ -53,8 +57,14 @@ def main():
 
     agents = []
     history = {}
+    depth = 2 * args.cycles + 2
 
     def node(node_id, tier, parent, parent_len, role, lout):
+        # SPEC accretes stage by stage (ruling chenyi9 2026-08-26): each
+        # stage pulls in new sections for the first time and re-reads all
+        # sections seen so far -- first use fixes the pages' append
+        # position, so later stages' reused pages scatter naturally.
+        visible = spec[: -(-len(spec) * (tier + 1) // depth)]
         segs = [sys_seg(role)]
         if parent is None:
             segs.append({"role": "user", "sha": sha16("repair-task"),
@@ -63,7 +73,7 @@ def main():
             segs.insert(0, {"role": "parent_out",
                             "sha": sha16(parent + "-out"),
                             "len": parent_len, "delta": 0})
-        segs.extend(dict(seg) for seg in spec)
+        segs.extend(dict(seg) for seg in visible)
         agents.append({"id": node_id, "tier": tier, "parent": parent,
                        "history_len": history.get(role, 0),
                        "segs": segs, "lout": lout})
@@ -82,7 +92,7 @@ def main():
 
     out = args.out or str(Path(__file__).resolve().parent /
                           "workload_pipeline_repair_c{}k{}.json".format(
-                              args.cycles, args.chunks))
+                              args.cycles, chunks))
     payload = {"meta": {
         "format": "v2-dag",
         "kind": "theoretical (mechanism illustration; NOT evidence-grade)",

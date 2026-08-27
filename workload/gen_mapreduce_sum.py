@@ -27,8 +27,9 @@ def sha16(text: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mappers", type=int, default=4)
-    parser.add_argument("--slice-tokens", type=int, default=1024,
+    # Defaults re-sized 2026-08-26 (chenyi9: longer contexts, more nodes).
+    parser.add_argument("--mappers", type=int, default=8)
+    parser.add_argument("--slice-tokens", type=int, default=24576,
                         help="each mapper's private document slice")
     parser.add_argument("--sys-tokens", type=int, default=300)
     parser.add_argument("--summary-tokens", type=int, default=200,

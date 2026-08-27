@@ -1,0 +1,229 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "kind": "theoretical (mechanism illustration; NOT evidence-grade; LOW-REUSE CONTRAST case)",
+  "scenario": "8 mappers over disjoint slices + 1 reducer",
+  "references": [
+   "Wu et al. arXiv:2109.10862",
+   "LangChain map-reduce summarization pattern"
+  ],
+  "assumed_token_lengths": {
+   "mappers": 8,
+   "slice_tokens": 24576,
+   "sys_tokens": 300,
+   "summary_tokens": 200,
+   "final_tokens": 256,
+   "out": null
+  },
+  "generator": "gen_mapreduce_sum.py"
+ },
+ "agents": [
+  {
+   "id": "map0",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "d4731d067591cf27",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "map1",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "46fd62a9524e3b94",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "map2",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "909489aca3a669c4",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "map3",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "ba6bb49ab0f38c87",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "map4",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "3e3a0dcc71373b49",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "map5",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "f26db8491ace911e",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "map6",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "d9054bb62e9436da",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "map7",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "ee2ff0f095f0427d",
+     "len": 300
+    },
+    {
+     "role": "doc",
+     "sha": "459c73698ba376cd",
+     "len": 24576
+    }
+   ],
+   "lout": 200
+  },
+  {
+   "id": "reduce",
+   "tier": 1,
+   "parent": "map0",
+   "history_len": 0,
+   "segs": [
+    {
+     "role": "parent_out",
+     "sha": "7fbbce6e51beeb8e",
+     "len": 200,
+     "delta": 0
+    },
+    {
+     "role": "sys",
+     "sha": "2fceee29662735dc",
+     "len": 300
+    },
+    {
+     "role": "user",
+     "sha": "60c3a0a5842f3472",
+     "len": 200
+    },
+    {
+     "role": "user",
+     "sha": "ed08fda63050a509",
+     "len": 200
+    },
+    {
+     "role": "user",
+     "sha": "b9a84a547ff305aa",
+     "len": 200
+    },
+    {
+     "role": "user",
+     "sha": "a7f000e63acb9801",
+     "len": 200
+    },
+    {
+     "role": "user",
+     "sha": "af9a8212853a4a5e",
+     "len": 200
+    },
+    {
+     "role": "user",
+     "sha": "a6afaeb20c1fcea5",
+     "len": 200
+    },
+    {
+     "role": "user",
+     "sha": "4694bf3b52bab8c0",
+     "len": 200
+    }
+   ],
+   "lout": 256
+  }
+ ]
+}

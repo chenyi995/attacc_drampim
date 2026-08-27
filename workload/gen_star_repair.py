@@ -49,12 +49,20 @@ def sha16(text: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--rounds", type=int, default=3)
+    # Defaults re-sized 2026-08-26 (chenyi9: longer contexts so the PIM-scan
+    # term is comparable to the per-token GPU term and the A3 irregularity
+    # penalty becomes visible end-to-end; more rounds).
+    parser.add_argument("--rounds", type=int, default=5)
     parser.add_argument("--workers", type=int, default=3)
-    parser.add_argument("--chunks", type=int, default=8,
-                        help="shared codebase split into k fingerprinted chunks")
-    parser.add_argument("--shared-tokens", type=int, default=2048,
-                        help="total shared-codebase tokens (split over --chunks)")
+    # Block convention (ruling chenyi9 2026-08-26): shared content is
+    # chunked at the NATURAL 256-token KV-block granularity -- in the naive
+    # rotation exactly one block lands per channel (a 4,096-token span
+    # covers the 16 channels once; longer spans wrap and the row conflicts
+    # emerge from the rotation itself, never from a tuned chunk count).
+    parser.add_argument("--chunk-tokens", type=int, default=256,
+                        help="tokens per shared-content block (natural KV-block size)")
+    parser.add_argument("--shared-tokens", type=int, default=12032,
+                        help="total shared-codebase tokens (split into 256-token blocks)")
     parser.add_argument("--sys-main", type=int, default=300)
     parser.add_argument("--sys-worker", type=int, default=300)
     parser.add_argument("--task-tokens", type=int, default=200)
@@ -65,8 +73,9 @@ def main():
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
 
-    base, rem = divmod(args.shared_tokens, args.chunks)
-    chunk_lens = [base + (1 if i < rem else 0) for i in range(args.chunks)]
+    chunks = max(1, -(-args.shared_tokens // args.chunk_tokens))
+    base, rem = divmod(args.shared_tokens, chunks)
+    chunk_lens = [base + (1 if i < rem else 0) for i in range(chunks)]
     code_segs = [{"role": "doc", "sha": sha16(f"codebase-chunk-{i}"),
                   "len": length}
                  for i, length in enumerate(chunk_lens) if length > 0]
@@ -77,6 +86,15 @@ def main():
     main_hist = 0
     worker_hist = [0] * args.workers
     for r in range(args.rounds):
+        # Context ACCRETES round by round (ruling chenyi9 2026-08-26): each
+        # round pulls ~1/R of the codebase files into context for the first
+        # time; every later round re-reads all files seen so far.  First use
+        # fixes the pages' append position, so a later consumer's reused
+        # pages are scattered through the append stream and the round-robin
+        # gives no guarantee which channels they alias to -- the "small
+        # reused blocks happen to pile onto one channel" case arises (or
+        # not) naturally, never by construction.
+        visible = code_segs[: -(-len(code_segs) * (r + 1) // args.rounds)]
         tier_main = 2 * r
         main_id = f"main.r{r}"
         segs = []
@@ -93,7 +111,7 @@ def main():
                 segs.append({"role": "user",
                              "sha": sha16(f"w{w}-reply-r{r-1}"),
                              "len": args.reply_tokens})
-        segs.extend(code_segs)          # planner re-consults the codebase
+        segs.extend(dict(seg) for seg in visible)  # re-consult files seen so far
         agents.append({"id": main_id, "tier": tier_main,
                        "parent": f"main.r{r-1}" if r else None,
                        "history_len": main_hist, "segs": segs,
@@ -103,7 +121,7 @@ def main():
         for w in range(args.workers):
             segs = [{"role": "parent_out", "sha": sha16(f"main-instr-r{r}"),
                      "len": args.instr_tokens, "delta": 0},
-                    dict(sys_worker)] + [dict(seg) for seg in code_segs]
+                    dict(sys_worker)] + [dict(seg) for seg in visible]
             agents.append({"id": f"w{w}.r{r}", "tier": tier_main + 1,
                            "parent": main_id,
                            "history_len": worker_hist[w], "segs": segs,
@@ -112,7 +130,7 @@ def main():
 
     out = args.out or str(Path(__file__).resolve().parent /
                           "workload_star_repair_r{}w{}k{}.json".format(
-                              args.rounds, args.workers, args.chunks))
+                              args.rounds, args.workers, chunks))
     payload = {
         "meta": {
             "format": "v2-dag",
@@ -129,7 +147,7 @@ def main():
                 "task": args.task_tokens, "instruction": args.instr_tokens,
                 "worker_reply": args.reply_tokens,
                 "shared_codebase_total": args.shared_tokens,
-                "chunks": args.chunks},
+                "chunk_tokens": args.chunk_tokens, "chunks": chunks},
             "generator": "gen_star_repair.py",
         },
         "agents": agents,
@@ -140,7 +158,7 @@ def main():
     print("wrote {} : {} agents ({} rounds x (1 main + {} workers)), "
           "input tokens={}, shared codebase {}x{} tokens".format(
               out, len(agents), args.rounds, args.workers, total_in,
-              args.chunks, chunk_lens[0]))
+              chunks, chunk_lens[0]))
 
 
 if __name__ == "__main__":

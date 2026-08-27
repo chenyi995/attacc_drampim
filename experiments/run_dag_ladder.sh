@@ -23,16 +23,24 @@ WL=$(readlink -f "$WL")
 STEM=$(basename "$WL" .json)
 # Output convention (chenyi9 2026-08-26): results live in <repo>/output/,
 # one folder per run named <timestamp>_<workload>_<model>.
-OUT=${3:-$REPO/output/$(date +%Y%m%d-%H%M%S)_${STEM}_${MODEL}}
+OUT=${3:-$REPO/output/$(date +%Y%m%d-%H%M%S)_${STEM}_${MODEL}_k${EPIC_K:-8}}
 mkdir -p "$OUT"
 
 # All six rungs launch IN PARALLEL (ruling chenyi9 2026-08-26).  Each rung
 # runs its own warm phase; the persistent signature cache on disk is shared,
 # so rungs feed each other whatever they finish first.
+# Core budget (ruling chenyi9 2026-08-26): AT MOST 96 CPU cores total ->
+# 6 rungs x 15 Ramulator workers = 90 simulations + 6 construction
+# processes = 96.  Override per-rung width with RAMU_WORKERS if the budget
+# changes.
+RAMU_WORKERS=${RAMU_WORKERS:-15}
+# Recompute-ratio knob (chenyi9 2026-08-26: run several ratios, prefer
+# lower recompute): EPIC prefix tokens per shifted segment for A2-A6.
+EPIC_K=${EPIC_K:-8}
 declare -A PID
 for A in A1 A2 A3 A4 A5 A6; do
     REUSE=epic
-    EXTRA=(--epic-prefix-recompute-tokens 8)
+    EXTRA=(--epic-prefix-recompute-tokens "$EPIC_K")
     if [ "$A" = A1 ]; then REUSE=no-reuse; EXTRA=(); fi
     echo "=== launch $A (reuse=$REUSE) $(date +%H:%M:%S) ==="
     (cd "$REPO" && python3 main.py \
@@ -41,7 +49,7 @@ for A in A1 A2 A3 A4 A5 A6; do
         --ablation "$A" --engine dag \
         --workload-report "$OUT/dag_${A}.json" \
         --workload-report-events none \
-        --ramulator-workers 64) > "$OUT/dag_${A}.log" 2>&1 &
+        --ramulator-workers "$RAMU_WORKERS") > "$OUT/dag_${A}.log" 2>&1 &
     PID[$A]=$!
 done
 FAILED=0

@@ -30,10 +30,13 @@ def sha16(text: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    # Defaults re-sized 2026-08-26 (chenyi9: longer contexts, more rounds).
     parser.add_argument("--debaters", type=int, default=3)
-    parser.add_argument("--rounds", type=int, default=3)
-    parser.add_argument("--chunks", type=int, default=8)
-    parser.add_argument("--shared-tokens", type=int, default=2048,
+    parser.add_argument("--rounds", type=int, default=5)
+    # 256-token natural KV-block granularity (ruling chenyi9 2026-08-26):
+    # one block per channel in the naive rotation; conflicts only from wrap.
+    parser.add_argument("--chunk-tokens", type=int, default=256)
+    parser.add_argument("--shared-tokens", type=int, default=12544,
                         help="shared reference-document tokens")
     parser.add_argument("--sys-tokens", type=int, default=300)
     parser.add_argument("--question-tokens", type=int, default=100)
@@ -42,10 +45,11 @@ def main():
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
 
-    base, rem = divmod(args.shared_tokens, args.chunks)
+    chunks = max(1, -(-args.shared_tokens // args.chunk_tokens))
+    base, rem = divmod(args.shared_tokens, chunks)
     doc = [{"role": "doc", "sha": sha16(f"refdoc-chunk-{i}"),
             "len": base + (1 if i < rem else 0)}
-           for i in range(args.chunks)]
+           for i in range(chunks)]
     doc = [seg for seg in doc if seg["len"] > 0]
     sys_debater = {"role": "sys", "sha": sha16("debater-system-prompt"),
                    "len": args.sys_tokens}
@@ -60,11 +64,16 @@ def main():
     agents = []
     history = [0] * args.debaters
     for r in range(args.rounds):
+        # Evidence ACCRETES round by round (ruling chenyi9 2026-08-26):
+        # each round cites ~1/R new document sections for the first time
+        # and re-reads everything cited so far -- first use fixes the
+        # pages' append position, so reused pages scatter naturally.
+        visible = doc[: -(-len(doc) * (r + 1) // args.rounds)]
         for d in range(args.debaters):
             segs = []
             if r == 0:
                 segs.append(dict(sys_debater))
-                segs.extend(dict(seg) for seg in doc)
+                segs.extend(dict(seg) for seg in visible)
                 segs.append(dict(question))
                 parent = None
             else:
@@ -75,7 +84,7 @@ def main():
                 for peer in range(args.debaters):
                     if peer != d:
                         segs.append(answer_seg(peer, r - 1))
-                segs.extend(dict(seg) for seg in doc)  # re-consult the doc
+                segs.extend(dict(seg) for seg in visible)  # re-consult cited sections
             agents.append({"id": f"d{d}.r{r}", "tier": r, "parent": parent,
                            "history_len": history[d], "segs": segs,
                            "lout": args.answer_tokens})
@@ -93,7 +102,7 @@ def main():
 
     out = args.out or str(Path(__file__).resolve().parent /
                           "workload_debate_d{}r{}k{}.json".format(
-                              args.debaters, args.rounds, args.chunks))
+                              args.debaters, args.rounds, chunks))
     payload = {"meta": {
         "format": "v2-dag",
         "kind": "theoretical (mechanism illustration; NOT evidence-grade)",
