@@ -16,7 +16,7 @@ import json
 import os
 import sys
 
-RUNGS = ("A1", "A2", "A3", "A4", "A5", "A6")
+RUNGS = ("A1", "A2", "A3", "A3a", "A4", "A5", "A6")
 ENERGY_CLASSES = ("GPU", "LINK", "PIM", "DIE", "TLB")
 
 

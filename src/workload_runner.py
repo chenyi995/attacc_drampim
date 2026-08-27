@@ -1064,6 +1064,23 @@ class NaiveKVLayout(CacheBlendTLB):
                 "entries": self.entries}
 
 
+class NaiveMaskKVLayout(NaiveKVLayout):
+    """A3a (ruling chenyi9 2026-08-26): the SAME paged software rotation as
+    A3, but the consumer CAN mask -- a corrected row's stale master copy is
+    streamed with the run and masked out of the score (GPU-side maskable),
+    so the run does not split; the corrected row still reads from its own
+    page.  Differs from A3 only in ``shadow_reads``."""
+
+    shadow_reads = True
+
+    def report(self) -> Dict[str, Any]:
+        report = super().report()
+        report["layout"] = ("naive scattered PAGED with read-mask (A3a): "
+                           "same page rotation as A3, stale rows streamed "
+                           "and masked instead of splitting the run")
+        return report
+
+
 def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                       request: str, name: str, device: str, rows: int,
                       time_s: float, energy: Iterable[float],
@@ -2675,10 +2692,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     # Using the concatenated local-hidden vector here would consume one K/V
     # address interval per *all-head* token and incorrectly overflow the
     # fixed 8-MiB K-to-V window for long contexts.
-    if kv_mapping not in ("master-diff", "naive", "private"):
+    if kv_mapping not in ("master-diff", "naive", "naive-mask", "private"):
         raise WorkloadValidationError(
-            "physical decode-on-PIM needs --kv-mapping master-diff, naive or "
-            "private, got '{}'".format(kv_mapping))
+            "physical decode-on-PIM needs --kv-mapping master-diff, naive, "
+            "naive-mask or private, got '{}'".format(kv_mapping))
     if kv_mapping == "private" and not physical_no_reuse:
         raise WorkloadValidationError(
             "--kv-mapping private is the no-reuse layout; use --reuse no-reuse")
@@ -2686,6 +2703,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         tlb = NoReuseKVLayout(system.model.dhead * dbyte)
     elif kv_mapping == "naive":
         tlb = NaiveKVLayout(system.model.dhead * dbyte)
+    elif kv_mapping == "naive-mask":
+        tlb = NaiveMaskKVLayout(system.model.dhead * dbyte)
     else:
         tlb = CacheBlendTLB(system.model.dhead * dbyte)
     events: List[SplitEvent] = []

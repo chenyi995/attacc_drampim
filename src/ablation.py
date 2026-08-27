@@ -67,7 +67,7 @@ _TOTAL_CHANNELS = 16
 
 PREFILL_ATTN_MODES = ("gpu", "pim", "dynamic")
 DECODE_ATTN_MODES = ("gpu", "pim")
-KV_MAPPINGS = ("none", "private", "naive", "master-diff")
+KV_MAPPINGS = ("none", "private", "naive", "naive-mask", "master-diff")
 MASTER_SHADOW_MODES = ("read-mask", "skip")
 
 # The A1-A6 ladder (chenyi9's ruling, 2026-08-24).  PAPER TIE (Question 1):
@@ -92,6 +92,11 @@ PRESETS: Dict[str, Dict[str, str]] = {
            "pim_batch_command": "replicate"},
     "A3": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "naive",
            "pim_batch_command": "replicate"},
+    # A3a (ruling chenyi9 2026-08-26): the same naive paged rotation but WITH
+    # the read-mask capability (stale rows streamed and masked instead of
+    # splitting the run) -- the milder naive variant; A3 keeps skip semantics.
+    "A3a": {"prefill_attn": "gpu", "decode_attn": "pim",
+            "kv_mapping": "naive-mask", "pim_batch_command": "replicate"},
     "A4": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "master-diff",
            "pim_batch_command": "replicate"},
     # A5/A6 carry the C3 microarchitecture point they are defined with
@@ -113,6 +118,7 @@ PRESET_LABELS = {
     "A1": "AttAcc, no reuse (reference)",
     "A2": "software reuse on the GPU only",
     "A3": "software reuse + AttAcc, scattered layout (no channel split)",
+    "A3a": "A3 layout, but stale rows are maskable (no run split)",
     "A4": "software reuse + AttAcc, channel-split master/diff pools",
     "A5": "A4 + all prefill attention on the PIM + MQ attention batching",
     "A6": "Fugue: A5 + dynamic per-class GPU/PIM prefill placement",
@@ -228,7 +234,7 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
     if resolved["decode_attn"] == "pim" and resolved["kv_mapping"] == "none":
         raise WorkloadValidationError(
             "--decode-attn pim needs a PIM KV mapping (private, naive, master-diff)")
-    if policy == "no-reuse" and resolved["kv_mapping"] in ("naive", "master-diff"):
+    if policy == "no-reuse" and resolved["kv_mapping"] in ("naive", "naive-mask", "master-diff"):
         raise WorkloadValidationError(
             "--kv-mapping {} describes reused/recomputed KV; --reuse no-reuse uses "
             "private".format(resolved["kv_mapping"]))
@@ -554,7 +560,7 @@ def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int
                                           stride),),
                            history_rows + input_rows + tail_rows, 1,
                            legacy_shape=True)
-    if config.kv_mapping == "naive":
+    if config.kv_mapping in ("naive", "naive-mask"):
         pools, rows, run_count = _naive_channel_pools(
             requests, plan, layer, input_rows, tail_rows, stride, history_rows)
         return ScanProfile(pools, rows, run_count)

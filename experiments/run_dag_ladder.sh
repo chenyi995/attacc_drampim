@@ -30,15 +30,15 @@ mkdir -p "$OUT"
 # runs its own warm phase; the persistent signature cache on disk is shared,
 # so rungs feed each other whatever they finish first.
 # Core budget (ruling chenyi9 2026-08-26): AT MOST 96 CPU cores total ->
-# 6 rungs x 15 Ramulator workers = 90 simulations + 6 construction
-# processes = 96.  Override per-rung width with RAMU_WORKERS if the budget
+# SEVEN rungs since A3a (2026-08-26): 6 PIM rungs x 14 Ramulator
+# workers + 7 construction processes = 91 <= 96.  Override per-rung width with RAMU_WORKERS if the budget
 # changes.
-RAMU_WORKERS=${RAMU_WORKERS:-15}
+RAMU_WORKERS=${RAMU_WORKERS:-14}
 # Recompute-ratio knob (chenyi9 2026-08-26: run several ratios, prefer
 # lower recompute): EPIC prefix tokens per shifted segment for A2-A6.
 EPIC_K=${EPIC_K:-8}
 declare -A PID
-for A in A1 A2 A3 A4 A5 A6; do
+for A in A1 A2 A3 A3a A4 A5 A6; do
     REUSE=epic
     EXTRA=(--epic-prefix-recompute-tokens "$EPIC_K")
     if [ "$A" = A1 ]; then REUSE=no-reuse; EXTRA=(); fi
@@ -53,7 +53,7 @@ for A in A1 A2 A3 A4 A5 A6; do
     PID[$A]=$!
 done
 FAILED=0
-for A in A1 A2 A3 A4 A5 A6; do
+for A in A1 A2 A3 A3a A4 A5 A6; do
     if wait "${PID[$A]}"; then
         echo "=== done $A $(date +%H:%M:%S) ==="
         grep -h REPORT_SUMMARY "$OUT/dag_${A}.log" || true
