@@ -1277,15 +1277,29 @@ def _annotate_batch_q_arrivals(scheduled: Sequence[SplitEvent],
     deliberately stronger than grouping requests by source order alone: the
     report exposes the measured admission timestamp so it can be audited.
     """
+    # Index once instead of rescanning every event per batch: the old
+    # listcomps were O(batches x events) -- an accidental quadratic that
+    # dominated construction at suite scale (py-spy evidence, chenyi9
+    # 2026-08-27).  Buckets keep (scan_index, event) so the per-batch lists
+    # reproduce the original scheduled-order output exactly.
+    q_by_layer_request: Dict[Tuple[int, str], List[Tuple[int, Any]]] = {}
+    sweeps_by_batch_id: Dict[str, List[Any]] = {}
+    for scan_index, event in enumerate(scheduled):
+        if event.name in ("decode_q_gpu_to_pim",
+                          "decode_gpu_rotate_q_extra_to_pim"):
+            q_by_layer_request.setdefault(
+                (event.transformer_layer, event.request_id), []).append(
+                    (scan_index, event))
+        elif event.name == "decode_batch_tlb_lookup_and_bank_plan":
+            sweeps_by_batch_id.setdefault(event.request_id, []).append(event)
     for batch in batches:
         members = set(batch["members"])
         layer = batch["transformer_layer"]
-        q_events = [event for event in scheduled
-                    if event.name in ("decode_q_gpu_to_pim",
-                                      "decode_gpu_rotate_q_extra_to_pim") and
-                    event.transformer_layer == layer and
-                    event.request_id in members]
-        q_events = [event for event in q_events
+        indexed_q = sorted(
+            (pair for member in members
+             for pair in q_by_layer_request.get((layer, member), ())),
+            key=lambda pair: pair[0])
+        q_events = [event for _, event in indexed_q
                     if all(position == batch["query_positions"][event.request_id]
                            for position in event.query_positions)]
         raw_q = [event for event in q_events if event.name == "decode_q_gpu_to_pim"]
@@ -1302,9 +1316,7 @@ def _annotate_batch_q_arrivals(scheduled: Sequence[SplitEvent],
         # The admitted batch may be served by several consecutive PIM sweeps
         # (the GEMV-buffer capacity splits it).  Each sweep needs only its own
         # members' Q arrivals; audit every sweep against exactly that set.
-        sweep_events = [event for event in scheduled
-                        if event.request_id == batch["id"] and
-                        event.name == "decode_batch_tlb_lookup_and_bank_plan"]
+        sweep_events = sweeps_by_batch_id.get(batch["id"], [])
         if sweep_events:
             sweeps = []
             for event in sweep_events:
