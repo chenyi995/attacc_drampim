@@ -6,11 +6,13 @@
 # with --no-warm and WITHOUT A1 (A1 is no-reuse, its invocation is the same
 # command at every k, so the chain copies its own k=2 dag_A1.json --
 # bit-identical by determinism; ruling chenyi9 2026-08-27).  N_PAR chains
-# run in flight, so at most N_PAR batches execute at any moment -- the
-# same core/RAM envelope as the old 25-job pool: N_PAR x 6 PIM rungs x
+# run in flight, so at most N_PAR batches execute at any moment (K_PAR>=2
+# doubles a chain's k-sweep concurrency -- see run_chain) -- the same
+# core/RAM envelope as the old 25-job pool: N_PAR x 6 PIM rungs x
 # RAMU_WORKERS + N_PAR x 7 builders.
 #   usage: run_dag_suite.sh [MODEL]
-#   env:   N_PAR (default 3), RAMU_WORKERS (default 4), NUM_HBM (optional)
+#   env:   N_PAR (default 3), RAMU_WORKERS (default 4), NUM_HBM (optional),
+#          SUITE_WORKLOADS (subset), K_PAR (parallel k-sweep, default 1)
 set -uo pipefail
 MODEL=${1:-LLAMA-7B}
 N_PAR=${N_PAR:-3}
@@ -50,11 +52,26 @@ run_chain() {
     fi
     local K
     # Ratio axis k in {2, 8, 32} (chenyi9 2026-08-27: 降为三点).
-    for K in 8 32; do
-        run_batch "$K" "$W" \
-            "$REPO/output/$(date +%Y%m%d-%H%M%S)_${STEM}_${MODEL}_k${K}" \
-            no-warm "$k2out/dag_A1.json" || true
-    done
+    # K_PAR=2 (W4) runs the two k-sweep batches concurrently -- use ONLY
+    # when the operator has RAM headroom for two of this workload's
+    # construction footprints (560-GB-cap note: big workloads do not fit).
+    if [ "${K_PAR:-1}" -ge 2 ]; then
+        local KPIDS=()
+        for K in 8 32; do
+            run_batch "$K" "$W" \
+                "$REPO/output/$(date +%Y%m%d-%H%M%S)_${STEM}_${MODEL}_k${K}" \
+                no-warm "$k2out/dag_A1.json" &
+            KPIDS+=($!)
+        done
+        local KP
+        for KP in "${KPIDS[@]}"; do wait "$KP" || true; done
+    else
+        for K in 8 32; do
+            run_batch "$K" "$W" \
+                "$REPO/output/$(date +%Y%m%d-%H%M%S)_${STEM}_${MODEL}_k${K}" \
+                no-warm "$k2out/dag_A1.json" || true
+        done
+    fi
 }
 
 active=0
