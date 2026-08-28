@@ -160,11 +160,11 @@ class Ramulator:
         # any earlier run simulated, and only new signatures reach a
         # Ramulator subprocess.  Keys are already primitive (see
         # _run_signature); duplicate lines are harmless (same value).
-        # v2 file since the head->HBM remap (2026-08-27): entries simulated
-        # under the old head-per-channel semantics must not be reused; the
-        # old signature_cache.jsonl stays on disk as an archive.
+        # Back on the original head-per-channel mapping (reverted chenyi9
+        # 2026-08-27 night): the pre-remap cache file is valid again; the
+        # v2 stripe-era file stays on disk as an archive of that detour.
         self._signature_cache_path = (os.path.join(
-            ramulator_dir, "signature_cache_v2_headhbm.jsonl") if ramulator_dir else "")
+            ramulator_dir, "signature_cache.jsonl") if ramulator_dir else "")
         if (self.signature_cache_enabled and self._signature_cache_path and
                 os.path.exists(self._signature_cache_path)):
             with open(self._signature_cache_path) as handle:
@@ -230,7 +230,6 @@ class Ramulator:
                        shared_kv, shared_queries, channel_base=None,
                        mq_command=False, nccdab_override=None):
         return (
-            "hbmstripe1",  # mapping-semantics version (head->HBM, 2026-08-27)
             pim_type.name, run_length, num_ops_per_hbm, dbyte,
             bool(power_constraint), self.dhead, self.num_hbm, channel_count,
             bool(shared_kv), shared_queries, channel_base,
@@ -351,9 +350,16 @@ class Ramulator:
             "trace_gen/gen_trace_attacc_{}.py".format(pim_type_name))
         trace_args = "--dhead {} --nhead {} --seqlen {} --dbyte {} --output {}".format(
             self.dhead, num_ops_per_hbm, l, dbyte, trace_file)
-        # head->HBM remap (ruling chenyi9 2026-08-27): channels carry the
-        # head's own token stripes; nhead = heads resident on this HBM.
-        trace_args += " --head-hbm-stripe"
+        # Placement semantics (chenyi9 final ruling 2026-08-27 night):
+        # * legacy/no-reuse runs (no pool base): AttAcc's ORIGINAL mapping,
+        #   one head per CHANNEL -- the faithful baseline (A1);
+        # * chunk-mapped pool runs (channel_base set): OUR layout -- the
+        #   software map places 256-token chunks across the pool's channels
+        #   (co-used chunks on different channels), so the per-channel
+        #   command stream covers only that channel's share; the stripe
+        #   generator path prices exactly that.
+        if channel_base is not None:
+            trace_args += " --head-hbm-stripe"
         if key_addr is not None:
             trace_args += " --key-addr 0x{:x}".format(key_addr)
         if value_addr is not None:
@@ -435,15 +441,9 @@ class Ramulator:
             dbyte = layer.dbyte
             num_ops_per_attacc = layer.numOp
             num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
-            # Sequence split across HBMs (ruling chenyi9 2026-08-27): with
-            # fewer resident (KV) heads than HBM stacks each head owns
-            # hbm_per_head stacks exclusively and its K/V divides into that
-            # many sequence segments scanned concurrently, so the per-HBM
-            # trace covers ceil(L / hbm_per_head) tokens.  5 stacks with
-            # >=4 heads keeps the factor at 1 (legacy behaviour and
-            # signature-cache keys unchanged).
-            hbm_per_head = max(1, self.num_hbm // max(1, num_ops_per_attacc)) \
-                if num_ops_per_attacc < self.num_hbm else 1
+            # Sequence split REVERTED with the head->channel restoration
+            # (chenyi9 2026-08-27 night): it presupposed token striping.
+            hbm_per_head = 1
             num_ops_group = 1
             if self.fast_mode:
                 minimum_heads = 64
@@ -504,12 +504,26 @@ class Ramulator:
                     channel_base = None
                 else:
                     key_addr, value_addr, run_length, channel_base, channel_count = run
-                run_length = math.ceil(run_length / hbm_per_head)
+                if channel_base is None:
+                    # Ruling (chenyi9 2026-08-28): legacy contiguous runs
+                    # quantize UP to the natural 256-token chunk so the
+                    # per-step unique-length explosion of no-reuse decode
+                    # (one signature per context length) collapses to
+                    # ~L/256 buckets.  Slightly overprices the baseline
+                    # (<=255 extra tokens per scan) -- conservative
+                    # direction; chunk-mapped pool runs are untouched.
+                    run_length = ((run_length + 255) // 256) * 256
                 signature = self._run_signature(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     power_constraint, key_addr, value_addr, channel_count,
                     shared_kv, shared_queries, channel_base,
                     mq_command, nccdab_override) + (phase,)
+                if channel_base is not None:
+                    # Chunk-striped pool semantics get their own key space
+                    # so pre-remap phantom-replication pool entries in the
+                    # v1 cache can never serve them; legacy runs keep the
+                    # v1-compatible keys.
+                    signature = signature + ("chunkstripe1",)
                 if use_signature_cache:
                     with self._signature_cache_lock:
                         cached = self._signature_cache.get(signature)
@@ -630,16 +644,13 @@ class Ramulator:
 
         num_ops_per_attacc = layer.numOp
         num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
-        # Sequence split (2026-08-27): mirror of the reuse-path rule above.
-        hbm_per_head = max(1, self.num_hbm // max(1, num_ops_per_attacc)) \
-            if num_ops_per_attacc < self.num_hbm else 1
         num_ops_group = 1
         if self.fast_mode:
             minimum_heads = 64
             num_ops_group = math.ceil(num_ops_per_hbm / minimum_heads)
             num_ops_per_hbm = minimum_heads
 
-        l = math.ceil(layer.n / hbm_per_head)
+        l = layer.n
         dhead = layer.k
         dbyte = layer.dbyte
         row = self.df[(self.df['L'] == l) & (self.df['nhead'] == num_ops_per_hbm) & \

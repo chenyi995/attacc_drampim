@@ -13,7 +13,7 @@
 
 结构:一、已解决(R);二、未解决(U);三、流程性裁决记录;附录 A/B。
 
-## 一、已解决(19 条)
+## 一、已解决(21 条)
 
 | # | 问题 | 修复 | 位置 / commit |
 |---|---|---|---|
@@ -36,6 +36,8 @@
 | R17 | **重算 token 取块头与"随机抽取"裁决不符**(EPIC 前缀是该策略本义,不许动) | **新增独立策略 `--reuse recompute`**:每位移块内**均匀随机抽 k 个 token**(种子可复现;归 EPIC_FAMILY 复用逐段记账/diff/位图机制);随机位置在物理上只影响 A3(断口散布);ladder A2–A6 改用之,比例轴 k∈{2,4,8,16,32} | 工作树(2026-08-27 提交) |
 | R18 | **head↔channel 映射不自洽**(trace 层沿用 AttAcc 上游"一个 head 一个 channel":7B/TP8 下 `n_head_per_hbm=1` → 单 channel 扫全 L、15/16 channel 闲置;多 channel 池 run 把同一列样式按"幻影 head"逐 channel 复制,能耗虚增 ~15×;与上层 TLB 的 channel 条带布局两层各说各话。chenyi9 发现) | **head→HBM 条带重映射**:一个 head 住一个 HBM,run 的各 channel 载该 head 自己的 token 条带(`stripe_width = channels // heads_per_hbm`,`L_per_channel = ceil(L/stripe_width)`,`num_itr=1`,head 并行为 trace 外 HBM 并发);trace 加 `--head-hbm-stripe`(wrapper 恒传);签名版本 `hbmstripe1` + 缓存轮换 `signature_cache_v2_headhbm.jsonl`;落 KV 事件改 per-HBM 带宽份额、D_i 位图按广播计;trace 对照 64 MAC_AB@ch0 → 4×16 守恒;**此前全部 PIM 侧数字作废,套件重跑**。归因三层:上游 `c1540de`(jwchoi)放置假设 + `47ae0c3`(xw338)带进池化路径 + 本线(chenyi9)退化配置出数;全文见 `README_head_hbm_remap.md` | 工作树(未 commit) |
 | R19 | **MQ 配平缺能量项**(C 模型 interval = max(地板, PE 项),把 PC 的 6-tCK 地板当纯协议常数;实为**每窗口能量预算**(E₆=列读 140.8+一次 MAC 5.23 pJ,即 n=1 命令顶红线的口径),n=8 命令多花 8×E_op 必须拉长间隔;另 preset 1.733 GHz 比配平点差 0.04% 被 ceil 罚成 7 tCK;RTL 侧(kvpim-rtl/docs/Fugue-asplos2027,ASAP7 14 频点综合)证据判 RTL 对) | `mq_interval_cycles` 增 **PC 能量钳位** `ceil(6·(E_col+n·E_op·ê)/E₆)`(ê 保守取 1;n=8 → **8 tCK** 对任意频率鲁棒;n=1 → 6 保持 AttAcc;NPC 保持无约束);A5/A6 preset **1.3004 GHz(=1/tCK,每拍一次 MAC)**;**--powerlimit 默认开**(--no-powerlimit 显式关);活文档五处同步;**此前全部 NPC/7-tCK 结果作废重跑** | 工作树(未 commit) |
+| R20 | **no-reuse 连续 prefill 扫描无驻留容量上限**(`_append_physical_no_reuse_prefill_layer` 把 rows×gqa 个查询塞进一个 op——LLAMA3-8B 下达 9,372 个"驻留"查询,违反 512 B/8 驻留硬上限(R7/R16 口径);replicate 展开使单条 trace 达 3,014 万行、单仿真 20+ min,A1 暖仿真不可行) | 按 GEMV 容量拆 sweep:`cap_rows = capacity//gqa_group`,ceil(rows/cap) 趟同形全域扫,**单事件按 趟数×每趟实测 计价**(1–2 个签名、秒级仿真);warm 台账新增 `agg_cb_sweeps` 类(记 (sweep_op,count) 分解,重定价同式);A6 回归逐值相同,A1 wl_tiny 242 s 收尾 | 工作树(cppcore 分支) |
+| R21 | **no-reuse 逐步唯一长度爆炸**(decode 每步上下文长度不同 → 144,000 个唯一签名零去重,长 trace 单 channel 串行仿真周级不可行) | **裁决(chenyi9 2026-08-28):legacy 连续 run 长度向上量化到 256 的自然 chunk 倍数**——唯一形状 144k → ~L/256 桶;对 baseline 每扫描 ≤255 token 轻微高估(保守方向,深上下文 <1%);chunk 映射的池 run 不受影响(本就 256 粒度) | 工作树(cppcore 分支) |
 
 另有设计裁决(非 bug,已落地):老 A6"split 混合 prefill"废除、物理 DAG 与 A 阶梯同菜单(`654aeee`/`0755694`);TSV 窄下行经实测关闭(转向代价 ≤0.84%,experiment C-abl-2)。
 

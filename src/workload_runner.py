@@ -1006,10 +1006,11 @@ def _gqa_kv_heads_local(system, q_heads_local: int) -> int:
 
 
 def _hbm_seq_split(system) -> int:
-    """HBM stacks owned by ONE resident KV head (head-exclusive stacks;
-    ruling chenyi9 2026-08-27): with fewer KV heads than PIM stacks a
-    head's K/V sequence-splits across num_hbm // kv_heads stacks.  1
-    whenever KV heads >= stacks (the legacy shape)."""
+    """REVERTED to constant 1 (chenyi9 2026-08-27 night): sequence split
+    presupposed token striping; AttAcc's head-per-channel is restored.
+    The original computation is kept below for the record but the
+    function short-circuits."""
+    return 1
     accelerator = system.devices.get("Acc") if isinstance(
         getattr(system, "devices", None), dict) else None
     if accelerator is None:
@@ -1232,12 +1233,13 @@ def _append_channel_kv_stores(system, events: List[SplitEvent], *, layer: int,
         # on ONE HBM's channels; the concurrent copies on the other stacks
         # are the head-parallel dimension, so the wall time uses the
         # PER-HBM bandwidth share, not the aggregate.
+        # Final placement ruling (chenyi9 2026-08-27 night): a pool holds
+        # ONE head's chunks on ONE HBM's channels (softmax accumulates
+        # inside that HBM's die; heads parallelize across HBMs outside the
+        # event).  The store therefore gets the PER-HBM bandwidth share.
         accelerator = system.devices["Acc"]
-        num_hbm = max(1, getattr(accelerator, "num_hbm", 1))
-        # A sequence-split head owns several stacks and its store lands on
-        # all of them concurrently (ruling chenyi9 2026-08-27).
-        bandwidth = (accelerator.peak_memory_bandwidth / num_hbm *
-                     min(_hbm_seq_split(system), num_hbm) *
+        bandwidth = (accelerator.peak_memory_bandwidth /
+                     max(1, getattr(accelerator, "num_hbm", 1)) *
                      channel_count / 16)
         result.append(_cacheblend_event(
             events, layer=layer, tier=tier, request=request, name=name,
@@ -1974,7 +1976,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                                                 tlb.bytes_per_vector))
                 # Every physical run yields one local softmax tuple; the DIE
                 # merges those with the GPU tuple.
-                merge_width = len(scan) * _hbm_seq_split(system) + 1
+                merge_width = len(scan) + 1
                 die_merge = _cacheblend_event(
                     events, layer=layer_index, tier=tier, request=request.request_id,
                     name="decode_die_lse_merge", device="DIE", rows=1,
@@ -2336,8 +2338,7 @@ def _append_cacheblend_decode_batched(
                     if contribution:
                         # One local softmax tuple per physical run plus the
                         # GPU tuple.
-                        merge_width = (len(contribution) *
-                                       _hbm_seq_split(system) + 1)
+                        merge_width = len(contribution) + 1
                         merge = _cacheblend_event(
                             events, layer=layer_index, tier=tier, request=request_id,
                             name="decode_die_lse_merge", device="DIE", rows=1,
@@ -2443,21 +2444,54 @@ def _append_physical_no_reuse_prefill_layer(
         name="contiguous_address_plan", device="ADDR", rows=rows + len(history),
         time_s=0.0, energy=(), deps=(q_link,),
         positions=positions, addresses=scan_addresses)
-    op = deepcopy(score)
-    op.m, op.n, op.k, op.numOp = (rows, rows + len(history),
-                                  system.model.dhead,
-                                  _gqa_kv_heads_local(system, heads))
-    op.pim_kv_runs = tlb.scan_runs(locations)
-    op.pim_shared_kv = True
-    op.pim_shared_queries = rows * _gqa_group(system)
-    time_s, energy = system.devices["Acc"].get_time_and_energy(op)
+    # GEMV residency cap (bug fix, chenyi9 2026-08-28): the old code put
+    # ALL rows x gqa query slices into ONE op (thousands of "resident"
+    # queries -- physically impossible against the 512-B buffer, and it
+    # exploded the replicate trace to tens of millions of commands).  The
+    # scan is served by ceil(rows / cap) consecutive full-range sweeps of
+    # at most cap resident rows; sweeps share one shape, so ONE priced op
+    # (plus one partial) covers them and the event carries the summed
+    # time/energy.  The warm ledger records the sweep decomposition.
+    gqa_group = _gqa_group(system)
+    cap_rows = max(1, mq_query_capacity(MQ_DEFAULT_GEMV_BUFFER_BYTES) // gqa_group)
+    full_sweeps, partial_rows = divmod(rows, cap_rows)
+
+    def _sweep_op(sweep_rows: int):
+        op = deepcopy(score)
+        op.m, op.n, op.k, op.numOp = (sweep_rows, rows + len(history),
+                                      system.model.dhead,
+                                      _gqa_kv_heads_local(system, heads))
+        op.pim_kv_runs = tlb.scan_runs(locations)
+        op.pim_shared_kv = True
+        op.pim_shared_queries = sweep_rows * gqa_group
+        return op
+
+    total_time = 0.0
+    total_energy = 0.0
+    ledger_parts = []
+    op_full = None
+    if full_sweeps:
+        op_full = _sweep_op(cap_rows)
+        time_s, energy = system.devices["Acc"].get_time_and_energy(op_full)
+        total_time += full_sweeps * time_s
+        total_energy += full_sweeps * sum(energy)
+        ledger_parts.append((op_full, full_sweeps))
+    if partial_rows:
+        op_partial = _sweep_op(partial_rows)
+        time_s, energy = system.devices["Acc"].get_time_and_energy(op_partial)
+        total_time += time_s
+        total_energy += sum(energy)
+        ledger_parts.append((op_partial, 1))
     scan = _cacheblend_event(
         events, layer=layer, tier=tier, request=request.request_id,
         name="pim_kv_scan_score_softmax_pv", device="PIM", rows=rows + len(history),
-        time_s=time_s, energy=energy, deps=(address_plan,), positions=positions,
-        addresses=scan_addresses)
+        time_s=total_time, energy=(total_energy,), deps=(address_plan,),
+        positions=positions, addresses=scan_addresses)
     if _WARM_LEDGER is not None:
-        _WARM_LEDGER.append(("agg_cb", deepcopy(op), (len(events) - 1,)))
+        _WARM_LEDGER.append(("agg_cb_sweeps",
+                             tuple((deepcopy(op), count)
+                                   for op, count in ledger_parts),
+                             (len(events) - 1,)))
     ctx_transfer = _link_layer(x2g, "ctx_pim_to_gpu", q_bytes)
     time_s, energy = system.devices["GPU"].get_time_and_energy(ctx_transfer)
     ctx_link = _cacheblend_event(
@@ -3588,7 +3622,13 @@ def _warm_build_price_finalize(system, workload: Workload, plan: ReusePlan,
     # Exact-repeat dedupe, conservative key = everything that can influence
     # the simulation (unchanged from the old flow).
     unique: Dict[Tuple, Tuple[str, Layer]] = {}
+    flat_ops = []
     for kind, op, _ in ledger:
+        if kind == "agg_cb_sweeps":
+            flat_ops.extend(("agg_cb", sweep_op) for sweep_op, _ in op)
+        else:
+            flat_ops.append((kind, op))
+    for kind, op in flat_ops:
         key = (kind, getattr(op, "name", ""), op.m, op.n, op.k,
                getattr(op, "numOp", 1), getattr(op, "dbyte", 2),
                tuple(getattr(op, "pim_kv_runs", ()) or ()),
@@ -3644,6 +3684,21 @@ def _warm_build_price_finalize(system, workload: Workload, plan: ReusePlan,
                                          energy_nj=sum(energy) / 1000.0)
             if _EC is not None:
                 _EC.set_duration(indexes[0], time_s)
+            repriced += 1
+            continue
+        elif kind == "agg_cb_sweeps":
+            # Capacity-swept contiguous scan: op is a tuple of
+            # (sweep_op, count); total = sum(count * priced sweep).
+            total_time = 0.0
+            total_energy_pj = 0.0
+            for sweep_op, count in op:
+                time_s, energy = original_agg(sweep_op)
+                total_time += count * time_s
+                total_energy_pj += count * sum(energy)
+            events[indexes[0]] = replace(events[indexes[0]], time_s=total_time,
+                                         energy_nj=total_energy_pj / 1000.0)
+            if _EC is not None:
+                _EC.set_duration(indexes[0], total_time)
             repriced += 1
             continue
         else:
