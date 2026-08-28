@@ -24,7 +24,7 @@ GEMV buffer 内全部驻留查询)——attention batching 与 prefill 上 PIM
 | 5 | prefill 投影/FF 按 GPU 定价;注意力**跳过 GPU** | `_prefill_batch` 顶部循环(attention 且 prefill_attn != "gpu" 时 continue) |
 | 6 | 层分类:全重算层(cacheblend 族)走 GPU 重建 + PIM 扫历史;携带复用的层走 PIM 整段 | `_prefill_batch` 的 `classes` 组装与 `carries_reuse` 分支(scan_rows = lin + history) |
 | 7 | PIM 扫描定价:每波 ≤ 容量条查询共享一次扫描,`容量 = gemv_buffer_bytes/64`,超出拆波 (passes) | `src/ablation.py::_pim_scan`(`mq_query_capacity` 封顶、`_apply_pim_batch` 语义) |
-| 8 | MQ 时序:列命令间隔 = max(preset 地板 6 PC/4 NPC, ceil(n/(f·tCK)));计算永不拉长 DRAM 节拍,PE 功率单独记账 | `src/ramulator_wrapper.py::mq_interval_cycles` / `mq_pe_power_w`(YAML nCCDAB 覆盖注入) |
+| 8 | MQ 时序(**R19,2026-08-27**):列命令间隔 = max(地板 6 PC/4 NPC, ⌈n/(f·tCK)⌉, **PC 能量钳位** ⌈6·(E_col+n·E_op·ê)/E₆⌉)——PC 的 6-tCK 地板本质是每窗口能量预算(E₆=列读+一次 MAC),n=8 → **8 tCK** 与频率无关;NPC 无钳位;PE 功率另有 116 W 诊断账 | `src/ramulator_wrapper.py::mq_interval_cycles` / `mq_pe_power_w`(YAML nCCDAB 覆盖注入) |
 | 9 | Q/ctx 链路费与 PIM softmax | `_prefill_batch` 的 link_time 与 sfm 定价 |
 | 10 | decode 同 A4(扫描也吃 mq 命令) | `_decode_block_time` → `_pim_scan` |
 

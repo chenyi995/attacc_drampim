@@ -13,7 +13,7 @@
 | decode_attn | pim |
 | kv_mapping | **master-diff** |
 | pim_batch_command | replicate |
-| master_pool_channels | 默认 8(`--kv-pool-split`,master 占 ch0–7、diff 占 ch8–15) |
+| master_pool_channels | **默认 15**(R5,2026-08-24 裁决:master 占 ch0–14、diff 占 ch15;`--kv-pool-split` 可调;本行旧稿"默认 8/8"为 R5 前口径,已改) |
 | master_shadow | 默认 read-mask(`--master-shadow`,另一选项 skip 会碎裂 run) |
 
 ## 2. 模型的每一步在哪里做(解析路径)
@@ -55,3 +55,14 @@ python3 main.py ... --reuse epic --epic-prefix-recompute-tokens 8 \
 A4 对 A3:隔离 PIM 感知布局的价值;A4 对 A5:prefill 注意力搬进 PIM
 (附带 MQ batching)——A4 是"prefill 在 GPU"一侧的最强形态,也是 A6
 dynamic 规则里 xPU 路的原型。
+
+
+---
+
+## 状态更新(2026-08-27)
+
+- **R18 条带映射**:master 池 15 channel 承载**单 KV 头自己的 token
+  条带**(废除"每 channel 一个 head"的上游语义);`--num-hbm` 大于
+  KV 头数时头内序列切分(每头独占多堆叠并发扫);
+- 真实负载默认 `--engine dag` 出数;PC 默认开(R19),replicate 列
+  节拍为 PC preset 的 nCCDAB=6。

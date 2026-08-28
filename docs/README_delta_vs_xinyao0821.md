@@ -12,8 +12,9 @@
 
 - `src/ramulator_wrapper.py`:MQ 常数(带出处注释)、
   `mq_query_capacity = S/64`(**只约束 Q**;P 流式)、
-  `mq_interval_cycles = max(preset 地板 6 PC/4 NPC, ceil(n/(f·tCK)))`
-  ——计算永不拉长 DRAM 节拍(FIMDRAM 先例);`mq_pe_power_w` PE 功率
+  `mq_interval_cycles = max(地板 6 PC/4 NPC, ⌈n/(f·tCK)⌉, PC 能量钳位
+  ⌈6·(E_col+n·E_op·ê)/E₆⌉)`(**R19,2026-08-27**:PC 地板本质是每窗口
+  能量预算,n=8 → 8 tCK 与频率无关;NPC 无钳位);`mq_pe_power_w` PE 功率
   单独记账(116 W 线,近似口径 TODO 见
   `README_manual_audit_findings.md`);缓存键/YAML nCCDAB 覆盖/trace
   标志管道。
@@ -128,7 +129,8 @@
   `pim_prefill_share`;报告新增 `energy_breakdown_nj`(设备类 + 事件名
   两粒度);
 - **Ramulator"先建缓存再跑"**(R13):签名缓存落盘
-  `ramulator2/signature_cache.jsonl`(载入/追加),`--ramulator-workers
+  `ramulator2/signature_cache.jsonl`(载入/追加;R18 后轮换为
+  `signature_cache_v2_headhbm.jsonl`,见文末),`--ramulator-workers
   64`,解析预热池 32→64;实测六档首建 ~32 min → 暖缓存复跑 2 min;
 - **一键阶梯**:`experiments/run_dag_ladder.sh <workload.json> [模型]`
   (A1 no-reuse、A2–A6 EPIC k=8)→ 六份报告 +
@@ -157,6 +159,26 @@
 - 五个文献引用的理论负载(星型/流水线/辩论/map-reduce 薄共享对照/
   多来源单块 RAG)+ 单段 8-MiB = bank 级硬限制(上下文扩展走加 HBM
   数量,拆段作废);
+- **head→HBM 条带重映射**(R18,2026-08-27):废除上游"一 head 一
+  channel"放置——一个 KV 头独占 HBM,run 的各 channel 载该头自己的
+  token 条带;签名版本 `hbmstripe1`、缓存轮换
+  `signature_cache_v2_headhbm.jsonl`;全文 `README_head_hbm_remap.md`;
+- **头内序列切分 + `--num-hbm`**(2026-08-27):KV 头数 < PIM 堆叠数时
+  每头独占 `hbm_per_head = num_hbm // kv_heads` 个堆叠、K/V 分段并发扫
+  (wrapper 双入口 run 长度 ÷ 因子;5 堆叠 ≥4 头时因子 1,行为不变);
+  `system.py` 顺带修复 NUM_HBM 从未传入 wrapper 的管道断点;
+- **GQA 支持**(2026-08-27):启用休眠的 `gqa_size` 字段,新模型档
+  `LLAMA3-8B`(32 Q / 8 KV,组 4);PIM 扫描 op 记本地 KV 头数,组内
+  Q 头为共享 KV 上的驻留查询(容量按组折算),A2 远端流量按 KV 头折减;
+- **R19 能量钳位 + PC 默认开**(2026-08-27):见 §1 修订;
+  `--powerlimit` 默认 True(`--no-powerlimit` 显式关);
+- **逐 tier 三指标 CSV**(2026-08-27):`collect_dag_ladder.py` 从批
+  记录折出 `dag_ladder_tiers.csv`(prefill_s/decode_s/tier_total_s/
+  cum_end_s,逐档逐 tier);
+- **套件按 workload 成链 + A1 去重**(2026-08-27):`run_dag_suite.sh`
+  每负载一条链(k=2 带暖全档 → 其余 k 免暖去 A1,链内复制 k=2 的
+  `dag_A1.json`,逐位等价);
 - 相对 xinyao 基线的性质:以上全部为**新增语义/新档/新策略**,
-  0aced82/47ae0c3 引入的原有路径(split 已废除者除外)行为不变,
-  `--engine` 默认 analytic 保历史命令逐字节兼容。
+  0aced82/47ae0c3 引入的原有路径(split 已废除者除外)行为不变;
+  唯 R18 重映射按裁决**恒开**(`--head-hbm-stripe` 由 wrapper 恒传),
+  旧 head-per-channel 语义仅存于 trace 生成器不带该旗标的直接调用。

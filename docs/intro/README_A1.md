@@ -67,3 +67,15 @@ python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
 A1 → A2:把 decode 也搬回 GPU、KV 不进 PIM,但打开软件复用——两者
 差异隔离出"PIM decode 本身"与"复用本身"的贡献;A1 → A3:保持放置,打开
 复用与 naive 布局。
+
+
+---
+
+## 状态更新(2026-08-27)
+
+- **物理 DAG 引擎为默认出数路径**(R11 接通 private 布局;
+  `--engine dag`);解析表仅预估/校验;
+- **R18 条带映射**:private 连续 extent 的扫描按 head→HBM 条带语义
+  执行(一个 KV 头独占 HBM、16 channel 载其 token 条带);
+  `--num-hbm` > 头数时头内序列切分同样适用;
+- 功耗约束 (PC) 默认开(R19);decode 服务批宽 8(R16)。

@@ -43,9 +43,12 @@
 ## 2. 一键跑法
 
 ```bash
-# 全套件(推荐,2026-08-27):25 批作业池 3 路并行,k=2 留预热优先跑,
-# 其余比例 --no-warm;核预算 3x6x4+21=93<=96
-bash experiments/run_dag_suite.sh LLAMA-7B
+# 全套件(推荐,2026-08-27 链式版):每 workload 一条链——k=2 批带暖跑
+# 全七档,随后 k∈{4,8,16,32} 免暖并跳过 A1(A1 与 k 无关,链内复制
+# 自己 k=2 的 dag_A1.json,逐位等价);N_PAR 条链在飞(同一时刻至多
+# N_PAR 个批)。当前生产口径(560 GB RAM / 96 核):
+NUM_HBM=16 N_PAR=2 RAMU_WORKERS=6 bash experiments/run_dag_suite.sh LLAMA3-8B
+NUM_HBM=16 N_PAR=2 RAMU_WORKERS=6 bash experiments/run_dag_suite.sh LLAMA-7B
 ```
 
 
@@ -62,14 +65,20 @@ done; done
 - 输出:`output/<时间戳>_<负载>_<模型>_k<EPIC_K>/`——七份 `dag_Ax.json`
   + 日志 + `dag_ladder.csv`(每档:makespan、链路字节、**每部件能耗**
   GPU/LINK/PIM/DIE/TLB、**prefill 归边普查** pim/gpu/mixed/none 与行加权
-  share);
+  share)+ **`dag_ladder_tiers.csv`**(2026-08-27:逐档逐 tier 三指标
+  `prefill_s`/`decode_s`/`tier_total_s` 与台阶曲线 `cum_end_s`——
+  任一指标把某档与其他档拉开即可读,"一个 tier 的三者其一");
 - 画图:单负载三柱 `python3 experiments/plot_motiv_bars.py <dag_ladder.csv>`;
   **分组主图** `python3 experiments/plot_motiv_groups.py <输出stem>
   star=<csv> pipeline=<csv> debate=<csv> mapreduce=<csv> multisource=<csv>`;
 - 旋钮:`EPIC_K`(重算比例,默认 8)、`RAMU_WORKERS`(每档 Ramulator
-  worker 数;单批独跑默认 14 = 6 个 PIM 档×14+7 构图 ≤96,套件并行时
-  由 `run_dag_suite.sh` 压到 4)、`NO_WARM=1`(跳过空跑收集遍,适用
-  签名已落盘的变体批)、`N_PAR`(套件在飞批数,默认 3)。
+  worker 数;单批独跑默认 14,套件按核预算配)、`NO_WARM=1`(跳过空跑
+  收集遍)、`N_PAR`(在飞链数,默认 3;生产口径 2)、
+  **`NUM_HBM`**(PIM 侧堆叠数 → `--num-hbm`,默认 5;16 时头内序列
+  切分)、`SKIP_A1=1 A1_JSON=<path>`(ladder 级 A1 去重,套件链自动
+  管理,手跑单批时可显式给);模型档:`LLAMA-7B`(MHA 32 头)、
+  `LLAMA3-8B`(GQA 32Q/8KV,2026-08-27 增);功耗约束默认 PC
+  (`--no-powerlimit` 走 NPC)。
 
 ## 3. 引擎与缓存行为(为什么第一遍慢、之后快)
 
@@ -78,7 +87,8 @@ done; done
   快速预估与交叉校验;
 - 每档运行分三段:**空跑构图**(单核 Python,收集全部扫描算子)→
   **预热**(≤worker 数并行把新形状仿真进落盘缓存
-  `ramulator2/signature_cache.jsonl`)→ **正式构图**(全程查表);
+  `ramulator2/signature_cache_v2_headhbm.jsonl`,R18 轮换版)→
+  **正式构图**(全程查表);
   同负载复跑或换比例大量命中缓存,分钟级;全新负载首跑小时级;
 - A2 不经 Ramulator,总是几分钟内先出。
 

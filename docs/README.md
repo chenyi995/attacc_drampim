@@ -56,6 +56,18 @@ GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
 下运行(`history_len`,由 workload 决定);曾经的"split 混合"档(GPU 算
 新行、PIM 扫旧行、LSE 缝合)已废除。
 
+**硬件轴(2026-08-27)**:
+- **head→HBM 条带映射**(R18,恒开):一个 KV 头独占 HBM,run 覆盖的各
+  channel 承载该头自己的 token 条带(废除上游"一 head 一 channel";
+  全文 `README_head_hbm_remap.md`);
+- **`--num-hbm`**(默认 5):PIM 侧 HBM 堆叠数(= 远端 KV 存储;GPU 的
+  HBM 与 NVLink 不变)。KV 头数 < 堆叠数时每头独占
+  `num_hbm // kv_heads` 个堆叠、K/V **头内序列切分**并发扫;
+- **GQA 模型档**:`LLAMA3-8B`(32 Q 头 / 8 KV 头,组 4;与 LLAMA-7B
+  同形对照)——组内 Q 头是共享 KV 头上的驻留查询,进 MQ/容量轴;
+- **功耗约束 (PC) 默认开**(R19):MQ 间隔带每窗口能量钳位
+  (n=8 → 8 tCK),`--no-powerlimit` 显式关。
+
 ## 4. 软件上游(复用策略,`--reuse`)
 
 复用策略决定"哪些 KV 可以复用、复用时要重算多少来修正精度"。现有六个,
@@ -86,6 +98,10 @@ GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
 # dag_ladder.csv;A1 用 no-reuse,A2–A6 用 recompute(EPIC_K 定 k)
 bash experiments/run_dag_ladder.sh workload/wl_tiny.json LLAMA-7B
 
+# 全套件(每 workload 一条链,k=2 带暖先行、其余 k 免暖去 A1;
+# NUM_HBM 指定 PIM 堆叠数;产出另含逐 tier 三指标 dag_ladder_tiers.csv)
+NUM_HBM=16 N_PAR=2 RAMU_WORKERS=6 bash experiments/run_dag_suite.sh LLAMA3-8B
+
 # 单档物理事件引擎(真实 workload 的默认出数方式)
 python3 main.py --system dgx-attacc --model LLAMA-7B \
   --workload workload/wl_tiny.json \
@@ -105,7 +121,8 @@ python3 -m unittest discover -s tests     # 41/41
 
 目录约定(2026-08-26):自造 workload 放本仓库 `workload/`;运行输出放
 `output/<时间戳>_<负载>_<模型>/`;Ramulator 签名缓存落盘在
-`ramulator2/signature_cache.jsonl`(首跑建缓存 ≤64 核,复跑秒级起步)。
+`ramulator2/signature_cache_v2_headhbm.jsonl`(R18 轮换版;首跑建缓存
+≤64 核,复跑秒级起步;旧 `signature_cache.jsonl` 为重映射前归档)。
 
 真实 workload 的准入标准与现存源见
 `/data2/chenyi9/KV-PIM/workload/README.md` 与其 `SOURCES.md`
@@ -116,6 +133,8 @@ python3 -m unittest discover -s tests     # 41/41
 - `intro/README_A1.md` … `README_A6.md` + `README_A3a.md`:每档定位
 - `README_software_upstream.md`:复用策略族与文献来源
 - `README_delta_vs_xinyao0821.md`:相对 xinyao_0821 基线的全部改动
+- `README_head_hbm_remap.md`:head→HBM 重映射全记录(R18:错误、
+  归因、量化、新映射规范)
 - `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
   流程裁决、阶梯诊断与 workload 有效性附录)
 - `README_run_experiments.md`:**当前主线实验怎么跑**(五组拓扑负载 ×

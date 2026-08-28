@@ -27,11 +27,13 @@ diff(重算修正行)分开。A3 暴露"把软件复用直接怼到 PIM 上"的�
 | 9 | 重算行的处置:naive 下重算行覆盖原位置(无 diff 池概念) | `_batch_scan_profile` naive 分支 |
 | 10 | 报告(含占用:`_memory_report` 计 KV 行、历史行) | `run_ablation_report` |
 
-## 3. 物理事件路径的对应物
+## 3. 物理事件路径的对应物(2026-08-26 起为默认出数路径)
 
-物理 TLB(`src/workload_runner.py::CacheBlendTLB`)天然是 master/diff
-分池的(A4 语义),**没有 naive 布局的物理孪生**——A3 的"乱序、不分
-channel"目前只在解析路径有模型。这是已知差距,对比实验以解析路径为准。
+物理孪生已补齐(R11/R14):`src/workload_runner.py::NaiveKVLayout`
+——一切预留先切 **256-token 页**、按 append 序轮换 16 个单 channel 池,
+run 劈裂/行激活由排程涌现。**真实负载默认 `--engine dag` 出数**;
+解析路径(§2 表)只作预估与交叉校验(裁决 2026-08-26,与本页旧稿
+"以解析路径为准"相反)。
 
 ## 4. 怎么跑
 
@@ -58,4 +60,6 @@ A3 对 A4:同一切,只把布局换成 master/diff 分池——隔离"PIM 感知
 - **无掩断流语义**(R15,`shadow_reads=False`):重算行的 master 副本被
   跳过,run 在缺口处劈开(act 段-act 行-act 段),重算行从自己 append
   位置单行激活读取;与新档 **A3a**(可掩不断流)构成一对;
-- gpu-prefill 读回补 DRAM 侧读事件;decode 波内共享扫描、命令 replicate。
+- gpu-prefill 读回补 DRAM 侧读事件;decode 波内共享扫描、命令 replicate;
+- **R18 条带映射(2026-08-27)**下 naive 单 channel 池语义不变
+  (条带宽 1),页仍整页驻单 channel——断流惩罚口径不受重映射影响。
