@@ -18,6 +18,7 @@ from .model import Layer
 from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
                                 MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
 from .type import DeviceType, LayerType
+from .cpp_eventcore import new_core as _new_event_core
 from .workload import (CACHEBLEND_FAMILY, EPIC_FAMILY,
                        ReusePlan, Workload, WorkloadValidationError,
                        validate_reuse_plan)
@@ -303,6 +304,8 @@ def _event(events: List[SplitEvent], transformer_layer: int, request_id: str,
     events.append(SplitEvent("legacy-{}".format(len(events)), transformer_layer,
                              0, request_id, name, device, rows, time_s,
                              sum(energy), link_bytes))
+    if _EC is not None:
+        _EC.add(device, time_s, ())
 
 
 def _link_layer(template: Layer, name: str, byte_count: int) -> Layer:
@@ -984,6 +987,12 @@ _WARM_BYPASS: Optional[Tuple[Any, Any]] = None
 # events are included); construction skips storing them.  The validator's
 # scan-address audit is gated accordingly.
 _RETAIN_EVENT_ADDRESSES = True
+# Native event-schedule core (experimental C++ branch, chenyi9 2026-08-28):
+# one instance per report run, mirroring every event as (device, duration,
+# deps) and owning the schedule state machine.  None = pure-Python paths
+# (KVPIM_CPPCORE=0 or library missing); all Python logic is preserved and
+# the overlap-contract validator replays the native schedule every run.
+_EC = None
 
 
 def _gqa_group(system) -> int:
@@ -1152,6 +1161,8 @@ def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                              array("Q", addresses if _RETAIN_EVENT_ADDRESSES
                                    else ()),
                              tuple(batch_members), masked_rows))
+    if _EC is not None:
+        _EC.add(device, time_s, deps)
     return event_id
 
 
@@ -1248,6 +1259,14 @@ def _schedule_cacheblend(events: Sequence[SplitEvent], *, pipe: bool) -> List[Sp
     trace unit an independent busy timeline, matching AttAcc's ``--pipeopt``
     convention for overlap between computation and communication.
     """
+    if _EC is not None and _EC.size() == len(events):
+        # Native fast path: recompute the whole schedule from the mirrored
+        # graph (a reprice may have updated durations), then attach times.
+        _EC.reset()
+        _EC.advance()
+        start_arr, end_arr = _EC.bulk_times(len(events))
+        return [replace(event, start_s=start_arr[index], end_s=end_arr[index])
+                for index, event in enumerate(events)]
     finish: Dict[str, float] = {}
     availability: Dict[str, float] = {}
     scheduled: List[SplitEvent] = []
@@ -2127,9 +2146,15 @@ def _append_cacheblend_decode_batched(
             # external Q link (including GPU-rotated variants) has been
             # emitted.  Later attention events cannot move a completed link
             # on its ordered resource.
-            provisional_finish, provisional_availability = _schedule_cacheblend_incremental(
-                events, pipe=pipe, start_index=provisional_index,
-                finish=provisional_finish, availability=provisional_availability)
+            if _EC is not None:
+                # Native core: incremental advance without the per-round
+                # dict copies of the Python fallback (those were an
+                # accidental quadratic at suite scale).
+                _EC.advance()
+            else:
+                provisional_finish, provisional_availability = _schedule_cacheblend_incremental(
+                    events, pipe=pipe, start_index=provisional_index,
+                    finish=provisional_finish, availability=provisional_availability)
             provisional_index = len(events)
             input_rank = {request.request_id: index for index, request in enumerate(active)}
             # WARM-BUILD INVARIANT (review note 2026-08-28): under a W2
@@ -2139,12 +2164,14 @@ def _append_cacheblend_decode_batched(
             # same-resource finish order is monotone in append order --
             # placeholder-independent.  Do not key this sort on Acc-priced
             # (placeholder-able) or zero-duration events.
-            ready = sorted(active, key=lambda request:
-                           (provisional_finish[
-                                rotate_ready[request.request_id]
-                                if rotate_mode == "gpu" and request.request_id in rotate_ready
-                                else q_links[request.request_id]],
-                            input_rank[request.request_id]))
+            def _q_key(request):
+                key_id = (rotate_ready[request.request_id]
+                          if rotate_mode == "gpu" and request.request_id in rotate_ready
+                          else q_links[request.request_id])
+                finish_s = (_EC.end(key_id) if _EC is not None
+                            else provisional_finish[key_id])
+                return (finish_s, input_rank[request.request_id])
+            ready = sorted(active, key=_q_key)
 
             # Stage B: attention, context and FFN use the global Q-ready
             # order.  A later request can therefore join an earlier PIM batch
@@ -2596,8 +2623,11 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
     # Keep the W3 retention gate coherent on this path too (review
     # hardening 2026-08-28): without this a prior events-none cacheblend
     # run would leave the module global stale for a same-process A2 run.
-    global _RETAIN_EVENT_ADDRESSES
+    global _RETAIN_EVENT_ADDRESSES, _EC
     _RETAIN_EVENT_ADDRESSES = bool(include_events)
+    if _EC is not None:
+        _EC.close()
+    _EC = _new_event_core(pipe)
     validate_reuse_plan(workload, plan, system.model.ndec)
     _validate_layer_config(plan, system.model.ndec)
     system.model.build(1, 1, 2, True)
@@ -2816,8 +2846,11 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     # W3 (2026-08-28): event address arrays only ever reach the report when
     # events are included; otherwise skip storing them (and the validator's
     # scan-address audit follows the same gate).
-    global _RETAIN_EVENT_ADDRESSES
+    global _RETAIN_EVENT_ADDRESSES, _EC
     _RETAIN_EVENT_ADDRESSES = bool(include_events)
+    if _EC is not None:
+        _EC.close()
+    _EC = _new_event_core(pipe)
     if system.hetero_name != DeviceType.PIM:
         raise WorkloadValidationError("reuse prefill requires --system dgx-attacc")
     validate_reuse_plan(workload, plan, system.model.ndec)
@@ -3600,6 +3633,8 @@ def _warm_build_price_finalize(system, workload: Workload, plan: ReusePlan,
             for index, (time_s, energy) in zip(indexes, measured):
                 events[index] = replace(events[index], time_s=time_s,
                                         energy_nj=sum(energy) / 1000.0)
+                if _EC is not None:
+                    _EC.set_duration(index, time_s)
                 repriced += 1
         elif kind == "agg_cb":
             # A _cacheblend_event priced by the aggregate entry (the
@@ -3607,6 +3642,8 @@ def _warm_build_price_finalize(system, workload: Workload, plan: ReusePlan,
             time_s, energy = original_agg(op)
             events[indexes[0]] = replace(events[indexes[0]], time_s=time_s,
                                          energy_nj=sum(energy) / 1000.0)
+            if _EC is not None:
+                _EC.set_duration(indexes[0], time_s)
             repriced += 1
             continue
         else:
@@ -3615,6 +3652,8 @@ def _warm_build_price_finalize(system, workload: Workload, plan: ReusePlan,
             # raw sum; the unit question is tracked separately).
             events[indexes[0]] = replace(events[indexes[0]], time_s=time_s,
                                          energy_nj=sum(energy))
+            if _EC is not None:
+                _EC.set_duration(indexes[0], time_s)
             repriced += 1
     print("[warm] cache ready after {:.0f}s total; repriced {} events, "
           "finalizing once".format(_time.time() - started, repriced),
