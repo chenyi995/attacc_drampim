@@ -19,6 +19,11 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(cd "$SCRIPT_DIR/.." && pwd)
 WORKLOADS=(star_repair_r5w3k47 pipeline_repair_c5k50 debate_d3r5k49
            mapreduce_sum_m8 multisource_rag_n12s96)
+# Optional subset override (space-separated stems), e.g. resuming after an
+# operator intervention: SUITE_WORKLOADS="mapreduce_sum_m8 multisource_rag_n12s96"
+if [ -n "${SUITE_WORKLOADS:-}" ]; then
+    read -r -a WORKLOADS <<< "$SUITE_WORKLOADS"
+fi
 
 run_batch() {
     local K=$1 W=$2 OUT=$3 warm=$4 a1json=$5
@@ -44,7 +49,8 @@ run_chain() {
         return 1
     fi
     local K
-    for K in 4 8 16 32; do
+    # Ratio axis k in {2, 8, 32} (chenyi9 2026-08-27: 降为三点).
+    for K in 8 32; do
         run_batch "$K" "$W" \
             "$REPO/output/$(date +%Y%m%d-%H%M%S)_${STEM}_${MODEL}_k${K}" \
             no-warm "$k2out/dag_A1.json" || true
