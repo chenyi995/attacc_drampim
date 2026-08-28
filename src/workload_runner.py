@@ -466,6 +466,9 @@ def _run_legacy_reuse_prefill(system, workload: Workload, plan: ReusePlan) -> Di
                     time_s, energy = system.devices["Acc"].get_time_and_energy(layer)
                     _event(events, layer_index, request.request_id, layer.name,
                            "PIM", rows, time_s, energy)
+                    if _WARM_LEDGER is not None:
+                        _WARM_LEDGER.append(("agg", deepcopy(layer),
+                                             (len(events) - 1,)))
                 ctx_bytes = rows * local_hidden * dbyte
                 layer = _link_layer(x2g_template, "ctx_pim_to_gpu", ctx_bytes)
                 time_s, energy = system.devices["GPU"].get_time_and_energy(layer)
@@ -967,6 +970,21 @@ _NAIVE_PAGE_ROWS = 256
 # concurrency.
 _DECODE_SERVE_WAVE = 8
 
+# W2 build-once machinery (ruling chenyi9 2026-08-28): during a warm build
+# the accelerator entries return zero placeholders; every placeholder-priced
+# event is recorded here as (kind, deepcopied op, event indexes) and
+# repriced from the warm cache before finalization -- the second full
+# construction of the old warm flow is gone.  _WARM_BYPASS carries the
+# ORIGINAL accelerator entries so the A6 estimator prices its probe for
+# real (a placeholder would skew the side decision).
+_WARM_LEDGER: Optional[List[Tuple[str, Any, Tuple[int, ...]]]] = None
+_WARM_BYPASS: Optional[Tuple[Any, Any]] = None
+# W3: with --workload-report-events none the per-event K/V address arrays
+# are pure run-time dead weight (they only ever reach the report when
+# events are included); construction skips storing them.  The validator's
+# scan-address audit is gated accordingly.
+_RETAIN_EVENT_ADDRESSES = True
+
 
 def _gqa_group(system) -> int:
     """Q heads per shared KV head (1 = MHA; ruling chenyi9 2026-08-27)."""
@@ -1130,7 +1148,9 @@ def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
     # report nJ, see System.simulate); keep the DAG report in the same nJ.
     events.append(SplitEvent(event_id, layer, tier, request, name, device, rows,
                              time_s, sum(energy) / 1000.0, link_bytes, tuple(deps),
-                             tuple(positions), array("Q", addresses),
+                             tuple(positions),
+                             array("Q", addresses if _RETAIN_EVENT_ADDRESSES
+                                   else ()),
                              tuple(batch_members), masked_rows))
     return event_id
 
@@ -1160,6 +1180,7 @@ def _append_physical_pim_scan(system, events: List[SplitEvent], *, op: Layer,
         masked = masked[:len(runs)]
     if len(measured) != len(runs):
         raise WorkloadValidationError("Ramulator physical-run result count mismatch")
+    first_event_index = len(events)
     scan_events = []
     for run, (time_s, energy), masked_rows in zip(runs, measured, masked):
         key_addr, value_addr, run_rows, channel, channel_count = run
@@ -1172,6 +1193,10 @@ def _append_physical_pim_scan(system, events: List[SplitEvent], *, op: Layer,
             time_s=time_s, energy=energy, deps=tuple(deps),
             positions=tuple(positions), addresses=(key_addr, value_addr),
             batch_members=tuple(batch_members), masked_rows=masked_rows))
+    if _WARM_LEDGER is not None and hasattr(accelerator, "get_time_and_energy_runs"):
+        _WARM_LEDGER.append(("runs", deepcopy(op),
+                             tuple(range(first_event_index,
+                                         first_event_index + len(scan_events)))))
     return tuple(scan_events)
 
 
@@ -1427,7 +1452,8 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
             if event.rows != 1 or event.link_bytes != tuple_bytes:
                 raise WorkloadValidationError("CacheBlend local LSE tuple shape is invalid")
         if "pim_kv_scan" in event.name:
-            if not event.dram_addresses or len(event.dram_addresses) % 2:
+            if _RETAIN_EVENT_ADDRESSES and (
+                    not event.dram_addresses or len(event.dram_addresses) % 2):
                 raise WorkloadValidationError("CacheBlend PIM scan lacks K/V addresses")
             if not event.depends_on or not any(
                     ("tlb_lookup_and_bank_plan" in named(dependency) or
@@ -2106,6 +2132,13 @@ def _append_cacheblend_decode_batched(
                 finish=provisional_finish, availability=provisional_availability)
             provisional_index = len(events)
             input_rank = {request.request_id: index for index, request in enumerate(active)}
+            # WARM-BUILD INVARIANT (review note 2026-08-28): under a W2
+            # warm build this sort runs on placeholder-priced provisional
+            # finishes.  It stays identical to the cold order only because
+            # every sort-key event is a positive-duration LINK event whose
+            # same-resource finish order is monotone in append order --
+            # placeholder-independent.  Do not key this sort on Acc-priced
+            # (placeholder-able) or zero-duration events.
             ready = sorted(active, key=lambda request:
                            (provisional_finish[
                                 rotate_ready[request.request_id]
@@ -2396,6 +2429,8 @@ def _append_physical_no_reuse_prefill_layer(
         name="pim_kv_scan_score_softmax_pv", device="PIM", rows=rows + len(history),
         time_s=time_s, energy=energy, deps=(address_plan,), positions=positions,
         addresses=scan_addresses)
+    if _WARM_LEDGER is not None:
+        _WARM_LEDGER.append(("agg_cb", deepcopy(op), (len(events) - 1,)))
     ctx_transfer = _link_layer(x2g, "ctx_pim_to_gpu", q_bytes)
     time_s, energy = system.devices["GPU"].get_time_and_energy(ctx_transfer)
     ctx_link = _cacheblend_event(
@@ -2558,6 +2593,11 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
     KV residency (remote here, GPU-local there) and decode batching
     (per-request batch 1 here, padded tier batch there).
     """
+    # Keep the W3 retention gate coherent on this path too (review
+    # hardening 2026-08-28): without this a prior events-none cacheblend
+    # run would leave the module global stale for a same-process A2 run.
+    global _RETAIN_EVENT_ADDRESSES
+    _RETAIN_EVENT_ADDRESSES = bool(include_events)
     validate_reuse_plan(workload, plan, system.model.ndec)
     _validate_layer_config(plan, system.model.ndec)
     system.model.build(1, 1, 2, True)
@@ -2771,7 +2811,13 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             pim_prefill_mode: str = "dynamic",
                             pim_batch_command: str = "replicate",
                             pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
-                            gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES) -> Dict[str, Any]:
+                            gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES,
+                            _build_sink: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    # W3 (2026-08-28): event address arrays only ever reach the report when
+    # events are included; otherwise skip storing them (and the validator's
+    # scan-address audit follows the same gate).
+    global _RETAIN_EVENT_ADDRESSES
+    _RETAIN_EVENT_ADDRESSES = bool(include_events)
     if system.hetero_name != DeviceType.PIM:
         raise WorkloadValidationError("reuse prefill requires --system dgx-attacc")
     validate_reuse_plan(workload, plan, system.model.ndec)
@@ -3070,7 +3116,13 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         est.pim_shared_queries = est.m * _gqa_group(system)
                         _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)
                         accelerator = system.devices["Acc"]
-                        if hasattr(accelerator, "get_time_and_energy_runs"):
+                        # Under a warm build the patched entries return zero
+                        # placeholders; the side DECISION must be real, so
+                        # the probe prices through the original entry (an
+                        # inline cold simulation that also warms the cache).
+                        if _WARM_BYPASS is not None:
+                            measured = _WARM_BYPASS[0](est)
+                        elif hasattr(accelerator, "get_time_and_energy_runs"):
                             measured = accelerator.get_time_and_energy_runs(est)
                         else:
                             # Aggregate mock-device API of lightweight tests.
@@ -3273,6 +3325,55 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 gemv_buffer_bytes=gemv_buffer_bytes).values() for dep in deps)
         previous_tier_done = tuple(tier_done)
 
+    ctx = {
+        "events": events, "batch_records": batch_records, "tlb": tlb,
+        "dynamic_prefill_sides": dynamic_prefill_sides,
+        "prefill_attn_rows": prefill_attn_rows,
+        "di_bitmap_bytes_total": di_bitmap_bytes_total,
+        "local_hidden": local_hidden, "dbyte": dbyte, "heads": heads,
+        "physical_no_reuse": physical_no_reuse, "batch_size": batch_size,
+        "rotate_mode": rotate_mode, "pim_batch_command": pim_batch_command,
+        "pim_prefill_mode": pim_prefill_mode, "kv_mapping": kv_mapping,
+        "pim_pe_freq_ghz": pim_pe_freq_ghz,
+        "gemv_buffer_bytes": gemv_buffer_bytes,
+    }
+    if _build_sink is not None:
+        # W1/W2 warm build: hand the constructed graph to the warm driver;
+        # validation/scheduling/annotation/report run exactly once, after
+        # repricing (the old warm flow burned all of them on placeholders
+        # and threw the result away).
+        _build_sink.update(ctx)
+        return {}
+    return _finalize_cacheblend_report(system, workload, plan, ctx,
+                                       include_events=include_events, pipe=pipe)
+
+
+def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
+                                ctx: Dict[str, Any], *, include_events: bool,
+                                pipe: bool) -> Dict[str, Any]:
+    """Validation, scheduling, annotation and report assembly.
+
+    Split out of _run_cacheblend_prefill (2026-08-28) so the warm path can
+    build once, reprice the Acc events from the warm cache, and finalize --
+    identical code path to a cold run from this point on.
+    """
+    events = ctx["events"]
+    batch_records = ctx["batch_records"]
+    tlb = ctx["tlb"]
+    dynamic_prefill_sides = ctx["dynamic_prefill_sides"]
+    prefill_attn_rows = ctx["prefill_attn_rows"]
+    di_bitmap_bytes_total = ctx["di_bitmap_bytes_total"]
+    local_hidden = ctx["local_hidden"]
+    dbyte = ctx["dbyte"]
+    heads = ctx["heads"]
+    physical_no_reuse = ctx["physical_no_reuse"]
+    batch_size = ctx["batch_size"]
+    rotate_mode = ctx["rotate_mode"]
+    pim_batch_command = ctx["pim_batch_command"]
+    pim_prefill_mode = ctx["pim_prefill_mode"]
+    kv_mapping = ctx["kv_mapping"]
+    pim_pe_freq_ghz = ctx["pim_pe_freq_ghz"]
+    gemv_buffer_bytes = ctx["gemv_buffer_bytes"]
     validate_cacheblend_events(events, workload, local_hidden=local_hidden,
                                dbyte=dbyte, dhead=system.model.dhead,
                                heads=heads)
@@ -3381,77 +3482,80 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                           pim_pe_freq_ghz=pim_pe_freq_ghz,
                           gemv_buffer_bytes=gemv_buffer_bytes)
         if warm:
-            _warm_scan_signature_cache(system, workload, plan, run_kwargs)
+            report = _warm_build_price_finalize(
+                system, workload, plan, include_events=include_events,
+                run_kwargs=run_kwargs)
+            if report is not None:
+                return report
         return _run_cacheblend_prefill(system, workload, plan,
                                        include_events=include_events,
                                        **run_kwargs)
     return _run_legacy_reuse_prefill(system, workload, plan)
 
 
-def _warm_scan_signature_cache(system, workload: Workload, plan: ReusePlan,
-                               run_kwargs: Mapping[str, Any]) -> None:
-    """Cache-first phase for the physical path (ruling chenyi9 2026-08-26).
+def _warm_build_price_finalize(system, workload: Workload, plan: ReusePlan,
+                               *, include_events: bool,
+                               run_kwargs: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
+    """Cache-first warm flow, build-once edition (W1+W2, chenyi9 2026-08-28).
 
-    Event construction prices each PIM scan with one serial Ramulator call
-    that carries only one or two independent jobs, so ``--ramulator-workers``
-    alone cannot engage: on a decode-heavy workload thousands of multi-second
-    simulations run back to back.  The scan set, however, is fully determined
-    by (workload, plan, config) before any timing is known.  So: run the
-    SAME construction once with the accelerator's scan entry point replaced
-    by a collector that records a deepcopy of every op and returns
-    zero-duration placeholders (the throwaway pass mutates only its own TLB
-    and event list), then simulate every collected op on up to 64 host
-    threads -- the wrapper's persistent signature cache absorbs the results
-    -- and let the real construction that follows hit the warm cache.
-    Best-effort: any error in the throwaway pass is swallowed; ops collected
-    up to that point still warm the cache.
+    The old flow built the FULL graph with zero placeholders, ran every
+    post-build phase, threw all of it away, simulated the collected shapes,
+    then built everything a second time against the warm cache.  This
+    edition builds ONCE: the accelerator entries return placeholders while
+    a ledger records (op, event indexes) for every placeholder-priced
+    event; the A6 estimator prices its probes through the ORIGINAL entries
+    (real inline simulations -- decisions must never see placeholders);
+    after the parallel simulation phase the ledger events are repriced
+    from the warm cache and the single graph proceeds to the one and only
+    validation/schedule/annotation/report pass.  Returns None when
+    ineligible; the caller falls back to the plain cold path.
     """
+    global _WARM_LEDGER, _WARM_BYPASS
     accelerator = system.devices.get("Acc") if hasattr(system, "devices") else None
     if accelerator is None or not hasattr(accelerator, "get_time_and_energy_runs"):
-        return
+        return None
     workers = getattr(getattr(accelerator, "ramulator", None), "workers", 1)
     if workers <= 1:
-        return
+        return None
     import sys as _sys
     import time as _time
     from concurrent.futures import ThreadPoolExecutor
-    # The throwaway pass prices Acc work through TWO entry points: the
-    # address-resolved scans via get_time_and_energy_runs AND the legacy
-    # aggregate entry get_time_and_energy (e.g. the no-reuse prefill
-    # layers).  Both must be intercepted -- patching only the former left
-    # the throwaway pass simulating serially on the main thread
-    # (py-spy-diagnosed, 2026-08-26).
-    pending: List[Tuple[str, Layer]] = []
+
+    ledger: List[Tuple[str, Any, Tuple[int, ...]]] = []
+    sink: Dict[str, Any] = {}
     original_runs = accelerator.get_time_and_energy_runs
     original_agg = accelerator.get_time_and_energy
 
     def _collect_runs(op):
-        pending.append(("runs", deepcopy(op)))
         runs = getattr(op, "pim_kv_runs", None) or ((0, 0, 1, 0, 16),)
         return [(0.0, (0.0,)) for _ in runs]
 
     def _collect_agg(op):
-        pending.append(("agg", deepcopy(op)))
         return (0.0, (0.0,))
 
     accelerator.get_time_and_energy_runs = _collect_runs
     accelerator.get_time_and_energy = _collect_agg
+    _WARM_LEDGER = ledger
+    _WARM_BYPASS = (original_runs, original_agg)
     started = _time.time()
     try:
         _run_cacheblend_prefill(system, workload, plan,
-                                include_events=False, **run_kwargs)
+                                include_events=include_events,
+                                _build_sink=sink, **run_kwargs)
     except Exception:
-        pass          # zero-duration placeholders may trip late validators;
-                      # the ops collected before that still warm the cache
+        sink = {}                  # fall back to the plain cold path
     finally:
         accelerator.get_time_and_energy_runs = original_runs
         accelerator.get_time_and_energy = original_agg
-    # Exact-repeat dedupe: the aggregate (legacy shape) entry repeats the
-    # same shape across requests/layers, the scan entry repeats identical
-    # run lists across layers.  Conservative key = everything that can
-    # influence the simulation.
+        _WARM_LEDGER = None
+        _WARM_BYPASS = None
+    if not sink:
+        return None
+
+    # Exact-repeat dedupe, conservative key = everything that can influence
+    # the simulation (unchanged from the old flow).
     unique: Dict[Tuple, Tuple[str, Layer]] = {}
-    for kind, op in pending:
+    for kind, op, _ in ledger:
         key = (kind, getattr(op, "name", ""), op.m, op.n, op.k,
                getattr(op, "numOp", 1), getattr(op, "dbyte", 2),
                tuple(getattr(op, "pim_kv_runs", ()) or ()),
@@ -3461,20 +3565,16 @@ def _warm_scan_signature_cache(system, workload: Workload, plan: ReusePlan,
                getattr(op, "pim_pe_freq_ghz", None))
         unique.setdefault(key, (kind, op))
     jobs = list(unique.values())
-    print("[warm] collected {} Acc ops -> {} unique shapes "
-          "(throwaway pass {:.0f}s); simulating with up to {} workers".format(
-              len(pending), len(jobs), _time.time() - started, workers),
+    print("[warm] collected {} Acc ops -> {} unique shapes (single build "
+          "{:.0f}s); simulating with up to {} workers".format(
+              len(ledger), len(jobs), _time.time() - started, workers),
           file=_sys.stderr, flush=True)
     if jobs:
-        fire = {"runs": original_runs, "agg": original_agg}
-        # Pool width follows --ramulator-workers so a global core budget
-        # (ruling chenyi9 2026-08-26: at most 96 cores total) can be split
-        # across concurrently running rungs.  While THIS outer pool runs,
-        # the wrapper's per-call inner pool must be suppressed: a prefill
-        # scan carries many physical runs, and outer x inner nesting
-        # multiplied the subprocess count past the budget (observed load
-        # ~500 under the 96-core cap).  The real pass afterwards restores
-        # the inner width for its serial residual calls.
+        fire = {"runs": original_runs, "agg": original_agg,
+                "agg_cb": original_agg}
+        # Pool width follows --ramulator-workers (96-core budget ruling);
+        # the wrapper's per-call inner pool is suppressed while the outer
+        # pool runs (outer x inner nesting blew the budget, 2026-08-26).
         ramulator = getattr(accelerator, "ramulator", None)
         saved_inner = getattr(ramulator, "workers", None)
         if ramulator is not None:
@@ -3485,5 +3585,40 @@ def _warm_scan_signature_cache(system, workload: Workload, plan: ReusePlan,
         finally:
             if ramulator is not None and saved_inner is not None:
                 ramulator.workers = saved_inner
-    print("[warm] cache ready after {:.0f}s total".format(
-        _time.time() - started), file=_sys.stderr, flush=True)
+
+    # Reprice the placeholder events from the now-warm cache.  Every call
+    # below is a signature-cache hit (the firing phase covered a superset
+    # of the ledger's simulation signatures in this same process).
+    events = sink["events"]
+    repriced = 0
+    for kind, op, indexes in ledger:
+        if kind == "runs":
+            measured = original_runs(op)
+            if len(measured) != len(indexes):
+                raise WorkloadValidationError(
+                    "warm reprice run-count mismatch")
+            for index, (time_s, energy) in zip(indexes, measured):
+                events[index] = replace(events[index], time_s=time_s,
+                                        energy_nj=sum(energy) / 1000.0)
+                repriced += 1
+        elif kind == "agg_cb":
+            # A _cacheblend_event priced by the aggregate entry (the
+            # bank-whole contiguous scan): nJ convention (sum/1000).
+            time_s, energy = original_agg(op)
+            events[indexes[0]] = replace(events[indexes[0]], time_s=time_s,
+                                         energy_nj=sum(energy) / 1000.0)
+            repriced += 1
+            continue
+        else:
+            time_s, energy = original_agg(op)
+            # Mirrors _event exactly (legacy aggregate events store the
+            # raw sum; the unit question is tracked separately).
+            events[indexes[0]] = replace(events[indexes[0]], time_s=time_s,
+                                         energy_nj=sum(energy))
+            repriced += 1
+    print("[warm] cache ready after {:.0f}s total; repriced {} events, "
+          "finalizing once".format(_time.time() - started, repriced),
+          file=_sys.stderr, flush=True)
+    return _finalize_cacheblend_report(system, workload, plan, sink,
+                                       include_events=include_events,
+                                       pipe=run_kwargs["pipe"])
