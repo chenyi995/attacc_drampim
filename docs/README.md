@@ -145,6 +145,12 @@ python3 -m unittest discover -s tests     # 41/41
   `dag_A*.json` 不入库、记本机路径手动下载;≤50 MB 报告与 .log 已入库)
 - `../output/analysis/`:结果分析工具与表格(`make_results_tables.py`
   → `RESULTS_k2.md`:七档的延迟/能量/prefill 放置/额外指标四表)
+- `README_sweep_design.md`:**参数化 sweep 设计规范**(一个 gen_sweep.py +
+  (topology, N, C, D, k),取代五组手调 workload,零 magic number;2026-08-29)
+- `../workload/gen_sweep.py` + `../workload/sweep/` + `../experiments/run_sweep.sh`:
+  参数化 sweep 的 generator / workload / 批跑脚本
+- `../workload/archived/2026-08-29_pre-sweep/`、`../output/archived/2026-08-29_pre-unify/`:
+  归档的旧手调 generator 与旧结果(各带 README)
 - `sessions/`:每日调整记录(chenyi9 裁决时间线)
 - `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit
 - `PORTING_PLAN.md`(不入库):干净分支 chenyi-822 的逐步移植计划
