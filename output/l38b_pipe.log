@@ -20,3 +20,13 @@
 [k8 pipeline_repair_c5k50] CSV: /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_ladder.csv
 ##### end k=8 pipeline_repair_c5k50 20:05:49
 ##### start k=32 pipeline_repair_c5k50 20:05:49
+[k32 pipeline_repair_c5k50] REPORT_SUMMARY {"ablation": "A2", "decode_attn": "gpu", "energy_nj": 2201919135073.423, "engine": "dag", "event_count": 12640, "kv_mapping": "none", "link_bytes": 603439890432, "makespan_s": 39.473728560033166, "pim_prefill_mode": "gpu", "policy": "recompute"}
+[k32 pipeline_repair_c5k50] REPORT_SUMMARY {"ablation": "A3", "decode_attn": "pim", "energy_nj": 3327501183184.1562, "engine": "dag", "event_count": 37575540, "kv_mapping": "naive", "link_bytes": 14037035858, "makespan_s": 30.68149388188972, "pim_prefill_mode": "gpu", "policy": "recompute"}
+[k32 pipeline_repair_c5k50] REPORT_SUMMARY {"ablation": "A3a", "decode_attn": "pim", "energy_nj": 2920137935352.2285, "engine": "dag", "event_count": 5139572, "kv_mapping": "naive-mask", "link_bytes": 14037035858, "makespan_s": 21.143576332573275, "pim_prefill_mode": "gpu", "policy": "recompute"}
+[k32 pipeline_repair_c5k50] REPORT_SUMMARY {"ablation": "A4", "decode_attn": "pim", "energy_nj": 3086539054964.899, "engine": "dag", "event_count": 2588342, "kv_mapping": "master-diff", "link_bytes": 14037035858, "makespan_s": 15.195414984923664, "pim_prefill_mode": "gpu", "policy": "recompute"}
+[k32 pipeline_repair_c5k50] REPORT_SUMMARY {"ablation": "A5", "decode_attn": "pim", "energy_nj": 3844895321645.2764, "engine": "dag", "event_count": 7959238, "kv_mapping": "master-diff", "link_bytes": 2932747090, "makespan_s": 13.70878495734559, "pim_prefill_mode": "pim", "policy": "recompute"}
+[k32 pipeline_repair_c5k50] REPORT_SUMMARY {"ablation": "A6", "decode_attn": "pim", "energy_nj": 3485760120919.369, "engine": "dag", "event_count": 6150966, "kv_mapping": "master-diff", "link_bytes": 4068748114, "makespan_s": 13.521623219413502, "pim_prefill_mode": "dynamic", "policy": "recompute"}
+[k32 pipeline_repair_c5k50] TIER_CSV: /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_ladder_tiers.csv
+[k32 pipeline_repair_c5k50] CSV: /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_ladder.csv
+##### end k=32 pipeline_repair_c5k50 23:02:35
+SUITE DONE 23:02:35

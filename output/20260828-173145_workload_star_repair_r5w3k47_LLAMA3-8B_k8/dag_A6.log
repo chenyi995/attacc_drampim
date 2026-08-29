@@ -9476,3 +9476,6 @@
   "total_input_tokens": 156936,
   "total_output_tokens": 4480
 }
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-173145_workload_star_repair_r5w3k47_LLAMA3-8B_k8/dag_A6.json
+REPORT_SUMMARY {"ablation": "A6", "decode_attn": "pim", "energy_nj": 5230049768502.802, "engine": "dag", "event_count": 7438794, "kv_mapping": "master-diff", "link_bytes": 3289729834, "makespan_s": 11.925837080793142, "pim_prefill_mode": "dynamic", "policy": "recompute"}

@@ -1,0 +1,121 @@
+{
+  "kind": "supervisor",
+  "requests": 9,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 8,
+    "fresh_tokens": 198608,
+    "policy": "recompute",
+    "random_seed": 0,
+    "recompute_canonical": true,
+    "reusable_segments": [
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee2ff0f095f0427d",
+        "length": 300,
+        "owner_tier": 0,
+        "request": "map1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee2ff0f095f0427d",
+        "length": 300,
+        "owner_tier": 0,
+        "request": "map2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee2ff0f095f0427d",
+        "length": 300,
+        "owner_tier": 0,
+        "request": "map3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee2ff0f095f0427d",
+        "length": 300,
+        "owner_tier": 0,
+        "request": "map4",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee2ff0f095f0427d",
+        "length": 300,
+        "owner_tier": 0,
+        "request": "map5",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee2ff0f095f0427d",
+        "length": 300,
+        "owner_tier": 0,
+        "request": "map6",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee2ff0f095f0427d",
+        "length": 300,
+        "owner_tier": 0,
+        "request": "map7",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "map0",
+        "epic_prefix_rows": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "fingerprint": "7fbbce6e51beeb8e",
+        "length": 200,
+        "owner_tier": 0,
+        "request": "reduce",
+        "segment_index": 0
+      }
+    ],
+    "reused_tokens": 2300
+  },
+  "tiers": {
+    "0": [
+      "map0",
+      "map1",
+      "map2",
+      "map3",
+      "map4",
+      "map5",
+      "map6",
+      "map7"
+    ],
+    "1": [
+      "reduce"
+    ]
+  },
+  "total_history_tokens": 0,
+  "total_input_tokens": 200908,
+  "total_output_tokens": 1856
+}
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260829-125452_workload_mapreduce_sum_m8_LLAMA3-8B_k8/dag_A2.json
+REPORT_SUMMARY {"ablation": "A2", "decode_attn": "gpu", "energy_nj": 4811698054329.06, "engine": "dag", "event_count": 8456, "kv_mapping": "none", "link_bytes": 666574192640, "makespan_s": 90.97098405593199, "pim_prefill_mode": "gpu", "policy": "recompute"}

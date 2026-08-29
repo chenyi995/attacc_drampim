@@ -5,7 +5,6 @@ ramulator.out
 ramulator2/build/
 ramulator2/log/
 
-# --- Large per-run event-trace reports (>50 MB): excluded from git,
 #     kept locally, downloaded manually. Recorded in
 #     docs/RAW_DATA_MANIFEST.md (chenyi9 2026-08-28). ---
 /output/20260828-173206_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A3a.json
@@ -42,3 +41,77 @@ ramulator2/log/
 
 # one-off local backup (2.6 GB), never track
 ramulator2.local_backup_0821/
+
+# --- Large per-run event-trace reports (>50 MB): not tracked, kept local,
+#     downloaded manually. Listed in docs/RAW_DATA_MANIFEST.md. Refresh this
+#     block before each commit (new runs add new big files). ---
+/output/20260828-235623_workload_star_repair_r5w3k47_LLAMA3-8B_k32/dag_A1.json
+/output/20260828-173145_workload_star_repair_r5w3k47_LLAMA3-8B_k8/dag_A1.json
+/output/20260828-125506_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A1.json
+/output/20260828-235623_workload_star_repair_r5w3k47_LLAMA3-8B_k32/dag_A5.json
+/output/20260828-235623_workload_star_repair_r5w3k47_LLAMA3-8B_k32/dag_A6.json
+/output/20260828-235623_workload_star_repair_r5w3k47_LLAMA3-8B_k32/dag_A4.json
+/output/20260828-173145_workload_star_repair_r5w3k47_LLAMA3-8B_k8/dag_A4.json
+/output/20260828-173145_workload_star_repair_r5w3k47_LLAMA3-8B_k8/dag_A6.json
+/output/20260828-173145_workload_star_repair_r5w3k47_LLAMA3-8B_k8/dag_A5.json
+/output/20260827-230515_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A5.json
+/output/20260828-125506_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A5.json
+/output/20260827-230515_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A6.json
+/output/20260828-125506_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A6.json
+/output/20260827-230515_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A4.json
+/output/20260828-125506_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A4.json
+/output/20260829-025941_workload_debate_d3r5k49_LLAMA3-8B_k32/dag_A1.json
+/output/20260829-001648_workload_debate_d3r5k49_LLAMA3-8B_k8/dag_A1.json
+/output/20260828-173206_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A1.json
+/output/20260828-174235_workload_multisource_rag_n12s96_LLAMA3-8B_k32/dag_A1.json
+/output/20260828-150654_workload_multisource_rag_n12s96_LLAMA3-8B_k8/dag_A1.json
+/output/20260828-130628_workload_multisource_rag_n12s96_LLAMA3-8B_k2/dag_A1.json
+/output/20260829-025941_workload_debate_d3r5k49_LLAMA3-8B_k32/dag_A4.json
+/output/20260829-025941_workload_debate_d3r5k49_LLAMA3-8B_k32/dag_A5.json
+/output/20260829-025941_workload_debate_d3r5k49_LLAMA3-8B_k32/dag_A6.json
+/output/20260829-001648_workload_debate_d3r5k49_LLAMA3-8B_k8/dag_A4.json
+/output/20260829-001648_workload_debate_d3r5k49_LLAMA3-8B_k8/dag_A6.json
+/output/20260829-001648_workload_debate_d3r5k49_LLAMA3-8B_k8/dag_A5.json
+/output/20260828-173206_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A4.json
+/output/20260828-173206_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A6.json
+/output/20260828-173206_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A5.json
+/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_A1.json
+/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_A1.json
+/output/20260828-130630_workload_pipeline_repair_c5k50_LLAMA3-8B_k2/dag_A1.json
+/output/20260828-125509_workload_mapreduce_sum_m8_LLAMA3-8B_k2/dag_A4.json
+/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_A4.json
+/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_A5.json
+/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_A6.json
+/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_A5.json
+/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_A4.json
+/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_A6.json
+/output/20260828-125509_workload_mapreduce_sum_m8_LLAMA3-8B_k2/dag_A1.json
+/output/20260828-130630_workload_pipeline_repair_c5k50_LLAMA3-8B_k2/dag_A4.json
+/output/20260828-130630_workload_pipeline_repair_c5k50_LLAMA3-8B_k2/dag_A5.json
+/output/20260828-130630_workload_pipeline_repair_c5k50_LLAMA3-8B_k2/dag_A6.json
+/output/20260828-235623_workload_star_repair_r5w3k47_LLAMA3-8B_k32/dag_A3.json
+/output/20260828-235623_workload_star_repair_r5w3k47_LLAMA3-8B_k32/dag_A3a.json
+/output/20260828-173145_workload_star_repair_r5w3k47_LLAMA3-8B_k8/dag_A3.json
+/output/20260827-230515_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A3.json
+/output/20260828-125506_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A3.json
+/output/20260828-173145_workload_star_repair_r5w3k47_LLAMA3-8B_k8/dag_A3a.json
+/output/20260827-230515_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A3a.json
+/output/20260828-125506_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A3a.json
+/output/20260828-174235_workload_multisource_rag_n12s96_LLAMA3-8B_k32/dag_A6.json
+/output/20260828-174235_workload_multisource_rag_n12s96_LLAMA3-8B_k32/dag_A5.json
+/output/20260828-174235_workload_multisource_rag_n12s96_LLAMA3-8B_k32/dag_A4.json
+/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_A3.json
+/output/20260828-200549_workload_pipeline_repair_c5k50_LLAMA3-8B_k32/dag_A3a.json
+/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_A3.json
+/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_A3a.json
+/output/20260828-130630_workload_pipeline_repair_c5k50_LLAMA3-8B_k2/dag_A3.json
+/output/20260828-130630_workload_pipeline_repair_c5k50_LLAMA3-8B_k2/dag_A3a.json
+/output/20260829-025941_workload_debate_d3r5k49_LLAMA3-8B_k32/dag_A3.json
+/output/20260829-001648_workload_debate_d3r5k49_LLAMA3-8B_k8/dag_A3.json
+/output/20260829-025941_workload_debate_d3r5k49_LLAMA3-8B_k32/dag_A3a.json
+/output/20260828-173206_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A3.json
+/output/20260829-001648_workload_debate_d3r5k49_LLAMA3-8B_k8/dag_A3a.json
+/output/20260828-173206_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A3a.json
+
+# analysis digest cache (regenerable)
+/output/analysis/.digest_cache/
