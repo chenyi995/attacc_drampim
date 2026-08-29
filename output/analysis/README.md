@@ -215,9 +215,33 @@
 
 一次 decode 要把一段 context 的很多行一起读。若这些**一起读的行落在同一条 channel
 上**，它们只能**排队串行**（一条 channel 一次只服务一个 row activation）——这个串行化
-就是这里说的 row conflict。避免它 = 让"一起读的行"落到**不同 channel**、从而**并行**。
-naive 布局（A3/A3a）恰恰相反：round-robin 分页 + 别的请求的页夹在中间，导致同一
-context 的页**挤在同 channel、且各自成为独立 row activation**——冲突拉满。
+就是这里说的 row conflict。naive 布局（A3/A3a）就是这样：**每个 256-token page 被钉死
+在单一 channel**（`KVBlock(..., channel, 1, ...)`，`channel_count=1`）、round-robin 轮转，
+别的请求的页夹在中间，导致同一 context 的页**挤在同 channel、且各自成为独立 row
+activation**——冲突拉满。
+
+### A4 怎么"保证"co-read 的 chunk 不撞 channel（关键澄清，别误读）
+
+**不是**"逐 chunk 挑一条不同的 channel、再两两查重不撞"——代码里没有这种组合式放置。
+"撞 channel"这个失败模式的**前提是每个 chunk 被分配到某一条具体 channel**；A4 直接**取消
+了这个前提**，分两层：
+
+1. **master 池内：任何 chunk 都不被钉死在单 channel。** A4 把一个池的所有 co-read chunk
+   **连续密排成一条流**，每个 block 存的是 `channel_base=0, channel_count=15`（横跨整个
+   15 条 master 池，不是"某条 channel"）；物理上由 head→channel 条带
+   （`head h → base+((offset+h) % 15)`）把这条流**铺满 15 条 channel**。计时按
+   `bandwidth = per_hbm × 15/16`（吃 15 条 channel 的合计带宽）。所以**根本不存在"两个
+   chunk 抢同一条 channel"**——没有 chunk 只待在一条 channel 上。这正是 A3 的反面：A3 把
+   page 钉到单 channel（`channel_count=1`）才会撞，A4 删掉了这个前提。
+2. **master vs diff：硬分到不相交 channel。** 这才是字面意义"保证一起读的两类行不在同一
+   channel"：重算修正行永在 ch15，不会排到 master 流（ch0–14）后面，两池并发取 max。
+
+**诚实边界**：所以 A4 的"避免 row conflict" = **(a) 池内不把 chunk 钉到单 channel（靠
+head→HBM 条带把整池读摊到 15 条 channel）+ (b) master/diff 硬分池**，是 **by 构造**实现的，
+不是逐 chunk 放置搜索。模型**假定** head→HBM 条带（R18，A1–A6 恒开）能把一次池读均匀摊到
+该池所有 channel、并按 15/16 带宽计时；它**不建模**"单个 head 的单个 chunk 落在一条
+channel 上"这种池内细粒度串行（一律给满 15 channel 带宽）。这条假设由 R18 条带映射带入，
+不是 A4 自证。
 
 ### 代码证据（DAG 引擎，权威）
 
@@ -263,16 +287,14 @@ context 的页**挤在同 channel、且各自成为独立 row activation**——
   翻成 `True`（run 不再因修正而碎），**channel 仍不分池、仍 round-robin**——所以
   **row conflict 依旧存在**，A3a 只修了"run 碎裂"那一半，没修"channel 冲突"那一半。
 
-### 诚实边界（别把结论说过头）
+### 一处已知的过期注释（核查时别被它带偏）
 
-- A4 避免的 row conflict 特指两件事：**(a) co-read 的 master vs diff 落到不相交
-  channel 并发**、**(b) 每池一条连续流（修正行掩码不打断 run）**。它**不是**声称"逐行
-  在 bank 间做花式轮转"——单条 run 在池内本就按 head→HBM 条带（R18，恒开）铺满该池的
-  channel；A4 改的是"池的划分方式"，把 naive 的"单 channel 挤压"换成"两池并发 + 连续流"。
-- **一处已知的过期注释**：`workload_runner.py:1220-1224` 的 docstring still说
-  "a master/diff pool has **eight** channels"——那是旧的 8/8 划分遗留文字；**以常量
-  `_KV_CHANNELS`（15/1）为准**（R5/audit-3a 裁决 2026-08-25）。核查时相信代码常量，
-  别信这条 prose。
+`workload_runner.py:1220-1224` 的 docstring still说 "a master/diff pool has **eight**
+channels"——那是旧的 8/8 划分遗留文字；**以常量 `_KV_CHANNELS`（15/1）为准**
+（R5/audit-3a 裁决 2026-08-25）。核查时相信代码常量，别信这条 prose。
+
+（A4"避免 row conflict"的**机制边界**——它是 by 构造而非逐 chunk 放置搜索——见本节
+上面"A4 怎么保证 co-read 的 chunk 不撞 channel"小节。）
 
 ### 你可以自己在 JSON 里验证
 
