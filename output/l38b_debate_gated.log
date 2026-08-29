@@ -1,0 +1,12 @@
+### free>280G -- launching debate 2026-08-28-13:06:32
+##### start k=2 debate_d3r5k49 13:06:32
+[k2 debate_d3r5k49] A1 FAILED -- see /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-130632_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A1.log
+[k2 debate_d3r5k49] REPORT_SUMMARY {"ablation": "A2", "decode_attn": "gpu", "energy_nj": 2485223338421.0273, "engine": "dag", "event_count": 16032, "kv_mapping": "none", "link_bytes": 1261533921280, "makespan_s": 62.86092420892649, "pim_prefill_mode": "gpu", "policy": "recompute"}
+[k2 debate_d3r5k49] A3 FAILED -- see /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-130632_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A3.log
+[k2 debate_d3r5k49] A3a FAILED -- see /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-130632_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A3a.log
+[k2 debate_d3r5k49] A4 FAILED -- see /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-130632_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A4.log
+[k2 debate_d3r5k49] A5 FAILED -- see /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-130632_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A5.log
+[k2 debate_d3r5k49] A6 FAILED -- see /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-130632_workload_debate_d3r5k49_LLAMA3-8B_k2/dag_A6.log
+##### end k=2 debate_d3r5k49 13:08:00
+##### chain debate_d3r5k49 ABORTED: k=2 batch FAILED
+SUITE DONE 13:08:00

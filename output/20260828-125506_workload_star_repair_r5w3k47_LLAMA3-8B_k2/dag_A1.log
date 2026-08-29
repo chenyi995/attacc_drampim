@@ -1,0 +1,68 @@
+[warm] collected 144000 Acc ops -> 144000 unique shapes (single build 8265s); simulating with up to 12 workers
+[warm] cache ready after 10796s total; repriced 401408 events, finalizing once
+{
+  "kind": "supervisor",
+  "requests": 20,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 1,
+    "fresh_tokens": 156936,
+    "policy": "no-reuse",
+    "random_seed": 0,
+    "recompute_canonical": false,
+    "reusable_segments": [],
+    "reused_tokens": 0
+  },
+  "tiers": {
+    "0": [
+      "main.r0"
+    ],
+    "1": [
+      "w0.r0",
+      "w1.r0",
+      "w2.r0"
+    ],
+    "2": [
+      "main.r1"
+    ],
+    "3": [
+      "w0.r1",
+      "w1.r1",
+      "w2.r1"
+    ],
+    "4": [
+      "main.r2"
+    ],
+    "5": [
+      "w0.r2",
+      "w1.r2",
+      "w2.r2"
+    ],
+    "6": [
+      "main.r3"
+    ],
+    "7": [
+      "w0.r3",
+      "w1.r3",
+      "w2.r3"
+    ],
+    "8": [
+      "main.r4"
+    ],
+    "9": [
+      "w0.r4",
+      "w1.r4",
+      "w2.r4"
+    ]
+  },
+  "total_history_tokens": 217848,
+  "total_input_tokens": 156936,
+  "total_output_tokens": 4480
+}
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-125506_workload_star_repair_r5w3k47_LLAMA3-8B_k2/dag_A1.json
+REPORT_SUMMARY {"ablation": "A1", "decode_attn": "pim", "energy_nj": 147976790773497.28, "engine": "dag", "event_count": 2499968, "kv_mapping": "private", "link_bytes": 21306212352, "makespan_s": 53.24934919717759, "pim_prefill_mode": "gpu", "policy": "no-reuse-physical"}

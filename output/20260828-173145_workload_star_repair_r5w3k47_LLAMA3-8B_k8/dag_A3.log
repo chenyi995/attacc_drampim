@@ -1,0 +1,9478 @@
+{
+  "kind": "supervisor",
+  "requests": 20,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 8,
+    "fresh_tokens": 15904,
+    "policy": "recompute",
+    "random_seed": 0,
+    "recompute_canonical": false,
+    "reusable_segments": [
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          66,
+          77,
+          98,
+          103,
+          107,
+          122,
+          124
+        ],
+        "fingerprint": "44b4023e3d1d63e6",
+        "length": 128,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          48,
+          71,
+          75,
+          111,
+          128,
+          144,
+          158,
+          183
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          37,
+          50,
+          51,
+          161,
+          169,
+          181,
+          222,
+          241
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          7,
+          31,
+          47,
+          104,
+          133,
+          204,
+          226,
+          244
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          32,
+          97,
+          113,
+          124,
+          166,
+          170,
+          252
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          41,
+          46,
+          55,
+          72,
+          122,
+          163,
+          229,
+          250
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          46,
+          63,
+          104,
+          147,
+          149,
+          154,
+          170,
+          227
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          16,
+          94,
+          95,
+          96,
+          123,
+          148,
+          162,
+          197
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          35,
+          41,
+          45,
+          66,
+          76,
+          133,
+          243
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          110,
+          120,
+          140,
+          141,
+          200,
+          214,
+          230,
+          252
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          42,
+          59,
+          97,
+          124,
+          166,
+          171,
+          182,
+          249
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r0",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          29,
+          43,
+          56,
+          69,
+          85,
+          95,
+          109
+        ],
+        "fingerprint": "44b4023e3d1d63e6",
+        "length": 128,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w1.r0",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          13,
+          23,
+          31,
+          37,
+          51,
+          63,
+          74,
+          112
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          18,
+          46,
+          59,
+          61,
+          96,
+          189,
+          200
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          31,
+          63,
+          94,
+          99,
+          107,
+          217,
+          245
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          35,
+          36,
+          51,
+          113,
+          133,
+          154,
+          179,
+          223
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          20,
+          31,
+          51,
+          92,
+          102,
+          133,
+          200,
+          239
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          29,
+          81,
+          82,
+          86,
+          104,
+          175,
+          183,
+          240
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          6,
+          60,
+          89,
+          128,
+          159,
+          209,
+          226,
+          241
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          6,
+          40,
+          78,
+          128,
+          171,
+          182,
+          198,
+          234
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          23,
+          69,
+          122,
+          143,
+          147,
+          180,
+          183,
+          246
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          41,
+          67,
+          98,
+          158,
+          171,
+          198,
+          212
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r0",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          8,
+          40,
+          57,
+          61,
+          96,
+          102,
+          106,
+          114
+        ],
+        "fingerprint": "44b4023e3d1d63e6",
+        "length": 128,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w2.r0",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          23,
+          32,
+          80,
+          84,
+          132,
+          214,
+          228,
+          249
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          19,
+          25,
+          159,
+          166,
+          212,
+          239,
+          253
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          1,
+          7,
+          42,
+          66,
+          96,
+          161,
+          205,
+          213
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          1,
+          7,
+          50,
+          60,
+          97,
+          101,
+          109,
+          154
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          41,
+          51,
+          93,
+          140,
+          143,
+          203,
+          243
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          58,
+          59,
+          68,
+          79,
+          131,
+          142,
+          177,
+          231
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          9,
+          20,
+          21,
+          105,
+          132,
+          161,
+          187,
+          253
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          91,
+          106,
+          149,
+          190,
+          192,
+          222,
+          234
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          47,
+          70,
+          77,
+          138,
+          170,
+          172,
+          173,
+          188
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          18,
+          21,
+          76,
+          83,
+          138,
+          148,
+          184,
+          202
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r0",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          12,
+          29,
+          33,
+          45,
+          61,
+          75,
+          78,
+          122
+        ],
+        "fingerprint": "44b4023e3d1d63e6",
+        "length": 128,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          36,
+          50,
+          55,
+          153,
+          154,
+          168,
+          206,
+          212
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          59,
+          63,
+          172,
+          175,
+          242,
+          245,
+          246,
+          254
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          44,
+          79,
+          85,
+          154,
+          171,
+          192,
+          218
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          31,
+          33,
+          43,
+          50,
+          101,
+          113,
+          197
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          42,
+          111,
+          148,
+          188,
+          201,
+          216,
+          229,
+          250
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          32,
+          58,
+          85,
+          98,
+          112,
+          133,
+          183,
+          220
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          14,
+          60,
+          103,
+          106,
+          131,
+          203,
+          231,
+          254
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          21,
+          53,
+          74,
+          101,
+          110,
+          185,
+          193,
+          234
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          53,
+          75,
+          77,
+          165,
+          207,
+          216,
+          249,
+          253
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          18,
+          103,
+          112,
+          162,
+          164,
+          174,
+          255
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r1",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          16,
+          21,
+          37,
+          39,
+          65,
+          75,
+          97,
+          120
+        ],
+        "fingerprint": "5d0a73473392c761",
+        "length": 128,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w0.r1",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          7,
+          20,
+          33,
+          66,
+          115,
+          153,
+          169,
+          229
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          17,
+          39,
+          46,
+          76,
+          82,
+          190,
+          195,
+          235
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          105,
+          119,
+          148,
+          198,
+          213,
+          218,
+          246
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          33,
+          93,
+          130,
+          134,
+          154,
+          170,
+          252
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          31,
+          65,
+          83,
+          122,
+          146,
+          155,
+          196,
+          208
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          18,
+          28,
+          41,
+          72,
+          171,
+          213,
+          246,
+          251
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          18,
+          24,
+          77,
+          180,
+          197,
+          210,
+          234,
+          238
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          16,
+          51,
+          53,
+          67,
+          77,
+          165,
+          241
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          30,
+          56,
+          99,
+          172,
+          177,
+          196,
+          239,
+          251
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          62,
+          63,
+          65,
+          96,
+          150,
+          151,
+          198
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r1",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          22,
+          38,
+          97,
+          182,
+          190,
+          200,
+          227,
+          233
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          13,
+          20,
+          47,
+          110,
+          117,
+          130,
+          215,
+          248
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          43,
+          53,
+          58,
+          74,
+          156,
+          212,
+          216,
+          218
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          15,
+          32,
+          50,
+          79,
+          212,
+          213,
+          220,
+          228
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          15,
+          36,
+          40,
+          62,
+          129,
+          166,
+          180,
+          254
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          5,
+          15,
+          91,
+          118,
+          176,
+          178,
+          183,
+          187
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          1,
+          3,
+          36,
+          63,
+          73,
+          104,
+          106,
+          150
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          12,
+          57,
+          72,
+          95,
+          119,
+          188,
+          232,
+          244
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          14,
+          66,
+          106,
+          132,
+          171,
+          176,
+          185,
+          242
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r1",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          20,
+          26,
+          40,
+          47,
+          74,
+          75,
+          78,
+          83
+        ],
+        "fingerprint": "5d0a73473392c761",
+        "length": 128,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w1.r1",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          64,
+          75,
+          94,
+          114,
+          121,
+          124,
+          161,
+          192
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          23,
+          39,
+          67,
+          149,
+          190,
+          201,
+          214
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          37,
+          67,
+          72,
+          152,
+          153,
+          213,
+          215,
+          216
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          29,
+          43,
+          127,
+          181,
+          189,
+          192,
+          209,
+          227
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          104,
+          150,
+          164,
+          190,
+          213,
+          225,
+          241
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          46,
+          55,
+          57,
+          78,
+          94,
+          141,
+          204,
+          228
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          72,
+          89,
+          94,
+          126,
+          174,
+          215,
+          221,
+          232
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          44,
+          104,
+          150,
+          181,
+          229,
+          236,
+          247
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          3,
+          58,
+          79,
+          111,
+          152,
+          154,
+          217,
+          236
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          47,
+          61,
+          118,
+          143,
+          207,
+          241,
+          254
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r1",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          0,
+          20,
+          52,
+          131,
+          138,
+          202,
+          203,
+          227
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          18,
+          36,
+          43,
+          100,
+          129,
+          134,
+          145,
+          181
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          34,
+          60,
+          83,
+          127,
+          148,
+          156,
+          174,
+          212
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          53,
+          68,
+          107,
+          142,
+          144,
+          149,
+          206,
+          210
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          61,
+          63,
+          70,
+          80,
+          190,
+          195,
+          205,
+          226
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          71,
+          111,
+          153,
+          181,
+          212,
+          239,
+          242,
+          244
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          30,
+          73,
+          153,
+          162,
+          227,
+          250,
+          252,
+          253
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          5,
+          13,
+          26,
+          34,
+          110,
+          181,
+          200,
+          241
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          1,
+          3,
+          21,
+          41,
+          59,
+          138,
+          184,
+          202
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r1",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          26,
+          36,
+          48,
+          58,
+          73,
+          74,
+          111,
+          117
+        ],
+        "fingerprint": "5d0a73473392c761",
+        "length": 128,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w2.r1",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          75,
+          86,
+          161,
+          169,
+          196,
+          215,
+          222,
+          229
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          66,
+          95,
+          106,
+          178,
+          199,
+          218,
+          227,
+          251
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          17,
+          25,
+          100,
+          104,
+          112,
+          198,
+          199,
+          224
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          29,
+          43,
+          44,
+          88,
+          95,
+          119,
+          152,
+          186
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          27,
+          145,
+          180,
+          210,
+          220,
+          232,
+          234,
+          250
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          21,
+          22,
+          26,
+          110,
+          130,
+          136,
+          172,
+          243
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          1,
+          3,
+          32,
+          71,
+          83,
+          148,
+          179,
+          219
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          43,
+          52,
+          98,
+          113,
+          163,
+          173,
+          203,
+          232
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          14,
+          22,
+          97,
+          130,
+          165,
+          166,
+          188,
+          233
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          41,
+          96,
+          103,
+          107,
+          128,
+          154,
+          159,
+          177
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r1",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          22,
+          37,
+          122,
+          130,
+          156,
+          176,
+          196,
+          246
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          4,
+          24,
+          211,
+          224,
+          225,
+          235,
+          252,
+          253
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          41,
+          43,
+          50,
+          60,
+          78,
+          109,
+          123,
+          211
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          20,
+          39,
+          92,
+          127,
+          201,
+          218,
+          225,
+          250
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          54,
+          65,
+          112,
+          142,
+          146,
+          163,
+          180,
+          222
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          8,
+          103,
+          118,
+          133,
+          139,
+          151,
+          226,
+          236
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          50,
+          60,
+          88,
+          111,
+          127,
+          145,
+          212
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          25,
+          60,
+          62,
+          117,
+          139,
+          183,
+          196,
+          219
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          33,
+          113,
+          119,
+          122,
+          144,
+          157,
+          167,
+          191
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r1",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          6,
+          35,
+          43,
+          73,
+          83,
+          93,
+          122
+        ],
+        "fingerprint": "5d0a73473392c761",
+        "length": 128,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          39,
+          66,
+          69,
+          79,
+          90,
+          105,
+          202,
+          254
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          55,
+          67,
+          109,
+          119,
+          120,
+          180,
+          196,
+          255
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          6,
+          13,
+          83,
+          112,
+          158,
+          183,
+          233,
+          250
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          40,
+          70,
+          97,
+          132,
+          160,
+          205,
+          246,
+          253
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          30,
+          106,
+          127,
+          149,
+          161,
+          162,
+          196
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          8,
+          83,
+          115,
+          133,
+          156,
+          175,
+          176,
+          225
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          12,
+          29,
+          31,
+          77,
+          180,
+          182,
+          251
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          6,
+          23,
+          31,
+          34,
+          115,
+          123,
+          167,
+          176
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          69,
+          72,
+          110,
+          159,
+          183,
+          216,
+          222,
+          229
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          21,
+          90,
+          135,
+          168,
+          195,
+          209,
+          236
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r2",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r2",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          0,
+          20,
+          31,
+          35,
+          37,
+          43,
+          99,
+          104
+        ],
+        "fingerprint": "d9dc33189ee79049",
+        "length": 128,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w0.r2",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          40,
+          86,
+          90,
+          121,
+          126,
+          168,
+          218
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          13,
+          20,
+          53,
+          76,
+          129,
+          174,
+          192,
+          234
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          18,
+          45,
+          77,
+          120,
+          149,
+          183,
+          234,
+          254
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          7,
+          83,
+          138,
+          172,
+          182,
+          201,
+          207,
+          252
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          17,
+          19,
+          134,
+          147,
+          159,
+          202,
+          233,
+          240
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          17,
+          26,
+          61,
+          139,
+          177,
+          206,
+          253
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          59,
+          106,
+          128,
+          130,
+          148,
+          168,
+          174,
+          197
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          26,
+          78,
+          79,
+          83,
+          124,
+          169,
+          180
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          149,
+          150,
+          165,
+          176,
+          185,
+          206,
+          220,
+          253
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          4,
+          22,
+          64,
+          72,
+          87,
+          174,
+          226
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r2",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          35,
+          86,
+          89,
+          96,
+          131,
+          142,
+          217,
+          245
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          32,
+          56,
+          80,
+          136,
+          145,
+          159,
+          196,
+          222
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          6,
+          97,
+          132,
+          143,
+          162,
+          175,
+          219,
+          221
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          18,
+          72,
+          79,
+          184,
+          196,
+          210,
+          237
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          8,
+          9,
+          81,
+          99,
+          116,
+          181,
+          185,
+          254
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          39,
+          94,
+          121,
+          123,
+          127,
+          140,
+          215,
+          229
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          33,
+          51,
+          84,
+          96,
+          202,
+          218,
+          225,
+          230
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          15,
+          46,
+          129,
+          139,
+          157,
+          167,
+          182,
+          223
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          5,
+          103,
+          128,
+          197,
+          199,
+          203,
+          223,
+          252
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r2",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          12,
+          19,
+          64,
+          142,
+          167,
+          181,
+          203,
+          238
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          2,
+          21,
+          35,
+          41,
+          69,
+          177,
+          184,
+          242
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          12,
+          22,
+          56,
+          64,
+          97,
+          161,
+          201,
+          241
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          30,
+          72,
+          75,
+          83,
+          140,
+          156,
+          206,
+          208
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          22,
+          23,
+          64,
+          68,
+          92,
+          176,
+          198,
+          246
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          41,
+          42,
+          89,
+          103,
+          129,
+          133,
+          135,
+          167
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          17,
+          19,
+          78,
+          79,
+          90,
+          132,
+          229,
+          233
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          36,
+          81,
+          98,
+          122,
+          161,
+          170,
+          233,
+          234
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          1,
+          29,
+          40,
+          42,
+          53,
+          69,
+          175,
+          243
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          60,
+          69,
+          171,
+          180,
+          185,
+          193,
+          218,
+          231
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r2",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          4,
+          5,
+          11,
+          32,
+          46,
+          49,
+          81,
+          86
+        ],
+        "fingerprint": "d9dc33189ee79049",
+        "length": 128,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w1.r2",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          26,
+          31,
+          39,
+          86,
+          159,
+          183,
+          199,
+          211
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          27,
+          130,
+          158,
+          181,
+          209,
+          211,
+          225,
+          232
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          15,
+          32,
+          92,
+          97,
+          135,
+          183,
+          198,
+          232
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          6,
+          10,
+          13,
+          49,
+          63,
+          90,
+          179,
+          206
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          26,
+          41,
+          134,
+          165,
+          205,
+          233,
+          243,
+          253
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          14,
+          16,
+          41,
+          49,
+          50,
+          170,
+          183,
+          241
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          18,
+          75,
+          78,
+          80,
+          146,
+          172,
+          192
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          12,
+          81,
+          82,
+          89,
+          124,
+          168,
+          203,
+          247
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          22,
+          87,
+          115,
+          121,
+          123,
+          144,
+          168,
+          180
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          6,
+          70,
+          83,
+          115,
+          186,
+          197,
+          215,
+          237
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r2",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          2,
+          9,
+          12,
+          76,
+          83,
+          88,
+          165,
+          199
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          1,
+          13,
+          19,
+          24,
+          57,
+          75,
+          78,
+          194
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          70,
+          110,
+          126,
+          170,
+          186,
+          204,
+          214,
+          223
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          37,
+          49,
+          66,
+          125,
+          179,
+          208,
+          220,
+          223
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          35,
+          115,
+          122,
+          195,
+          202,
+          203,
+          241,
+          246
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          11,
+          20,
+          121,
+          129,
+          141,
+          164,
+          190,
+          242
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          13,
+          24,
+          54,
+          73,
+          200,
+          201,
+          215,
+          221
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          53,
+          82,
+          86,
+          174,
+          210,
+          235,
+          236,
+          242
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          57,
+          73,
+          81,
+          145,
+          176,
+          183,
+          188,
+          242
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r2",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          21,
+          27,
+          90,
+          100,
+          131,
+          151,
+          166,
+          194
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          17,
+          106,
+          137,
+          149,
+          177,
+          192,
+          210,
+          220
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          15,
+          56,
+          67,
+          68,
+          84,
+          182,
+          203,
+          220
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          38,
+          39,
+          70,
+          78,
+          86,
+          106,
+          217,
+          237
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          15,
+          69,
+          84,
+          116,
+          147,
+          171,
+          182,
+          252
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          60,
+          74,
+          81,
+          134,
+          169,
+          175,
+          192,
+          209
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          120,
+          156,
+          177,
+          193,
+          199,
+          208,
+          209,
+          241
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          2,
+          50,
+          54,
+          56,
+          75,
+          78,
+          104,
+          136
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          5,
+          18,
+          43,
+          59,
+          86,
+          185,
+          192,
+          246
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          55,
+          81,
+          117,
+          129,
+          162,
+          188,
+          231,
+          249
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r2",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          6,
+          19,
+          42,
+          43,
+          53,
+          103,
+          104,
+          112
+        ],
+        "fingerprint": "d9dc33189ee79049",
+        "length": 128,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w2.r2",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          27,
+          68,
+          87,
+          135,
+          192,
+          198,
+          225
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          20,
+          44,
+          52,
+          119,
+          171,
+          207,
+          233,
+          245
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          92,
+          117,
+          135,
+          137,
+          186,
+          201,
+          242,
+          251
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          35,
+          73,
+          81,
+          154,
+          201,
+          209,
+          233,
+          244
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          47,
+          56,
+          72,
+          117,
+          135,
+          151,
+          184,
+          246
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          3,
+          16,
+          29,
+          48,
+          70,
+          101,
+          207,
+          251
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          2,
+          49,
+          54,
+          116,
+          123,
+          175,
+          177,
+          242
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          115,
+          140,
+          159,
+          174,
+          181,
+          253,
+          254
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          39,
+          46,
+          74,
+          115,
+          156,
+          188,
+          195,
+          216
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          66,
+          102,
+          118,
+          144,
+          147,
+          183,
+          196,
+          246
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r2",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          61,
+          117,
+          181,
+          183,
+          191,
+          205,
+          221,
+          241
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          53,
+          61,
+          142,
+          144,
+          149,
+          183,
+          205,
+          245
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          78,
+          95,
+          117,
+          124,
+          173,
+          176,
+          228,
+          255
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          56,
+          112,
+          159,
+          196,
+          199,
+          204,
+          236,
+          237
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          0,
+          47,
+          119,
+          161,
+          162,
+          201,
+          241,
+          249
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          20,
+          24,
+          47,
+          102,
+          116,
+          134,
+          208,
+          220
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          14,
+          22,
+          57,
+          91,
+          92,
+          119,
+          167,
+          186
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          2,
+          4,
+          41,
+          59,
+          66,
+          102,
+          195,
+          238
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          0,
+          34,
+          90,
+          101,
+          116,
+          119,
+          195,
+          212
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r2",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          0,
+          14,
+          21,
+          107,
+          137,
+          195,
+          223,
+          243
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          47,
+          52,
+          68,
+          128,
+          172,
+          177,
+          188,
+          232
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          12,
+          52,
+          69,
+          72,
+          106,
+          139,
+          163,
+          194
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          54,
+          61,
+          63,
+          103,
+          215,
+          229,
+          240,
+          243
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          40,
+          65,
+          91,
+          130,
+          173,
+          193,
+          213,
+          232
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          12,
+          119,
+          127,
+          171,
+          179,
+          210,
+          232,
+          246
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          3,
+          114,
+          123,
+          129,
+          207,
+          219,
+          228,
+          244
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          72,
+          76,
+          116,
+          145,
+          184,
+          225,
+          243,
+          248
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          18,
+          30,
+          44,
+          62,
+          79,
+          96,
+          153,
+          175
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          82,
+          96,
+          98,
+          171,
+          199,
+          210,
+          239,
+          254
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r2",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          12,
+          42,
+          46,
+          48,
+          83,
+          86,
+          100,
+          111
+        ],
+        "fingerprint": "d9dc33189ee79049",
+        "length": 128,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          16,
+          77,
+          109,
+          124,
+          162,
+          225,
+          249,
+          252
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          22,
+          31,
+          68,
+          100,
+          114,
+          124,
+          226
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          55,
+          83,
+          98,
+          146,
+          173,
+          190,
+          217,
+          252
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          34,
+          75,
+          112,
+          162,
+          182,
+          200,
+          224,
+          239
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          23,
+          58,
+          79,
+          107,
+          188,
+          201,
+          237
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          2,
+          44,
+          69,
+          106,
+          107,
+          207,
+          210,
+          211
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          7,
+          33,
+          40,
+          104,
+          158,
+          194,
+          250,
+          252
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          14,
+          42,
+          122,
+          159,
+          184,
+          188,
+          214
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          56,
+          78,
+          112,
+          132,
+          142,
+          195,
+          228,
+          238
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          22,
+          45,
+          79,
+          116,
+          135,
+          161,
+          173,
+          196
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r3",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r3",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r3",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          6,
+          16,
+          29,
+          81,
+          98,
+          111,
+          122,
+          124
+        ],
+        "fingerprint": "ce4ad42a86f61c1d",
+        "length": 128,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w0.r3",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          15,
+          16,
+          60,
+          68,
+          72,
+          126,
+          220,
+          222
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          59,
+          97,
+          135,
+          139,
+          149,
+          176,
+          191,
+          196
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          7,
+          11,
+          30,
+          82,
+          132,
+          169,
+          173,
+          253
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          34,
+          38,
+          50,
+          53,
+          70,
+          128,
+          176,
+          213
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          17,
+          49,
+          65,
+          90,
+          111,
+          114,
+          177,
+          248
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          80,
+          102,
+          103,
+          117,
+          137,
+          178,
+          204,
+          224
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          42,
+          65,
+          110,
+          141,
+          160,
+          167,
+          238
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          7,
+          17,
+          43,
+          58,
+          85,
+          149,
+          157,
+          165
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          45,
+          62,
+          103,
+          140,
+          177,
+          209,
+          212,
+          229
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          41,
+          89,
+          123,
+          146,
+          151,
+          165,
+          223,
+          237
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r3",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          4,
+          11,
+          16,
+          39,
+          137,
+          147,
+          160,
+          162
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          24,
+          28,
+          71,
+          127,
+          132,
+          143,
+          198,
+          214
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          62,
+          115,
+          129,
+          160,
+          191,
+          216,
+          229,
+          250
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          15,
+          26,
+          41,
+          86,
+          118,
+          122,
+          196,
+          244
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          7,
+          50,
+          65,
+          93,
+          157,
+          185,
+          211,
+          224
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          63,
+          126,
+          137,
+          144,
+          206,
+          220,
+          241,
+          255
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          29,
+          77,
+          84,
+          103,
+          113,
+          127,
+          154,
+          182
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          13,
+          74,
+          80,
+          92,
+          95,
+          119,
+          128,
+          213
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          10,
+          65,
+          86,
+          102,
+          124,
+          126,
+          153,
+          235
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r3",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          31,
+          85,
+          108,
+          195,
+          197,
+          198,
+          210,
+          252
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          5,
+          41,
+          44,
+          52,
+          64,
+          124,
+          202,
+          230
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          39,
+          80,
+          124,
+          132,
+          141,
+          176,
+          202,
+          211
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          23,
+          27,
+          34,
+          68,
+          107,
+          127,
+          228,
+          230
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          6,
+          75,
+          129,
+          148,
+          152,
+          179,
+          183,
+          187
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          11,
+          68,
+          102,
+          154,
+          173,
+          203,
+          242,
+          245
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          71,
+          151,
+          169,
+          178,
+          194,
+          202,
+          225,
+          243
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          85,
+          96,
+          110,
+          120,
+          135,
+          152,
+          205,
+          220
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          26,
+          71,
+          132,
+          154,
+          174,
+          221,
+          233,
+          243
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          0,
+          9,
+          35,
+          52,
+          99,
+          103,
+          131,
+          234
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r3",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          4,
+          8,
+          10,
+          88,
+          94,
+          110,
+          137,
+          184
+        ],
+        "fingerprint": "7e497667b297c845",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          44,
+          85,
+          120,
+          158,
+          181,
+          185,
+          201,
+          255
+        ],
+        "fingerprint": "37b4718978e1500a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          7,
+          12,
+          59,
+          88,
+          106,
+          139,
+          180,
+          221
+        ],
+        "fingerprint": "a03f8799509acc24",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          77,
+          91,
+          94,
+          100,
+          163,
+          196,
+          208,
+          254
+        ],
+        "fingerprint": "810508acd012e8a7",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          1,
+          16,
+          27,
+          43,
+          69,
+          116,
+          214,
+          223
+        ],
+        "fingerprint": "b03fe1ff7b59999e",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          31,
+          70,
+          96,
+          140,
+          158,
+          161,
+          169,
+          173
+        ],
+        "fingerprint": "40596d9bc8f60e23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          39,
+          55,
+          81,
+          138,
+          169,
+          234,
+          246,
+          248
+        ],
+        "fingerprint": "a4cee309986b1e06",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          57,
+          64,
+          81,
+          132,
+          207,
+          214,
+          215,
+          229
+        ],
+        "fingerprint": "8b3f6b908f9ada23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          51,
+          57,
+          95,
+          134,
+          141,
+          150,
+          217,
+          246
+        ],
+        "fingerprint": "081e2fb018d14722",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r3",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          2,
+          3,
+          10,
+          19,
+          28,
+          31,
+          35,
+          91
+        ],
+        "fingerprint": "ce4ad42a86f61c1d",
+        "length": 128,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w1.r3",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          13,
+          43,
+          71,
+          160,
+          197,
+          200,
+          208,
+          246
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          14,
+          24,
+          67,
+          107,
+          115,
+          152,
+          204,
+          211
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          28,
+          65,
+          74,
+          86,
+          106,
+          207,
+          208,
+          228
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          4,
+          45,
+          108,
+          129,
+          137,
+          147,
+          206,
+          240
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          5,
+          26,
+          35,
+          58,
+          68,
+          72,
+          79,
+          145
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          3,
+          32,
+          44,
+          74,
+          165,
+          169,
+          170,
+          190
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          41,
+          43,
+          106,
+          129,
+          169,
+          230,
+          240,
+          248
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          37,
+          112,
+          161,
+          196,
+          206,
+          218,
+          224,
+          245
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          17,
+          36,
+          73,
+          75,
+          79,
+          160,
+          196,
+          204
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          34,
+          59,
+          137,
+          154,
+          163,
+          180,
+          205,
+          244
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r3",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          19,
+          118,
+          175,
+          176,
+          187,
+          196,
+          238
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          12,
+          39,
+          56,
+          124,
+          127,
+          188,
+          222,
+          243
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          20,
+          57,
+          92,
+          137,
+          174,
+          183,
+          187,
+          248
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          0,
+          22,
+          82,
+          120,
+          176,
+          214,
+          244,
+          247
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          13,
+          84,
+          109,
+          147,
+          197,
+          232,
+          245,
+          247
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          73,
+          88,
+          161,
+          167,
+          200,
+          219,
+          220,
+          226
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          108,
+          121,
+          123,
+          130,
+          151,
+          188,
+          190,
+          195
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          73,
+          74,
+          121,
+          124,
+          131,
+          164,
+          172,
+          233
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          58,
+          88,
+          92,
+          104,
+          127,
+          183,
+          228,
+          245
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r3",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          45,
+          103,
+          107,
+          139,
+          150,
+          181,
+          199,
+          254
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          10,
+          22,
+          83,
+          98,
+          100,
+          161,
+          208,
+          234
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          27,
+          41,
+          128,
+          147,
+          160,
+          197,
+          214,
+          249
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          30,
+          58,
+          81,
+          136,
+          158,
+          171,
+          212,
+          224
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          8,
+          41,
+          45,
+          46,
+          112,
+          169,
+          191,
+          246
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          10,
+          21,
+          46,
+          48,
+          49,
+          120,
+          159,
+          200
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          65,
+          70,
+          81,
+          94,
+          101,
+          115,
+          142,
+          151
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          66,
+          74,
+          104,
+          116,
+          132,
+          138,
+          155,
+          253
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          8,
+          40,
+          69,
+          93,
+          101,
+          179,
+          208,
+          245
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          2,
+          41,
+          64,
+          73,
+          106,
+          112,
+          138,
+          142
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r3",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          1,
+          21,
+          65,
+          74,
+          112,
+          163,
+          214,
+          248
+        ],
+        "fingerprint": "7e497667b297c845",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          51,
+          89,
+          96,
+          118,
+          140,
+          162,
+          226,
+          233
+        ],
+        "fingerprint": "37b4718978e1500a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          111,
+          139,
+          144,
+          146,
+          179,
+          180,
+          200,
+          250
+        ],
+        "fingerprint": "a03f8799509acc24",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          33,
+          48,
+          58,
+          70,
+          73,
+          89,
+          192,
+          235
+        ],
+        "fingerprint": "810508acd012e8a7",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          35,
+          90,
+          99,
+          133,
+          135,
+          167,
+          216,
+          225
+        ],
+        "fingerprint": "b03fe1ff7b59999e",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          17,
+          26,
+          64,
+          77,
+          176,
+          192,
+          196,
+          199
+        ],
+        "fingerprint": "40596d9bc8f60e23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          44,
+          104,
+          107,
+          156,
+          200,
+          212,
+          227,
+          239
+        ],
+        "fingerprint": "a4cee309986b1e06",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          16,
+          49,
+          62,
+          85,
+          103,
+          119,
+          205,
+          238
+        ],
+        "fingerprint": "8b3f6b908f9ada23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          35,
+          48,
+          101,
+          108,
+          111,
+          123,
+          193,
+          208
+        ],
+        "fingerprint": "081e2fb018d14722",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r3",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          23,
+          25,
+          33,
+          49,
+          67,
+          101,
+          110,
+          125
+        ],
+        "fingerprint": "ce4ad42a86f61c1d",
+        "length": 128,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w2.r3",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          14,
+          17,
+          101,
+          105,
+          176,
+          179,
+          225,
+          241
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          3,
+          46,
+          73,
+          108,
+          110,
+          121,
+          232,
+          241
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          45,
+          63,
+          141,
+          148,
+          152,
+          168,
+          200,
+          254
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          9,
+          45,
+          69,
+          117,
+          122,
+          189,
+          209,
+          248
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          38,
+          59,
+          73,
+          74,
+          144,
+          163,
+          164,
+          189
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          18,
+          98,
+          102,
+          151,
+          184,
+          193,
+          202,
+          217
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          39,
+          73,
+          79,
+          96,
+          147,
+          179,
+          225,
+          250
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          59,
+          71,
+          76,
+          79,
+          80,
+          108,
+          135,
+          219
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          43,
+          91,
+          153,
+          187,
+          216,
+          226,
+          240
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          15,
+          21,
+          44,
+          50,
+          51,
+          125,
+          238,
+          253
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r3",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          62,
+          81,
+          83,
+          121,
+          131,
+          133,
+          192,
+          254
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          6,
+          34,
+          54,
+          73,
+          79,
+          90,
+          115,
+          124
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          21,
+          38,
+          48,
+          132,
+          138,
+          143,
+          214,
+          239
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          30,
+          72,
+          130,
+          170,
+          177,
+          199,
+          208,
+          231
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          11,
+          45,
+          73,
+          108,
+          109,
+          123,
+          126,
+          151
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          5,
+          66,
+          128,
+          163,
+          169,
+          198,
+          215,
+          231
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          48,
+          102,
+          121,
+          134,
+          138,
+          152,
+          156,
+          227
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          13,
+          26,
+          43,
+          74,
+          188,
+          197,
+          229,
+          230
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          54,
+          82,
+          99,
+          136,
+          146,
+          217,
+          239
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r3",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          67,
+          101,
+          131,
+          135,
+          197,
+          206,
+          241,
+          248
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          7,
+          55,
+          88,
+          106,
+          133,
+          137,
+          173,
+          254
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          15,
+          65,
+          98,
+          158,
+          165,
+          169,
+          210,
+          223
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          63,
+          88,
+          127,
+          181,
+          183,
+          218,
+          226,
+          241
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          44,
+          49,
+          54,
+          67,
+          186,
+          209,
+          223,
+          231
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          7,
+          29,
+          49,
+          121,
+          197,
+          201,
+          215,
+          245
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          0,
+          63,
+          73,
+          87,
+          142,
+          151,
+          154,
+          172
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          0,
+          47,
+          101,
+          124,
+          172,
+          173,
+          191,
+          231
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          2,
+          7,
+          52,
+          87,
+          133,
+          204,
+          230,
+          236
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          47,
+          52,
+          54,
+          58,
+          106,
+          154,
+          159,
+          168
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r3",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          31,
+          56,
+          84,
+          125,
+          132,
+          147,
+          227,
+          238
+        ],
+        "fingerprint": "7e497667b297c845",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          8,
+          13,
+          51,
+          62,
+          85,
+          158,
+          193,
+          225
+        ],
+        "fingerprint": "37b4718978e1500a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          42,
+          106,
+          117,
+          131,
+          188,
+          195,
+          196,
+          237
+        ],
+        "fingerprint": "a03f8799509acc24",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          4,
+          95,
+          119,
+          145,
+          160,
+          177,
+          215,
+          217
+        ],
+        "fingerprint": "810508acd012e8a7",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          83,
+          95,
+          113,
+          129,
+          139,
+          176,
+          239,
+          242
+        ],
+        "fingerprint": "b03fe1ff7b59999e",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          10,
+          11,
+          126,
+          146,
+          165,
+          190,
+          236,
+          242
+        ],
+        "fingerprint": "40596d9bc8f60e23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          16,
+          52,
+          68,
+          93,
+          101,
+          169,
+          199,
+          235
+        ],
+        "fingerprint": "a4cee309986b1e06",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          6,
+          101,
+          104,
+          188,
+          211,
+          225,
+          239,
+          251
+        ],
+        "fingerprint": "8b3f6b908f9ada23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          34,
+          40,
+          44,
+          67,
+          106,
+          142,
+          207,
+          251
+        ],
+        "fingerprint": "081e2fb018d14722",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r3",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          0,
+          5,
+          50,
+          75,
+          87,
+          107,
+          109,
+          122
+        ],
+        "fingerprint": "ce4ad42a86f61c1d",
+        "length": 128,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          32,
+          44,
+          145,
+          177,
+          194,
+          211,
+          229
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          118,
+          144,
+          147,
+          195,
+          205,
+          222,
+          248
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          78,
+          154,
+          189,
+          202,
+          204,
+          220,
+          240,
+          248
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          87,
+          155,
+          177,
+          214,
+          217,
+          224,
+          225
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          12,
+          33,
+          116,
+          118,
+          158,
+          169,
+          173,
+          192
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          16,
+          35,
+          50,
+          79,
+          90,
+          93,
+          117,
+          254
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          5,
+          91,
+          148,
+          159,
+          203,
+          220,
+          223,
+          225
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          54,
+          59,
+          80,
+          81,
+          144,
+          242,
+          245
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          16,
+          34,
+          136,
+          154,
+          156,
+          169,
+          200,
+          236
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          30,
+          34,
+          105,
+          112,
+          150,
+          158,
+          193,
+          232
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "main.r4",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "main.r4",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "main.r4",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "7e497667b297c845",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "37b4718978e1500a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "a03f8799509acc24",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "810508acd012e8a7",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "b03fe1ff7b59999e",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "40596d9bc8f60e23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "a4cee309986b1e06",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "8b3f6b908f9ada23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 40
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [],
+        "fingerprint": "081e2fb018d14722",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "main.r4",
+        "segment_index": 41
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          1,
+          10,
+          14,
+          23,
+          75,
+          79,
+          94,
+          108
+        ],
+        "fingerprint": "43fff286665785fb",
+        "length": 128,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w0.r4",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          16,
+          22,
+          41,
+          71,
+          79,
+          86,
+          240
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          10,
+          33,
+          39,
+          51,
+          52,
+          59,
+          69,
+          103
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          41,
+          52,
+          58,
+          86,
+          221,
+          228,
+          242,
+          249
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          17,
+          41,
+          48,
+          66,
+          70,
+          127,
+          190,
+          216
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          46,
+          78,
+          123,
+          157,
+          165,
+          190,
+          193,
+          200
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          4,
+          10,
+          145,
+          180,
+          186,
+          191,
+          207
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          59,
+          70,
+          73,
+          95,
+          107,
+          131,
+          247,
+          250
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          20,
+          64,
+          71,
+          88,
+          133,
+          141,
+          165,
+          179
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          48,
+          59,
+          74,
+          97,
+          102,
+          128,
+          164,
+          253
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          16,
+          52,
+          124,
+          140,
+          180,
+          182,
+          198,
+          204
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w0.r4",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          17,
+          81,
+          118,
+          134,
+          138,
+          169,
+          201,
+          215
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          23,
+          40,
+          116,
+          136,
+          137,
+          171,
+          213
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          37,
+          58,
+          87,
+          91,
+          102,
+          129,
+          189,
+          254
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          2,
+          15,
+          21,
+          81,
+          132,
+          146,
+          168,
+          208
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          16,
+          88,
+          97,
+          101,
+          119,
+          207,
+          230,
+          232
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          8,
+          59,
+          95,
+          171,
+          177,
+          186,
+          214,
+          245
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          7,
+          82,
+          96,
+          116,
+          197,
+          200,
+          211,
+          253
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          32,
+          78,
+          81,
+          109,
+          129,
+          195,
+          219,
+          227
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          1,
+          50,
+          78,
+          90,
+          94,
+          128,
+          154,
+          203
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w0.r4",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          61,
+          128,
+          131,
+          164,
+          215,
+          217,
+          237,
+          251
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          11,
+          103,
+          129,
+          131,
+          145,
+          161,
+          192,
+          255
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          11,
+          18,
+          43,
+          139,
+          142,
+          208,
+          212,
+          216
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          13,
+          15,
+          179,
+          199,
+          227,
+          241,
+          243,
+          252
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          12,
+          34,
+          94,
+          107,
+          112,
+          157,
+          182,
+          220
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          49,
+          65,
+          79,
+          84,
+          161,
+          225,
+          232,
+          254
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          22,
+          114,
+          129,
+          135,
+          174,
+          184,
+          250,
+          251
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          32,
+          49,
+          66,
+          71,
+          74,
+          157,
+          174,
+          201
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          13,
+          22,
+          25,
+          39,
+          71,
+          99,
+          241,
+          250
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          41,
+          66,
+          69,
+          132,
+          154,
+          182,
+          238,
+          239
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w0.r4",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          21,
+          51,
+          52,
+          56,
+          156,
+          157,
+          168,
+          189
+        ],
+        "fingerprint": "7e497667b297c845",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          3,
+          46,
+          92,
+          109,
+          187,
+          207,
+          213,
+          243
+        ],
+        "fingerprint": "37b4718978e1500a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          74,
+          105,
+          136,
+          192,
+          219,
+          221,
+          248,
+          252
+        ],
+        "fingerprint": "a03f8799509acc24",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          36,
+          70,
+          98,
+          137,
+          164,
+          185,
+          217,
+          238
+        ],
+        "fingerprint": "810508acd012e8a7",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          65,
+          83,
+          125,
+          149,
+          174,
+          175,
+          230,
+          236
+        ],
+        "fingerprint": "b03fe1ff7b59999e",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          44,
+          49,
+          79,
+          89,
+          112,
+          162,
+          227,
+          254
+        ],
+        "fingerprint": "40596d9bc8f60e23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          57,
+          59,
+          83,
+          139,
+          161,
+          164,
+          182,
+          193
+        ],
+        "fingerprint": "a4cee309986b1e06",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          0,
+          86,
+          95,
+          96,
+          154,
+          158,
+          167,
+          170
+        ],
+        "fingerprint": "8b3f6b908f9ada23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          26,
+          40,
+          54,
+          81,
+          123,
+          132,
+          193,
+          243
+        ],
+        "fingerprint": "081e2fb018d14722",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w0.r4",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          29,
+          45,
+          57,
+          72,
+          77,
+          200,
+          237,
+          248
+        ],
+        "fingerprint": "2e2e4ec7bea151a3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 40
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          41,
+          48,
+          51,
+          61,
+          111,
+          144,
+          154,
+          206
+        ],
+        "fingerprint": "d6322cc683bef95e",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 41
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          88,
+          89,
+          90,
+          133,
+          136,
+          172,
+          206,
+          231
+        ],
+        "fingerprint": "e4842b8c181ae3d5",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 42
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          43,
+          46,
+          82,
+          108,
+          169,
+          183,
+          217,
+          233
+        ],
+        "fingerprint": "5e174838e9cbf6a1",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 43
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          28,
+          71,
+          89,
+          115,
+          154,
+          178,
+          234,
+          255
+        ],
+        "fingerprint": "10c96afa4bbc66d5",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 44
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          33,
+          50,
+          64,
+          115,
+          118,
+          184,
+          222,
+          225
+        ],
+        "fingerprint": "1ea14890787fda60",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 45
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          61,
+          68,
+          102,
+          121,
+          161,
+          165,
+          175,
+          254
+        ],
+        "fingerprint": "11496dd68804155f",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 46
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          9,
+          56,
+          92,
+          100,
+          138,
+          139,
+          151,
+          246
+        ],
+        "fingerprint": "1693bfd182384371",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 47
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          24,
+          56,
+          89,
+          159,
+          192,
+          214,
+          225,
+          233
+        ],
+        "fingerprint": "d42e4e61fbbbf1c3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w0.r4",
+        "segment_index": 48
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          6,
+          37,
+          58,
+          81,
+          84,
+          86,
+          123,
+          126
+        ],
+        "fingerprint": "43fff286665785fb",
+        "length": 128,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w1.r4",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          0,
+          9,
+          28,
+          43,
+          56,
+          70,
+          71,
+          164
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          24,
+          32,
+          90,
+          99,
+          117,
+          159,
+          184,
+          196
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          3,
+          20,
+          107,
+          114,
+          188,
+          200,
+          214,
+          228
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          5,
+          32,
+          66,
+          78,
+          102,
+          143,
+          162,
+          212
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          136,
+          150,
+          155,
+          168,
+          175,
+          211,
+          231,
+          251
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          7,
+          109,
+          143,
+          170,
+          171,
+          205,
+          206,
+          227
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          66,
+          91,
+          97,
+          152,
+          206,
+          219,
+          239,
+          244
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          39,
+          62,
+          83,
+          87,
+          94,
+          98,
+          138,
+          248
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          19,
+          27,
+          46,
+          59,
+          94,
+          127,
+          222,
+          246
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          48,
+          49,
+          51,
+          70,
+          75,
+          107,
+          183,
+          187
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w1.r4",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          64,
+          104,
+          114,
+          146,
+          171,
+          192,
+          227,
+          250
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          48,
+          66,
+          71,
+          91,
+          96,
+          136,
+          141,
+          214
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          5,
+          46,
+          51,
+          86,
+          166,
+          172,
+          202,
+          228
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          31,
+          63,
+          96,
+          127,
+          169,
+          175,
+          218,
+          222
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          30,
+          33,
+          125,
+          152,
+          168,
+          196,
+          246,
+          252
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          45,
+          81,
+          86,
+          141,
+          169,
+          176,
+          234
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          34,
+          72,
+          139,
+          145,
+          172,
+          199,
+          232,
+          239
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          12,
+          14,
+          56,
+          67,
+          153,
+          168,
+          207,
+          233
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          3,
+          13,
+          79,
+          152,
+          166,
+          212,
+          227,
+          250
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w1.r4",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          40,
+          70,
+          80,
+          91,
+          152,
+          173,
+          215,
+          231
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          42,
+          47,
+          57,
+          67,
+          86,
+          103,
+          124,
+          184
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          14,
+          98,
+          129,
+          135,
+          168,
+          181,
+          192,
+          244
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          7,
+          19,
+          114,
+          159,
+          221,
+          226,
+          228,
+          242
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          83,
+          90,
+          109,
+          143,
+          150,
+          172,
+          178,
+          202
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          60,
+          79,
+          85,
+          102,
+          130,
+          154,
+          180,
+          193
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          14,
+          39,
+          40,
+          95,
+          127,
+          199,
+          207,
+          210
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          24,
+          34,
+          50,
+          81,
+          86,
+          110,
+          165,
+          231
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          8,
+          24,
+          31,
+          37,
+          109,
+          133,
+          224,
+          252
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          44,
+          76,
+          87,
+          96,
+          102,
+          148,
+          190,
+          252
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w1.r4",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          0,
+          6,
+          115,
+          155,
+          158,
+          171,
+          181,
+          211
+        ],
+        "fingerprint": "7e497667b297c845",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          36,
+          51,
+          76,
+          143,
+          153,
+          168,
+          177,
+          180
+        ],
+        "fingerprint": "37b4718978e1500a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          4,
+          7,
+          19,
+          119,
+          205,
+          220,
+          221,
+          238
+        ],
+        "fingerprint": "a03f8799509acc24",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          2,
+          7,
+          22,
+          34,
+          46,
+          89,
+          150,
+          232
+        ],
+        "fingerprint": "810508acd012e8a7",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          15,
+          20,
+          55,
+          65,
+          89,
+          112,
+          196,
+          201
+        ],
+        "fingerprint": "b03fe1ff7b59999e",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          13,
+          87,
+          144,
+          163,
+          194,
+          201,
+          207,
+          215
+        ],
+        "fingerprint": "40596d9bc8f60e23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          16,
+          24,
+          102,
+          125,
+          173,
+          182,
+          212,
+          252
+        ],
+        "fingerprint": "a4cee309986b1e06",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          18,
+          61,
+          94,
+          100,
+          102,
+          108,
+          150,
+          234
+        ],
+        "fingerprint": "8b3f6b908f9ada23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          28,
+          73,
+          92,
+          141,
+          156,
+          165,
+          168,
+          212
+        ],
+        "fingerprint": "081e2fb018d14722",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w1.r4",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          56,
+          83,
+          113,
+          194,
+          195,
+          198,
+          209,
+          254
+        ],
+        "fingerprint": "2e2e4ec7bea151a3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 40
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          23,
+          65,
+          110,
+          116,
+          185,
+          204,
+          226,
+          248
+        ],
+        "fingerprint": "d6322cc683bef95e",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 41
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          14,
+          40,
+          56,
+          78,
+          84,
+          114,
+          155,
+          163
+        ],
+        "fingerprint": "e4842b8c181ae3d5",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 42
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          6,
+          58,
+          67,
+          70,
+          92,
+          131,
+          187,
+          213
+        ],
+        "fingerprint": "5e174838e9cbf6a1",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 43
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          22,
+          30,
+          110,
+          127,
+          136,
+          138,
+          213,
+          227
+        ],
+        "fingerprint": "10c96afa4bbc66d5",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 44
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          29,
+          53,
+          98,
+          137,
+          150,
+          172,
+          190,
+          251
+        ],
+        "fingerprint": "1ea14890787fda60",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 45
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          55,
+          99,
+          119,
+          123,
+          135,
+          145,
+          174,
+          183
+        ],
+        "fingerprint": "11496dd68804155f",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 46
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          62,
+          86,
+          96,
+          102,
+          128,
+          177,
+          193,
+          200
+        ],
+        "fingerprint": "1693bfd182384371",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 47
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          13,
+          22,
+          43,
+          56,
+          102,
+          130,
+          153,
+          222
+        ],
+        "fingerprint": "d42e4e61fbbbf1c3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w1.r4",
+        "segment_index": 48
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          26,
+          31,
+          37,
+          45,
+          73,
+          75,
+          90,
+          108
+        ],
+        "fingerprint": "43fff286665785fb",
+        "length": 128,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "w0.r0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c50748f2a87b6838",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "w2.r4",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          39,
+          89,
+          98,
+          123,
+          126,
+          150,
+          244,
+          248
+        ],
+        "fingerprint": "20a4bd865a5b229e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          52,
+          71,
+          137,
+          167,
+          179,
+          183,
+          218,
+          237
+        ],
+        "fingerprint": "9ab6734a754c1b9d",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          32,
+          66,
+          159,
+          163,
+          205,
+          235,
+          246,
+          247
+        ],
+        "fingerprint": "d08a027d3c65b5e6",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          23,
+          33,
+          34,
+          72,
+          90,
+          145,
+          210,
+          237
+        ],
+        "fingerprint": "9ae87ab9d42e4990",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          15,
+          54,
+          57,
+          118,
+          149,
+          151,
+          201,
+          217
+        ],
+        "fingerprint": "4507ec10354b9a34",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          25,
+          55,
+          83,
+          116,
+          125,
+          188,
+          206,
+          211
+        ],
+        "fingerprint": "3efa0426917061ae",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          59,
+          74,
+          76,
+          126,
+          151,
+          183,
+          221,
+          248
+        ],
+        "fingerprint": "e646956386ed6749",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          11,
+          52,
+          76,
+          92,
+          95,
+          161,
+          171,
+          174
+        ],
+        "fingerprint": "f6e2ee9cb02b549b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          46,
+          52,
+          53,
+          126,
+          146,
+          171,
+          244,
+          252
+        ],
+        "fingerprint": "859509070aaad92f",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "main.r0",
+        "epic_prefix_rows": [
+          21,
+          33,
+          106,
+          112,
+          132,
+          133,
+          174,
+          206
+        ],
+        "fingerprint": "fcd577b876fb0572",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w2.r4",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          19,
+          49,
+          65,
+          130,
+          143,
+          171,
+          224,
+          230
+        ],
+        "fingerprint": "b7b36c9cc0ffca1f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          9,
+          124,
+          164,
+          175,
+          180,
+          183,
+          185,
+          227
+        ],
+        "fingerprint": "2ca95e1f99b62895",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          8,
+          11,
+          60,
+          103,
+          157,
+          192,
+          201,
+          205
+        ],
+        "fingerprint": "61981006a3087531",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          12,
+          25,
+          47,
+          64,
+          73,
+          149,
+          160,
+          222
+        ],
+        "fingerprint": "0676dfd47068e0df",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          42,
+          100,
+          114,
+          124,
+          146,
+          162,
+          185,
+          221
+        ],
+        "fingerprint": "7392f0dd8e833d02",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          10,
+          33,
+          82,
+          109,
+          140,
+          195,
+          231,
+          235
+        ],
+        "fingerprint": "2d9f547fcb304b0f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          1,
+          5,
+          25,
+          27,
+          47,
+          80,
+          85,
+          189
+        ],
+        "fingerprint": "2524834b679c9169",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          25,
+          114,
+          115,
+          130,
+          159,
+          160,
+          191,
+          254
+        ],
+        "fingerprint": "5a8181f7e7879299",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "main.r1",
+        "epic_prefix_rows": [
+          21,
+          50,
+          54,
+          66,
+          71,
+          109,
+          118,
+          124
+        ],
+        "fingerprint": "c4de161da65ad6d0",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "w2.r4",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          7,
+          46,
+          107,
+          163,
+          202,
+          222,
+          230,
+          232
+        ],
+        "fingerprint": "43c1199691fc3316",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          25,
+          64,
+          126,
+          150,
+          153,
+          201,
+          205,
+          234
+        ],
+        "fingerprint": "e0c1b33b1977de85",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          61,
+          130,
+          135,
+          136,
+          157,
+          160,
+          228,
+          231
+        ],
+        "fingerprint": "3597c2ab929b2fa2",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          3,
+          39,
+          52,
+          55,
+          159,
+          165,
+          174,
+          223
+        ],
+        "fingerprint": "ebb6ffbea2fb7f17",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          2,
+          9,
+          53,
+          56,
+          100,
+          158,
+          168,
+          236
+        ],
+        "fingerprint": "13069208a9b6ae52",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          10,
+          102,
+          121,
+          135,
+          140,
+          154,
+          205,
+          255
+        ],
+        "fingerprint": "96c6eb32a8099b39",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          7,
+          54,
+          150,
+          157,
+          169,
+          174,
+          228,
+          244
+        ],
+        "fingerprint": "07f759914ec5d44c",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          46,
+          78,
+          113,
+          134,
+          142,
+          178,
+          197,
+          233
+        ],
+        "fingerprint": "66dba080f71780ec",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          42,
+          48,
+          88,
+          93,
+          132,
+          232,
+          238,
+          243
+        ],
+        "fingerprint": "f5cbe9c563f8d865",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "main.r2",
+        "epic_prefix_rows": [
+          26,
+          29,
+          89,
+          128,
+          170,
+          174,
+          184,
+          196
+        ],
+        "fingerprint": "2bd3429ac7619aa9",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "w2.r4",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          22,
+          38,
+          138,
+          145,
+          155,
+          163,
+          178,
+          243
+        ],
+        "fingerprint": "7e497667b297c845",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          0,
+          10,
+          88,
+          135,
+          150,
+          183,
+          229,
+          251
+        ],
+        "fingerprint": "37b4718978e1500a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          24,
+          58,
+          80,
+          119,
+          124,
+          177,
+          194,
+          228
+        ],
+        "fingerprint": "a03f8799509acc24",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          6,
+          13,
+          18,
+          128,
+          166,
+          193,
+          227,
+          235
+        ],
+        "fingerprint": "810508acd012e8a7",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          28,
+          52,
+          53,
+          90,
+          108,
+          135,
+          204,
+          238
+        ],
+        "fingerprint": "b03fe1ff7b59999e",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          5,
+          29,
+          34,
+          70,
+          131,
+          145,
+          170,
+          216
+        ],
+        "fingerprint": "40596d9bc8f60e23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          24,
+          118,
+          121,
+          135,
+          171,
+          173,
+          226,
+          246
+        ],
+        "fingerprint": "a4cee309986b1e06",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          9,
+          15,
+          21,
+          58,
+          103,
+          124,
+          163,
+          195
+        ],
+        "fingerprint": "8b3f6b908f9ada23",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "main.r3",
+        "epic_prefix_rows": [
+          76,
+          92,
+          123,
+          134,
+          160,
+          221,
+          228,
+          252
+        ],
+        "fingerprint": "081e2fb018d14722",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "w2.r4",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          19,
+          88,
+          117,
+          140,
+          151,
+          174,
+          184,
+          200
+        ],
+        "fingerprint": "2e2e4ec7bea151a3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 40
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          2,
+          9,
+          21,
+          30,
+          51,
+          69,
+          84,
+          169
+        ],
+        "fingerprint": "d6322cc683bef95e",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 41
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          40,
+          71,
+          77,
+          79,
+          83,
+          95,
+          199,
+          208
+        ],
+        "fingerprint": "e4842b8c181ae3d5",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 42
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          5,
+          8,
+          9,
+          121,
+          147,
+          176,
+          188,
+          189
+        ],
+        "fingerprint": "5e174838e9cbf6a1",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 43
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          33,
+          44,
+          96,
+          175,
+          187,
+          188,
+          189,
+          209
+        ],
+        "fingerprint": "10c96afa4bbc66d5",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 44
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          57,
+          69,
+          76,
+          94,
+          108,
+          129,
+          163,
+          184
+        ],
+        "fingerprint": "1ea14890787fda60",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 45
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          49,
+          84,
+          94,
+          130,
+          134,
+          183,
+          228,
+          239
+        ],
+        "fingerprint": "11496dd68804155f",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 46
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          49,
+          76,
+          91,
+          132,
+          162,
+          184,
+          202,
+          214
+        ],
+        "fingerprint": "1693bfd182384371",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 47
+      },
+      {
+        "cache_owner": "main.r4",
+        "epic_prefix_rows": [
+          41,
+          76,
+          137,
+          172,
+          180,
+          191,
+          211,
+          229
+        ],
+        "fingerprint": "d42e4e61fbbbf1c3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "w2.r4",
+        "segment_index": 48
+      }
+    ],
+    "reused_tokens": 141032
+  },
+  "tiers": {
+    "0": [
+      "main.r0"
+    ],
+    "1": [
+      "w0.r0",
+      "w1.r0",
+      "w2.r0"
+    ],
+    "2": [
+      "main.r1"
+    ],
+    "3": [
+      "w0.r1",
+      "w1.r1",
+      "w2.r1"
+    ],
+    "4": [
+      "main.r2"
+    ],
+    "5": [
+      "w0.r2",
+      "w1.r2",
+      "w2.r2"
+    ],
+    "6": [
+      "main.r3"
+    ],
+    "7": [
+      "w0.r3",
+      "w1.r3",
+      "w2.r3"
+    ],
+    "8": [
+      "main.r4"
+    ],
+    "9": [
+      "w0.r4",
+      "w1.r4",
+      "w2.r4"
+    ]
+  },
+  "total_history_tokens": 217848,
+  "total_input_tokens": 156936,
+  "total_output_tokens": 4480
+}

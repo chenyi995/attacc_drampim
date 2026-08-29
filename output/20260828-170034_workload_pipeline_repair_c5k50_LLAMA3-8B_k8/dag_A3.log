@@ -1,0 +1,4491 @@
+{
+  "kind": "supervisor",
+  "requests": 12,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 8,
+    "fresh_tokens": 14200,
+    "policy": "recompute",
+    "random_seed": 0,
+    "recompute_canonical": false,
+    "reusable_segments": [
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          20,
+          132,
+          155,
+          197,
+          207,
+          215,
+          244,
+          248
+        ],
+        "fingerprint": "502d6ac53c58df59",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c0",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          48,
+          71,
+          75,
+          111,
+          128,
+          144,
+          158,
+          183
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c0",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          37,
+          50,
+          51,
+          161,
+          169,
+          181,
+          222,
+          241
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c0",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          7,
+          31,
+          47,
+          104,
+          133,
+          204,
+          226,
+          244
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c0",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          0,
+          32,
+          97,
+          113,
+          124,
+          166,
+          170,
+          252
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c0",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          41,
+          46,
+          55,
+          72,
+          122,
+          163,
+          229,
+          250
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c0",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          46,
+          63,
+          104,
+          147,
+          149,
+          154,
+          170,
+          227
+        ],
+        "fingerprint": "15977e9d71490118",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c0",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          16,
+          94,
+          95,
+          96,
+          123,
+          148,
+          162,
+          197
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c0",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          19,
+          35,
+          41,
+          45,
+          66,
+          76,
+          133,
+          243
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c0",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          110,
+          120,
+          140,
+          141,
+          200,
+          214,
+          230,
+          252
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c0",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          42,
+          59,
+          97,
+          124,
+          166,
+          171,
+          182,
+          249
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c0",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          8,
+          59,
+          87,
+          112,
+          138,
+          170,
+          190,
+          218
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c0",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c0",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c0",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c0",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c0",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          6,
+          11,
+          15,
+          18,
+          25,
+          31,
+          37,
+          56
+        ],
+        "fingerprint": "a55a05d8fcbd1fc5",
+        "length": 128,
+        "owner_tier": 2,
+        "request": "engineer.c1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          18,
+          46,
+          59,
+          61,
+          96,
+          189,
+          200,
+          294
+        ],
+        "fingerprint": "12254cf62447c5f8",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "engineer.c1",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          11,
+          31,
+          63,
+          94,
+          99,
+          107,
+          217,
+          245
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c1",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          35,
+          36,
+          51,
+          113,
+          133,
+          154,
+          179,
+          223
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c1",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          20,
+          31,
+          51,
+          92,
+          102,
+          133,
+          200,
+          239
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c1",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          29,
+          81,
+          82,
+          86,
+          104,
+          175,
+          183,
+          240
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c1",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          6,
+          60,
+          89,
+          128,
+          159,
+          209,
+          226,
+          241
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c1",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          6,
+          40,
+          78,
+          128,
+          171,
+          182,
+          198,
+          234
+        ],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c1",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          23,
+          69,
+          122,
+          143,
+          147,
+          180,
+          183,
+          246
+        ],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c1",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          0,
+          41,
+          67,
+          98,
+          158,
+          171,
+          198,
+          212
+        ],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c1",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          16,
+          81,
+          114,
+          122,
+          193,
+          205,
+          212,
+          229
+        ],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c1",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          23,
+          32,
+          80,
+          84,
+          132,
+          214,
+          228,
+          249
+        ],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c1",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          0,
+          19,
+          25,
+          159,
+          166,
+          212,
+          239,
+          253
+        ],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c1",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          1,
+          7,
+          42,
+          66,
+          96,
+          161,
+          205,
+          213
+        ],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c1",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          1,
+          7,
+          50,
+          60,
+          97,
+          101,
+          109,
+          154
+        ],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c1",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          11,
+          41,
+          51,
+          93,
+          140,
+          143,
+          203,
+          243
+        ],
+        "fingerprint": "ed9620b4b157193f",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c1",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "4a94037da58fd01b",
+        "length": 300,
+        "owner_tier": 2,
+        "request": "reviewer.c1",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          58,
+          59,
+          68,
+          79,
+          131,
+          142,
+          177,
+          231
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c1",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          9,
+          20,
+          21,
+          105,
+          132,
+          161,
+          187,
+          253
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c1",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          4,
+          91,
+          106,
+          149,
+          190,
+          192,
+          222,
+          234
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c1",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          47,
+          70,
+          77,
+          138,
+          170,
+          172,
+          173,
+          188
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c1",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          18,
+          21,
+          76,
+          83,
+          138,
+          148,
+          184,
+          202
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c1",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c1",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c1",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c1",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c1",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c1",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c1",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c1",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c1",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          24,
+          58,
+          66,
+          91,
+          122,
+          150,
+          157,
+          244
+        ],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c1",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          36,
+          50,
+          55,
+          153,
+          154,
+          168,
+          206,
+          212
+        ],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c1",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          59,
+          63,
+          172,
+          175,
+          242,
+          245,
+          246,
+          254
+        ],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c1",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          19,
+          44,
+          79,
+          85,
+          154,
+          171,
+          192,
+          218
+        ],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c1",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          2,
+          15,
+          16,
+          21,
+          25,
+          50,
+          56,
+          98
+        ],
+        "fingerprint": "1f0262c157a7f43f",
+        "length": 128,
+        "owner_tier": 4,
+        "request": "engineer.c2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          111,
+          148,
+          201,
+          229,
+          250,
+          265,
+          284,
+          299
+        ],
+        "fingerprint": "12254cf62447c5f8",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "engineer.c2",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          42,
+          85,
+          98,
+          112,
+          133,
+          188,
+          216,
+          220
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c2",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          14,
+          32,
+          58,
+          60,
+          103,
+          183,
+          231,
+          254
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c2",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          21,
+          53,
+          74,
+          101,
+          106,
+          110,
+          131,
+          203
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c2",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          53,
+          75,
+          77,
+          185,
+          193,
+          207,
+          234,
+          249
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c2",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          4,
+          103,
+          112,
+          165,
+          174,
+          216,
+          253,
+          255
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c2",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          18,
+          75,
+          79,
+          131,
+          150,
+          162,
+          164,
+          194
+        ],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c2",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          7,
+          20,
+          33,
+          43,
+          66,
+          115,
+          153,
+          240
+        ],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c2",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          17,
+          76,
+          82,
+          169,
+          190,
+          195,
+          229,
+          235
+        ],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c2",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          39,
+          46,
+          105,
+          148,
+          198,
+          213,
+          218,
+          246
+        ],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c2",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          0,
+          10,
+          33,
+          93,
+          119,
+          130,
+          154,
+          170
+        ],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c2",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          31,
+          65,
+          83,
+          134,
+          155,
+          196,
+          208,
+          252
+        ],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c2",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          18,
+          28,
+          72,
+          122,
+          146,
+          171,
+          213,
+          246
+        ],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c2",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          18,
+          41,
+          77,
+          180,
+          197,
+          210,
+          238,
+          251
+        ],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c2",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c2",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c2",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c2",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c2",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          10,
+          16,
+          24,
+          51,
+          67,
+          77,
+          234,
+          241
+        ],
+        "fingerprint": "c6af362aa955c4bf",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c2",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          30,
+          53,
+          56,
+          99,
+          165,
+          177,
+          196,
+          251
+        ],
+        "fingerprint": "9dff2136a1e7d7de",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c2",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          62,
+          63,
+          65,
+          150,
+          151,
+          172,
+          198,
+          239
+        ],
+        "fingerprint": "0f5b6ce2f0e50690",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c2",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          19,
+          96,
+          97,
+          182,
+          190,
+          200,
+          227,
+          233
+        ],
+        "fingerprint": "21c2efbb1dc41961",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c2",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          13,
+          20,
+          22,
+          38,
+          110,
+          117,
+          130,
+          248
+        ],
+        "fingerprint": "9a05e6c11d0118a6",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c2",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "4a94037da58fd01b",
+        "length": 300,
+        "owner_tier": 2,
+        "request": "reviewer.c2",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          43,
+          47,
+          58,
+          74,
+          156,
+          215,
+          216,
+          218
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c2",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          15,
+          32,
+          50,
+          53,
+          79,
+          212,
+          220,
+          228
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c2",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          15,
+          36,
+          40,
+          129,
+          166,
+          180,
+          213,
+          254
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c2",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          5,
+          15,
+          62,
+          91,
+          118,
+          176,
+          178,
+          183
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c2",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          1,
+          3,
+          36,
+          63,
+          73,
+          104,
+          106,
+          187
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c2",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c2",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c2",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c2",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c2",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c2",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c2",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c2",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c2",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          12,
+          57,
+          72,
+          95,
+          119,
+          150,
+          188,
+          232
+        ],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c2",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          14,
+          66,
+          106,
+          132,
+          171,
+          176,
+          185,
+          244
+        ],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c2",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          41,
+          52,
+          94,
+          149,
+          151,
+          157,
+          167,
+          242
+        ],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c2",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          64,
+          75,
+          80,
+          114,
+          121,
+          124,
+          161,
+          192
+        ],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c2",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "c6af362aa955c4bf",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c2",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "9dff2136a1e7d7de",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c2",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "0f5b6ce2f0e50690",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c2",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "21c2efbb1dc41961",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c2",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          10,
+          23,
+          67,
+          94,
+          149,
+          190,
+          201,
+          214
+        ],
+        "fingerprint": "4c05ab6f96b7cbbf",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c2",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          37,
+          39,
+          67,
+          72,
+          153,
+          213,
+          215,
+          216
+        ],
+        "fingerprint": "7aa9cec1f10ee53b",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c2",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          29,
+          43,
+          127,
+          152,
+          181,
+          189,
+          192,
+          227
+        ],
+        "fingerprint": "5446df842b64f9bd",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c2",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          4,
+          104,
+          150,
+          164,
+          190,
+          209,
+          213,
+          225
+        ],
+        "fingerprint": "1f7632b49810d492",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c2",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          23,
+          27,
+          28,
+          39,
+          47,
+          70,
+          114,
+          120
+        ],
+        "fingerprint": "8828d9651694699d",
+        "length": 128,
+        "owner_tier": 6,
+        "request": "engineer.c3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          89,
+          94,
+          126,
+          174,
+          204,
+          215,
+          221,
+          232
+        ],
+        "fingerprint": "12254cf62447c5f8",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "engineer.c3",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          0,
+          44,
+          72,
+          104,
+          150,
+          181,
+          236,
+          247
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c3",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          3,
+          58,
+          79,
+          111,
+          152,
+          154,
+          229,
+          236
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c3",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          11,
+          47,
+          118,
+          143,
+          207,
+          217,
+          241,
+          254
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c3",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          0,
+          20,
+          61,
+          131,
+          138,
+          202,
+          203,
+          227
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c3",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          18,
+          36,
+          43,
+          52,
+          100,
+          129,
+          145,
+          181
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c3",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          34,
+          60,
+          83,
+          127,
+          134,
+          156,
+          174,
+          212
+        ],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c3",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          53,
+          68,
+          107,
+          142,
+          144,
+          148,
+          206,
+          210
+        ],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c3",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          61,
+          63,
+          70,
+          80,
+          149,
+          190,
+          195,
+          226
+        ],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c3",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          71,
+          111,
+          153,
+          181,
+          205,
+          212,
+          239,
+          242
+        ],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c3",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          30,
+          73,
+          153,
+          162,
+          227,
+          244,
+          250,
+          252
+        ],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c3",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          5,
+          13,
+          26,
+          110,
+          181,
+          200,
+          241,
+          253
+        ],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c3",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          1,
+          3,
+          21,
+          34,
+          41,
+          59,
+          184,
+          202
+        ],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c3",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          53,
+          72,
+          97,
+          116,
+          138,
+          147,
+          149,
+          222
+        ],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c3",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c3",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c3",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c3",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c3",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          75,
+          86,
+          169,
+          196,
+          215,
+          222,
+          229,
+          235
+        ],
+        "fingerprint": "c6af362aa955c4bf",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c3",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          66,
+          75,
+          95,
+          106,
+          161,
+          178,
+          199,
+          227
+        ],
+        "fingerprint": "9dff2136a1e7d7de",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c3",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          25,
+          100,
+          104,
+          112,
+          199,
+          218,
+          224,
+          251
+        ],
+        "fingerprint": "0f5b6ce2f0e50690",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c3",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          17,
+          29,
+          43,
+          88,
+          95,
+          119,
+          186,
+          198
+        ],
+        "fingerprint": "21c2efbb1dc41961",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c3",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "4c05ab6f96b7cbbf",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c3",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "7aa9cec1f10ee53b",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c3",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "5446df842b64f9bd",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c3",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "1f7632b49810d492",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c3",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          27,
+          44,
+          119,
+          145,
+          152,
+          180,
+          210,
+          234
+        ],
+        "fingerprint": "d316109d6918891f",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c3",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          110,
+          130,
+          136,
+          172,
+          220,
+          232,
+          243,
+          250
+        ],
+        "fingerprint": "34201a3b78daf9d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c3",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          1,
+          3,
+          21,
+          22,
+          26,
+          83,
+          148,
+          179
+        ],
+        "fingerprint": "df2680b35bde67d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c3",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          32,
+          71,
+          98,
+          113,
+          173,
+          203,
+          219,
+          232
+        ],
+        "fingerprint": "9dea906074cac7ca",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c3",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          14,
+          43,
+          52,
+          130,
+          163,
+          165,
+          166,
+          233
+        ],
+        "fingerprint": "89b49369578d9e4a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c3",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          22,
+          41,
+          96,
+          97,
+          103,
+          107,
+          177,
+          188
+        ],
+        "fingerprint": "a98f456a162f4c00",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c3",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "4a94037da58fd01b",
+        "length": 300,
+        "owner_tier": 2,
+        "request": "reviewer.c3",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          122,
+          128,
+          130,
+          154,
+          159,
+          176,
+          196,
+          246
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c3",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          4,
+          22,
+          24,
+          37,
+          156,
+          224,
+          235,
+          253
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c3",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          41,
+          43,
+          60,
+          123,
+          211,
+          225,
+          235,
+          252
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c3",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          39,
+          50,
+          78,
+          109,
+          201,
+          211,
+          218,
+          225
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c3",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          20,
+          65,
+          92,
+          112,
+          127,
+          142,
+          180,
+          250
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c3",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c3",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c3",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c3",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c3",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c3",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c3",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c3",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c3",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          54,
+          103,
+          146,
+          151,
+          163,
+          222,
+          226,
+          236
+        ],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c3",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          8,
+          50,
+          60,
+          88,
+          118,
+          133,
+          139,
+          212
+        ],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c3",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          3,
+          25,
+          62,
+          111,
+          127,
+          145,
+          196,
+          219
+        ],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c3",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          33,
+          60,
+          113,
+          117,
+          122,
+          139,
+          144,
+          183
+        ],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c3",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "c6af362aa955c4bf",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c3",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "9dff2136a1e7d7de",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c3",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "0f5b6ce2f0e50690",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c3",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "21c2efbb1dc41961",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c3",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          70,
+          87,
+          119,
+          146,
+          157,
+          167,
+          191,
+          245
+        ],
+        "fingerprint": "4c05ab6f96b7cbbf",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c3",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          7,
+          12,
+          66,
+          79,
+          90,
+          167,
+          187,
+          202
+        ],
+        "fingerprint": "7aa9cec1f10ee53b",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c3",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          39,
+          67,
+          69,
+          105,
+          109,
+          119,
+          120,
+          254
+        ],
+        "fingerprint": "5446df842b64f9bd",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c3",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          13,
+          55,
+          67,
+          180,
+          183,
+          196,
+          250,
+          255
+        ],
+        "fingerprint": "1f7632b49810d492",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c3",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "d316109d6918891f",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c3",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "34201a3b78daf9d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c3",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "df2680b35bde67d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c3",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "9dea906074cac7ca",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c3",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "89b49369578d9e4a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c3",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          6,
+          83,
+          112,
+          158,
+          160,
+          233,
+          246,
+          253
+        ],
+        "fingerprint": "df5a2402c872906f",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c3",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          40,
+          70,
+          97,
+          132,
+          149,
+          162,
+          196,
+          205
+        ],
+        "fingerprint": "cb27667059509bba",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c3",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          19,
+          30,
+          106,
+          115,
+          127,
+          161,
+          175,
+          225
+        ],
+        "fingerprint": "41089fab967878b7",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c3",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          8,
+          29,
+          77,
+          83,
+          133,
+          156,
+          176,
+          182
+        ],
+        "fingerprint": "ee22e256b36b9c62",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c3",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          3,
+          5,
+          6,
+          11,
+          15,
+          61,
+          90,
+          125
+        ],
+        "fingerprint": "028e23b960f905de",
+        "length": 128,
+        "owner_tier": 8,
+        "request": "engineer.c4",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          31,
+          34,
+          69,
+          110,
+          115,
+          167,
+          176,
+          216
+        ],
+        "fingerprint": "12254cf62447c5f8",
+        "length": 300,
+        "owner_tier": 1,
+        "request": "engineer.c4",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          72,
+          90,
+          159,
+          168,
+          183,
+          209,
+          222,
+          229
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c4",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          4,
+          21,
+          62,
+          135,
+          195,
+          199,
+          209,
+          236
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c4",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          1,
+          40,
+          70,
+          75,
+          87,
+          90,
+          121,
+          168
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c4",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          11,
+          40,
+          53,
+          76,
+          86,
+          126,
+          218,
+          234
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c4",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          13,
+          18,
+          20,
+          45,
+          129,
+          174,
+          192,
+          254
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "engineer.c4",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          77,
+          83,
+          120,
+          149,
+          182,
+          183,
+          207,
+          234
+        ],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c4",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          7,
+          138,
+          147,
+          159,
+          172,
+          201,
+          240,
+          252
+        ],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c4",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          17,
+          19,
+          61,
+          134,
+          177,
+          202,
+          206,
+          233
+        ],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c4",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          10,
+          17,
+          26,
+          106,
+          130,
+          139,
+          148,
+          253
+        ],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "engineer.c4",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          59,
+          106,
+          124,
+          128,
+          168,
+          174,
+          180,
+          197
+        ],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c4",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          4,
+          26,
+          78,
+          79,
+          83,
+          169,
+          176,
+          185
+        ],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c4",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          0,
+          87,
+          149,
+          150,
+          165,
+          206,
+          220,
+          253
+        ],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c4",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          4,
+          22,
+          64,
+          72,
+          131,
+          174,
+          226,
+          245
+        ],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "engineer.c4",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c4",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c4",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c4",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "engineer.c4",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          32,
+          35,
+          80,
+          86,
+          89,
+          96,
+          142,
+          217
+        ],
+        "fingerprint": "c6af362aa955c4bf",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c4",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          6,
+          56,
+          136,
+          145,
+          159,
+          196,
+          219,
+          222
+        ],
+        "fingerprint": "9dff2136a1e7d7de",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c4",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          3,
+          72,
+          97,
+          132,
+          143,
+          162,
+          175,
+          221
+        ],
+        "fingerprint": "0f5b6ce2f0e50690",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c4",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          8,
+          18,
+          79,
+          116,
+          184,
+          196,
+          210,
+          237
+        ],
+        "fingerprint": "21c2efbb1dc41961",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "engineer.c4",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "4c05ab6f96b7cbbf",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c4",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "7aa9cec1f10ee53b",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c4",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "5446df842b64f9bd",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c4",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "1f7632b49810d492",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "engineer.c4",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          9,
+          81,
+          99,
+          123,
+          127,
+          181,
+          185,
+          254
+        ],
+        "fingerprint": "d316109d6918891f",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c4",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          39,
+          51,
+          94,
+          121,
+          140,
+          215,
+          229,
+          230
+        ],
+        "fingerprint": "34201a3b78daf9d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c4",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          33,
+          84,
+          96,
+          129,
+          139,
+          202,
+          218,
+          225
+        ],
+        "fingerprint": "df2680b35bde67d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c4",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          5,
+          15,
+          46,
+          157,
+          167,
+          182,
+          223,
+          252
+        ],
+        "fingerprint": "9dea906074cac7ca",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c4",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          19,
+          103,
+          128,
+          197,
+          199,
+          203,
+          223,
+          238
+        ],
+        "fingerprint": "89b49369578d9e4a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "engineer.c4",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "df5a2402c872906f",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "engineer.c4",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "cb27667059509bba",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "engineer.c4",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "41089fab967878b7",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "engineer.c4",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee22e256b36b9c62",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "engineer.c4",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          12,
+          64,
+          69,
+          142,
+          167,
+          181,
+          203,
+          242
+        ],
+        "fingerprint": "355aca93a24b157a",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "engineer.c4",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          2,
+          21,
+          35,
+          41,
+          56,
+          97,
+          177,
+          184
+        ],
+        "fingerprint": "ebbf04910c9bc27f",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "engineer.c4",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          12,
+          22,
+          64,
+          140,
+          161,
+          201,
+          208,
+          241
+        ],
+        "fingerprint": "bb88c401e1d96560",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "engineer.c4",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          30,
+          64,
+          68,
+          72,
+          75,
+          83,
+          156,
+          206
+        ],
+        "fingerprint": "4c5e4ac3bac7daa3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "engineer.c4",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [
+          22,
+          23,
+          41,
+          42,
+          92,
+          176,
+          198,
+          246
+        ],
+        "fingerprint": "03271d489906d737",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "reviewer.c4",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "4a94037da58fd01b",
+        "length": 300,
+        "owner_tier": 2,
+        "request": "reviewer.c4",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          89,
+          103,
+          129,
+          132,
+          133,
+          135,
+          167,
+          233
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c4",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          17,
+          19,
+          36,
+          78,
+          79,
+          90,
+          161,
+          229
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c4",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          69,
+          81,
+          98,
+          122,
+          170,
+          233,
+          234,
+          243
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c4",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          1,
+          29,
+          40,
+          42,
+          53,
+          175,
+          180,
+          218
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c4",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          11,
+          60,
+          69,
+          162,
+          171,
+          185,
+          193,
+          231
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "reviewer.c4",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c4",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c4",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c4",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "reviewer.c4",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c4",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c4",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c4",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "reviewer.c4",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          9,
+          22,
+          31,
+          64,
+          93,
+          98,
+          172,
+          211
+        ],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c4",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          26,
+          27,
+          39,
+          86,
+          159,
+          183,
+          199,
+          209
+        ],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c4",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          15,
+          92,
+          130,
+          158,
+          181,
+          211,
+          225,
+          232
+        ],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c4",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [
+          32,
+          49,
+          63,
+          97,
+          135,
+          183,
+          198,
+          232
+        ],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "reviewer.c4",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "c6af362aa955c4bf",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c4",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "9dff2136a1e7d7de",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c4",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "0f5b6ce2f0e50690",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c4",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "21c2efbb1dc41961",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "reviewer.c4",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          6,
+          10,
+          13,
+          90,
+          165,
+          179,
+          206,
+          233
+        ],
+        "fingerprint": "4c05ab6f96b7cbbf",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c4",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          14,
+          26,
+          41,
+          49,
+          134,
+          205,
+          243,
+          253
+        ],
+        "fingerprint": "7aa9cec1f10ee53b",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c4",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          16,
+          41,
+          50,
+          78,
+          146,
+          170,
+          183,
+          241
+        ],
+        "fingerprint": "5446df842b64f9bd",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c4",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [
+          0,
+          18,
+          75,
+          80,
+          82,
+          89,
+          172,
+          192
+        ],
+        "fingerprint": "1f7632b49810d492",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "reviewer.c4",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "d316109d6918891f",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c4",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "34201a3b78daf9d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c4",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "df2680b35bde67d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c4",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "9dea906074cac7ca",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c4",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "89b49369578d9e4a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "reviewer.c4",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          12,
+          22,
+          81,
+          115,
+          124,
+          168,
+          203,
+          247
+        ],
+        "fingerprint": "df5a2402c872906f",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c4",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          83,
+          87,
+          115,
+          121,
+          123,
+          144,
+          168,
+          180
+        ],
+        "fingerprint": "cb27667059509bba",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c4",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          2,
+          6,
+          70,
+          83,
+          186,
+          197,
+          215,
+          237
+        ],
+        "fingerprint": "41089fab967878b7",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c4",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [
+          1,
+          9,
+          12,
+          19,
+          76,
+          88,
+          165,
+          199
+        ],
+        "fingerprint": "ee22e256b36b9c62",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "reviewer.c4",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "355aca93a24b157a",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "reviewer.c4",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "ebbf04910c9bc27f",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "reviewer.c4",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "bb88c401e1d96560",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "reviewer.c4",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "4c5e4ac3bac7daa3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "reviewer.c4",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [
+          13,
+          24,
+          57,
+          75,
+          78,
+          194,
+          214,
+          223
+        ],
+        "fingerprint": "fccd5e0e838ac41d",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "reviewer.c4",
+        "segment_index": 40
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [
+          37,
+          66,
+          70,
+          110,
+          126,
+          170,
+          186,
+          204
+        ],
+        "fingerprint": "a0e6ec326091b285",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "reviewer.c4",
+        "segment_index": 41
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [
+          49,
+          125,
+          179,
+          195,
+          208,
+          220,
+          223,
+          241
+        ],
+        "fingerprint": "9e8483e1a66cdebe",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "reviewer.c4",
+        "segment_index": 42
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [
+          35,
+          115,
+          122,
+          129,
+          141,
+          202,
+          203,
+          246
+        ],
+        "fingerprint": "e7d72688f3906fa9",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "reviewer.c4",
+        "segment_index": 43
+      },
+      {
+        "cache_owner": "reviewer.c4",
+        "epic_prefix_rows": [
+          5,
+          10,
+          60,
+          70,
+          82,
+          95,
+          100,
+          121
+        ],
+        "fingerprint": "1fa018e09781869a",
+        "length": 128,
+        "owner_tier": 10,
+        "request": "tester",
+        "segment_index": 0
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          13,
+          24,
+          54,
+          73,
+          200,
+          201,
+          215,
+          221
+        ],
+        "fingerprint": "e30e7f3e32cc7675",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "tester",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          53,
+          82,
+          86,
+          174,
+          210,
+          235,
+          236,
+          242
+        ],
+        "fingerprint": "46e1f25013f58b80",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "tester",
+        "segment_index": 3
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          57,
+          73,
+          81,
+          145,
+          176,
+          183,
+          188,
+          242
+        ],
+        "fingerprint": "851f3d9074e0570a",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "tester",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          21,
+          27,
+          90,
+          100,
+          131,
+          151,
+          166,
+          194
+        ],
+        "fingerprint": "d9429d02c5b014fc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "tester",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "architect",
+        "epic_prefix_rows": [
+          17,
+          106,
+          137,
+          149,
+          177,
+          192,
+          210,
+          220
+        ],
+        "fingerprint": "598b613b506df977",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "tester",
+        "segment_index": 6
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          15,
+          56,
+          67,
+          68,
+          84,
+          182,
+          203,
+          220
+        ],
+        "fingerprint": "a8281812b4377861",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "tester",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          38,
+          39,
+          70,
+          78,
+          86,
+          106,
+          217,
+          237
+        ],
+        "fingerprint": "169f43e8691f7f9d",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "tester",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          15,
+          69,
+          84,
+          116,
+          147,
+          171,
+          182,
+          252
+        ],
+        "fingerprint": "c7d4a3f9b85874a9",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "tester",
+        "segment_index": 9
+      },
+      {
+        "cache_owner": "engineer.c0",
+        "epic_prefix_rows": [
+          60,
+          74,
+          81,
+          134,
+          169,
+          175,
+          192,
+          209
+        ],
+        "fingerprint": "0b3ecb47572ca8fa",
+        "length": 256,
+        "owner_tier": 1,
+        "request": "tester",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          120,
+          156,
+          177,
+          193,
+          199,
+          208,
+          209,
+          241
+        ],
+        "fingerprint": "a510d5918114be92",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "tester",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          2,
+          50,
+          54,
+          56,
+          75,
+          78,
+          104,
+          136
+        ],
+        "fingerprint": "1a224eb830f60173",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "tester",
+        "segment_index": 12
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          5,
+          18,
+          43,
+          59,
+          86,
+          185,
+          192,
+          246
+        ],
+        "fingerprint": "06cd9d70336c658f",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "tester",
+        "segment_index": 13
+      },
+      {
+        "cache_owner": "reviewer.c0",
+        "epic_prefix_rows": [
+          55,
+          81,
+          117,
+          129,
+          162,
+          188,
+          231,
+          249
+        ],
+        "fingerprint": "b7b34609358edd44",
+        "length": 256,
+        "owner_tier": 2,
+        "request": "tester",
+        "segment_index": 14
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "d30cea729563785e",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "tester",
+        "segment_index": 15
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "492829d0f2055bd1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "tester",
+        "segment_index": 16
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "28740e0b0dbf32c1",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "tester",
+        "segment_index": 17
+      },
+      {
+        "cache_owner": "engineer.c1",
+        "epic_prefix_rows": [],
+        "fingerprint": "74a4cd82c12e15ed",
+        "length": 256,
+        "owner_tier": 3,
+        "request": "tester",
+        "segment_index": 18
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          13,
+          39,
+          85,
+          86,
+          106,
+          207,
+          209,
+          224
+        ],
+        "fingerprint": "c6af362aa955c4bf",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "tester",
+        "segment_index": 19
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          10,
+          27,
+          68,
+          87,
+          135,
+          192,
+          198,
+          225
+        ],
+        "fingerprint": "9dff2136a1e7d7de",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "tester",
+        "segment_index": 20
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          20,
+          44,
+          52,
+          119,
+          171,
+          207,
+          233,
+          245
+        ],
+        "fingerprint": "0f5b6ce2f0e50690",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "tester",
+        "segment_index": 21
+      },
+      {
+        "cache_owner": "reviewer.c1",
+        "epic_prefix_rows": [
+          92,
+          117,
+          135,
+          137,
+          186,
+          201,
+          242,
+          251
+        ],
+        "fingerprint": "21c2efbb1dc41961",
+        "length": 256,
+        "owner_tier": 4,
+        "request": "tester",
+        "segment_index": 22
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "4c05ab6f96b7cbbf",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "tester",
+        "segment_index": 23
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "7aa9cec1f10ee53b",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "tester",
+        "segment_index": 24
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "5446df842b64f9bd",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "tester",
+        "segment_index": 25
+      },
+      {
+        "cache_owner": "engineer.c2",
+        "epic_prefix_rows": [],
+        "fingerprint": "1f7632b49810d492",
+        "length": 256,
+        "owner_tier": 5,
+        "request": "tester",
+        "segment_index": 26
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          35,
+          73,
+          81,
+          154,
+          201,
+          209,
+          233,
+          244
+        ],
+        "fingerprint": "d316109d6918891f",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "tester",
+        "segment_index": 27
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          47,
+          56,
+          72,
+          117,
+          135,
+          151,
+          184,
+          246
+        ],
+        "fingerprint": "34201a3b78daf9d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "tester",
+        "segment_index": 28
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          3,
+          16,
+          29,
+          48,
+          70,
+          101,
+          207,
+          251
+        ],
+        "fingerprint": "df2680b35bde67d5",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "tester",
+        "segment_index": 29
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          2,
+          49,
+          54,
+          116,
+          123,
+          175,
+          177,
+          242
+        ],
+        "fingerprint": "9dea906074cac7ca",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "tester",
+        "segment_index": 30
+      },
+      {
+        "cache_owner": "reviewer.c2",
+        "epic_prefix_rows": [
+          4,
+          115,
+          140,
+          159,
+          174,
+          181,
+          253,
+          254
+        ],
+        "fingerprint": "89b49369578d9e4a",
+        "length": 256,
+        "owner_tier": 6,
+        "request": "tester",
+        "segment_index": 31
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "df5a2402c872906f",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "tester",
+        "segment_index": 32
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "cb27667059509bba",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "tester",
+        "segment_index": 33
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "41089fab967878b7",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "tester",
+        "segment_index": 34
+      },
+      {
+        "cache_owner": "engineer.c3",
+        "epic_prefix_rows": [],
+        "fingerprint": "ee22e256b36b9c62",
+        "length": 256,
+        "owner_tier": 7,
+        "request": "tester",
+        "segment_index": 35
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          39,
+          46,
+          74,
+          115,
+          156,
+          188,
+          195,
+          216
+        ],
+        "fingerprint": "355aca93a24b157a",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "tester",
+        "segment_index": 36
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          66,
+          102,
+          118,
+          144,
+          147,
+          183,
+          196,
+          246
+        ],
+        "fingerprint": "ebbf04910c9bc27f",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "tester",
+        "segment_index": 37
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          61,
+          117,
+          181,
+          183,
+          191,
+          205,
+          221,
+          241
+        ],
+        "fingerprint": "bb88c401e1d96560",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "tester",
+        "segment_index": 38
+      },
+      {
+        "cache_owner": "reviewer.c3",
+        "epic_prefix_rows": [
+          53,
+          61,
+          142,
+          144,
+          149,
+          183,
+          205,
+          245
+        ],
+        "fingerprint": "4c5e4ac3bac7daa3",
+        "length": 256,
+        "owner_tier": 8,
+        "request": "tester",
+        "segment_index": 39
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [],
+        "fingerprint": "fccd5e0e838ac41d",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "tester",
+        "segment_index": 40
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [],
+        "fingerprint": "a0e6ec326091b285",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "tester",
+        "segment_index": 41
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [],
+        "fingerprint": "9e8483e1a66cdebe",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "tester",
+        "segment_index": 42
+      },
+      {
+        "cache_owner": "engineer.c4",
+        "epic_prefix_rows": [],
+        "fingerprint": "e7d72688f3906fa9",
+        "length": 256,
+        "owner_tier": 9,
+        "request": "tester",
+        "segment_index": 43
+      },
+      {
+        "cache_owner": "reviewer.c4",
+        "epic_prefix_rows": [
+          78,
+          95,
+          117,
+          124,
+          173,
+          176,
+          228,
+          255
+        ],
+        "fingerprint": "d85397da3ddf8763",
+        "length": 256,
+        "owner_tier": 10,
+        "request": "tester",
+        "segment_index": 44
+      },
+      {
+        "cache_owner": "reviewer.c4",
+        "epic_prefix_rows": [
+          56,
+          112,
+          159,
+          196,
+          199,
+          204,
+          236,
+          237
+        ],
+        "fingerprint": "fc029a6229f081b9",
+        "length": 256,
+        "owner_tier": 10,
+        "request": "tester",
+        "segment_index": 45
+      },
+      {
+        "cache_owner": "reviewer.c4",
+        "epic_prefix_rows": [
+          0,
+          47,
+          119,
+          161,
+          162,
+          201,
+          241,
+          249
+        ],
+        "fingerprint": "3f72c0b30cc712ca",
+        "length": 256,
+        "owner_tier": 10,
+        "request": "tester",
+        "segment_index": 46
+      },
+      {
+        "cache_owner": "reviewer.c4",
+        "epic_prefix_rows": [
+          20,
+          24,
+          47,
+          102,
+          116,
+          134,
+          208,
+          220
+        ],
+        "fingerprint": "6a6b8fc04c911d35",
+        "length": 256,
+        "owner_tier": 10,
+        "request": "tester",
+        "segment_index": 47
+      }
+    ],
+    "reused_tokens": 76256
+  },
+  "tiers": {
+    "0": [
+      "architect"
+    ],
+    "1": [
+      "engineer.c0"
+    ],
+    "10": [
+      "reviewer.c4"
+    ],
+    "11": [
+      "tester"
+    ],
+    "2": [
+      "reviewer.c0"
+    ],
+    "3": [
+      "engineer.c1"
+    ],
+    "4": [
+      "reviewer.c1"
+    ],
+    "5": [
+      "engineer.c2"
+    ],
+    "6": [
+      "reviewer.c2"
+    ],
+    "7": [
+      "engineer.c3"
+    ],
+    "8": [
+      "reviewer.c3"
+    ],
+    "9": [
+      "engineer.c4"
+    ]
+  },
+  "total_history_tokens": 108656,
+  "total_input_tokens": 90456,
+  "total_output_tokens": 2304
+}
+dgx-attacc: (A100a x 8), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/attacc_drampim_xinyao/output/20260828-170034_workload_pipeline_repair_c5k50_LLAMA3-8B_k8/dag_A3.json
+REPORT_SUMMARY {"ablation": "A3", "decode_attn": "pim", "energy_nj": 2913190022592.379, "engine": "dag", "event_count": 14151926, "kv_mapping": "naive", "link_bytes": 13885254482, "makespan_s": 22.319678471370697, "pim_prefill_mode": "gpu", "policy": "recompute"}

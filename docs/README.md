@@ -140,6 +140,11 @@ python3 -m unittest discover -s tests     # 41/41
 - `README_run_experiments.md`:**当前主线实验怎么跑**(五组拓扑负载 ×
   DAG 七档 × 五个重算比例,一键脚本与图)
 - `README_experiments.md`:论文证据矩阵怎么跑
+- `README_cppcore_branch.md`:`chenyi-822-cppcore-exp` 分支说明(核心 C++ 化)
+- `RAW_DATA_MANIFEST.md`:**原始数据本地清单**(>50 MB 的事件轨迹
+  `dag_A*.json` 不入库、记本机路径手动下载;≤50 MB 报告与 .log 已入库)
+- `../output/analysis/`:结果分析工具与表格(`make_results_tables.py`
+  → `RESULTS_k2.md`:七档的延迟/能量/prefill 放置/额外指标四表)
 - `sessions/`:每日调整记录(chenyi9 裁决时间线)
 - `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit
 - `PORTING_PLAN.md`(不入库):干净分支 chenyi-822 的逐步移植计划
