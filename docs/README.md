@@ -147,6 +147,8 @@ python3 -m unittest discover -s tests     # 41/41
   → `RESULTS_k2.md`:七档的延迟/能量/prefill 放置/额外指标四表)
 - `README_sweep_design.md`:**参数化 sweep 设计规范**(一个 gen_sweep.py +
   (topology, N, C, D, k),取代五组手调 workload,零 magic number;2026-08-29)
+- `README_run_sweep_guide.md`:**运行指南**(另一台机器 clone 后照着跑:
+  setup→跑 98 run→提取→独立复核→写 RESULTS_sweep.md→commit;2026-08-29)
 - `../workload/gen_sweep.py` + `../workload/sweep/` + `../experiments/run_sweep.sh`:
   参数化 sweep 的 generator / workload / 批跑脚本
 - `../workload/archived/2026-08-29_pre-sweep/`、`../output/archived/2026-08-29_pre-unify/`:
