@@ -14,3 +14,6 @@ ramulator2.local_backup_0821/
 /output/*
 !/output/analysis/
 /output/analysis/.digest_cache/
+
+# cppcore build artifact (see docs/sessions/2026-08-30.md §4)
+src/cppcore/*.so

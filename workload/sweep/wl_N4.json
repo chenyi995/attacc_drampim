@@ -754,22 +754,19 @@
      "delta": 0
     },
     {
-     "role": "parent_out",
+     "role": "user",
      "sha": "e601e00cf19bfca0",
-     "len": 256,
-     "delta": 0
+     "len": 256
     },
     {
-     "role": "parent_out",
+     "role": "user",
      "sha": "463b299fccdd62f5",
-     "len": 256,
-     "delta": 0
+     "len": 256
     },
     {
-     "role": "parent_out",
+     "role": "user",
      "sha": "6af506dbd48391cc",
-     "len": 256,
-     "delta": 0
+     "len": 256
     },
     {
      "role": "doc",
@@ -947,27 +944,24 @@
     },
     {
      "role": "parent_out",
-     "sha": "462471ec43cde656",
-     "len": 256,
-     "delta": 0
-    },
-    {
-     "role": "parent_out",
      "sha": "e601e00cf19bfca0",
      "len": 256,
      "delta": 0
     },
     {
-     "role": "parent_out",
-     "sha": "463b299fccdd62f5",
-     "len": 256,
-     "delta": 0
+     "role": "user",
+     "sha": "462471ec43cde656",
+     "len": 256
     },
     {
-     "role": "parent_out",
+     "role": "user",
+     "sha": "463b299fccdd62f5",
+     "len": 256
+    },
+    {
+     "role": "user",
      "sha": "6af506dbd48391cc",
-     "len": 256,
-     "delta": 0
+     "len": 256
     },
     {
      "role": "doc",
@@ -1145,27 +1139,24 @@
     },
     {
      "role": "parent_out",
-     "sha": "462471ec43cde656",
-     "len": 256,
-     "delta": 0
-    },
-    {
-     "role": "parent_out",
-     "sha": "e601e00cf19bfca0",
-     "len": 256,
-     "delta": 0
-    },
-    {
-     "role": "parent_out",
      "sha": "463b299fccdd62f5",
      "len": 256,
      "delta": 0
     },
     {
-     "role": "parent_out",
+     "role": "user",
+     "sha": "462471ec43cde656",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e601e00cf19bfca0",
+     "len": 256
+    },
+    {
+     "role": "user",
      "sha": "6af506dbd48391cc",
-     "len": 256,
-     "delta": 0
+     "len": 256
     },
     {
      "role": "doc",
@@ -1343,27 +1334,24 @@
     },
     {
      "role": "parent_out",
-     "sha": "462471ec43cde656",
-     "len": 256,
-     "delta": 0
-    },
-    {
-     "role": "parent_out",
-     "sha": "e601e00cf19bfca0",
-     "len": 256,
-     "delta": 0
-    },
-    {
-     "role": "parent_out",
-     "sha": "463b299fccdd62f5",
-     "len": 256,
-     "delta": 0
-    },
-    {
-     "role": "parent_out",
      "sha": "6af506dbd48391cc",
      "len": 256,
      "delta": 0
+    },
+    {
+     "role": "user",
+     "sha": "462471ec43cde656",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e601e00cf19bfca0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "463b299fccdd62f5",
+     "len": 256
     },
     {
      "role": "doc",

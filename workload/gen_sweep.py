@@ -75,18 +75,27 @@ def main():
         cur = []
         for i in range(w):
             nid = f"t{t}n{i}"
+            parent = (prev[i] if i < len(prev) else prev[0]) if prev else None
             segs = [{"role": "sys", "sha": sha16(f"sys-{nid}"), "len": SYS}]
             if t == 0:
                 segs.append({"role": "user", "sha": sha16("task"), "len": BLOCK})
             else:
-                for pid in prev:      # read ALL previous-tier outputs
-                    segs.append({"role": "parent_out", "sha": sha16(f"out-{pid}"),
-                                 "len": BLOCK, "delta": 0})
+                # Read ALL previous-tier outputs.  The v2-dag schema allows
+                # exactly ONE parent_out -- the declared data dependency; the
+                # remaining upstream outputs are ordinary fingerprinted
+                # segments carrying the producer's sha, so cross-request reuse
+                # still resolves through them.  Same convention as the retired
+                # gen_debate.py / gen_mapreduce_sum.py peer reads.
+                segs.append({"role": "parent_out", "sha": sha16(f"out-{parent}"),
+                             "len": BLOCK, "delta": 0})
+                for pid in prev:
+                    if pid != parent:
+                        segs.append({"role": "user", "sha": sha16(f"out-{pid}"),
+                                     "len": BLOCK})
             segs.extend(corpus(nid))   # shared (or private) C-block corpus
             agents.append({
                 "id": nid, "tier": t,
-                "parent": prev[i] if (prev and i < len(prev)) else
-                          (prev[0] if prev else None),
+                "parent": parent,
                 "history_len": t * BLOCK,
                 "segs": segs, "lout": BLOCK})
             cur.append(nid)
