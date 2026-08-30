@@ -1,4 +1,4 @@
-# 怎么跑实验(DAG 七档阶梯;2026-08-27 版)
+# 怎么跑实验(DAG 阶梯;2026-08-27 版,阶梯 2026-08-29 重切为 9 档)
 
 > **2026-08-29 更新**:五组手调 workload 已改为**参数化 sweep**(一个
 > `workload/gen_sweep.py` + (topology, N, C, D, k),零 magic number、cap 天然
@@ -6,6 +6,13 @@
 > 组归档 `workload/archived/2026-08-29_pre-sweep/`。下文 5 组表格与"顶到 cap
 > 76–86%"是**旧版**(8-MiB/32,768 cap 有硬依据=AttAcc K 分区;"76%"是自定
 > margin、无外部出处),将随 sweep 定稿重写。
+
+> ⚠️ **2026-08-29 阶梯重切 + 多模型**:阶梯扩到 **9 档**(A1 A2 A3 A3a **A3b** A4
+> **A4b** A5 A6,见 `README.md` §3),sweep 扩成 **6 模型 × 14 config × 9 档 =
+> 756 run** 的 experiment1。**新的多模型跑法一律以 `README_run_sweep_guide.md`
+> 为准**(先并行预热 Ramulator 缓存,再跑 `experiments/run_sweep_models.sh`);下文
+> 的"七档 / run_dag_ladder / run_suite"是单模型旧口径,仍可用(`run_dag_ladder.sh`
+> 已同步 9 档 + `--ngpu`)。
 
 目标读者:接手人。本页讲**当前主线实验**——五组理论拓扑负载在物理事件
 引擎上跑 **A1/A2/A3/A3a/A4/A5/A6 七档**、扫五个重算比例、出分组三柱动机图。论文证据矩阵

@@ -1,5 +1,13 @@
 # 参数化 workload sweep — 设计规范 v2（CS 术语，待审阅，未写代码）
 
+> ⚠️ **2026-08-29 更新**：阶梯已重切为 **9 档**（A1 A2 A3 A3a **A3b** A4 **A4b**
+> A5 A6，见 `README.md` §3），且 sweep 扩成 **6 模型 × 14 config × 9 档 = 756 run**
+> 的 experiment1。本文下面写的"7 档 / 98 run"是旧口径,workload 族设计（(N,C,D,k)、
+> 零 magic number）不变、仍适用。**怎么跑以 `README_run_sweep_guide.md` 为准**（含先
+> 并行预热 Ramulator 缓存再跑）；§7 的"哪个轴凸显哪对档"里,decode 布局那几对现在还多了
+> **A3(head→1channel) vs A3b(head 切片)** 和 **A4(固定切片) vs A4b(全局 co-read
+> table)**,且需 `heads_per_hbm>1`(head 挤 HBM)才明显。
+
 > 用**一个**参数化 generator 取代 5 个手调场景。把每个 workload 建成一个
 > **分层 DAG（tiered DAG）**：node = agent = request，按 **tier（拓扑层）**
 > 排布；tier 之间的连边是标准 dataflow primitive（**fan-out / fan-in /

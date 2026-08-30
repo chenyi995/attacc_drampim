@@ -1,5 +1,15 @@
 # 手动审计总台账(唯一合并版;chenyi9 2026-08-26 指令合并)
 
+> ⚠️ **2026-08-29 阶梯重切(R20)**:放置阶梯改为 head-aware,一个 head 的一个 chunk =
+> 一条 channel 的一个 row、decode 时间 = 最忙 channel;扩到 **9 档**(+A3b head 切片、
+> +A4b 全局 co-read placement table)。**避免 row conflict 由 A3b 切片 + A4b table
+> 实现**(把 co-read 的 chunk 摊到不同 channel),取代旧"master/diff 条带
+> channel_count=15"。计时:每条活跃 channel 造真实 Ramulator run、跨 channel 取 max
+> (**曾误用 probe 外推、破坏公平,已按 chenyi9 指示改回真实 Ramulator**)。语义见
+> `README.md` §3、`intro/README_A3b.md`/`README_A4b.md`;当天时间线见
+> `sessions/2026-08-29.md` §7–8。本页下文按旧 7 档写的条目对**机制方向**仍有效,
+> 具体 channel 布局口径以上述为准。
+
 目标读者:接手人/审稿人;概念首现即释,本页自足。
 本页是**全项目人工审计的唯一文档**。2026-08-26 起,原三份 audit 合并于此:
 
