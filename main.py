@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import gc as _gc
 import csv
 import json
 import os
@@ -9,6 +10,17 @@ from src.ablation import (DECODE_ATTN_MODES, KV_MAPPINGS,
                           PREFILL_ATTN_MODES, PRESETS)
 from src.workload import (Workload, WorkloadValidationError, build_reuse_plan,
                           load_workload, workload_summary)
+
+# Opt-in: drop the cyclic collector for this process.  The engine keeps millions
+# of live SplitEvent/KVLocation objects, so CPython's gen-2 passes rescan the
+# whole live heap over and over -- measured at ~16% of a build, and invisible to
+# a Python sampling profiler because the collector runs in C and its cost lands
+# on whichever frame happened to be allocating.  Reference counting still frees
+# everything acyclic; only reference cycles are left for process exit, so the
+# results are unchanged (verified byte-identical on LLAMA-7B/wl_D1/A1).
+if os.environ.get("KVPIM_NOGC", "0") == "1":
+    _gc.disable()
+
 
 RAMULATOR = False
 
