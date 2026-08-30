@@ -563,6 +563,7 @@ def main():
                                            ablation.gemv_buffer_bytes),
                         decode_attn=ablation.decode_attn,
                         kv_mapping=ablation.kv_mapping,
+                        channel_placement=ablation.channel_placement,
                         warm=not args.no_warm)
                     report["engine"] = "dag"
                     report["ablation"] = ablation.to_dict()

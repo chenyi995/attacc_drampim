@@ -41,9 +41,11 @@ EPIC_K=${EPIC_K:-8}
 # LITERALLY the same command at every EPIC_K, so k!=2 batches may skip it
 # and copy the k=2 batch's dag_A1.json (bit-identical by determinism).
 # SKIP_A1=1 requires A1_JSON=<path to an existing dag_A1.json>.
-RUNGS="A1 A2 A3 A3a A4 A5 A6"
+# NINE rungs since the placement re-cut (chenyi9 2026-08-29): + A3b (head
+# slicing) and A4b (global co-read placement table).
+RUNGS="A1 A2 A3 A3a A3b A4 A4b A5 A6"
 if [ -n "${SKIP_A1:-}" ]; then
-    RUNGS="A2 A3 A3a A4 A5 A6"
+    RUNGS="A2 A3 A3a A3b A4 A4b A5 A6"
     : "${A1_JSON:?SKIP_A1=1 requires A1_JSON=<path to dag_A1.json>}"
     [ -f "$A1_JSON" ] || { echo "A1_JSON not found: $A1_JSON" >&2; exit 1; }
 fi
@@ -61,6 +63,7 @@ for A in $RUNGS; do
         --workload-report-events none \
         --cacheblend-batch-size 8 \
         ${NUM_HBM:+--num-hbm "$NUM_HBM"} \
+        ${NGPU:+--ngpu "$NGPU"} \
         ${NO_WARM:+--no-warm} \
         --ramulator-workers "$RAMU_WORKERS") > "$OUT/dag_${A}.log" 2>&1 &
     PID[$A]=$!

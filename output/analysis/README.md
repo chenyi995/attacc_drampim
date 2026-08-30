@@ -6,6 +6,16 @@
 > 什么**、并且能回答一个具体核查问题：**A4 到底有没有实现"避免 row conflict"**。
 > 所有结论都给了代码出处（`文件:行号`），可自行复核。
 
+> ⚠️ **2026-08-29 阶梯已重切,本文下半部分的 A4 row-conflict 描述是旧口径**。
+> 新模型:一个 head 的一个 chunk = 一条 channel 的一个 row,decode 扫描时间 = 最忙
+> channel;阶梯扩到 **9 档**——A3(head→1 channel)/A3a/**A3b**(+head 切片)/A4
+> (+master/diff 分离)/**A4b**(+全局 co-read placement table)/A5/A6。**"避免 row
+> conflict"现在由 A3b 的 head 切片 + A4b 的全局 placement table 实现**(把一起读的
+> chunk 摊到不同 channel),不再是旧的"master/diff 条带 channel_count=15"。权威语义见
+> `docs/README.md` §3 与 `docs/intro/README_A3b.md`、`README_A4b.md`。**下面三份
+> `RESULTS_k2/k8/k32.md` 是重切之前(旧 7 档条带模型)跑的**,重跑会变;多模型新结果见
+> `RESULTS_sweep.md`(`docs/README_run_sweep_guide.md`)。
+
 ---
 
 ## 0. 30 秒背景（不懂这个项目也能往下读）

@@ -69,20 +69,31 @@ PREFILL_ATTN_MODES = ("gpu", "pim", "dynamic")
 DECODE_ATTN_MODES = ("gpu", "pim")
 KV_MAPPINGS = ("none", "private", "naive", "naive-mask", "master-diff")
 MASTER_SHADOW_MODES = ("read-mask", "skip")
+# How a head's chunks map to channels (2026-08-29): ``single`` = head -> one
+# channel (A3); ``slice`` = head -> a slice of channels, round-robin (A3b/A4);
+# ``table`` = global co-read-aware spread over the master channels (A4b, needs
+# master/diff).  Combined with kv_mapping in workload_runner._layout_policy.
+CHANNEL_PLACEMENTS = ("single", "slice", "table")
 
-# The A1-A6 ladder (chenyi9's ruling, 2026-08-24).  PAPER TIE (Question 1):
-# the paper asks WHERE prefill attention, decode attention and the KV cache
-# should live once requests share KV -- each rung isolates exactly one
-# placement decision, so the ladder differences ARE the paper's evidence:
-# A2-A1 = software reuse alone, A3-A2 = PIM decode + KV residency,
-# A4-A3 = PIM-aware layout, A5-A4 = prefill attention on the PIM (with the
-# batching it enables), A6-A5 = the dynamic per-request rule (Fugue).
-# The former A6 -- the
-# GPU/PIM "split" prefill hybrid (GPU attends the fresh rows, the PIM scans
-# the reused KV, LSE merge at the DIE) -- is ABOLISHED as a ladder point:
-# the design menu is either all-GPU or all-PIM prefill attention, never
-# half and half.  Attention batching (the MQ command) is coupled to
-# prefill-on-PIM: A1-A4 run the legacy replicate command, A5/A6 run MQ.
+# The A1..A6 ladder (chenyi9's ruling, 2026-08-24; layout rungs re-cut
+# 2026-08-29).  PAPER TIE (Question 1): the paper asks WHERE prefill
+# attention, decode attention and the KV cache should live once requests
+# share KV -- each rung isolates exactly one decision, so the ladder
+# differences ARE the paper's evidence:
+#   A2-A1  = software reuse alone
+#   A3-A2  = PIM decode + KV residency (head -> ONE channel, no slicing)
+#   A3b-A3 = head slicing (a head's chunks spread across its channel slice)
+#   A4-A3b = master/diff channel split (corrections on the diff channel)
+#   A4b-A4 = global co-read placement table (spread co-read chunks over the
+#            master channels instead of fixed per-head slices)
+#   A5-A4b = prefill attention on the PIM (with the batching it enables)
+#   A6-A5  = the dynamic per-request rule (Fugue)
+# One chunk of one head is ONE row on ONE channel; the decode scan time is
+# the busiest channel (chunks a scan reads together that share a channel
+# serialise).  The former split-prefill hybrid (GPU attends fresh rows, PIM
+# scans reused KV, LSE merge at the DIE) is ABOLISHED: prefill attention is
+# all-GPU or all-PIM, never half and half.  Attention batching (the MQ
+# command) is coupled to prefill-on-PIM: A1..A4b run replicate, A5/A6 run MQ.
 # Every rung assumes multi-round agentic orchestration (per-request
 # ``history_len``) -- that is workload configuration, not a switch here.
 PRESETS: Dict[str, Dict[str, str]] = {
@@ -90,15 +101,32 @@ PRESETS: Dict[str, Dict[str, str]] = {
            "pim_batch_command": "replicate"},
     "A2": {"prefill_attn": "gpu", "decode_attn": "gpu", "kv_mapping": "none",
            "pim_batch_command": "replicate"},
+    # A3 (redefined chenyi9 2026-08-29): NO head slicing -- head h -> ONE
+    # channel, every chunk of that head piles on it (the worst-case naive
+    # floor; other channels idle).
     "A3": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "naive",
-           "pim_batch_command": "replicate"},
-    # A3a (ruling chenyi9 2026-08-26): the same naive paged rotation but WITH
-    # the read-mask capability (stale rows streamed and masked instead of
-    # splitting the run) -- the milder naive variant; A3 keeps skip semantics.
+           "channel_placement": "single", "pim_batch_command": "replicate"},
+    # A3a (ruling chenyi9 2026-08-26): the naive layout but WITH the read-mask
+    # capability (stale rows streamed and masked instead of splitting the run);
+    # same single-channel placement as A3, A3 keeps skip semantics.
     "A3a": {"prefill_attn": "gpu", "decode_attn": "pim",
-            "kv_mapping": "naive-mask", "pim_batch_command": "replicate"},
+            "kv_mapping": "naive-mask", "channel_placement": "single",
+            "pim_batch_command": "replicate"},
+    # A3b (chenyi9 2026-08-29): + head slicing -- each head's chunks round-robin
+    # its slice of 16//heads_per_hbm channels, so different chunks of a head
+    # land on different channels (vs A3's one-channel pile-up).
+    "A3b": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "naive",
+            "channel_placement": "slice", "pim_batch_command": "replicate"},
+    # A4 (chenyi9 2026-08-29): + master/diff split -- master pool ch0..14 stays
+    # head-sliced, the recomputed correction rows move to the diff channel ch15.
     "A4": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "replicate"},
+           "channel_placement": "slice", "pim_batch_command": "replicate"},
+    # A4b (chenyi9 2026-08-29): + placement table -- drop the fixed per-head
+    # slice; a global co-read-aware table spreads ALL heads' master chunks over
+    # the 15 master channels so co-read chunks (across heads and within a head)
+    # land on different channels.  A5/A6 build on this best layout.
+    "A4b": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "master-diff",
+            "channel_placement": "table", "pim_batch_command": "replicate"},
     # A5/A6 carry the C3 microarchitecture point they are defined with
     # (ruling 2026-08-25): prefill-on-PIM, attention batching and the
     # bank-PE design point are ONE package.  Capacity re-ruled (chenyi9
@@ -112,20 +140,22 @@ PRESETS: Dict[str, Dict[str, str]] = {
     # on the PIM (A5/A6); every earlier rung stays replicate even where
     # prefill could have batched.  An explicit CLI value still overrides.
     "A5": {"prefill_attn": "pim", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.3004,
-           "gemv_buffer_bytes": 512},
+           "channel_placement": "table", "pim_batch_command": "mq",
+           "pim_pe_freq_ghz": 1.3004, "gemv_buffer_bytes": 512},
     "A6": {"prefill_attn": "dynamic", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "pim_batch_command": "mq", "pim_pe_freq_ghz": 1.3004,
-           "gemv_buffer_bytes": 512},
+           "channel_placement": "table", "pim_batch_command": "mq",
+           "pim_pe_freq_ghz": 1.3004, "gemv_buffer_bytes": 512},
 }
 
 PRESET_LABELS = {
     "A1": "AttAcc, no reuse (reference)",
     "A2": "software reuse on the GPU only",
-    "A3": "software reuse + AttAcc, scattered layout (no channel split)",
-    "A3a": "A3 layout, but stale rows are maskable (no run split)",
-    "A4": "software reuse + AttAcc, channel-split master/diff pools",
-    "A5": "A4 + all prefill attention on the PIM + MQ attention batching",
+    "A3": "AttAcc reuse, no head slicing (head -> one channel)",
+    "A3a": "A3 placement, but stale rows are maskable (no run split)",
+    "A3b": "A3 + head slicing (a head's chunks spread across its channels)",
+    "A4": "A3b + master/diff channel split (corrections on the diff channel)",
+    "A4b": "A4 + global co-read placement table (spread co-read chunks over channels)",
+    "A5": "A4b + all prefill attention on the PIM + MQ attention batching",
     "A6": "Fugue: A5 + dynamic per-class GPU/PIM prefill placement",
 }
 
@@ -154,6 +184,17 @@ class AblationConfig:
     # keeping the run contiguous; ``skip`` leaves it out of the address stream
     # and therefore breaks the master run at every correction.
     master_shadow: str = "read-mask"
+    # How a head's chunks map to physical channels (chenyi9 ruling 2026-08-29;
+    # one chunk of one head is one row on one channel, the scan time is the
+    # busiest channel).  Combines with ``kv_mapping`` to pick the placement
+    # policy (see workload_runner._layout_channel_loads):
+    #   ``single`` head -> ONE channel, all its chunks pile there (A3);
+    #   ``slice``  head -> a slice of 16//heads_per_hbm channels, chunks
+    #             round-robin the slice (A3b; + master/diff = A4);
+    #   ``table``  no fixed per-head slice, a global co-read-aware table
+    #             spreads all heads' master chunks over the master channels
+    #             (A4b, requires master/diff).
+    channel_placement: str = "slice"
     # How a multi-query PIM sweep issues its MACs (PLAN_mq_command.md).
     # ``replicate``: one MAC_AB per (column, query), the legacy expansion.
     # ``mq``: one MAC_AB per column serves every resident Q; the PE multiplies
@@ -177,6 +218,7 @@ class AblationConfig:
             "master_pool_channels": self.master_pool_channels,
             "prefill_kv_readback": self.prefill_kv_readback,
             "master_shadow": self.master_shadow,
+            "channel_placement": self.channel_placement,
             "pim_batch_command": self.pim_batch_command,
             "pim_pe_freq_ghz": self.pim_pe_freq_ghz,
             "gemv_buffer_bytes": self.gemv_buffer_bytes,
@@ -190,6 +232,7 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
                    master_pool_channels: int = 15,
                    prefill_kv_readback: bool = True,
                    master_shadow: str = "read-mask",
+                   channel_placement: Optional[str] = None,
                    pim_batch_command: Optional[str] = None,
                    pim_pe_freq_ghz: Optional[float] = None,
                    gemv_buffer_bytes: Optional[int] = None) -> AblationConfig:
@@ -210,6 +253,8 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
     }
     pim_batch_command = (pim_batch_command or
                          base.get("pim_batch_command", "replicate"))
+    channel_placement = (channel_placement or
+                         base.get("channel_placement", "slice"))
     # The microarchitecture knobs follow the rung (A5/A6 carry the balance
     # point) unless the CLI sets them explicitly; a preset-less run keeps
     # the stock AttAcc values.  PROVISIONAL values, see PRESETS.
@@ -254,6 +299,12 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
     if master_shadow not in MASTER_SHADOW_MODES:
         raise WorkloadValidationError("--master-shadow must be one of {}".format(
             ", ".join(MASTER_SHADOW_MODES)))
+    if channel_placement not in CHANNEL_PLACEMENTS:
+        raise WorkloadValidationError("--channel-placement must be one of {}".format(
+            ", ".join(CHANNEL_PLACEMENTS)))
+    if channel_placement == "table" and resolved["kv_mapping"] != "master-diff":
+        raise WorkloadValidationError(
+            "channel-placement 'table' (A4b) needs --kv-mapping master-diff")
     if pim_batch_command not in ("replicate", "mq"):
         raise WorkloadValidationError(
             "--pim-batch-command must be 'replicate' or 'mq'")
@@ -266,6 +317,7 @@ def resolve_config(preset: Optional[str], prefill_attn: Optional[str],
                           master_pool_channels=master_pool_channels,
                           prefill_kv_readback=prefill_kv_readback,
                           master_shadow=master_shadow,
+                          channel_placement=channel_placement,
                           pim_batch_command=pim_batch_command,
                           pim_pe_freq_ghz=pim_pe_freq_ghz,
                           gemv_buffer_bytes=gemv_buffer_bytes, **resolved)
@@ -559,6 +611,16 @@ def _batch_scan_profile(requests: Sequence[Request], plan: ReusePlan, layer: int
     agent's own KV from earlier turns: one resident, contiguous extent that
     the scan walks before this turn's rows (private rows in the master pool
     under ``master-diff``).
+
+    NOTE (chenyi9 2026-08-29): the head-aware channel-placement ladder
+    (``config.channel_placement`` single/slice/table -> A3/A3b, A4/A4b) is
+    modelled only by the PHYSICAL EVENT ENGINE
+    (``workload_runner._append_placement_pim_scan``), which is the sole source
+    of ladder numbers (2026-08-26 ruling).  This analytic profile is the
+    optional cross-check and keeps the coarser pool structure: naive/naive-mask
+    -> per-channel pools (~slice), master-diff -> master+diff pools; it does
+    NOT distinguish single vs slice vs table.  Do not read A3/A3b/A4/A4b
+    differences off the analytic engine.
     """
     if config.kv_mapping == "private":
         return ScanProfile((_private_runs(history_rows + input_rows + tail_rows,

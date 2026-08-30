@@ -297,19 +297,39 @@ def make_pim_config(pim_type: PIMType,
 
 
 def make_model_config(name, dtype):
+    # ---- model_table entry = [n_layers, d_model, n_heads, d_head, ff_scale,
+    # gqa_group].  SOURCES for the experiment1 models (every geometry number is
+    # from a published architecture table; chenyi9 2026-08-29):
+    #   LLaMA-1  (Touvron et al. 2023, arXiv:2302.13971, Table 2):
+    #       7B  = 32 layers / dim 4096 / 32 heads
+    #       33B = 60 layers / dim 6656 / 52 heads
+    #       65B = 80 layers / dim 8192 / 64 heads
+    #   Llama-3 (Grattafiori et al. 2024, arXiv:2407.21783, Sec. 3.2 / Table 3):
+    #       8B  = 32 layers / dim 4096 / 32 query heads / 8 KV heads (GQA group 4)
+    #   GPT-3   (Brown et al. 2020, arXiv:2005.14165, Table 2.1):
+    #       13B  = 40 layers / n_heads 40 / d_head 128 (Table lists d_model 5140,
+    #              which is NOT n_heads x d_head = 5120; we use the self-consistent
+    #              5120 so d_head stays 128)
+    #       175B = 96 layers / d_model 12288 / 96 heads / d_head 128
+    # d_head is 128 for all of these per the same tables.  ``ff_scale``/``gqa``
+    # follow each family (LLaMA SwiGLU 8/3, GPT 4x); the MT-*/OPT rows below are
+    # legacy AttAcc entries, not used by experiment1.
     model_table = {}
     # Fast physical-DAG regression model.  It preserves the 128-wide head
     # geometry used by the HBM-PIM trace generator while keeping only four
     # decoder layers and a 1024-wide hidden state.
     model_table['CACHEBLEND-TINY'] = [4, 1024, 8, 128, 4, 1]
-    model_table['GPT-175B'] = [96, 12288, 96, 128, 4, 1]
+    model_table['GPT-175B'] = [96, 12288, 96, 128, 4, 1]   # GPT-3 Table 2.1
     model_table['GPT-89B'] = [48, 12288, 96, 128, 4, 1]
-    model_table['GPT-13B'] = [40, 5120, 40, 128, 4, 1]
-    model_table['LLAMA-7B'] = [32, 4096, 32, 128, 8 / 3, 1]
-    # GQA sibling of LLAMA-7B (ruling chenyi9 2026-08-27): LLaMA-3-8B
-    # geometry -- 32 Q heads sharing 8 KV heads (group 4), FFN 14336.
+    model_table['GPT-13B'] = [40, 5120, 40, 128, 4, 1]     # GPT-3 Table 2.1 (5120=40x128)
+    model_table['LLAMA-7B'] = [32, 4096, 32, 128, 8 / 3, 1]  # LLaMA-1 Table 2
+    # Llama-3-8B (arXiv:2407.21783): 32 Q heads sharing 8 KV heads (group 4),
+    # FFN 14336; the GQA sibling of LLAMA-7B (ruling chenyi9 2026-08-27).
     model_table['LLAMA3-8B'] = [32, 4096, 32, 128, 3.5, 4]
-    model_table['LLAMA-65B'] = [80, 8192, 64, 128, 8 / 3, 1]
+    # LLaMA-1-33B (arXiv:2302.13971 Table 2): 60 layers, dim 6656, 52 heads
+    # (no GQA); the second medium model beside GPT-13B (chenyi9 2026-08-29).
+    model_table['LLAMA-33B'] = [60, 6656, 52, 128, 8 / 3, 1]
+    model_table['LLAMA-65B'] = [80, 8192, 64, 128, 8 / 3, 1]  # LLaMA-1 Table 2
     model_table['MT-76B'] = [60, 10240, 40, 128, 4, 1]
     model_table['MT-146B'] = [80, 12288, 80, 128, 4, 1]
     model_table['MT-310B'] = [96, 16384, 128, 128, 4, 1]

@@ -523,6 +523,141 @@ _KV_CHANNELS = {
     "master": tuple(range(0, 15)),
     "diff": tuple(range(15, 16)),
 }
+
+# ---------------------------------------------------------------------------
+# Head-aware channel placement model (chenyi9 ruling 2026-08-29).
+#
+# A decode scan reads, for EACH local KV head, the whole context: a list of
+# 256-token chunks.  One chunk of one head is ONE row on ONE channel.  The
+# scan time is the BUSIEST channel -- chunks a scan reads together that land
+# on the same channel serialise; chunks on different channels stream in
+# parallel.  Heads that share one HBM (``heads_per_hbm`` > 1) share that HBM's
+# sixteen channels.  Four placement policies form the A3..A4b ladder:
+#
+#   single             (A3)  head h -> ONE channel (h % 16); every chunk of
+#                            that head piles on it (no slicing).  Worst case:
+#                            one channel scans a head's whole context.
+#   slice              (A3b) head h -> a slice of ``16 // heads_per_hbm``
+#                            channels; the head's chunks round-robin the slice
+#                            so different chunks of a head land on different
+#                            channels.
+#   master-diff-slice  (A4)  master pool = channels 0..14, diff pool = ch15;
+#                            head-sliced WITHIN the master pool
+#                            (``15 // heads_per_hbm`` channels per head), the
+#                            recomputed correction rows go to the diff channel.
+#   master-diff-table  (A4b) master/diff split, but NO fixed per-head slice: a
+#                            global placement table spreads ALL heads' master
+#                            chunks over the 15 master channels so co-read
+#                            chunks (across heads AND within a head) land on
+#                            different channels -> balanced load; corrections
+#                            go to the diff channel.
+#
+# ``_layout_channel_loads`` returns the per-physical-channel load in CHUNK
+# units for one decode scan on one HBM; the caller turns the busiest channel
+# into a wall time with the single-chunk single-channel PIM cost, and prices
+# energy from the total work (placement-independent).  ``single`` -> ``slice``
+# adds head slicing; ``slice`` -> ``master-diff-slice`` adds the master/diff
+# split; ``master-diff-slice`` -> ``master-diff-table`` replaces fixed slices
+# with the co-read-aware table.
+# ---------------------------------------------------------------------------
+_HBM_CHANNELS = 16
+_MASTER_CHANNELS_DEFAULT = 15          # channels 0..14; diff uses channel 15
+_LAYOUT_POLICIES = ("single", "slice", "master-diff-slice", "master-diff-table")
+
+
+def _layout_channel_loads(policy: str, master_chunks: int, diff_chunks: int,
+                          heads_per_hbm: int,
+                          master_channels: int = _MASTER_CHANNELS_DEFAULT
+                          ) -> List[float]:
+    """Per-physical-channel load (chunk units) of one decode scan on one HBM.
+
+    ``master_chunks``/``diff_chunks`` are the PER-HEAD immutable vs recomputed
+    chunk counts; ``heads_per_hbm`` KV heads share this HBM's sixteen channels.
+    Returns a length-16 load vector; the scan time is ``max(vector) * t_chunk``
+    because all sixteen channels stream concurrently (master pool 0..14 and the
+    diff channel 15 included).
+    """
+    if policy not in _LAYOUT_POLICIES:
+        raise WorkloadValidationError(
+            "unknown channel-placement policy '{}'".format(policy))
+    heads = max(1, int(heads_per_hbm))
+    nch = _HBM_CHANNELS
+    loads = [0.0] * nch
+    c_master, c_diff = max(0, int(master_chunks)), max(0, int(diff_chunks))
+
+    if policy == "single":
+        # head h -> channel (h % 16); ALL of head h's chunks pile on it.
+        per_head = c_master + c_diff
+        for h in range(heads):
+            loads[h % nch] += per_head
+        return loads
+
+    if policy == "slice":
+        # head h -> contiguous slice of ``stripe`` channels; chunks round-robin
+        # the slice so a head's chunks spread across its own channels.
+        stripe = max(1, nch // heads)
+        per_head = c_master + c_diff
+        for h in range(heads):
+            base = (h * stripe) % nch
+            for i in range(per_head):
+                loads[(base + (i % stripe)) % nch] += 1.0
+        return loads
+
+    # master/diff split: corrections live on the single diff channel; master
+    # chunks live on channels 0..master_channels-1.
+    diff_channel = master_channels
+    if policy == "master-diff-slice":
+        stripe_m = max(1, master_channels // heads)
+        for h in range(heads):
+            base = (h * stripe_m) % master_channels
+            for i in range(c_master):
+                loads[(base + (i % stripe_m)) % master_channels] += 1.0
+            loads[diff_channel] += c_diff          # this head's corrections
+        return loads
+
+    # master-diff-table: global co-read-aware placement -- every (head, chunk)
+    # master read round-robins the master channels so co-read chunks differ in
+    # channel and the load is balanced across all 15.
+    slot = 0
+    for _h in range(heads):
+        for _i in range(c_master):
+            loads[slot % master_channels] += 1.0
+            slot += 1
+    loads[diff_channel] += heads * c_diff
+    return loads
+
+
+def _layout_scan_max_load(policy: str, master_chunks: int, diff_chunks: int,
+                          heads_per_hbm: int,
+                          master_channels: int = _MASTER_CHANNELS_DEFAULT) -> float:
+    """Busiest-channel load (chunk units) -> proportional to the scan time."""
+    return max(_layout_channel_loads(policy, master_chunks, diff_chunks,
+                                     heads_per_hbm, master_channels))
+
+
+def _layout_policy(kv_mapping: str, channel_placement: str) -> str:
+    """Map (kv_mapping, channel_placement) to a ``_layout_channel_loads`` policy.
+
+    naive / naive-mask (A3/A3a/A3b) have no master/diff split, so they use
+    ``single`` or ``slice``; master-diff (A4/A4b/A5/A6) adds the split and uses
+    ``master-diff-slice`` or ``master-diff-table``.  private/none keep a single
+    contiguous extent, treated as ``slice``.
+    """
+    if kv_mapping in ("naive", "naive-mask"):
+        return "single" if channel_placement == "single" else "slice"
+    if kv_mapping == "master-diff":
+        return ("master-diff-table" if channel_placement == "table"
+                else "master-diff-slice")
+    return "slice"
+
+
+def _heads_per_hbm(kv_heads_local: int, num_hbm: int) -> int:
+    """KV heads sharing one HBM = ceil(local KV heads / HBM stacks) (>= 1)."""
+    kv = max(1, int(kv_heads_local))
+    nh = max(1, int(num_hbm))
+    return max(1, -(-kv // nh))
+
+
 _ROTATE_MODES = ("gpu", "die", "bank")
 _DIE_ROTATE_CYCLE_S = 1e-9
 # After prefill, master and diff already sit as sequential streams in their
@@ -714,9 +849,15 @@ class CacheBlendTLB:
     """
 
     shadow_reads = True
+    _kv_mapping = "master-diff"
 
-    def __init__(self, bytes_per_vector: int):
+    def __init__(self, bytes_per_vector: int, channel_placement: str = "slice"):
         self.bytes_per_vector = bytes_per_vector
+        # Head-aware channel placement (chenyi9 2026-08-29): the scan timing
+        # (``_append_placement_pim_scan``) reads this to spread a head's chunks
+        # over channels.  The physical byte layout below is unchanged.
+        self.channel_placement = channel_placement
+        self.layout_policy = _layout_policy(self._kv_mapping, channel_placement)
         self._locations: Dict[Tuple[int, str, str, int, str], KVLocation] = {}
         self._reserved_rows: Dict[Tuple[int, str, str, str], set] = {}
         self._blocks: Dict[Tuple[int, str, str, str], KVBlock] = {}
@@ -882,6 +1023,10 @@ class NoReuseKVLayout:
     shared Ramulator/DAG interface.
     """
 
+    # The private extent spans all sixteen channels (AttAcc original), i.e. the
+    # ``slice`` placement with one head per HBM (see _append_placement_pim_scan).
+    layout_policy = "slice"
+
     def __init__(self, bytes_per_vector: int):
         self.bytes_per_vector = bytes_per_vector
         self._reserved: Dict[Tuple[int, str, str], set] = {}
@@ -1042,6 +1187,7 @@ class NaiveKVLayout(CacheBlendTLB):
     """
 
     shadow_reads = False
+    _kv_mapping = "naive"
 
     def finalize(self) -> None:
         if self._blocks:
@@ -1133,6 +1279,7 @@ class NaiveMaskKVLayout(NaiveKVLayout):
     page.  Differs from A3 only in ``shadow_reads``."""
 
     shadow_reads = True
+    _kv_mapping = "naive-mask"
 
     def report(self) -> Dict[str, Any]:
         report = super().report()
@@ -1209,6 +1356,119 @@ def _append_physical_pim_scan(system, events: List[SplitEvent], *, op: Layer,
         _WARM_LEDGER.append(("runs", deepcopy(op),
                              tuple(range(first_event_index,
                                          first_event_index + len(scan_events)))))
+    return tuple(scan_events)
+
+
+def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
+                               layer: int, tier: int, request: str, name: str,
+                               reads: Sequence[KVLocation], deps: Sequence[str],
+                               positions: Sequence[int], policy: str,
+                               heads_per_hbm: int,
+                               master_channels: int = _MASTER_CHANNELS_DEFAULT,
+                               masked: Optional[set] = None,
+                               batch_members: Sequence[str] = ()) -> Tuple[str, ...]:
+    """Schedule a PIM scan under the head-aware channel-placement model.
+
+    One chunk of one head is ONE row on ONE channel; the scan time is the
+    busiest channel.  ``policy`` (see ``_layout_channel_loads``) spreads the
+    context's master/diff chunks over the HBM's sixteen channels given
+    ``heads_per_hbm``.  Each loaded channel gets a REAL Ramulator run of its
+    head-folded row load -- Ramulator prices every channel's actual scan (ACT /
+    row-buffer effects and the MQ command are real, not a probe extrapolation),
+    and each run becomes one concurrent ``PIM:pool{c}-{c}`` event so the DAG max
+    over channels is the busiest channel's measured time.  Energy is Ramulator's
+    per-run energy summed over channels and scaled by the HBMs that hold KV, so
+    row-conflict activation cost is charged where it actually occurs.
+    """
+    accelerator = system.devices["Acc"]
+    masked = masked or set()
+    master_rows = sum(1 for location in reads if location.kind != "diff")
+    diff_rows = sum(1 for location in reads if location.kind == "diff")
+    c_master = -(-master_rows // _NAIVE_PAGE_ROWS)          # 256-token chunks
+    c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
+    loads = _layout_channel_loads(policy, c_master, c_diff, heads_per_hbm,
+                                  master_channels)
+    active = [channel for channel, load in enumerate(loads) if load > 0]
+    kv_heads = max(1, int(getattr(op, "numOp", 1)))
+    # Heads parallelise across HBMs: each HBM runs ``heads_per_hbm`` heads, so
+    # ``num_hbm_used`` HBMs hold the KV.  The busiest channel sets the (per-HBM)
+    # time; the energy is every HBM's copy.
+    num_hbm_used = max(1, -(-kv_heads // max(1, int(heads_per_hbm))))
+    diff_channel = master_channels if policy.startswith("master-diff") else None
+    master_active = [c for c in active if c != diff_channel]
+    diff_pool = [diff_channel] if diff_channel in active else master_active
+    # Distribute the consumer-visible rows over the active channels for the
+    # report: master (and, for naive layouts, every) rows over the master
+    # channels, corrections to the diff channel.  Addresses/rows/masks are the
+    # trace; the TIME comes from Ramulator pricing each channel's real run.
+    retain = _RETAIN_EVENT_ADDRESSES
+    per_channel_rows: Dict[int, int] = {channel: 0 for channel in active}
+    per_channel_masked: Dict[int, int] = {channel: 0 for channel in active}
+    per_channel_addr: Dict[int, List[int]] = {channel: [] for channel in active}
+    rr_master = rr_diff = 0
+    for location in reads:
+        if diff_channel is not None and location.kind == "diff" and diff_pool:
+            channel = diff_pool[rr_diff % len(diff_pool)]
+            rr_diff += 1
+        else:
+            pool = master_active or active
+            if not pool:
+                continue
+            channel = pool[rr_master % len(pool)]
+            rr_master += 1
+        per_channel_rows[channel] += 1
+        if (location.key_address, location.value_address) in masked:
+            per_channel_masked[channel] += 1
+        if retain:                                # address lists only on demand
+            per_channel_addr[channel].append(location.key_address)
+            per_channel_addr[channel].append(location.value_address)
+    if not active:
+        # Empty context (first token, no reused KV): keep the dependency chain.
+        return (_cacheblend_event(
+            events, layer=layer, tier=tier, request=request, name=name,
+            device="PIM:pool0-0", rows=0, time_s=0.0, energy=(0.0,),
+            deps=tuple(deps), positions=tuple(positions),
+            batch_members=tuple(batch_members)),)
+    # Build a REAL Ramulator run per active channel: the channel's head-folded
+    # chunk load (``loads[c]`` chunks x 256 rows) on that ONE channel, priced by
+    # Ramulator so ACT / row-buffer effects and the MQ command (carried on
+    # ``op``) are real, NOT extrapolated from a probe.  The busiest channel sets
+    # the scan time; the runs stream concurrently as separate pool devices.
+    runs = tuple((channel * _HBM_CHANNEL_BYTES,
+                  channel * _HBM_CHANNEL_BYTES + _ORIGINAL_KV_GAP_BYTES,
+                  max(1, int(round(loads[channel] * _NAIVE_PAGE_ROWS))),
+                  channel, 1)
+                 for channel in active)
+    scan_op = deepcopy(op)
+    scan_op.numOp = 1                              # heads folded into the rows
+    scan_op.n = sum(run[2] for run in runs)
+    scan_op.pim_kv_runs = runs
+    runs_cost = (_WARM_BYPASS[0] if _WARM_BYPASS is not None
+                 else getattr(accelerator, "get_time_and_energy_runs", None))
+    if runs_cost is not None:
+        measured = runs_cost(scan_op)
+    else:
+        # Lightweight mock devices expose only the aggregate API; price one run.
+        measured = [accelerator.get_time_and_energy(scan_op) for _ in runs]
+    if len(measured) != len(runs):
+        raise WorkloadValidationError(
+            "Ramulator run-result count mismatch in placement scan")
+    scan_events: List[str] = []
+    for channel, (time_s, energy_vec) in zip(active, measured):
+        channel_addr = (per_channel_addr[channel] or
+                        [channel * _HBM_CHANNEL_BYTES,
+                         channel * _HBM_CHANNEL_BYTES + _ORIGINAL_KV_GAP_BYTES]
+                        if retain else ())
+        scan_events.append(_cacheblend_event(
+            events, layer=layer, tier=tier, request=request, name=name,
+            device="PIM:pool{}-{}".format(channel, channel),
+            rows=per_channel_rows[channel],               # K/V rows on channel
+            time_s=time_s,
+            energy=tuple(value * num_hbm_used for value in energy_vec),
+            deps=tuple(deps), positions=tuple(positions),
+            addresses=channel_addr,
+            masked_rows=per_channel_masked[channel],
+            batch_members=tuple(batch_members)))
     return tuple(scan_events)
 
 
@@ -1966,15 +2226,17 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     deps=(die_q,), positions=(request.total_length + output_row,),
                     addresses=[address for location in reads
                                for address in (location.key_address, location.value_address)])
-                scan = _append_physical_pim_scan(
+                scan = _append_placement_pim_scan(
                     system, events, op=op, layer=layer_index, tier=tier,
                     request=request.request_id,
-                    name="decode_pim_kv_scan_score_softmax_pv", rows=len(reads),
-                    deps=(address_plan,), positions=(request.total_length + output_row,),
-                    runs=op.pim_kv_runs,
-                    masked=_masked_rows_per_run(op.pim_kv_runs, masked_keys,
-                                                tlb.bytes_per_vector))
-                # Every physical run yields one local softmax tuple; the DIE
+                    name="decode_pim_kv_scan_score_softmax_pv",
+                    reads=reads, deps=(address_plan,),
+                    positions=(request.total_length + output_row,),
+                    policy=tlb.layout_policy, masked=masked_keys,
+                    heads_per_hbm=_heads_per_hbm(
+                        _gqa_kv_heads_local(system, heads),
+                        getattr(system.devices["Acc"], "num_hbm", 1)))
+                # Every active channel yields one local softmax tuple; the DIE
                 # merges those with the GPU tuple.
                 merge_width = len(scan) + 1
                 die_merge = _cacheblend_event(
@@ -2279,14 +2541,16 @@ def _append_cacheblend_decode_batched(
                         op.pim_shared_kv = True
                         op.pim_shared_queries = len(sweep) * _gqa_group(system)
                         _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
-                        shared_scan = _append_physical_pim_scan(
+                        shared_scan = _append_placement_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
                             request=label,
-                            name="decode_batch_pim_kv_scan_score_softmax_pv", rows=len(common),
-                            deps=(tlb_event,), positions=sweep_positions, runs=op.pim_kv_runs,
-                            batch_members=sweep_members,
-                            masked=_masked_rows_per_run(op.pim_kv_runs, common_masked,
-                                                        tlb.bytes_per_vector))
+                            name="decode_batch_pim_kv_scan_score_softmax_pv",
+                            reads=common, deps=(tlb_event,), positions=sweep_positions,
+                            policy=tlb.layout_policy, masked=common_masked,
+                            heads_per_hbm=_heads_per_hbm(
+                                _gqa_kv_heads_local(system, heads),
+                                getattr(system.devices["Acc"], "num_hbm", 1)),
+                            batch_members=sweep_members)
                         for request in sweep:
                             scan_deps[request.request_id].extend(shared_scan)
 
@@ -2322,13 +2586,14 @@ def _append_cacheblend_decode_batched(
                             time_s=(0.0 if contiguous_no_reuse else plan_time_s),
                             energy=(() if contiguous_no_reuse else plan_energy),
                             deps=(die_q,), positions=(position,), addresses=addresses)
-                        scan_deps[request_id].extend(_append_physical_pim_scan(
+                        scan_deps[request_id].extend(_append_placement_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
                             request=request_id, name="decode_pim_kv_scan_score_softmax_pv",
-                            rows=len(private), deps=(address_plan,), positions=(position,),
-                            runs=op.pim_kv_runs,
-                            masked=_masked_rows_per_run(op.pim_kv_runs, private_masked,
-                                                        tlb.bytes_per_vector)))
+                            reads=private, deps=(address_plan,), positions=(position,),
+                            policy=tlb.layout_policy, masked=private_masked,
+                            heads_per_hbm=_heads_per_hbm(
+                                _gqa_kv_heads_local(system, heads),
+                                getattr(system.devices["Acc"], "num_hbm", 1))))
 
                 context_links: Dict[str, str] = {}
                 for request in group:
@@ -2510,24 +2775,37 @@ def _append_physical_no_reuse_prefill_layer(
     return post_last, store
 
 
-def _energy_breakdown(scheduled: Sequence[SplitEvent]) -> Dict[str, Any]:
-    """Per-part energy of a scheduled DAG (nJ), two granularities.
+def _energy_breakdown(scheduled: Sequence[SplitEvent],
+                      num_layers: Optional[int] = None) -> Dict[str, Any]:
+    """Per-part energy of a scheduled DAG (nJ), three granularities.
 
     ``by_class`` folds the device string into GPU / LINK / PIM (plain and
     per-pool) / DIE / TLB; ``by_event`` keys by event name so e.g. the PIM
     scan, the KV stores and each link direction can be read separately
     (chenyi9 order 2026-08-26: the ladder CSV needs every part's energy).
+    ``by_layer`` totals energy per decoder layer with a ZERO entry for every
+    layer 0..num_layers-1, so a layer that ran no attention (e.g. a
+    full-recompute or fresh layer) still appears as 0 rather than being
+    dropped (chenyi9 order 2026-08-29: the per-layer view must be complete).
     """
     by_class: Dict[str, float] = {}
     by_event: Dict[str, float] = {}
+    by_layer: Dict[int, float] = {}
     for event in scheduled:
         device = event.device
         device_class = ("PIM" if device == "PIM" or device.startswith("PIM:")
                         else device)
         by_class[device_class] = by_class.get(device_class, 0.0) + event.energy_nj
         by_event[event.name] = by_event.get(event.name, 0.0) + event.energy_nj
+        layer = getattr(event, "transformer_layer", None)
+        if layer is not None and layer >= 0:
+            by_layer[layer] = by_layer.get(layer, 0.0) + event.energy_nj
+    top = (num_layers if num_layers is not None
+           else (max(by_layer) + 1 if by_layer else 0))
     return {"by_class": {key: by_class[key] for key in sorted(by_class)},
-            "by_event": {key: by_event[key] for key in sorted(by_event)}}
+            "by_event": {key: by_event[key] for key in sorted(by_event)},
+            "by_layer": {str(layer): by_layer.get(layer, 0.0)
+                         for layer in range(top)}}
 
 
 def summarize_cacheblend_schedule(scheduled: Sequence[SplitEvent],
@@ -2861,7 +3139,7 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
         "pim_pool_time_s_unoverlapped": 0.0,
         "die_time_s_unoverlapped": 0.0,
         "energy_nj": sum(event.energy_nj for event in scheduled),
-        "energy_breakdown_nj": _energy_breakdown(scheduled),
+        "energy_breakdown_nj": _energy_breakdown(scheduled, system.model.ndec),
         "energy_unit": "nJ",
     }
 
@@ -2870,6 +3148,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             *, pipe: bool, batch_size: int = 1,
                             physical_no_reuse: bool = False,
                             kv_mapping: str = "master-diff",
+                            channel_placement: str = "slice",
                             rotate_mode: str = "gpu",
                             include_events: bool = True,
                             pim_prefill_mode: str = "dynamic",
@@ -2922,11 +3201,11 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     if physical_no_reuse:
         tlb = NoReuseKVLayout(system.model.dhead * dbyte)
     elif kv_mapping == "naive":
-        tlb = NaiveKVLayout(system.model.dhead * dbyte)
+        tlb = NaiveKVLayout(system.model.dhead * dbyte, channel_placement)
     elif kv_mapping == "naive-mask":
-        tlb = NaiveMaskKVLayout(system.model.dhead * dbyte)
+        tlb = NaiveMaskKVLayout(system.model.dhead * dbyte, channel_placement)
     else:
-        tlb = CacheBlendTLB(system.model.dhead * dbyte)
+        tlb = CacheBlendTLB(system.model.dhead * dbyte, channel_placement)
     events: List[SplitEvent] = []
     previous_tier_done: Tuple[str, ...] = ()
     parent_output_fingerprints = _parent_output_fingerprints(workload)
@@ -3271,15 +3550,16 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         op.pim_shared_queries = (len(grouped_positions) *
                                                  _gqa_group(system))
                         _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
-                        scan = _append_physical_pim_scan(
+                        scan = _append_placement_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
                             request=request.request_id,
                             name="pim_kv_scan_score_softmax_pv",
-                            rows=len(scan_locations), deps=(tlb_event,),
-                            positions=tuple(grouped_positions), runs=op.pim_kv_runs,
-                            masked=_masked_rows_per_run(op.pim_kv_runs,
-                                                        masked_prefill_keys,
-                                                        tlb.bytes_per_vector))
+                            reads=scan_locations, deps=(tlb_event,),
+                            positions=tuple(grouped_positions),
+                            policy=tlb.layout_policy, masked=masked_prefill_keys,
+                            heads_per_hbm=_heads_per_hbm(
+                                _gqa_kv_heads_local(system, heads),
+                                getattr(system.devices["Acc"], "num_hbm", 1)))
                         assembly_bytes = heads * (system.model.dhead + 2) * dbyte
                         for position in grouped_positions:
                             pim_results.append(_cacheblend_event(
@@ -3495,7 +3775,7 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
         "die_time_s_unoverlapped": sum(event.time_s for event in scheduled
                                         if event.device == "DIE"),
         "energy_nj": sum(event.energy_nj for event in scheduled),
-        "energy_breakdown_nj": _energy_breakdown(scheduled),
+        "energy_breakdown_nj": _energy_breakdown(scheduled, system.model.ndec),
         "energy_unit": "nJ",
     }
     ramulator = getattr(system.devices.get("Acc"), "ramulator", None)
@@ -3514,6 +3794,7 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                       gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES,
                       decode_attn: str = "pim",
                       kv_mapping: str = "master-diff",
+                      channel_placement: str = "slice",
                       warm: bool = True) -> Dict[str, Any]:
     """Dispatch address-resolved CacheBlend and EPIC to the shared DAG.
 
@@ -3543,6 +3824,7 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
                           batch_size=cacheblend_batch_size,
                           physical_no_reuse=(plan.config.policy == "no-reuse"),
                           kv_mapping=kv_mapping,
+                          channel_placement=channel_placement,
                           rotate_mode=cacheblend_rotate_mode,
                           pim_prefill_mode=pim_prefill_mode,
                           pim_batch_command=pim_batch_command,

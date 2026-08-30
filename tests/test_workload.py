@@ -56,14 +56,14 @@ class WorkloadTests(unittest.TestCase):
             self.assertAlmostEqual(actual.exec_time, expected.exec_time)
 
     def test_existing_rag_workload_is_valid(self):
-        workload = load_workload(ROOT / "workload/workload_2wikimqa_first8.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_2wikimqa_first8.json")
         self.assertEqual(workload.kind, "rag")
         self.assertTrue(all(r.total_length == sum(s.length for s in r.segments)
                             for r in workload.requests))
         self.assertEqual(workload_summary(workload)["tiers"].keys(), {"0"})
 
     def test_existing_supervisor_workload_is_valid(self):
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         self.assertEqual(workload.kind, "supervisor")
         self.assertEqual([r.request_id for r in workload.tiers[1]],
                          ["t1w0", "t1w1", "t1w2", "t1w3"])
@@ -102,8 +102,8 @@ class WorkloadTests(unittest.TestCase):
             load_workload(path)
 
     def test_reuse_policy_is_independent_of_workload_kind(self):
-        rag = load_workload(ROOT / "workload/workload_2wikimqa_first8.json")
-        supervisor = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        rag = load_workload(ROOT / "tests/fixtures/workload_2wikimqa_first8.json")
+        supervisor = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         self.assertGreater(build_reuse_plan(rag, "epic").reused_tokens, 0)
         plan = build_reuse_plan(supervisor, "cacheblend", 0.5, 7)
         self.assertGreater(plan.reused_tokens, 0)
@@ -111,7 +111,7 @@ class WorkloadTests(unittest.TestCase):
         self.assertEqual(build_reuse_plan(rag, "no-reuse").reused_tokens, 0)
 
     def test_parent_output_owner_is_the_declared_parent(self):
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "epic", epic_prefix_recompute_tokens=2)
         relay_decisions = [decision for decision in plan.reusable
                            if decision.fingerprint == "out-sup"]
@@ -134,7 +134,7 @@ class WorkloadTests(unittest.TestCase):
                 self.calls.append((batch, lin, lout, kwargs))
                 kwargs["perfs"].append((batch, lin, lout))
 
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         system = FakeSystem()
         results = run_no_reuse_workload(system, workload, pipe=True,
                                         parallel_ff=True, power_constraint=False)
@@ -318,7 +318,7 @@ class WorkloadTests(unittest.TestCase):
 
     def test_relay_json_no_reuse_matches_original_attacc_prototype(self):
         """Use the supplied relay JSON, not a synthetic DAG fixture."""
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         toy = {"name": "toy", "ndec": 1, "num_heads": 4, "hdim": 16,
                "dhead": 4, "ff_scale": 4, "gqa_size": 1,
                "dtype": DataType.W16A16}
@@ -338,7 +338,7 @@ class WorkloadTests(unittest.TestCase):
 
     def test_2wikimqa_json_no_reuse_matches_original_attacc_prototype(self):
         """The supplied RAG JSON is likewise only a tiered legacy adapter."""
-        workload = load_workload(ROOT / "workload/workload_2wikimqa_first8.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_2wikimqa_first8.json")
         toy = {"name": "toy", "ndec": 1, "num_heads": 4, "hdim": 16,
                "dhead": 4, "ff_scale": 4, "gqa_size": 1,
                "dtype": DataType.W16A16}
@@ -583,7 +583,7 @@ class WorkloadTests(unittest.TestCase):
         whose rows are selected offline, so it must not carry full-recompute
         selection layers.
         """
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
 
         zero = build_reuse_plan(workload, "promptcache")
         self.assertTrue(zero.reusable)
@@ -611,7 +611,7 @@ class WorkloadTests(unittest.TestCase):
             build_reuse_plan(workload, "cachetune", 0.2, 7, (0,), (1, 2))
 
     def test_reuse_structure_checker_covers_layers_and_rows(self):
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         cacheblend = build_reuse_plan(
             workload, "cacheblend", .25, 7, (0, 1), (2,))
         validate_reuse_plan(workload, cacheblend, model_layers=3)
@@ -636,7 +636,7 @@ class WorkloadTests(unittest.TestCase):
                                  "hdim": 16, "ff_scale": 4,
                                  "dtype": DataType.W16A16}, tensor_parallel=1)
 
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "epic", epic_prefix_recompute_tokens=1)
 
         def prefill_names(report):
@@ -712,7 +712,7 @@ class WorkloadTests(unittest.TestCase):
                                  "hdim": 16, "ff_scale": 4,
                                  "dtype": DataType.W16A16}, tensor_parallel=1)
 
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
         report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                    pim_prefill_mode="pim")
@@ -767,8 +767,17 @@ class WorkloadTests(unittest.TestCase):
         self.assertTrue(any(not entry["reused"] and
                             entry["location"]["kind"] == "master"
                             for entry in report["tlb"]["entries"]))
-        self.assertTrue(any(len(runs) > 1 for runs in pim.kv_runs),
-                        "a multi-block CacheBlend scan must retain every TLB extent")
+        # Per-channel placement (chenyi9 2026-08-29): the Ramulator run is now
+        # a fixed per-chunk probe, so a multi-block scan retains its extents by
+        # SPREADING over more than one channel event rather than one coalesced
+        # multi-run trace.
+        scan_events = [event for event in report["events"]
+                       if event["name"] == "pim_kv_scan_score_softmax_pv"
+                       and event["request"] == "t1w0"]
+        self.assertTrue(scan_events)
+        self.assertGreater(
+            len({event["device"] for event in scan_events}), 1,
+            "a multi-block CacheBlend scan must spread over multiple channels")
         scan = next(event for event in events
                     if event["name"] == "pim_kv_scan_score_softmax_pv")
         self.assertTrue(scan["dram_addresses"])
@@ -871,7 +880,7 @@ class WorkloadTests(unittest.TestCase):
                                  "hdim": 16, "ff_scale": 4,
                                  "dtype": DataType.W16A16}, tensor_parallel=1)
 
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
         report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                    cacheblend_batch_size=2)
@@ -972,22 +981,33 @@ class WorkloadTests(unittest.TestCase):
                      and event["query_positions"] == [first]]
             return plan, report, corrected, scans
 
+        def channel_of(device):                    # "PIM:pool{c}-{c}" -> c
+            return int(device.split("pool")[1].split("-")[0])
+
+        def split_pools(events):
+            master = [event for event in events if event["device"].startswith(
+                "PIM:pool") and channel_of(event["device"]) < 15]
+            diff = [event for event in events
+                    if event["device"] == "PIM:pool15-15"]
+            return master, diff
+
         plan, report, corrected, scans = decode_scans(0.25)
         self.assertGreater(corrected, 0)
-        master = [event for event in scans if event["device"] == "PIM:pool0-14"]
-        diff = [event for event in scans if event["device"] == "PIM:pool15-15"]
-        # The whole 24-row context is streamed from master (shadowed rows
-        # included), and only the corrected rows come from the diff pool.
+        master, diff = split_pools(scans)
+        # The whole 24-row context is streamed from the master channels
+        # (shadowed rows included); only corrected rows come from the diff
+        # channel (chenyi9 2026-08-29: master rows now spread over channels
+        # 0..14, corrections on channel 15).
         self.assertEqual(sum(event["rows"] for event in master), 24)
         self.assertEqual(sum(event["masked_rows"] for event in master), corrected)
         self.assertEqual(len(diff), 1)
         self.assertEqual(diff[0]["rows"], corrected)
         self.assertEqual(diff[0]["masked_rows"], 0)
-        # Fragmentation-free: exactly as many master runs as with no correction.
+        # Fragmentation-free: exactly as many master channels as with no
+        # correction (corrections go to the diff channel, never the master).
         _, _, _, baseline = decode_scans(0.0)
-        self.assertEqual(len(master),
-                         len([event for event in baseline
-                              if event["device"] == "PIM:pool0-14"]))
+        base_master, _ = split_pools(baseline)
+        self.assertEqual(len(master), len(base_master))
         # Every event's rows and masks are consistent and the DIE merge is
         # priced per physical run (one local softmax tuple each) plus the GPU
         # tuple, not per K/V row.
@@ -1021,8 +1041,7 @@ class WorkloadTests(unittest.TestCase):
                    if event["request"] == "r1" and event["transformer_layer"] == 1
                    and event["name"] == "pim_kv_scan_score_softmax_pv"]
         self.assertTrue(prefill)
-        master_prefill = [event for event in prefill
-                          if event["device"] == "PIM:pool0-14"]
+        master_prefill, _ = split_pools(prefill)
         self.assertTrue(master_prefill)
         self.assertTrue(any(event["masked_rows"] > 0 for event in master_prefill))
 
@@ -1170,7 +1189,7 @@ class MQBatchCommandTests(unittest.TestCase):
                                  "hdim": 16, "ff_scale": 4,
                                  "dtype": DataType.W16A16}, tensor_parallel=1)
 
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
         report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                    cacheblend_batch_size=4,
@@ -1206,7 +1225,7 @@ class MQBatchCommandTests(unittest.TestCase):
                                  "hdim": 16, "ff_scale": 4,
                                  "dtype": DataType.W16A16}, tensor_parallel=1)
 
-        workload = load_workload(ROOT / "workload/workload_relay_s400w4t1.json")
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
         plan = build_reuse_plan(workload, "cacheblend", .1, 7, (0, 1), (2,))
         report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                    cacheblend_batch_size=4,
@@ -1246,7 +1265,15 @@ class MQBatchCommandTests(unittest.TestCase):
         # scan reads more than the reused set.
         worker_scans = [e for e in scans if e["request"].startswith("t1w")]
         self.assertTrue(worker_scans)
-        self.assertTrue(all(e["rows"] > 500 for e in worker_scans))
+        # Per-channel placement (chenyi9 2026-08-29): a worker's >500-row
+        # bank-whole context is the SUM over its scan's channel events at one
+        # query position, not one coalesced run.
+        totals = {}
+        for event in worker_scans:
+            key = (event["request"], tuple(event["query_positions"]))
+            totals[key] = totals.get(key, 0) + event["rows"]
+        self.assertTrue(totals)
+        self.assertTrue(all(total > 500 for total in totals.values()))
         # (1) D_i bitmap: one load per (request, partial layer with
         # corrections) for CacheBlend, before that layer's masked scans.
         bitmap_loads = [e for e in prefill if e["name"] == "die_load_di_bitmap"]

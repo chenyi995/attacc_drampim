@@ -37,24 +37,36 @@ AttAcc(ASPLOS'24)把 decode 注意力搬进 HBM 内存的每个 bank(DRAM 的
 GPU↔远端存储链路计入 `link_bytes`,R10 裁决;解析引擎的 A2 暂为
 "KV 在 GPU 本地"旧口径,见总台账 U3)。
 
-## 3. A1–A6 阶梯(放置消融,2026-08-24 定)
+## 3. A1–A6 阶梯(放置消融,2026-08-24 定;布局档 2026-08-29 重切)
 
-每一档只比上一档多一件事(2026-08-26 起共**七档**,A3a 见下表);各档细节见 `intro/`:
+每一档只比上一档多一件事。**布局的物理模型(chenyi9 2026-08-29)**:一个
+head 的一个 chunk(256 token)是**一个 channel 上的一个 row**;一次 decode
+扫描的时间是**最忙的那条 channel**(一起读、又落在同一条 channel 上的 chunk
+会串行)。head 之间是 HBM 间并行;`heads_per_hbm = ceil(局部 KV head / num_hbm)`
+个 head 共享一个 HBM 的 16 条 channel。各档细节见 `intro/`:
 
-| 档 | 含义 | prefill attn | KV 布局 | 批命令 |
+| 档 | 一个 head 的 chunk 怎么落 channel | prefill attn | KV 布局(`kv_mapping`/`channel_placement`) | 批命令 |
 |---|---|---|---|---|
 | A1 | AttAcc 原样,无复用(参照点) | GPU | private | replicate |
-| A2 | 纯软件复用,无 PIM 算力 | GPU(decode 也在 GPU) | none(KV 在**远端哑存储**,R10;解析引擎旧口径见 U3) | replicate |
-| A3 | 软件复用 + AttAcc,乱序布局(不分 channel) | GPU | naive | replicate |
-| **A3a** | A3 布局但**可掩**(陈旧行随流读出被掩,run 不断;2026-08-26 增) | GPU | naive-mask | replicate |
-| A4 | + 分裂 channel(master/diff 分池) | GPU | master-diff | replicate |
-| A5 | + 所有 prefill 注意力进 PIM(MQ n_cap=8:512 B/1.3004 GHz,能量钳位 8 tCK) | PIM | master-diff | **mq** |
-| A6 | **Fugue(我们的方法)**:A5 + 逐请求动态选边 | dynamic | master-diff | **mq** |
+| A2 | 纯软件复用,无 PIM 算力 | GPU(decode 也在 GPU) | none(KV 在**远端哑存储**,R10) | replicate |
+| A3 | **不切片**:head→**1 条** channel,该 head 全部 chunk 压这一条(余闲) | GPU | naive / **single** | replicate |
+| **A3a** | A3 布局但**可掩**(陈旧行随流读出被掩,run 不断) | GPU | naive-mask / single | replicate |
+| **A3b** | **+ head 切片**:该 head 的 chunk 在自己 `16/heads_per_hbm` 条 channel 上轮转 | GPU | naive / **slice** | replicate |
+| A4 | **+ master/diff 分离**:master 池 ch0–14 head-切片,修正行进 diff 池 ch15 | GPU | master-diff / **slice** | replicate |
+| **A4b** | **+ placement table**:丢掉固定切片,全局把 co-read 的 chunk 摊到 15 条 master channel | GPU | master-diff / **table** | replicate |
+| A5 | **A4b 布局** + 所有 prefill 注意力进 PIM(MQ n_cap=8:512 B/1.3004 GHz) | PIM | master-diff / table | **mq** |
+| A6 | **Fugue(我们的方法)**:A5 + 逐请求动态选边 | dynamic | master-diff / table | **mq** |
 
-关键约定:**attention batching(MQ 批命令,一次列读服务多条驻留查询)
-与"prefill 上 PIM"同步启用**(A5 起);A1–A6 默认都在多轮 agentic 编排
-下运行(`history_len`,由 workload 决定);曾经的"split 混合"档(GPU 算
-新行、PIM 扫旧行、LSE 缝合)已废除。
+阶梯 diff:A3b−A3 = head 切片;A4−A3b = master/diff 分离;A4b−A4 = 全局
+co-read table 取代固定切片;A5−A4b = prefill 上 PIM + MQ;A6−A5 = 动态。
+物理事件引擎(`workload_runner._append_placement_pim_scan`)是**唯一出数路径**;
+解析引擎只作粗校验、不区分 single/slice/table。真实配置 `num_hbm=16`、
+LLAMA3-8B 8 KV head → `heads_per_hbm=1`,此时 A4≈A4b(切片与全局 table 重合,
+只有 head 挤一个 HBM 时才分开)。
+
+关键约定:**attention batching(MQ 批命令)与"prefill 上 PIM"同步启用**
+(A5 起);A1–A6 默认都在多轮 agentic 编排下运行(`history_len`);曾经的
+"split 混合"档已废除。
 
 **硬件轴(2026-08-27)**:
 - **head→HBM 条带映射**(R18,恒开):一个 KV 头独占 HBM,run 覆盖的各
