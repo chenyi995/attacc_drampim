@@ -11,6 +11,8 @@
 2026-08-29(magic-number 核查 → 参数化 sweep 重构)、
 2026-08-30(sweep 多上游 workload 的 parent_out 阻塞修复 + 集群化运行记录;
 由接手运行的 AI 登记,非 chenyi9 裁决)。
+**跑批交接见 `2026-08-30-HANDOFF.md`**(athena Slurm 集群上 756-run sweep 的
+运行状态、续跑方式、资源纪律与已知问题——接手跑批先看这页)。
 更早的移植期(2026-08-22/23,
 MQ 命令 C 模型与 822 分支启用)见 delta 文档 §1–§3 与 experiment 分支
 存档。
