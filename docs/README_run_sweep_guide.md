@@ -26,6 +26,14 @@ make -C src/cppcore            # 产出 src/cppcore/libeventcore.so；编不过�
 python3 -m unittest discover -s tests                      # 应全绿（61 测试）
 ```
 
+**换机器构建坑（athena 2026-08-30 实测）**：
+- **ramulator2 cmake 需外网**（`FetchContent` 拉 yaml-cpp/spdlog/argparse）。构建节点
+  无外网时，先把一个已成功 checkout 的 `ramulator2/ext/` 拷进来再 cmake。
+- **`--ramulator-workers` 不能给 1**：`_warm_build_price_finalize` 在 workers≤1 时退回
+  冷路径、build-once 暖流程失效；每个 run 至少给 2（脚本默认 8）。
+- Ramulator 每个并发 job 要**独立工作目录**（`ATTACC_RAMULATOR_DIR`/`ATTACC_RAMULATOR_LOG`，
+  见 `src/system.py`：CSV 整文件重写）；NFS 上别并发 O_APPEND 写签名缓存。
+
 ## 2. 模型与 system 配置（3 档）
 
 | 档 | 模型 | `--ngpu` / `--num-hbm` | heads_per_hbm | 出处（每个几何数字都有来源）|
@@ -51,7 +59,7 @@ run 计价，**每个新 (模型, 上下文大小, 档) 形状都要跑一遍完
 # 阶段 1：预热（6 模型并行 = 不同形状不撞；每模型内 9 档串行 = 同形状单写）
 bash experiments/warm_cache.sh
 # 盯着缓存长大；不再增长即基本建好：
-watch -n 20 'ls -la ramulator2/signature_cache_v2_headhbm.jsonl'
+watch -n 20 'ls -la ramulator2/signature_cache.jsonl'   # 代码实际写这个文件
 ```
 
 `warm_cache.sh` 用几个形状最多样的 config(最大 C64、baseline、最多 agent N64)× 9 档

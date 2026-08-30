@@ -12,6 +12,7 @@
 //   end        = start + duration; avail[resource] = end
 // Floats are IEEE doubles with the same fold order as the Python max(),
 // so results are bit-identical.
+#include <cstddef>   // std::size_t (unqualified size_t below needs this on gcc 11)
 #include <cstdint>
 #include <vector>
 

@@ -20,7 +20,7 @@
 #
 #   usage: bash experiments/run_sweep_models.sh
 set -uo pipefail
-cd /data2/chenyi9/KV-PIM/attacc_drampim_xinyao
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # repo root, any machine
 WD=workload/sweep
 TS=$(date +%Y%m%d-%H%M%S)
 ROOT=output/sweep_models_${TS}

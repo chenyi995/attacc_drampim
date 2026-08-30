@@ -24,7 +24,7 @@
 #
 #   usage: bash experiments/warm_cache.sh      # then run_sweep_models.sh
 set -uo pipefail
-cd /data2/chenyi9/KV-PIM/attacc_drampim_xinyao
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # repo root, any machine
 WD=workload/sweep
 RUNGS="A1 A2 A3 A3a A3b A4 A4b A5 A6"
 
