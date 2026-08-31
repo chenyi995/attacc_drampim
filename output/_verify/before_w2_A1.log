@@ -1,0 +1,46 @@
+[warm] collected 512 Acc ops -> 512 unique shapes (single build 3848s); simulating with up to 2 workers
+[warm] cache ready after 8020s total; repriced 512 events, finalizing once
+{
+  "kind": "supervisor",
+  "requests": 16,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 1,
+    "fresh_tokens": 135424,
+    "policy": "no-reuse",
+    "random_seed": 0,
+    "recompute_canonical": false,
+    "reusable_segments": [],
+    "reused_tokens": 0
+  },
+  "tiers": {
+    "0": [
+      "t0n0",
+      "t0n1",
+      "t0n2",
+      "t0n3",
+      "t0n4",
+      "t0n5",
+      "t0n6",
+      "t0n7",
+      "t0n8",
+      "t0n9",
+      "t0n10",
+      "t0n11",
+      "t0n12",
+      "t0n13",
+      "t0n14",
+      "t0n15"
+    ]
+  },
+  "total_history_tokens": 0,
+  "total_input_tokens": 135424,
+  "total_output_tokens": 4096
+}
+dgx-attacc: (A100a x 1), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /home/cw636/chenyi/attacc_drampim/output/_verify/before_w2_A1.json
+REPORT_SUMMARY {"ablation": "A1", "decode_attn": "pim", "energy_nj": 12724176753506.645, "engine": "dag", "event_count": 3497984, "kv_mapping": "private", "link_bytes": 147387842560, "makespan_s": 119.60112974114459, "pim_prefill_mode": "gpu", "policy": "no-reuse-physical"}

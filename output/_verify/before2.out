@@ -1,0 +1,10 @@
+[2026-08-30 17:39:44] before2 LLAMA3-8B_wl_pipeline_D4_evfull A2 rc=0 5s
+[2026-08-30 18:12:42] before2 LLAMA3-8B_wl_pipeline_D4_evfull A4 rc=0 1983s
+[2026-08-30 18:12:44] before2 LLAMA3-8B_wl_pipeline_D4_evfull A3 rc=0 1985s
+[2026-08-30 18:13:01] before2 LLAMA3-8B_wl_pipeline_D4_evfull A3b rc=0 2002s
+[2026-08-30 18:13:02] before2 LLAMA3-8B_wl_pipeline_D4_evfull A5 rc=0 2003s
+[2026-08-30 18:13:14] before2 LLAMA3-8B_wl_pipeline_D4_evfull A4b rc=0 2015s
+[2026-08-30 18:13:14] before2 LLAMA3-8B_wl_pipeline_D4_evfull A3a rc=0 2015s
+[2026-08-30 18:13:23] before2 LLAMA3-8B_wl_pipeline_D4_evfull A6 rc=0 2024s
+[2026-08-30 18:37:03] before2 LLAMA3-8B_wl_pipeline_D4_evfull A1 rc=0 3444s
+[2026-08-30 18:37:03] MATRIX2 DONE before2 (json=0 sha=9)

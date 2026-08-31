@@ -1,0 +1,40 @@
+[warm] collected 128 Acc ops -> 128 unique shapes (single build 1030s); simulating with up to 2 workers
+[warm] cache ready after 2376s total; repriced 128 events, finalizing once
+{
+  "kind": "supervisor",
+  "requests": 4,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 1,
+    "fresh_tokens": 33856,
+    "policy": "no-reuse",
+    "random_seed": 0,
+    "recompute_canonical": false,
+    "reusable_segments": [],
+    "reused_tokens": 0
+  },
+  "tiers": {
+    "0": [
+      "t0n0"
+    ],
+    "1": [
+      "t1n0"
+    ],
+    "2": [
+      "t2n0"
+    ],
+    "3": [
+      "t3n0"
+    ]
+  },
+  "total_history_tokens": 1536,
+  "total_input_tokens": 33856,
+  "total_output_tokens": 1024
+}
+dgx-attacc: (A100a x 1), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /tmp/kvpim_cw636_v2_before2_LLAMA3-8B_wl_pipeline_D4_evfull_A1/report.fifo
+REPORT_SUMMARY {"ablation": "A1", "decode_attn": "pim", "energy_nj": 6527897678319.315, "engine": "dag", "event_count": 1247232, "kv_mapping": "private", "link_bytes": 36846960640, "makespan_s": 48.54678185535021, "pim_prefill_mode": "gpu", "policy": "no-reuse-physical"}

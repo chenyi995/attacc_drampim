@@ -1,0 +1,195 @@
+diff --git a/main.py b/main.py
+index 77a0d0a..b1125e2 100644
+--- a/main.py
++++ b/main.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ import argparse
++import gc as _gc
+ import csv
+ import json
+ import os
+@@ -10,6 +11,17 @@ from src.ablation import (DECODE_ATTN_MODES, KV_MAPPINGS,
+ from src.workload import (Workload, WorkloadValidationError, build_reuse_plan,
+                           load_workload, workload_summary)
+ 
++# Opt-in: drop the cyclic collector for this process.  The engine keeps millions
++# of live SplitEvent/KVLocation objects, so CPython's gen-2 passes rescan the
++# whole live heap over and over -- measured at ~16% of a build, and invisible to
++# a Python sampling profiler because the collector runs in C and its cost lands
++# on whichever frame happened to be allocating.  Reference counting still frees
++# everything acyclic; only reference cycles are left for process exit, so the
++# results are unchanged (verified byte-identical on LLAMA-7B/wl_D1/A1).
++if os.environ.get("KVPIM_NOGC", "0") == "1":
++    _gc.disable()
++
++
+ RAMULATOR = False
+ 
+ 
+diff --git a/src/workload_runner.py b/src/workload_runner.py
+index 4ea2182..5887ee1 100644
+--- a/src/workload_runner.py
++++ b/src/workload_runner.py
+@@ -718,11 +718,26 @@ class KVBlock:
+     channel_offset: int = 0
+ 
+     def token_offset(self, owner_row: int) -> int:
+-        try:
+-            return self.rows.index(owner_row)
+-        except ValueError as exc:
+-            raise WorkloadValidationError(
+-                "TLB row {} is not reserved in {}".format(owner_row, self.block_id)) from exc
++        # ``rows`` is ``tuple(sorted(<set>))`` at every construction site
++        # (CacheBlendTLB.finalize, the no-reuse finalize, and the naive-page
++        # finalize whose ``page_rows`` is a slice of one), so it is ascending
++        # and duplicate-free.  ``tuple.index`` therefore returns the same index
++        # a binary search does -- but it scans, and ``locate`` visits every row
++        # of a block once, so the scan made block binding O(L^2) per
++        # (request, layer).  A contiguous block needs no search at all.
++        rows = self.rows
++        count = len(rows)
++        if count:
++            if rows[count - 1] - rows[0] == count - 1:
++                offset = owner_row - rows[0]
++                if 0 <= offset < count:
++                    return offset
++            else:
++                offset = bisect_left(rows, owner_row)
++                if offset < count and rows[offset] == owner_row:
++                    return offset
++        raise WorkloadValidationError(
++            "TLB row {} is not reserved in {}".format(owner_row, self.block_id))
+ 
+     def to_dict(self) -> Dict[str, Any]:
+         count = len(self.rows)
+@@ -2311,6 +2326,56 @@ def _append_cacheblend_decode_batched(
+         request.request_id: {layer: [] for layer in range(system.model.ndec)}
+         for request in requests
+     }
++    # Decode appends exactly one resident KV row per output token, so the
++    # per-step rebuild of the whole history was recomputing an unchanged
++    # prefix.  These carry that state instead.  ``_physical_reads`` is a
++    # per-element order-preserving expansion and ``_prefill_location_deltas``
++    # is a pure function of (request, its layer bindings), so the values are
++    # the same ones the rebuild produced.  Every consumer of these structures
++    # reads them (checked: no call site mutates the list, the mask set, or the
++    # delta map), which is what makes sharing them across steps safe.
++    _old_state: Dict[str, Dict[int, List[KVLocation]]] = {
++        request.request_id: {} for request in requests
++    }
++    _reads_state: Dict[str, Dict[int, Tuple[List[KVLocation], set]]] = {
++        request.request_id: {} for request in requests
++    }
++    _delta_state: Dict[Tuple[str, int], Dict[Tuple[int, int], int]] = {}
++    _shadow_gate = getattr(tlb, "shadow_reads", True)
++
++    def _decode_state(request_id: str, layer: int):
++        """(resident locations, (physical reads, masked keys)) for this layer."""
++        per_layer = _old_state[request_id]
++        if layer not in per_layer:
++            locations = [location for _, _, _, location
++                         in bindings[request_id][layer]]
++            locations.extend(previous_output[request_id][layer])
++            per_layer[layer] = locations
++            _reads_state[request_id][layer] = _pool_reads(tlb, locations)
++        return per_layer[layer], _reads_state[request_id][layer]
++
++    def _decode_state_append(request_id: str, layer: int,
++                             location: KVLocation) -> None:
++        """Mirror one generated KV row into the carried state."""
++        per_layer = _old_state[request_id]
++        if layer not in per_layer:
++            return                      # not materialised yet; lazy init folds it in
++        per_layer[layer].append(location)
++        reads, masked = _reads_state[request_id][layer]
++        reads.append(location)
++        if _shadow_gate and location.shadow is not None:
++            reads.append(location.shadow)
++            masked.add(_address_key(location.shadow))
++
++    def _decode_deltas(request, layer: int):
++        """Prefill position deltas: independent of the output row."""
++        key = (request.request_id, layer)
++        cached = _delta_state.get(key)
++        if cached is None:
++            cached = _prefill_location_deltas(
++                request, bindings[request.request_id][layer])
++            _delta_state[key] = cached
++        return cached
+     # Cached prefix state for the real, append-only AttAcc event schedule.
+     # It avoids replaying a long decode trace solely to find newly emitted Q
+     # completion times.
+@@ -2380,18 +2445,14 @@ def _append_cacheblend_decode_batched(
+                         link_bytes=kv_bytes, positions=(position,),
+                         addresses=(location.key_address, location.value_address))
+ 
+-            old_by_request = {
+-                request.request_id: [location for _, _, _, location
+-                                     in bindings[request.request_id][layer_index]] +
+-                previous_output[request.request_id][layer_index]
+-                for request in active
+-            }
+-            # Physical master/diff streams per request (masked shadow rows
+-            # included) -- see ``_physical_reads``.
+-            reads_by_request = {
+-                request.request_id: _pool_reads(tlb, old_by_request[request.request_id])
+-                for request in active
+-            }
++            # Carried across output rows -- see _decode_state.  The rebuild
++            # this replaces was O(L) per (token, layer, request).
++            old_by_request = {}
++            reads_by_request = {}
++            for request in active:
++                _rid = request.request_id
++                old_by_request[_rid], reads_by_request[_rid] = _decode_state(
++                    _rid, layer_index)
+             # GPU rotation creates additional Q variants that have their own
+             # GPU->PIM transfers.  Emit them before admission, so the ready
+             # timestamp denotes the final required external Q arrival.
+@@ -2400,8 +2461,7 @@ def _append_cacheblend_decode_batched(
+                     system, events, x2g, layer=layer_index, tier=tier,
+                     request=request.request_id, q_dependency=q_links[request.request_id],
+                     q_bytes=q_bytes, locations=reads_by_request[request.request_id][0],
+-                    location_deltas=_prefill_location_deltas(
+-                        request, bindings[request.request_id][layer_index]),
++                    location_deltas=_decode_deltas(request, layer_index),
+                     rotate_mode=rotate_mode, name_prefix="decode_",
+                     positions=(request.total_length + output_row,))
+                 for request in active if old_by_request[request.request_id]
+@@ -2494,8 +2554,10 @@ def _append_cacheblend_decode_batched(
+                             for location in reads_by_request[request.request_id][0]
+                             if location.kind == "master"}
+                     common_keys = keys if common_keys is None else common_keys & keys
++                _common_addresses = common_keys or frozenset()
+                 common = [location for location in reads_by_request[group[0].request_id][0]
+-                          if _address_key(location) in (common_keys or set())]
++                          if (location.key_address, location.value_address)
++                          in _common_addresses]
+                 # The mask is query-private; the shared event reports the
+                 # rows masked for at least one member of the batch.
+                 common_masked = set().union(*(reads_by_request[request.request_id][1]
+@@ -2557,8 +2619,13 @@ def _append_cacheblend_decode_batched(
+                 for request in group:
+                     request_id = request.request_id
+                     position = request.total_length + output_row
++                    # ``(common_keys or set())`` built a throwaway set for
++                    # every location; hoist it, and inline the address key so
++                    # the membership test is not a function call per row.
++                    common_addresses = common_keys or frozenset()
+                     private = [location for location in reads_by_request[request_id][0]
+-                               if _address_key(location) not in (common_keys or set())]
++                               if (location.key_address, location.value_address)
++                               not in common_addresses]
+                     private_masked = reads_by_request[request_id][1]
+                     if private:
+                         die_q = _cacheblend_event(
+@@ -2651,6 +2718,7 @@ def _append_cacheblend_decode_batched(
+                         deps=(kv_links[request_id],), positions=(position,),
+                         addresses=(location.key_address, location.value_address))
+                     previous_output[request_id][layer_index].append(location)
++                    _decode_state_append(request_id, layer_index, location)
+                     next_layer_deps[request_id] = (post_last, store)
+             layer_deps = next_layer_deps
+         token_deps.update(layer_deps)

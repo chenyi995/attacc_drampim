@@ -1,0 +1,4 @@
+REPORT_SUMMARY {"ablation": "A1", "decode_attn": "pim", "energy_nj": 6527897678319.315, "engine": "dag", "event_count": 1247232, "kv_mapping": "private", "link_bytes": 36846960640, "makespan_s": 48.54678185535021, "pim_prefill_mode": "gpu", "policy": "no-reuse-physical"}
+
+ROWS INVARIANT over 352 blocks / 1165312 rows: unsorted=0 duplicated=0 bisect!=index=0 contiguous_blocks=352
+VERDICT: invariant holds -- bisect_left is exactly tuple.index
