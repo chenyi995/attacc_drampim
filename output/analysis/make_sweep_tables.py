@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Extract RESULTS_sweep.md from a completed parametric-sweep run.
 
-Reads the newest output/sweep_<timestamp>/<config>_k<k>/dag_A*.json (14
-configs x 7 rungs = 98 runs) and writes output/analysis/RESULTS_sweep.md:
+Reads the newest output/sweep_<timestamp>/<config>_k<k>/dag_A*.json (13
+configs x 9 rungs = 117 runs per model) and writes output/analysis/RESULTS_sweep.md:
 per-config headline (makespan / total energy / average power / prefill-on-PIM
 share, per rung A1..A6) plus the OFAT axis views (N / C / D / k) that isolate
 each A-rung difference. All values are measured; source fields are labelled.
@@ -20,7 +20,14 @@ CACHE = HERE + "/.digest_cache"
 CONFIGS = [
     ("baseline",   "alltoall",       16, 32, 2, 8),
     ("N-lo",       "alltoall",        4, 32, 2, 8),
-    ("N-hi",       "alltoall",       64, 32, 2, 8),
+    # N-hi (64 agents) dropped 2026-08-31.  It was the heaviest configuration in
+    # the sweep -- W=17.33 for the small models, 52 for GPT-175B -- and it never
+    # completed on any model: GPT-175B and LLAMA-65B project ~1.3TB and ~1.1TB
+    # against a 1008GB node, LLAMA-7B lost six rungs to ENOSPC, and LLAMA3-8B was
+    # cancelled by the memory guard eight hours in with eight of nine rungs
+    # unfinished.  Partial output stays on disk but is deliberately not listed
+    # here, so it cannot enter a results table as a half-filled row.
+    # THE N AXIS IS THEREFORE TWO POINTS: N=4 (N-lo) and N=16 (baseline).
     ("C-lo",       "alltoall",       16, 16, 2, 8),
     ("C-hi",       "alltoall",       16, 64, 2, 8),
     ("D-lo",       "alltoall",       16, 32, 1, 8),
@@ -91,7 +98,7 @@ def collect(model_root):
 def render(rows, model_label):
     """Markdown section (overview + topology view) for one model's rows."""
     md = [f"\n## 模型 {model_label}\n"]
-    md.append("### 配置完整度（14 组 × 9 档）\n")
+    md.append(f"### 配置完整度（{len(CONFIGS)} 组 × {len(RUNGS)} 档）\n")
     md.append("| config | topology | N | C | D | k | 完整 |")
     md.append("|---|---|---|---|---|---|---|")
     for name, topo, N, C, D, kk in CONFIGS:

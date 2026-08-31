@@ -173,6 +173,8 @@ def main():
             if r["st"] == "done":
                 ndone += 1
                 cells.append("**9/9**")
+            elif r["st"] == "excluded":
+                cells.append("✖")
             elif r["st"] == "parked":
                 cells.append("⏸")
             elif r["st"] == "damaged":
@@ -181,9 +183,14 @@ def main():
                 cells.append(f"🔵{r['n']}/9")
             else:
                 cells.append("⬜")
-        o(f"| {m} | " + " | ".join(cells) + f" | {ndone}/{len(cfgs)} |")
+        # denominator counts only what this model can still reach -- an excluded
+        # config is not a shortfall, and scoring it as one reads as failure
+        reachable = sum(1 for c in cfgs
+                        if by.get((m, c)) and by[(m, c)]["st"] != "excluded")
+        o(f"| {m} | " + " | ".join(cells) + f" | {ndone}/{reachable} |")
     o("")
-    o("图例：**9/9** 完成 ・ 🔵 在跑 ・ ⬜ 未领取 ・ ⚠️ 受损缺档 ・ ⏸ 停放")
+    o("图例：**9/9** 完成 ・ 🔵 在跑 ・ ⬜ 未领取 ・ ⚠️ 受损缺档 ・ "
+      "⏸ 停放 ・ ✖ 已放弃")
     o("")
     o("## 3. 受损任务：缺哪些档、为什么")
     o("")
@@ -211,24 +218,31 @@ def main():
     o(f"这是下限而不是估计：它按九档等价折算，但 **A1（`no-reuse`）的图最大，")
     o(f"比其余各档慢约 3 倍**，而 {n_a1} 个受损任务缺的正是 A1。真实代价明显更高。")
     o("")
-    o("## 4. 停放的任务")
+    o("## 4. 已放弃 / 停放的任务")
     o("")
-    o("N-hi（`wl_N64.json`，64 个 agent）是最重的一档。按决定**只跑两个小模型的")
-    o("N-hi**，四个较大模型的停放。这四个里有两类，别混为一谈：")
-    o("")
-    o("| 任务 | W | 预计常驻 | 停放理由 |")
-    o("|---|---:|---:|---|")
-    NODE_G = 1008
-    for r in sorted((r for r in rows if r["st"] == "parked"), key=lambda r: -r["w"]):
-        g = G.SLOT_BASE_G + G.MEM_PER_W * r["w"]
-        why = ("**装不下** — 超过单节点 %dGB，跑它会活锁" % NODE_G if g > NODE_G
-               else "按决定停放 — 内存装得下，是取舍不是硬限")
-        o(f"| `{r['model']} / {r['cfg']}` | {r['w']:.1f} | ~{g:.0f} GB | {why} |")
-    o("")
-    o("换句话说：GPT-175B / LLAMA-65B 的 N-hi **物理上跑不了**（1.3TB、1.1TB 对")
-    o("1008GB 的节点），这一条已经用一次 3.5 小时零产出的活锁证实过；")
-    o("LLAMA-33B / GPT-13B 的 N-hi 内存是够的，停放是为了省时间。")
-    o("**若要补这两个，是可行的**，代价见上表的 W。")
+    dropped = [r for r in rows if r["st"] in ("excluded", "parked")]
+    if dropped:
+        o("**N-hi（`wl_N64.json`，64 个 agent）整行放弃**，六个模型一个都不跑。")
+        o("它是全 sweep 最重的配置，而且在两个「装得下」的模型上也没跑成：")
+        o("`LLAMA-7B/N-hi` 6 档死于 ENOSPC，`LLAMA3-8B/N-hi` 跑满 8 小时后被内存")
+        o("守卫取消、只剩 1/9。")
+        o("")
+        o("| 任务 | 状态 | W | 预计常驻 | 单节点 1008GB |")
+        o("|---|---|---:|---:|---|")
+        NODE_G = 1008
+        for r in sorted(dropped, key=lambda r: -r["w"]):
+            g = G.SLOT_BASE_G + G.MEM_PER_W * r["w"]
+            fit = "❌ 放不下" if g > NODE_G else "✓ 装得下"
+            st = "✖ 放弃" if r["st"] == "excluded" else "⏸ 停放"
+            o(f"| `{r['model']} / {r['cfg']}` | {st} | {r['w']:.1f} | "
+              f"~{g:.0f} GB | {fit} |")
+        o("")
+        o("**科研代价：N 轴从三点降为两点** —— 只剩 N=4（`N-lo`）与 N=16")
+        o("（`baseline`），4 倍跨度、没有第三点显示曲率。A1 的机制是随 degree")
+        o("**爆炸**，两点连线看不出爆炸。详见 `docs/README_sweep_design.md` §7.1 缺口 1。")
+        o("")
+        o("残缺产出（多数只有 A2）**留在磁盘上但不再被引用**：N-hi 已从")
+        o("`make_sweep_tables.py` 的 `CONFIGS` 中移除，不会以半填充行进入结果表。")
     o("")
     o("## 5. 关键路径")
     o("")
