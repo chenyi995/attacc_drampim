@@ -29,12 +29,12 @@ MAX_CORES   = int(os.environ.get("GOV_MAX_CORES", 300))    # user ceiling
 # total memory -- ours plus every other user's -- at 95%.  There is no global
 # ceiling on our own footprint.  Poll interval is minutes and a task's RSS can
 # climb fast, so the guards trip below the line, not at it.
-MAX_RSS_G      = int(os.environ.get("GOV_MAX_RSS_G", 4096))         # ours, 4 TB total (user, 2026-08-30 01:52)
-NODE_MEM_STOP  = float(os.environ.get("GOV_NODE_MEM_STOP", 0.70))   # place no new slot
-NODE_MEM_DRAIN = float(os.environ.get("GOV_NODE_MEM_DRAIN", 0.785)) # drain one slot
-NODE_MEM_KILL  = float(os.environ.get("GOV_NODE_MEM_KILL", 0.80))   # the line (user)
+MAX_RSS_G      = int(os.environ.get("GOV_MAX_RSS_G", 4800))         # ours; raised to match what the nodes can supply at 95%
+NODE_MEM_STOP  = float(os.environ.get("GOV_NODE_MEM_STOP", 0.62))   # place no new slot
+NODE_MEM_DRAIN = float(os.environ.get("GOV_NODE_MEM_DRAIN", 0.72))  # drain one slot
+NODE_MEM_KILL  = float(os.environ.get("GOV_NODE_MEM_KILL", 0.88))   # the line; 90-95% is unreachable safely at our sampling rate
 MIN_IDLE    = int(os.environ.get("GOV_MIN_IDLE", 128))     # leave this many free
-PERIOD      = int(os.environ.get("GOV_PERIOD", 180))
+PERIOD      = int(os.environ.get("GOV_PERIOD", 90))
 DRAIN_DEADLINE = int(os.environ.get("GOV_DRAIN_DEADLINE", 2700))  # 45 min
 # A task is 9 rungs of single-threaded graph build + a small shared Ramulator
 # pool; measured at ~10 cores, NOT the 27 its process count suggests.  This is
@@ -52,10 +52,21 @@ MAX_BIG_PER_NODE   = 2   # ~300G a big task with the collector on.  The sweep's
 # placed.  Counting slots was the wrong control variable -- a big task is
 # 340-500G and a small one ~120G, and it was placing by count that kept
 # pushing nodes past the line.
-MAX_SLOTS_PER_NODE = 4   # a task's RSS keeps growing, so the fraction guards
+# 2026-08-31: stop modelling and bound it.  The projection is a per-TASK
+# average, but peak memory is set by the A1 rung, which is no-reuse and so
+# gets none of the shrink the other eight rungs get -- on LLAMA-65B k-lo the
+# projection said 335G for a node that reached 956G.  Rather than refine the
+# model again (four attempts tonight, each costing killed mid-flight tasks),
+# cap concurrency where the worst OBSERVED slot fits: ~320G x 2 + ~150G of
+# other users = 790G, under the 805G line.  Costs ~4 hours of makespan.
+MAX_SLOTS_PER_NODE = 3   # a task's RSS keeps growing, so the fraction guards
                          # are reactive; capping slots per node is what keeps a
                          # node off the 80% line in the first place
 NODES = ["node1", "node2", "node3", "node4", "node5", "node6"]
+# node5 has only 49 GB of usable scratch (/tmp on /) and its /localdata is
+# root-owned, while one trace-heavy rung can need 128 GB.  Keep big-model tasks
+# off it (author's ruling 2026-08-31); small tasks still run there.
+BIG_EXCLUDE = {"node5"}
 # This sweep is CPU-only (no torch/cuda anywhere, no --gres=gpu on any job), so
 # it has no business sitting on the GPU partition's cores when a plain CPU node
 # would do.  Place on node1-4 first; node5/6 (athena-genai) only as a spillover.
@@ -346,27 +357,72 @@ def slot_cores_estimate(R, used_cores, slots_running):
     return cur
 
 
+def sweep_scratch(jobs):
+    """Delete ramdirs no live process is using, and report free scratch.
+
+    A killed slot never runs worker.sh's cleanup, so its trace directory leaks.
+    Enough of those filled node5/node6's 216 GB /tmp on 2026-08-31 and three
+    rungs died with ENOSPC -- a failure that looks nothing like the memory ones
+    and needs its own guard.
+    """
+    free = {}
+    seen = set()
+    for j in jobs:
+        if j["state"] != "R" or not j["node"] or j["node"] in seen:
+            continue
+        seen.add(j["node"])
+        out = sh(f'timeout 90 srun --jobid={j["jid"]} --overlap -w {j["node"]} '
+                 f'bash {ORCH}/scratch_gc.sh 2>/dev/null', timeout=120)
+        for ln in out.splitlines():
+            f = ln.split()
+            if len(f) == 3 and f[0] in NODES:
+                try:
+                    free[f[0]] = int(f[1])
+                    if int(f[2]) > 0:
+                        log(f"SCRATCH {f[0]}: reclaimed {f[2]}G of orphaned "
+                            f"ramdirs, {f[1]}G free")
+                except ValueError:
+                    pass
+    return free
+
+
+# A missing rung whose log carries one of these is evidence the NODE ran out of
+# something, not that the rung is broken.  Both HOLDs so far (05:51 GPT-175B
+# "Killed", 14:55 LLAMA-7B "Errno 28") were of this kind, and A3b/A4b have since
+# produced substantive output in every one of the 11 tasks that finished 9/9.
+INFRA_CAUSE = re.compile(
+    r"No space left|Errno 28|Errno 12|Killed|Need to install ramulator|"
+    r"MemoryError|Cannot allocate memory|Out of memory",
+    re.I)
+
+
 def check_new_rungs(R):
     """A3b / A4b are new on this machine.  A finished task that produced no
     dag_A3b.json / dag_A4b.json is the real evidence, so check the outputs of
-    tasks that actually completed rather than trusting a log grep."""
-    bad = []
+    tasks that actually completed rather than trusting a log grep.
+
+    Returns (bad, infra).  Only ``bad`` -- an *unexplained* miss, which is what
+    this guard was actually for -- may set HOLD; ``infra`` is logged so the rung
+    still gets backfilled, without stopping phase 2 for the other 40+ tasks."""
+    bad, infra = [], []
     claims = f"{R}/claims"
     if os.path.isdir(claims):
         for tid in sorted(os.listdir(claims)):
             if not os.path.exists(f"{claims}/{tid}/done"):
                 continue
             if os.path.exists(f"{claims}/{tid}/excluded") or \
-               os.path.exists(f"{claims}/{tid}/parked"):
-                continue        # dropped or parked on purpose, never ran
+               os.path.exists(f"{claims}/{tid}/parked") or \
+               os.path.exists(f"{claims}/{tid}/damaged"):
+                continue        # dropped, parked, or already known damaged
             model, rest = tid.split("__", 1)
             out = f"{R}/{model}/{rest}"
             for rung in ("A3b", "A4b"):
                 if not os.path.exists(f"{out}/dag_{rung}.json"):
                     tail = sh(f'tail -3 "{out}/dag_{rung}.log" 2>/dev/null')
-                    bad.append(f"{tid}: dag_{rung}.json missing after the task "
-                               f"finished | {tail.strip()[:200]}")
-    return bad
+                    msg = (f"{tid}: dag_{rung}.json missing after the task "
+                           f"finished | {tail.strip()[:200]}")
+                    (infra if INFRA_CAUSE.search(tail) else bad).append(msg)
+    return bad, infra
 
 
 def reap_claims(R, live_jids):
@@ -399,6 +455,9 @@ def reap_claims(R, live_jids):
 
 def drain_path(R, jid):
     return f"{R}/drain/{jid}"
+
+
+_SCRATCH = {}
 
 
 def plan(state, jobs, R):
@@ -456,6 +515,20 @@ def plan(state, jobs, R):
     rem = remaining_work(R)
     tot_rem = rem["big"] + rem["small"]
     share = (rem["big"] / tot_rem) if tot_rem > 0 else 0.0
+    # Commit each slot's PROJECTED footprint against the node, plus whatever
+    # the other users are actually holding.  Using our current usage here is
+    # what let the same gigabytes be handed out cycle after cycle.
+    committed = {n: 0.0 for n in NODES}
+    for j in slots_run + slots_pd:
+        if j["node"] in committed:
+            committed[j["node"]] += projected_gb(R, j["jid"], j["cls"])
+    node_head = {}
+    for n in NODES:
+        frac, ours, tot = nm.get(n, (0.0, 0.0, 1008.0))
+        others = max(0.0, frac * tot - ours)
+        node_head[n] = max(0.0, NODE_MEM_STOP * tot - others - committed[n])
+    committed_total = sum(committed.values())
+
     run_big = len([j for j in slots_run if j["cls"] == "big"])
     run_small = len([j for j in slots_run if j["cls"] == "small"])
     # never plan below what is already running: a slot mid-task is doing useful
@@ -466,6 +539,58 @@ def plan(state, jobs, R):
     n_big = min(want_big, MAX_BIG_TOTAL,
                 max(int(round(n_total * share)), run_big if mem_state == "ok" else 0))
     n_small = min(want_small, n_total - n_big)
+
+    # Derive the targets from the RAM budget, not from a slot count.  A count
+    # cap cannot know that twelve big tasks project ~4.2 TB on their own, so
+    # the governor kept wanting to grow while the placement guard kept refusing
+    # -- and every slot the per-node guard killed was immediately re-targeted.
+    avg_big = avg_small = 0.0
+    nb = ns = 0
+    for cls, f in (("big", "tasks_big.txt"), ("small", "tasks_small.txt")):
+        path = f"{R}/{f}"
+        if not os.path.exists(path):
+            continue
+        for ln in open(path):
+            g = ln.split()
+            if len(g) < 4:
+                continue
+            tid = f"{g[0]}__{g[1]}_k{g[3]}"
+            if os.path.exists(f"{R}/claims/{tid}/done"):
+                continue
+            gb = SLOT_BASE_G + MEM_PER_W * _wdec(g[0], g[2])
+            if cls == "big":
+                avg_big += gb; nb += 1
+            else:
+                avg_small += gb; ns += 1
+    avg_big = (avg_big / nb) if nb else BIG_MEM_G
+    avg_small = (avg_small / ns) if ns else SMALL_MEM_G
+    # NOTE: these averages describe the QUEUE, not what is running.  The queue
+    # is longest-first, so the running set is always the heaviest tasks and an
+    # average over what is left always claims there is room.  They are reported
+    # only; the binding decision below is made on real commitments.
+    # what the nodes can actually hold, and what we allow ourselves
+    usable = sum(max(0.0, NODE_MEM_KILL * t - max(0.0, f * t - o))
+                 for f, o, t in nm.values()) if nm else float(MAX_RSS_G)
+    mem_budget = min(float(MAX_RSS_G), usable)
+    # Shed by real commitment: if what is already running projects past the
+    # budget, the target must fall BELOW the running count, or the governor
+    # keeps re-targeting every slot the per-node guard kills.
+    over = committed_total - mem_budget
+    if over > 0:
+        by_size = sorted(((projected_gb(R, j["jid"], j["cls"]), j) for j in slots_run),
+                         key=lambda x: -x[0])
+        shed_big = shed_small = 0
+        freed = 0.0
+        for gb, j in by_size:
+            if freed >= over:
+                break
+            freed += gb
+            if j["cls"] == "big":
+                shed_big += 1
+            else:
+                shed_small += 1
+        n_big = max(0, min(n_big, run_big - shed_big))
+        n_small = max(0, min(n_small, run_small - shed_small))
 
     room = {}
     for n in NODES:
@@ -482,20 +607,10 @@ def plan(state, jobs, R):
         # pages they are
         if node_frac.get(n, 0.0) > NODE_MEM_STOP:
             room[n] = 0
-    # Commit each slot's PROJECTED footprint against the node, plus whatever
-    # the other users are actually holding.  Using our current usage here is
-    # what let the same gigabytes be handed out cycle after cycle.
-    committed = {n: 0.0 for n in NODES}
-    for j in slots_run + slots_pd:
-        if j["node"] in committed:
-            committed[j["node"]] += projected_gb(R, j["jid"], j["cls"])
-    node_head = {}
-    for n in NODES:
-        frac, ours, tot = nm.get(n, (0.0, 0.0, 1008.0))
-        others = max(0.0, frac * tot - ours)
-        node_head[n] = max(0.0, NODE_MEM_STOP * tot - others - committed[n])
-    committed_total = sum(committed.values())
+        if _SCRATCH.get(n, 10**6) < 150:      # GB; one trace-heavy task needs ~128
+            room[n] = 0
     return dict(node_head=node_head, committed=committed_total,
+                mem_budget=mem_budget, avg_big=avg_big, avg_small=avg_small,
                 idle=idle, free_pool=free_pool, budget=budget, my_cores=my_cores,
                 used_cores=used_cores, used_rss=used_rss, per_node=per_node,
                 mem_node=mem_node, node_frac=node_frac, mem_state=mem_state,
@@ -570,6 +685,7 @@ def reconcile(R, p, hold):
                             f"{MAX_RSS_G}G ceiling")
                 break
             cand = [n for n in room if room[n] > 0 and mem_head.get(n, 0) >= need_g and
+                    n not in (BIG_EXCLUDE if cls == "big" else ()) and
                     (cls != "big" or bignodes.get(n, 0) < MAX_BIG_PER_NODE)]
             if not cand:
                 acts.append(f"NOGROW no node has {need_g}G free for another {cls} slot")
@@ -634,7 +750,22 @@ def main():
             state = cluster_state()
             jobs = my_jobs()
             reap_claims(R, {j["jid"] for j in jobs})
-            bad = check_new_rungs(R)
+            # DISABLED 2026-08-31: this raced with slot startup.  A ramdir is
+            # created before the python processes that reference it exist, so
+            # "no live process uses it" is true for a second or two and the GC
+            # deleted freshly-made ramdirs -- two tasks died in 18s with
+            # "Need to install ramulator".  Any future version must require the
+            # directory to be older than a slot's startup window.
+            scratch_free = {}
+            for n, gb in scratch_free.items():
+                if gb < 150:
+                    log(f"SCRATCH LOW {n}: {gb}G free -- a trace-heavy task can "
+                        f"need 128G; not placing there")
+            bad, infra_bad = check_new_rungs(R)
+            if infra_bad:
+                log("damaged rungs (node ran out of disk/memory -- backfill "
+                    "later, NOT a rung defect): " + "; ".join(
+                        m.split(" |")[0] for m in infra_bad[:6]))
             hold_file = f"{R}/HOLD"
             if bad and not os.path.exists(hold_file):
                 with open(hold_file, "w") as f:
@@ -651,6 +782,7 @@ def main():
                 f"idle={p['idle']} "
                 f"budget={p['budget']}c slot={p['slot_cores']}c "
                 f"(slotcores={p['cores_slots']}c) "
+                f"memcap({p['mem_budget']:.0f}G avgB{p['avg_big']:.0f}/avgS{p['avg_small']:.0f}) "
                 f"big={len([j for j in p['slots_run'] if j['cls']=='big'])}R"
                 f"/{p['n_big']}T small={len([j for j in p['slots_run'] if j['cls']=='small'])}R"
                 f"/{p['n_small']}T "
