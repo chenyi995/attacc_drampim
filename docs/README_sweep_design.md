@@ -8,6 +8,13 @@
 > **A3(head→1channel) vs A3b(head 切片)** 和 **A4(固定切片) vs A4b(全局 co-read
 > table)**,且需 `heads_per_hbm>1`(head 挤 HBM)才明显。
 
+> ⚠️ **实现状态(2026-08-31 核对 `gen_sweep.py` 与全部 12 个
+> `workload/sweep/*.json` 后如实标注)**:本文是**先于代码写的规划**(标题里的
+> "未写代码"),`gen_sweep.py` 实现了它的一个**子集**。**未实现**的部分已在下面
+> 逐处标出:**SL / LL 节点(large out)**、**scatter**、**funnel 拓扑**。
+> 已实现的部分见 **§2.1 实现清单**。写方法一节时以 §2.1 为准,不要照本文的
+> 规划部分写——那会和实际跑的东西对不上。
+>
 > 用**一个**参数化 generator 取代 5 个手调场景。把每个 workload 建成一个
 > **分层 DAG（tiered DAG）**：node = agent = request，按 **tier（拓扑层）**
 > 排布；tier 之间的连边是标准 dataflow primitive（**fan-out / fan-in /
@@ -22,18 +29,50 @@
 | **sys** | 16 token | 每 node 私有 system call |
 | **cap** | 128 block = 32,768 token | 8-MiB K 分区单段硬上限（越界引擎拒绝）|
 | **small** | 1 block（256）| node 只读/写一个对象 |
-| **large** | W × block | node 读/写 W 个对象（W = 相连 tier 的 degree）|
+| **large** | W × block | node 读/写 W 个对象（W = 相连 tier 的 degree）。**只有"读"这一侧被实现**:tier>0 的 node 读全部上游输出 = W×block。**"写"这一侧未实现** —— 生成器里 `lout` 恒为 1 block |
 
 ## 2. Node 类型（在 I/O 尺寸上做 2×2）
 
 | type | in | out | CS 含义（这个 node 在 dataflow 里扮演什么）|
 |---|---|---|---|
-| **SS** | small | small | map / 独立 worker（读一个、写一个）|
-| **SL** | small | large | **producer / source**：写一个大对象供下游 fan-out |
-| **LS** | large | small | **reducer / sink**：fan-in 读全部上游、归约成一个 |
-| **LL** | large | large | **all-to-all node**：读全部上游、也写给全部下游 |
+| type | in | out | CS 含义 | 实现状态 |
+|---|---|---|---|---|
+| **SS** | small | small | map / 独立 worker（读一个、写一个）| ✅ 已实现(tier 0 的 node、pipeline 的每一节) |
+| **SL** | small | **large** | **producer / source**：写一个大对象供下游 fan-out | ❌ **未实现** —— `lout` 恒为 1 block |
+| **LS** | **large** | small | **reducer / sink**：fan-in 读全部上游、归约成一个 | ✅ 已实现(reduce 的末层、任何 tier>0 的 node) |
+| **LL** | **large** | **large** | **all-to-all node**：读全部上游、也写给全部下游 | ⚠️ **半实现** —— 读是 large,写仍是 1 block |
 
 `small = 1 block；large = W block`（= W 个 small 拼接）。
+
+**"large out" 整体未实现的后果**:无论扇出度 N 多大,生产者永远只写 256 token。
+即建模里假设"派活的内容量与下游人数无关"。真实 fan-out 场景中输出常随扇出度增长,
+所以本 sweep **可能低估 fan-out 边上的 prefill 成本**。要补就是让生产者
+`lout = W × BLOCK`,但那会改变 workload 定义、需要重跑。
+
+### 2.1 实现清单(以 `gen_sweep.py` 与 `workload/sweep/*.json` 实测为准)
+
+**已实现**:
+
+| 项 | 实际形态 |
+|---|---|
+| 分层 DAG | node = agent = request,按 tier 排布 |
+| **broadcast**(fan-out 1→N) | N 个消费者**各读同一份完整输出**(同一 sha,各 256 token) |
+| **fan-in**(N→1) | reducer 读全部 N 个上游,各 256 token |
+| **all-to-all**(N→N) | 每个 node 读全部 N 个上游,各 256 token |
+| **pipeline**(1→1) | 链式,读上一个 |
+| **supervisor** | `[1,N,1,N,…]`,fan-out 与 fan-in 交替 |
+| 四条轴 | N(4/16/64)、C(16/32/64)、D(1/2/4)、k(2/8/32,运行时经 `EPIC_K`) |
+| 共享语料 | C 个 block,sha 稳定 → 跨 node 复用,各自位移偏移 |
+| **private 对照** | `--private`:每个 node 独占语料(零共享对照) |
+| history | `history_len = t × 256`(自己前几轮的输出,append 散落) |
+
+**未实现**(本文规划过、代码没有):
+
+| 项 | 说明 |
+|---|---|
+| **SL / LL 的 large out** | `lout` 恒为 1 block,见上 |
+| **scatter** | fan-out 只有 broadcast 一种。scatter(各读 1/N)意味着**零共享**,是共享的反面;零共享对照已由 `--private` 覆盖,故未单独建模 |
+| **funnel 拓扑** | `--topology` 的 choices 只有 broadcast/reduce/alltoall/supervisor/pipeline |
 
 ## 3. Dataflow primitive（tier 间连边）——两个方向对称
 
@@ -42,7 +81,7 @@
 
 | primitive | degree 变化 | 下游每个 node 读什么 | CS 名 |
 |---|---|---|---|
-| **fan-out** | 1 → N | 都读那 1 个的输出（broadcast），或各读大输出的 1/N（scatter）| broadcast / scatter |
+| **fan-out** | 1 → N | **已实现:broadcast** —— 都读那 1 个的完整输出。~~或各读大输出的 1/N（scatter）~~ ❌ **scatter 未实现**(它意味着零共享,已由 `--private` 对照覆盖)| broadcast |
 | **fan-in** | N → 1 | 那 1 个 reducer 读**全部** N 个 | gather / reduce |
 | **all-to-all** | N → N | 每个都读**全部** N 个上游 | all-reduce / gossip |
 | **pipeline** | 1 → 1 | 读上一个 | chain |
@@ -61,7 +100,7 @@
 | **all-to-all** | `[N]×D` | 每层 all-to-all | debate |
 | **supervisor** | `[1, N]×R`（即 `[1,N,1,N,…]`）| fan-out 与 fan-in **交替** | star（旧名，已弃）|
 | **pipeline** | `[1]×D` | 纯 chain | pipeline |
-| **funnel** | `[N]×(D−1)+[1]` | all-to-all 若干层 + 末尾 fan-in | judge 收敛 |
+| **funnel** ❌ **未实现** | `[N]×(D−1)+[1]` | all-to-all 若干层 + 末尾 fan-in | judge 收敛 |
 
 > **"star" 就是 supervisor**：一个 hub（degree 1）fan-out 给 N 个 worker，
 > worker 再 fan-in 回 hub，多轮 → `[1,N,1,N,…]`。它**同时含** fan-out 和
