@@ -176,6 +176,50 @@ config 顺序、每 config 内 7 档并行）。老脚本/负载归档在
 
 一条 OFAT sweep 就把"每上一档多解决一件事"逐段量出来。
 
+
+## 7.1 每条轴对应论文的哪个贡献(2026-08-31 加)
+
+稿子 §1 的三条贡献(`sections/01-intro.tex` 的 contributions 列表)与本 sweep
+轴的对应。**判据**:一条贡献要成立,必须有至少一条轴能让它的机制**从不起作用
+变到起作用**,否则那条贡献在评测里没有自变量。
+
+### 轴的全集(五条,不是四条)
+
+前面 §5 的四条是 **workload 轴**;还有一条 **system 轴**同样在扫,而且对贡献 2
+最关键,一并列出:
+
+| 轴 | 取值 | 属性 |
+|---|---|---|
+| **N** fan degree | 4 / 16 / 64 | workload |
+| **C** 共享 context | 16 / 32 / 64 block | workload |
+| **D** DAG 深度 | 1 / 2 / 4 | workload |
+| **k** 每 block 重算 token | 2 / 8 / 32 | workload(运行时 `EPIC_K`)|
+| **topology** | broadcast / reduce / alltoall / supervisor / pipeline | workload |
+| **模型** → `heads_per_hbm` | LLAMA3-8B 8 / LLAMA-7B 32 / GPT-13B 4 / LLAMA-33B ~5 / GPT-175B 3 / LLAMA-65B 2 | **system** |
+
+### 贡献 ↔ 轴
+
+| 贡献(稿子 §1) | 它的机制在什么条件下才起作用 | 对应的轴 | 对应档 |
+|---|---|---|---|
+| **C1 异构 GPU–PIM 存储系统**:通道分成 shared 侧与 per-agent 侧,die 合并两侧的分数与上下文 | 两侧都非空,且**比例要变** —— 全共享则 diff 通道空转,全私有则 shared 侧无意义 | **k**(直接决定落到 diff 侧的量)+ **C**(决定 shared 侧的量);两者张成 shared:per-agent 比例平面 | A3a→A4 |
+| **C2 sharing-aware 数据映射**:共享块保持 dense、重算 token 紧凑打包、逻辑位置由 driver 装进 die,**一份存储服务所有 agent** | "一份服务所有" —— 必须有**多个 agent 读同一块**,且数量要变 | **N**(同读同一指纹的 agent 数)+ **k**(重算 token 的紧凑打包量);**模型轴**决定 `heads_per_hbm`,而 A4 与 A4b **只有在 head 挤 HBM 时才分开** | A3→A3a→A3b→A4→A4b |
+| **C3 多 agent 工作流步的执行模型**:(a) 按 computed-token 数逐 prefill 选边;(b) 多 agent 共乘一次行激活;(c) 依赖允许时各阶段流水 | (a) 阈值的自变量是 computed token 数 q;(b) 需要**足够多**的同读 agent 才填得满批;(c) 需要**依赖结构**有可重叠与不可重叠两端 | (a) **k**(q = k × 位移块数)+ **C**;(b) **N** —— 注意 **N-lo=4 低于 MQ 批容量 8**,是"批填不满"的有效低点;(c) **D** + **topology**(pipeline 纯链 = 无重叠端,all-to-all = 最大重叠端)| A4b→A5→A6 |
+
+**结论:三条贡献各自都有至少一条轴,而且多数有两条。**
+
+### 但有三处覆盖缺口,必须记下来
+
+1. **N-hi 目前只在两个小模型上跑**(2026-08-31 用户裁决,四个较大模型的 N-hi
+   因单任务内存超单节点而停放,见 `sessions/2026-08-31.md`)。N 是 **C2 与
+   C3(b) 的主轴**,而**大模型恰是 `heads_per_hbm` 最小、A4 与 A4b 区分度最高的
+   一端** —— 也就是说 C2 最强的证据点缺了。**这是当前最严重的缺口。**
+   补法:给大模型做降规模的 N-hi(如 64 agent 而非 128,W 减半)。**待裁决。**
+2. **`large out` 未实现**(见 §2):生产者输出不随扇出度增长,所以 fan-out 边上
+   被产出的 token 数被固定住,轻微低估 C3(a) 阈值输入的一端。影响小于第 1 条。
+3. **MQ 批容量固定为 8**,不是自变量。它是硬件能力(n_cap=8,512 B / 1.3004 GHz),
+   属 C 系列微架构实验(见 `README.md` §5),不在本 sweep 的范围。C3(b) 在本
+   sweep 里由 **N** 提供自变量(有多少 agent 可供批),而不是由批容量提供。
+
 ## 8. cap / history 建模 / 与旧结果
 
 - **cap**：所有点 C ≤ 64 block（≤ 50% 的 128-block cap）；fan-in 输入与
