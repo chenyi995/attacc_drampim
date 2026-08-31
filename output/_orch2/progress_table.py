@@ -238,15 +238,30 @@ def main():
         o(f"`{cp['model']} / {cp['cfg']}`：W={cp['w']:.2f}，全程约 "
           f"{cp['w'] * SEC_PER_W / 3600:.1f} 小时，是所有未完成任务里最长的一个。")
         o("")
-        o("**整个 sweep 的完成时间由它单独决定**，加 slot 换不来一分钟：")
+        counts = [slots, slots + 3, slots + 7, slots + 11]
+        etas = [eta(rows, n) for n in counts]
+        # Whether the tail is one long task or genuine queue depth is not a
+        # fixed property of the sweep -- it flips as tasks finish and as heavy
+        # ones are parked.  Read it off the numbers instead of asserting it.
+        flat = (etas[0] - etas[-1]) / etas[0] < 0.05 if etas[0] else True
+        if flat:
+            o("**整个 sweep 的完成时间由它单独决定**：它比队列里其余任何东西都长，")
+            o("剩下的任务都跑在它的影子里，所以加 slot 换不来一分钟。")
+        else:
+            o(f"这一段**还是吞吐受限的**，不是被单个任务卡住：从 {counts[0]} 槽加到 "
+              f"{counts[-1]} 槽能省 {(etas[0] - etas[-1]) / 3600:.1f} 小时。")
         o("")
         o("| 并行槽数 | 还需 |")
         o("|---:|---:|")
-        for n in (slots, slots + 3, slots + 7, slots + 11):
-            o(f"| {n} | {eta(rows, n) / 3600:.1f}h |")
+        for n, e in zip(counts, etas):
+            o(f"| {n} | {e / 3600:.1f}h |")
         o("")
-        o("所以内存阈值保持保守（`NODE_MEM_STOP=0.62`）：放宽只会增加 OOM 风险，")
-        o("而受损任务正是这么来的。")
+        if flat:
+            o("所以内存阈值保持保守（`NODE_MEM_STOP=0.62`）不花任何代价：放宽只会增加")
+            o("OOM 风险，而受损任务正是这么来的。")
+        else:
+            o("所以放宽 `NODE_MEM_STOP`（当前 0.62）这时候是**有收益的**，代价是 OOM")
+            o("风险 —— 34 个受损档全是这么丢的。要权衡，不要默认。")
     o("")
     o("## 6. 轴的含义")
     o("")

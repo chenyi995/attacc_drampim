@@ -228,6 +228,38 @@ def remaining_work(R):
     return out
 
 
+_HU = {"t": 0.0, "v": {}}
+
+
+def heaviest_unclaimed(R, ttl=60.0):
+    """Projected GB of the heaviest UNCLAIMED task in each class.
+
+    This is what a slot placed right now will actually pick up: the queue is
+    ordered longest-first and a worker takes the first task it can claim.  A
+    reservation smaller than this admits a slot the node cannot hold.  Returns
+    0 for a class whose queue is empty, so placement falls back to the class
+    constant.
+    """
+    now = time.time()
+    if now - _HU["t"] < ttl:
+        return _HU["v"]
+    out = {"big": 0.0, "small": 0.0}
+    for cls, f in (("big", "tasks_big.txt"), ("small", "tasks_small.txt")):
+        path = f"{R}/{f}"
+        if not os.path.exists(path):
+            continue
+        for ln in open(path):
+            g = ln.split()
+            if len(g) < 4:
+                continue
+            c = f"{R}/claims/{g[0]}__{g[1]}_k{g[3]}"
+            if os.path.isdir(c):        # claimed, parked, damaged or done
+                continue
+            out[cls] = max(out[cls], SLOT_BASE_G + MEM_PER_W * _wdec(g[0], g[2]))
+    _HU.update(t=now, v=out)
+    return out
+
+
 def queue_stats(R):
     """(class -> [total, claimed]) plus the overall totals."""
     out = {}
@@ -672,14 +704,36 @@ def reconcile(R, p, hold):
         target = plan_by_cls[cls]
         run, pd, draining, have = state(cls)
         need = target - have
-        for j in draining[:max(0, need)]:        # cheapest growth: cancel a drain
+        # Cheapest growth is cancelling a drain -- but only one the memory guard
+        # did not set.  Undraining a slot whose node is still over the stop line
+        # puts the two rules in a loop: on 2026-08-31 the guard re-drained
+        # slot 190622 on node3 and this line undrained it, once per 90s cycle
+        # for ten minutes, until the node reached 90% and the slot was killed
+        # outright.  A drain that keeps being cancelled is not a drain.
+        undrainable = [j for j in draining
+                       if p["node_frac"].get(j["node"], 0.0) <= NODE_MEM_STOP]
+        for j in undrainable[:max(0, need)]:
             os.remove(drain_path(R, j["jid"]))
             acts.append(f"UNDRAIN {cls} slot {j['jid']} on {j['node']}")
             need -= 1
+        for j in draining:
+            if j not in undrainable:
+                acts.append(f"KEEP-DRAIN {cls} slot {j['jid']} on {j['node']}: "
+                            f"node at {100 * p['node_frac'].get(j['node'], 0):.0f}%")
         while need > 0:
             if headroom < p["slot_cores"]:
                 break
-            need_g = BIG_MEM_G if cls == "big" else SMALL_MEM_G
+            # Reserve for the task this slot will ACTUALLY pick up, not for the
+            # class average.  Workers pull longest-first, so a new slot takes
+            # the heaviest unclaimed task in its class -- and the class constant
+            # can be wildly under it.  LLAMA3-8B/N-hi projects 473G and was
+            # admitted against SMALL_MEM_G=130, which is how the heaviest task
+            # in the sweep came to share node3 with a big task: 717G of
+            # predicted demand on a 1008G node, past a 62% stop line it should
+            # never have cleared.  It was cancelled 8h in with 8 of 9 rungs
+            # unfinished.
+            need_g = max(BIG_MEM_G if cls == "big" else SMALL_MEM_G,
+                         heaviest_unclaimed(R).get(cls, 0.0))
             if mem_left < need_g:
                 acts.append(f"NOGROW {cls}: only {mem_left:.0f}G left under our "
                             f"{MAX_RSS_G}G ceiling")
