@@ -385,7 +385,14 @@ def main():
         for col in RUNG_COLUMNS:
             if col in row:
                 continue
-            if col.startswith("energy_") and col.endswith("_nj") and \
+            if col == "tiers":
+                # read_fields returns the tiers themselves, which belong in
+                # sweep_tiers.csv; this column is their COUNT.  Writing the
+                # list here put a repr with embedded commas and quotes into a
+                # CSV cell -- caught by extract_sweep.sh's spot check, which
+                # compares this column against len(summary.tiers).
+                row[col] = len(f.get("tiers") or [])
+            elif col.startswith("energy_") and col.endswith("_nj") and \
                     col != "energy_nj":
                 row[col] = ec.get(col[len("energy_"):-len("_nj")].upper(), "")
             else:
