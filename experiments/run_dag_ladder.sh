@@ -43,7 +43,12 @@ EPIC_K=${EPIC_K:-8}
 # SKIP_A1=1 requires A1_JSON=<path to an existing dag_A1.json>.
 # NINE rungs since the placement re-cut (chenyi9 2026-08-29): + A3b (head
 # slicing) and A4b (global co-read placement table).
-RUNGS="A1 A2 A3 A3a A3b A4 A4b A5 A6"
+# RUNGS may be set in the environment to run a SUBSET -- used to backfill the
+# rungs a task lost to an infrastructure failure without re-running the ones it
+# already has.  Unset (the normal case) means the full nine, unchanged.  Note
+# that collect_dag_ladder.py at the end reads whatever dag_A*.json are in OUT,
+# so a backfill that completes the set still produces the full CSV.
+RUNGS=${RUNGS:-"A1 A2 A3 A3a A3b A4 A4b A5 A6"}
 if [ -n "${SKIP_A1:-}" ]; then
     RUNGS="A2 A3 A3a A3b A4 A4b A5 A6"
     : "${A1_JSON:?SKIP_A1=1 requires A1_JSON=<path to dag_A1.json>}"
