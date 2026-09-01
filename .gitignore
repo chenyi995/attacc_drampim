@@ -32,3 +32,4 @@ ramulator2.local_backup_0821/
 
 # cppcore build artifact (see docs/sessions/2026-08-30.md §4)
 src/cppcore/*.so
+/output/analysis/.extract_cache.pkl
