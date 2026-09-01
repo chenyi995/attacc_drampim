@@ -252,14 +252,23 @@ COMPLETE_COLUMNS = ["model", "config", "k", "workload", "agents",
                     "claim_status"]
 
 
-def task_dirs(root):
+def task_dirs(root, valid):
+    """Output directories of real tasks, keyed by (model, config, k).
+
+    ``valid`` is the (model, config, k) set the run's own queues declare, and it
+    is the filter, not a nicety: the sweep root also holds bookkeeping
+    directories whose entries are named <model>__<config>_k<n>, so a bare
+    ``*/*_k*`` glob picks up claims/ and claims_bf/ as if "claims" were a model.
+    That put 91 phantom rows into sweep_completeness.csv -- every claim, listed
+    as an unclaimed task with no rungs.
+    """
     out = []
     for d in sorted(glob.glob(f"{root}/*/*_k*")):
         if not os.path.isdir(d):
             continue
         model = os.path.basename(os.path.dirname(d))
         cfg, _, k = os.path.basename(d).rpartition("_k")
-        if cfg and k.isdigit():
+        if cfg and k.isdigit() and (model, cfg, k) in valid:
             out.append((model, cfg, k, d))
     return out
 
@@ -327,7 +336,7 @@ def main():
             cache = {}
 
     wl_of = workload_of(root)
-    tasks = task_dirs(root)
+    tasks = task_dirs(root, set(wl_of))
     plan, todo, hits = [], [], 0
     for model, cfg, k, d in tasks:
         for rung in RUNGS:
