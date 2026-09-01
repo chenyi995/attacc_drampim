@@ -80,6 +80,12 @@ def collect(root):
                 st = "parked"
             elif os.path.exists(f"{claim}/excluded"):
                 st = "excluded"
+            elif os.path.exists(f"{claim}/done"):
+                # The worker finished this task and it still has holes.  Without
+                # this branch such a task reads as "running" for the rest of the
+                # sweep -- nobody is working on it and nobody ever will.  It is
+                # damaged whether or not anyone got round to writing a marker.
+                st = "damaged"
             elif os.path.isdir(claim):
                 st = "running"
             else:
