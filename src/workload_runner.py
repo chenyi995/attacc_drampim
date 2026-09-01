@@ -7,7 +7,9 @@ GPU/PIM prefill split needed for position-independent KV reuse.
 
 from __future__ import annotations
 
+import json
 import math
+import os
 from array import array
 from bisect import bisect_left
 from copy import deepcopy
@@ -1374,6 +1376,39 @@ def _append_physical_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     return tuple(scan_events)
 
 
+def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
+                            heads_per_hbm: int,
+                            master_channels: int = _MASTER_CHANNELS_DEFAULT):
+    """Head-folded per-channel Ramulator runs of ONE placement scan.
+
+    Returns ``(loads, active, runs)``: the length-16 per-channel chunk load
+    vector, the loaded channel indexes, and one ``(key_addr, value_addr, rows,
+    channel, 1)`` Ramulator run per loaded channel.
+
+    This is the ONLY place head multiplicity enters the bank cost.  A striped
+    pool run carries ONE channel (``channel_count = 1``), so the trace
+    generator's ``--nhead`` can no longer express "this channel also holds the
+    other heads' chunks": ``_layout_channel_loads`` folds the
+    ``heads_per_hbm`` heads that share this HBM into the channel's ROW COUNT
+    instead, and the scan op's ``numOp`` becomes 1.  Any consumer that prices
+    a bank scan -- the committed scan AND the A6 placement probe -- must build
+    its runs here, or it silently prices a single head.
+    """
+    master_rows = sum(1 for location in reads if location.kind != "diff")
+    diff_rows = sum(1 for location in reads if location.kind == "diff")
+    c_master = -(-master_rows // _NAIVE_PAGE_ROWS)          # 256-token chunks
+    c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
+    loads = _layout_channel_loads(policy, c_master, c_diff, heads_per_hbm,
+                                  master_channels)
+    active = [channel for channel, load in enumerate(loads) if load > 0]
+    runs = tuple((channel * _HBM_CHANNEL_BYTES,
+                  channel * _HBM_CHANNEL_BYTES + _ORIGINAL_KV_GAP_BYTES,
+                  max(1, int(round(loads[channel] * _NAIVE_PAGE_ROWS))),
+                  channel, 1)
+                 for channel in active)
+    return loads, active, runs
+
+
 def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
                                layer: int, tier: int, request: str, name: str,
                                reads: Sequence[KVLocation], deps: Sequence[str],
@@ -1397,13 +1432,9 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     """
     accelerator = system.devices["Acc"]
     masked = masked or set()
-    master_rows = sum(1 for location in reads if location.kind != "diff")
-    diff_rows = sum(1 for location in reads if location.kind == "diff")
-    c_master = -(-master_rows // _NAIVE_PAGE_ROWS)          # 256-token chunks
-    c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
-    loads = _layout_channel_loads(policy, c_master, c_diff, heads_per_hbm,
-                                  master_channels)
-    active = [channel for channel, load in enumerate(loads) if load > 0]
+    loads, active, runs = _placement_channel_runs(
+        reads, policy=policy, heads_per_hbm=heads_per_hbm,
+        master_channels=master_channels)
     kv_heads = max(1, int(getattr(op, "numOp", 1)))
     # Heads parallelise across HBMs: each HBM runs ``heads_per_hbm`` heads, so
     # ``num_hbm_used`` HBMs hold the KV.  The busiest channel sets the (per-HBM)
@@ -1449,11 +1480,6 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     # Ramulator so ACT / row-buffer effects and the MQ command (carried on
     # ``op``) are real, NOT extrapolated from a probe.  The busiest channel sets
     # the scan time; the runs stream concurrently as separate pool devices.
-    runs = tuple((channel * _HBM_CHANNEL_BYTES,
-                  channel * _HBM_CHANNEL_BYTES + _ORIGINAL_KV_GAP_BYTES,
-                  max(1, int(round(loads[channel] * _NAIVE_PAGE_ROWS))),
-                  channel, 1)
-                 for channel in active)
     scan_op = deepcopy(op)
     scan_op.numOp = 1                              # heads folded into the rows
     scan_op.n = sum(run[2] for run in runs)
@@ -3503,29 +3529,70 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     if prefill_side is None:
                         # xPU path: resident-row readback + full-context GPU
                         # attention block.
+                        _dbg = os.environ.get("KVPIM_DEBUG_A6")
+                        _dbg_parts = {}
                         t_xpu = 0.0
                         op = _link_layer(x2g, "kv_pim_to_gpu",
                                          len(readback_rows) * 2 * local_hidden * dbyte)
-                        t_xpu += system.devices["GPU"].get_time_and_energy(op)[0]
+                        _t = system.devices["GPU"].get_time_and_energy(op)[0]
+                        _dbg_parts["xpu_link_kv_pim_to_gpu"] = _t
+                        t_xpu += _t
                         full_rows = len(readback_rows) + len(compute_positions)
                         for template, wide in ((score, "n"), (softmax, "n"),
                                                (context, "k")):
                             op = deepcopy(template)
                             op.m, op.numOp = len(compute_positions), heads
                             setattr(op, wide, full_rows)
-                            t_xpu += system.devices["GPU"].get_time_and_energy(op)[0]
+                            _t = system.devices["GPU"].get_time_and_energy(op)[0]
+                            _dbg_parts["xpu_gpu_" + str(getattr(template, "name", wide))] = _t
+                            t_xpu += _t
                         # bank path: the same sweep-set the "pim" branch
                         # prices (Q/ctx links + TLB plan + shared scans).
                         cap = max(1, min(batch_size,
                                          mq_query_capacity(gemv_buffer_bytes) //
                                          _gqa_group(system)))
                         sweeps = max(1, math.ceil(len(compute_positions) / cap))
+                        # BUGFIX (2026-09-01, head-count probe): the probe
+                        # used to price ONE head's TLB runs and carry the
+                        # head count in ``numOp``.  A striped pool run is a
+                        # SINGLE channel, so ``numOp`` cannot express head
+                        # multiplicity any more -- the committed branch folds
+                        # the ``heads_per_hbm`` heads that share an HBM into
+                        # each channel's ROW COUNT (see
+                        # ``_placement_channel_runs``).  The old probe
+                        # therefore returned a single head's scan time and
+                        # underpriced the bank side by the head-folding
+                        # factor (LLAMA-7B: 32 KV heads on 1 HBM -> the
+                        # busiest channel really carries 3 heads), so the
+                        # rule committed to the PIM requests the GPU wins.
+                        # Price EXACTLY the run set the "pim" branch below
+                        # schedules, and take the BUSIEST channel: those runs
+                        # become concurrent ``PIM:pool{c}-{c}`` events, so the
+                        # DAG cost is their max, never their sum.
+                        kv_heads_local = _gqa_kv_heads_local(system, heads)
+                        probe_heads_per_hbm = _heads_per_hbm(
+                            kv_heads_local,
+                            getattr(system.devices["Acc"], "num_hbm", 1))
+                        tlb_runs = tlb.scan_runs(scan_locations)
+                        probe_loads, probe_active, probe_runs = (
+                            _placement_channel_runs(
+                                scan_locations, policy=tlb.layout_policy,
+                                heads_per_hbm=probe_heads_per_hbm))
+                        # The committed branch runs every loaded channel as a
+                        # CONCURRENT ``PIM:pool{c}-{c}`` event, so its scan
+                        # cost is the busiest channel -- and every channel run
+                        # has the same shape but a smaller row count.  Price
+                        # ONE Ramulator run, the busiest channel's, instead of
+                        # all sixteen: same number, ~16x fewer simulations on
+                        # a decision that is only a probe.
+                        probe_runs = probe_runs[:1] if not probe_active else (
+                            max(probe_runs, key=lambda run: run[2]),)
                         est = deepcopy(score)
                         est.m, est.n, est.k, est.numOp = (
                             min(cap, len(compute_positions)),
-                            len(scan_locations), system.model.dhead,
-                            _gqa_kv_heads_local(system, heads))
-                        est.pim_kv_runs = tlb.scan_runs(scan_locations)
+                            probe_runs[0][2] if probe_runs else 0,
+                            system.model.dhead, 1)   # heads folded into rows
+                        est.pim_kv_runs = probe_runs
                         est.pim_shared_kv = est.m * _gqa_group(system) > 1
                         est.pim_shared_queries = est.m * _gqa_group(system)
                         _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)
@@ -3534,20 +3601,73 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         # placeholders; the side DECISION must be real, so
                         # the probe prices through the original entry (an
                         # inline cold simulation that also warms the cache).
-                        if _WARM_BYPASS is not None:
+                        if not probe_runs:
+                            # Empty context (nothing resident to scan): the
+                            # bank side pays only its links.
+                            measured = []
+                        elif _WARM_BYPASS is not None:
                             measured = _WARM_BYPASS[0](est)
                         elif hasattr(accelerator, "get_time_and_energy_runs"):
                             measured = accelerator.get_time_and_energy_runs(est)
                         else:
                             # Aggregate mock-device API of lightweight tests.
                             measured = [accelerator.get_time_and_energy(est)]
-                        t_bank = sum(item[0] for item in measured) * sweeps
-                        t_bank += _tlb_plan_cost(est.pim_kv_runs)[0] * sweeps
+                        scan_once = max([item[0] for item in measured],
+                                        default=0.0)
+                        t_bank = scan_once * sweeps
+                        _dbg_parts["bank_scan_x_sweeps"] = t_bank
+                        _tlbc = _tlb_plan_cost(tlb_runs)[0] * sweeps
+                        _dbg_parts["bank_tlb_plan_x_sweeps"] = _tlbc
+                        t_bank += _tlbc
                         for name in ("q_gpu_to_pim", "ctx_pim_to_gpu"):
                             op = _link_layer(x2g, name,
                                              len(compute_positions) * local_hidden * dbyte)
-                            t_bank += system.devices["GPU"].get_time_and_energy(op)[0]
+                            _t = system.devices["GPU"].get_time_and_energy(op)[0]
+                            _dbg_parts["bank_link_" + name] = _t
+                            t_bank += _t
                         prefill_side = "pim" if t_bank <= t_xpu else "gpu"
+                        if _dbg:
+                            _rec = {
+                                "request": request.request_id,
+                                "layer": layer_index,
+                                "tier": tier,
+                                "t_bank": t_bank,
+                                "t_xpu": t_xpu,
+                                "side": prefill_side,
+                                "parts": _dbg_parts,
+                                "shape": {
+                                    "compute_positions": len(compute_positions),
+                                    "readback_rows": len(readback_rows),
+                                    "scan_locations": len(scan_locations),
+                                    "full_rows": full_rows,
+                                    "cap": cap,
+                                    "sweeps": sweeps,
+                                    "batch_size": batch_size,
+                                    "heads": heads,
+                                    "gqa_group": _gqa_group(system),
+                                    "kv_heads_local": _gqa_kv_heads_local(system, heads),
+                                    "local_hidden": local_hidden,
+                                    "dbyte": dbyte,
+                                    "est_m": est.m, "est_n": est.n, "est_k": est.k,
+                                    "est_numOp": est.numOp,
+                                    "heads_per_hbm": probe_heads_per_hbm,
+                                    "num_hbm": getattr(system.devices["Acc"],
+                                                       "num_hbm", 1),
+                                    "layout_policy": tlb.layout_policy,
+                                    "probe_channels": len(probe_active),
+                                    "probe_chunks_busiest": (max(probe_loads)
+                                                             if probe_active else 0),
+                                    "probe_rows_busiest": (probe_runs[0][2]
+                                                           if probe_runs else 0),
+                                    "probe_channel_busiest": (probe_runs[0][3]
+                                                              if probe_runs else -1),
+                                    "tlb_runs": len(tlb_runs),
+                                    "pim_kv_runs": len(est.pim_kv_runs),
+                                    "measured_len": len(measured),
+                                    "scan_once": scan_once,
+                                },
+                            }
+                            print("A6_PROBE " + json.dumps(_rec), flush=True)
                         dynamic_prefill_sides[request.request_id] = prefill_side
                 else:
                     prefill_side = pim_prefill_mode
