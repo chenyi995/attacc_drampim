@@ -72,57 +72,103 @@ KV link 稳定在 86.8%。把卖点讲成"更快"会在大模型一端被审稿�
 
 ---
 
-## 3. A6 的选边：算法是对的，只在一个格子上错
+## 3. A6 的选边：应当成立的不变量破了两次
 
-A6 逐 request 比较 GPU 与 PIM 两条 prefill 路径的时间，
+A6 逐 request 在 GPU 与 PIM 两条 prefill 路径之间选边，
 `prefill_side = "pim" if t_bank <= t_xpu else "gpu"`
 （`src/workload_runner.py` 的 `_run_cacheblend_prefill`）。
 
-sweep 里 A4（强制全 GPU prefill）和 A5（强制全 PIM prefill）都实跑了，所以
-**选边器的判断可以直接检验，不需要相信它**：
+A4 强制全 GPU prefill、A5 强制全 PIM，两者都实跑了。A6 既然可以自由选择，
+就**永远不应该输给其中任何一个**：
 
-| | |
-|---|---|
-| A6 与 A5 完全相同（判定"全走 PIM"） | **47 / 54** |
-| A6 实际改选了 GPU | 7 / 54（**全部是 LLAMA3-8B**）|
-| 在那 47 个里，实测 A5 反而慢于 A4 | **1** |
+> **不变量：`A6 ≤ min(A4, A5)`**
 
-**PIM prefill 在 55 个格子里只输 2 个，两个都是 `k-hi`（k=32）**：
+60 个有这三档的任务里，**破了 2 个，都在 LLAMA-7B 上**：
 
-| 格子 | A5 − A4 | A6 |
-|---|---|---|
-| `LLAMA-7B / k-hi` | **+23.3%** | **未触发** ← 唯一的真错误 |
-| `LLAMA3-8B / k-hi` | +21.7% | 救回（179.3 s → 64.9 s）|
+| workload | 配置 | A4 | A5 | **A6** | 超出 min |
+|---|---|---|---|---|---|
+| `wl_baseline_alltoall_N16_C32_D2.json` (k=32) | **k-hi** | **149.4 s** | 184.1 s | **184.1 s** | **+23.3%** |
+| `wl_pipeline_D4.json` (k=8) | pipeline | **22.3 s** | 22.4 s | 22.4 s | +0.4% |
 
-`k-hi` 是 recompute token 最多、prefill 工作量最大的配置，而这两个是最小的两个
-模型 —— GPU prefill 相对便宜。两个条件叠加时 PIM 才输，A6 抓到了其中一个。
+第二个只超 0.4%，且该任务本身是 6/9 的受损任务（§3 末的静默崩溃）。**实质违反
+只有 `LLAMA-7B / k-hi` 一个**，它在 node5 上 9/9 干净跑完 —— 不是节点问题，也
+不是数据损坏。两次都是选边器把**全部请求判给 PIM**（A6 逐字节等于 A5）。
 
-### 未验证的线索：探针没有传 `heads_per_hbm`
+### 最优解一定是混合的，逐层数据说得很清楚
 
-同一份代码里给 PIM 定价有三处调用。DAG 真实事件的两处
-（`workload_runner.py` 2251 行、2612 行）都传了：
+| `LLAMA-7B/k-hi` | tier 0 | tier 1 | 合计 |
+|---|---|---|---|
+| A4 全 GPU | 55.6 s | **93.8 s** | 149.4 |
+| A5 全 PIM | **18.8 s** | 165.4 s | 184.1 |
+| 逐层取优 | 18.8（PIM） | 93.8（GPU） | **≈112.6** |
+| A6 实际 | 18.8 | 165.4 | **184.1** ❌ |
 
-```python
-heads_per_hbm=_heads_per_hbm(_gqa_kv_heads_local(system, heads),
-                             getattr(system.devices["Acc"], "num_hbm", 1))
-```
+**tier 0 在 PIM 上快 3 倍，tier 1 在 PIM 上慢 1.76 倍。** LLAMA3-8B 在同一个
+workload 上正是这么分的（tier 0→PIM、tier 1→GPU），拿到 64.9 s —— 比两个纯策略
+都好。所以机制本身是对的，问题在阈值/估价。
 
-而 A6 选边探针（3523 行附近）构造 `est` 时只设了 `m / n / k / numOp`、
-`pim_kv_runs`、`pim_shared_*`，**没有 `heads_per_hbm`**；`get_time_and_energy_runs`
-与 `output_runs` 里也搜不到这个参数，不会自行推导。`heads_per_hbm` 正是
-1411 行 `num_hbm_used = ceil(kv_heads / heads_per_hbm)` 建模 HBM 堆栈并行度所用
-的那一项。
+A6 真正做了混合选边的 7 个任务（**全部是 LLAMA3-8B**），无一例外优于最优纯策略
+25%–56%。分流依据是**上下文大小**，不是并发度：`reduce` 只把那一个读遍 16 路
+上游的 reducer 送去 GPU，`supervisor` 只送 supervisor 那一个；按实际工作量算是
+**138 : 1**，不是负载对半开。
 
-**这是一处事实上的代码不对称，不是已证实的病因。** 曾有过一个"`num_hbm=1` 的
-模型因此被选错"的假设，**已被数据否定**：按全部配置统计，`num_hbm=1` 的两个模型
-反而是 PIM 收益最大的（中位 −28.6% / −37.1%）。那个假设是只看 `k-hi` 一列
-得出的。真实的触发条件是 **`k-hi` × 小模型**的交互，与 `num_hbm` 无单调关系。
+### 逐步对照：探针与引擎用两套模型给同一件事定价
 
-另外，LLAMA3-8B 之所以是唯一会触发 A6 的模型，**机制上是 GQA 而非上述问题**：
-它是六个模型里唯一 `group_query=4` 的，探针里
-`cap = mq_query_capacity(...) // _gqa_group(system)` 把容量除以 4，`sweeps` 涨
-四倍，而 `_tlb_plan_cost(...) * sweeps` 按 sweep 计费、不随 KV head 变少而减少，
-于是 PIM 路径被算贵。**它在 `k-hi` 上选对，是这个与堆栈并行度无关的原因造成的。**
+沿 `LLAMA-7B/k-hi` 的 tier-1 请求静态走一遍（不跑，只读代码 + 已有 JSON）。
+选边是**比较**，两侧都要查。
+
+**PIM 侧 `t_bank`：**
+
+| 步骤 | 理论 / 引擎 | 探针（3520–3548 行） | 偏向 |
+|---|---|---|---|
+| 分解 | `_layout_channel_loads(policy, c_master, c_diff, heads_per_hbm, 15)` → 长度 16 的每通道负载向量 | `tlb.scan_runs()` 按**物理地址相邻**合并 | — |
+| **policy** | `single`/`slice`/`master-diff-slice`/`master-diff-table` **就是 A3→A3b→A4→A4b 这条阶梯** | **完全不传** | ⚠️ |
+| **heads_per_hbm** | 决定 head 在通道上叠几层 | **没有这个参数** | ⚠️ |
+| 归约 | 每通道一个**并发事件** → DAG 取 **max**（docstring：*"the scan time is the busiest channel"*） | **`sum(item[0] for item in measured)`** | 高估 PIM |
+| numOp | `scan_op.numOp = 1`，head 折进行数 | `numOp = kv_heads`，`n` 是单 head 行数 | — |
+| sweeps | 每个 sweep 各自成事件，串不串行由 DAG 依赖决定 | `× sweeps` 硬乘（连 TLB plan 一起） | 高估 PIM |
+
+**GPU 侧 `t_xpu`：**
+
+| 步骤 | 引擎（3665–3697 行） | 探针（3503–3516 行） | 偏向 |
+|---|---|---|---|
+| **`dram_read_resident`** | `_append_channel_kv_stores(readback_rows)` —— 逐通道 PIM pool 事件，`time_s = bytes / (每HBM带宽 × ch/16)`；注释：*"a scattered layout pays its activations here too"* | **整笔缺失** | 低估 GPU |
+| link `kv_pim_to_gpu` | ✓ | ✓ | |
+| score / softmax / context | ✓ | ✓ | |
+
+### 最根本的一条
+
+**探针从不应用放置策略。** A6 骑在 A3→A4b 这条**专门研究通道放置**的阶梯顶上，
+而它的选边估价里既没有 `policy` 也没有 `heads_per_hbm` —— 意味着它对 A3、A3b、
+A4、A4b 给出**完全相同**的 PIM 估价。这与理论公式（`max(负载向量)`，而负载向量
+由 policy 与 heads_per_hbm 生成）直接冲突。
+
+LLAMA-7B 恰好是这个盲区最致命处。`head_mapping` 的落地规则是
+*"head h → channel (offset+h) % channel_count；超过 channel_count 个 head 后推进
+一个 8-KiB partition"*，而 `master-diff-slice` 的 `stripe_m = 15 // heads`：
+
+| 模型 | kv_heads | num_hbm | heads_per_hbm | 15 个 master 通道上的分布 | 最忙通道 |
+|---|---|---|---|---|---|
+| GPT-13B | 40 | 10 | 4 | — | — |
+| LLAMA3-8B | 8 | 1 | 8 | ch0–7 各 1 个，ch8–14 空 | **1 个 head** |
+| GPT-175B | 96 | 10 | 10 | — | — |
+| **LLAMA-7B** | 32 | **1** | **32** | ch0,ch1 各 3 个；ch2–14 各 2 个 | **3 个 head** |
+
+理论上 LLAMA-7B 的最忙通道是 LLAMA3-8B 的 **3 倍**，探针完全看不见。
+
+### 一个诚实的限制：静态读码不能定主因
+
+**四处偏离的方向是相反的** —— PIM 侧的 `sum` 与 `× sweeps` 高估 PIM（偏 GPU），
+GPU 侧漏掉 `dram_read_resident` 低估 GPU（也偏 GPU），而观察到的错误是**过度偏
+PIM**。所以只能确定这四处都与理论公式不符，**不能断定哪一条占主导**。
+
+要定论需要给探针加日志，打出每个请求的 `t_bank` / `t_xpu`，与事件流里实际发生的
+时间对账。那需要跑，等 sweep 结束后再做。
+
+**已作废的假设**（记在这里，免得被重复引用）：曾提出"`num_hbm=1` 的模型因此被选
+错"，**被数据否定** —— 按全部配置统计，`num_hbm=1` 的两个模型反而是 PIM 收益最大
+的（中位 −28.6% / −37.1%）。判别变量是 `heads_per_hbm`（32 对 8），不是 `num_hbm`。
+另一个曾提出的"A6 没做负载均衡"也被否定：分流依据是上下文大小，工作量比 138:1。
 
 ---
 
@@ -130,7 +176,9 @@ heads_per_hbm=_heads_per_hbm(_gqa_kv_heads_local(system, heads),
 
 1. **补跑结束后重跑本页的脚本** —— 结论建立在 54/78 个任务上。
 2. **A3a / A3b / A4b 是否进入论文** —— 现在有数据支撑决定了。
-3. **探针补 `heads_per_hbm` 与另外两处对齐** —— 属引擎改动，会改变 A6 结果，
-   必须等 sweep 跑完，且改完要按 `docs/sessions/2026-08-31.md` 的办法做
-   逐字节一致性验证。
-4. **核对 §1 末尾那处与归档结果的口径冲突。**
+3. **先给探针加日志定主因，再动修复** —— §3 列的四处偏离方向相反，静态读码
+   定不了主因。打出逐 request 的 `t_bank` / `t_xpu`，与事件流实际时间对账。
+4. **修复方向：让探针和引擎共用同一个定价函数**，而不是再写一份平行逻辑 ——
+   这个 bug 正是平行逻辑产生的。属引擎改动，会改变 A6 结果，**必须等 sweep
+   跑完**，且改完要按 `docs/sessions/2026-08-31.md` 的办法做逐字节一致性验证。
+5. **核对 §1 末尾那处与归档结果的口径冲突。**
