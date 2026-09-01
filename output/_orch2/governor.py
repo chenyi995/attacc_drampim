@@ -458,11 +458,23 @@ def check_new_rungs(R):
 
 
 def reap_claims(R, live_jids):
-    """Release claims whose owning slot died mid-task, so the task can be redone.
+    """Release claims nobody is working on any more, so the task can be redone.
 
-    'Died mid-task' = owner job gone from squeue AND the worker never wrote its
-    done marker.  A task that finished badly still has a done marker, so it is
-    never silently retried in a loop.
+    Two ways a claim goes stale, and the second one hid a lost task for 25h:
+
+    1. The owner job is gone from squeue and the worker never wrote its done
+       marker -- the slot died mid-task.
+
+    2. The owner job is still alive but has MOVED ON to a different task.  A
+       slot outlives the individual tasks it runs, so "job still in squeue" is
+       not evidence anyone is still working on this one.  LLAMA-33B/C-hi was
+       started at 2026-08-30 19:48 and abandoned without an END line; the slot
+       began the next task 1h44m later and ran three more.  With no done marker
+       the rung guard skipped it too, so it sat claimed, dead and counted as
+       running for 25 hours, and nothing would ever have redone it.
+
+    A task that finished badly still has a done marker, so it is never silently
+    retried in a loop.
     """
     claims = f"{R}/claims"
     if not os.path.isdir(claims):
@@ -472,16 +484,31 @@ def reap_claims(R, live_jids):
         d = f"{claims}/{tid}"
         if os.path.exists(f"{d}/done"):
             continue
-        try:
-            owner = open(f"{d}/owner").read()
-        except OSError:
-            continue
-        m = re.search(r"jobid=(\S+)", owner)
-        if not m or m.group(1) in live_jids or m.group(1) == "nojob":
-            continue
-        shutil.rmtree(d, ignore_errors=True)
-        log(f"REAP released abandoned claim {tid} (owner job {m.group(1)} gone, no done marker)")
-        n += 1
+        for mark in ("parked", "damaged", "excluded"):
+            if os.path.exists(f"{d}/{mark}"):
+                break
+        else:
+            try:
+                owner = open(f"{d}/owner").read()
+            except OSError:
+                continue
+            m = re.search(r"jobid=(\S+)", owner)
+            if not m or m.group(1) == "nojob":
+                continue
+            jid = m.group(1)
+            if jid in live_jids:
+                cur = _task_of_slot(R, jid)
+                if cur is None:
+                    continue
+                model, rest = tid.split("__", 1)
+                if (model, rest.rsplit("_k", 1)[0]) == cur:
+                    continue                    # still the slot's current task
+                why = (f"owner job {jid} moved on to {cur[0]}/{cur[1]}")
+            else:
+                why = f"owner job {jid} gone"
+            shutil.rmtree(d, ignore_errors=True)
+            log(f"REAP released abandoned claim {tid} ({why}, no done marker)")
+            n += 1
     return n
 
 
