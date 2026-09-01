@@ -21,9 +21,32 @@ sys.path.insert(0, ORCH)
 import governor as G                                        # noqa: E402
 
 RUNGS = ["A1", "A2", "A3", "A3a", "A3b", "A4", "A4b", "A5", "A6"]
-# Measured on this sweep: median seconds of wall clock per unit of decode work,
-# over the 14 tasks that had completed when it was fitted (range 2992-5047).
-SEC_PER_W = 3801.0
+# Refitted 2026-09-01 on all 28 tasks that had finished 9/9 rc=0.
+#
+# The old flat 3801 s/W was fitted on 14 tasks that happened to be heavy, and it
+# is fine there -- 19% median relative error, +3% bias.  On light tasks it is
+# not: 38% error and a systematic -38%, i.e. it underestimates them by more than
+# a third.  That is the wrong end to be wrong at, because the tail of this sweep
+# is almost all light work (24 unclaimed tasks, median W=1.14), and it made
+# every ETA quoted from it optimistic.
+#
+# A power law fitted in log space -- which is the fit that actually minimises
+# relative error, unlike least squares on raw seconds -- is nearly unbiased on
+# light tasks (-8%) but overestimates heavy ones (+18%).  Neither form wins
+# outright, so each is used where it is unbiased.  An intercept model was tried
+# and is worse than both (25% error), so it is not used.
+#
+# Residual scatter is large either way (2481-14375 s/W measured) and is driven
+# by node contention rather than by W, so treat any ETA as +-20%.
+SEC_PER_W = 3801.0          # heavy-task slope, kept for the backfill estimate
+W_SPLIT = 3.5
+
+
+def task_seconds(w):
+    """Wall-clock seconds for one 9-rung task of decode work w."""
+    return 6949.0 * w ** 0.71 if w < W_SPLIT else SEC_PER_W * w
+
+
 # The 14 configs in the order they vary one axis at a time, then topology.
 ORDER = ["baseline", "N-lo", "N-hi", "C-lo", "C-hi", "D-lo", "D-hi",
          "k-lo", "k-hi", "broadcast", "reduce", "supervisor", "pipeline",
@@ -82,7 +105,7 @@ def eta(rows, nslots):
     for r in rows:
         if r["st"] in ("done", "parked", "excluded", "damaged"):
             continue
-        d = r["w"] * SEC_PER_W
+        d = task_seconds(r["w"])
         if r["st"] == "running":
             try:
                 el = now - os.path.getmtime(r["claim"])
@@ -250,7 +273,7 @@ def main():
     if live:
         cp = max(live, key=lambda r: r["w"])
         o(f"`{cp['model']} / {cp['cfg']}`：W={cp['w']:.2f}，全程约 "
-          f"{cp['w'] * SEC_PER_W / 3600:.1f} 小时，是所有未完成任务里最长的一个。")
+          f"{task_seconds(cp['w']) / 3600:.1f} 小时，是所有未完成任务里最长的一个。")
         o("")
         counts = [slots, slots + 3, slots + 7, slots + 11]
         etas = [eta(rows, n) for n in counts]
