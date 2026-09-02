@@ -1,0 +1,4 @@
+# Slurm run logs are raw run data (docs/RAW_DATA_MANIFEST.md): they stay on
+# this machine.  The lines that carry the result are extracted into
+# results/report_summaries.txt, which IS tracked.
+logs/
