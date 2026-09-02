@@ -68,11 +68,10 @@ slurm array 193281，2026-09-02 06:31 提交、08:00 三个 task 全部 COMPLETE
 A3b 比 A3a 再快 6.42 %。event_count 变多是对的：一个 head 摊到 2 条
 channel，lane 事件本来就该翻倍。
 
-**但只有 1.148×，不是 load 模型预测的 1.89×。** busiest-channel load 17→9
-说的是**一次 KV scan** 的时间，而 makespan 里还有 GPU prefill、链路、
-DIE merge 等与 placement 无关的部分——lane 并行之后 scan 已经不再是
-压倒性的大头（见第 4 节：并行化本身就吃掉了 7×）。要把这 1.148× 拆开
-归因，得看 `dag_A3*.json` 的 per-device busy 时间，**本次没做**。
+**1.148× 看起来远小于 load 模型的 1.94×（busiest 33→17），但两者其实一致。**
+makespan 里有三块与 placement 无关：GPU prefill 9.53 s、DIE 0.02 s、链路
+1.75 s，合计 11.31 s。扣掉之后 scan 关键路径 4.03 s → 2.04 s，正是 1.94×。
+逐项归因见第 6 节。
 
 ## 4. channel 并行本身的效果（`--num-hbm 1`）
 
@@ -117,10 +116,11 @@ KV head，`--num-hbm 1` ⇒ `heads_per_hbm = ceil(32/1) = 32` ⇒ `16 // 32 = 0`
 正是 A3 的 `single`。直接调函数的对照：
 
 ```
-num_hbm=1  heads_per_hbm=32   c_master=16, c_diff=1
-  single 34 | slice 34 | master-diff-slice 48 | master-diff-table 35   slice == single: True
-num_hbm=4  heads_per_hbm=8    c_master=16, c_diff=1
-  single 17 | slice  9 | master-diff-slice 16 | master-diff-table  9   slice == single: False
+busiest-channel load, c_master=32, c_diff=1  (= 本实验的 scan 形状，见第 2 节)
+num_hbm=1  heads_per_hbm=32
+  single 66 | slice 66 | master-diff-slice 96 | master-diff-table 69   slice == single: True
+num_hbm=4  heads_per_hbm=8
+  single 33 | slice 17 | master-diff-slice 32 | master-diff-table 18   slice == single: False
 ```
 
 **这个 bug 不是本次改动引入的，旧数据里同样存在**：2026-08-30 sweep 的
@@ -134,18 +134,95 @@ lane 并行之前 A4（140.234 s）略快于 A3（141.635 s）；并行之后 A4
 （24.009 s）**慢于** A3（19.539 s），broadcast / reduce 同向。串行相加
 时各 channel 的不均衡被求和抹平，取 max 之后才显出来。
 
-根因同样是 `heads_per_hbm = 32` 太大：A4 的 `master-diff-slice` 里
-`stripe_m = max(1, 15 // 32) = 1`，32 个 head 挤在 15 条 master channel
-上（≈3 head 深，A3 是 16 条上 2 head 深），而 32 个 head 的 correction
-chunk 全压在唯一的 diff channel（ch15）上 ⇒ busiest load 48 vs A3 的 34。
-实测比值 24.009/19.539 = 1.23 低于 48/34 = 1.41，因为 scan 只占 makespan
-的一部分。
+**总工作量几乎没变**：所有 PIM lane 的耗时之和 A3 130.247 s、A4 129.948 s，
+差 0.2 %。A4 不是多干了活，是**干的活堆歪了**——busiest channel 从 66 涨到 96
+（+45 %）。这次实测的 per-channel load 向量（`c_master=32`、`c_diff=1`）：
 
-这一条**尚未单独跑实验验证**。注意 `--num-hbm 4` 修不掉它
-（`15 // 8` 仍然是 1，护栏在 A4 + 4 stack 时照样报警）——要么再加 stack
-（≥ 5），要么换 A4b 的全局放置表（`master-diff-table`，同参数下 35 vs 48）。
+```
+A3 single           : [66] × 16                                    ← 完美均衡
+A4 master-diff-slice: [96, 96, 64 × 13, 32]
+                       ^^^^^^          ^^  diff channel，不是瓶颈
+```
 
-## 6. 复现
+**瓶颈是 master pool，不是 diff channel。** 两件事叠加：
+
+1. master pool 从 16 条 channel 缩到 15 条（ch15 让给 diff）；
+2. `stripe_m = max(1, 15 // 32) = 1`，head h 整块压在 ch(h mod 15)。
+
+32 不能被 15 整除 ⇒ ch0 / ch1 各接到 **3** 个 head（96），其余 13 条接 2 个
+（64）；A3 是 32 head 铺 16 条，**每条正好 2 个**（66），一点不歪。而 diff
+channel 只有 32 个 correction chunk（每个复用块只重算 8 token），远够不上
+瓶颈。**A4 把 correction 挪出去省的那点，不抵它为此丢掉一条 master channel
+再撞上 32 ∤ 15 的代价。**
+
+### 5.3 更正：`--num-hbm 4` 其实能修掉 A4 的回退
+
+本文档 2026-09-02 早先的版本写着「`--num-hbm 4` 修不掉 A4（`15 // 8` 仍是
+1）」。**这句是错的。** stripe 确实还是 1，但 8 个 head 铺 15 条 master
+channel 时**每条最多 1 个**，根本没有堆叠：
+
+| `--num-hbm` | heads/stack | A3 | A3b | A4 | A4b | A4/A3 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 32 | 66 | 66 | 96 | 69 | 1.455 |
+| 2 | 16 | 33 | 33 | 64 | 35 | **1.939**（最差） |
+| 4 | 8 | 33 | 17 | 32 | 18 | **0.970** |
+| 8 | 4 | 33 | 9 | 11 | 9 | 0.333 |
+
+即 A4 的回退只出现在 heads/stack > master channel 数的时候，`--num-hbm 4`
+就没有了。**这是一条尚未跑实验的预测**：A4 / A4b 在 `--num-hbm 4` 下没跑过。
+（护栏在 A4 + 4 stack 时仍会报警，那是对的：stripe 塌了意味着这一格测不到
+slicing —— 同参数下 A4b 的全局放置表 18 vs A4 的 32，差 1.8×。）
+
+## 6. makespan 逐项归因
+
+无 `--pipeopt` 时所有宏事件串行，所以
+
+```
+makespan = GPU + DIE + 链路 + PIM scan 关键路径
+```
+
+前三项与 placement 无关。报告里的 `pim_pool_time_s_unoverlapped` 是**所有
+lane 耗时之和**（= 总 scan 工作量，不是关键路径），placement 决定最忙那条
+channel 占其中多少，正好是 load 模型的 `max(loads) / sum(loads)`：
+
+```
+PIM scan 关键路径 = pool_sum × max(loads) / sum(loads)
+```
+
+链路没有单独上报，所以**每个格子从它的 A3 行反解一次**（A3 的 `single`
+在这里是完美均衡的，关键路径占比精确已知），然后**固定住去预测同格其余
+档位**——所以除 A3 外每一行都是样本外预测，残差是对 load 模型的真检验。
+
+`python3 attribute_makespan.py`（`c_master=32`、`c_diff=1`，见第 2 节 workload）：
+
+| 格子 | 档位 | busiest | GPU | DIE | 链路 | PIM 关键路径 | 预测 | 实测 | 残差 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| baseline_k8 | A3 | 66 | 9.53 | 0.11 | 1.75 | 8.14 | 19.54 | 19.54 | 反解 |
+| baseline_k8 | A3a | 66 | 9.53 | 0.11 | 1.75 | 8.14 | 19.54 | 18.46 | +5.9 % |
+| baseline_k8 | A4 | 96 | 9.53 | 0.11 | 1.75 | 11.81 | 23.21 | 24.01 | −3.3 % |
+| baseline_k8_hbm4 | A3 | 33 | 9.53 | 0.02 | 1.75 | 4.03 | 15.33 | 15.33 | 反解 |
+| baseline_k8_hbm4 | A3a | 33 | 9.53 | 0.02 | 1.75 | 4.06 | 15.36 | 14.27 | +7.6 % |
+| baseline_k8_hbm4 | A3b | 17 | 9.53 | 0.03 | 1.75 | 2.04 | 13.35 | 13.36 | **−0.0 %** |
+| broadcast_k8 | A4 | 96 | 5.92 | 0.06 | 0.32 | 5.23 | 11.53 | 12.89 | −10.5 % |
+| reduce_k8 | A4 | 96 | 6.74 | 0.06 | 0.30 | 5.12 | 12.22 | 12.56 | −2.7 % |
+
+两个交叉验证：
+
+- 链路项在 `--num-hbm 1` 和 `--num-hbm 4` 两个**独立**反解里得到
+  1.752113 s 和 1.750665 s，差 0.08 %——两套配置的 GPU / DIE / pool_sum
+  完全不同，却反解出同一个链路时间。
+- **A3b @ hbm4 预测 13.35 s、实测 13.356 s，残差 −0.0 %**，是纯样本外。
+
+不吻合的地方（照实说）：
+
+- **A3a 系统性高估 6–8 %**。读掩码改的是**工作量**（被掩掉的行不算），
+  不只是分布，所以"busiest × pool_sum"这个模型对它本来就不成立。
+- **A4 系统性低估 3–10 %**，即 A4 实际比 chunk 模型算的还要更差一点。
+  chunk 模型按 256 行整块计价，忽略了每条 run 的固定开销与 run 长度差异；
+  broadcast 那格 −10.5 % 最大，多半是它的 `c_master`/`c_diff` 与
+  baseline 不同（本节对三个格子用了同一组假设值，没有逐格测量）。
+
+## 7. 复现
 
 ```bash
 # 12 格（baseline / broadcast / reduce × A3–A6），--num-hbm 1
@@ -156,5 +233,8 @@ sbatch experiments/channel_parallel_validation/run_a3a_a3b_a6.sbatch
 sbatch experiments/channel_parallel_validation/run_a3_l7b_hbm4.sbatch
 
 python3 experiments/channel_parallel_validation/collect_summaries.py
+python3 experiments/channel_parallel_validation/make_report_summaries.py
+python3 experiments/channel_parallel_validation/extract_device_times.py
+python3 experiments/channel_parallel_validation/attribute_makespan.py
 python3 -m unittest tests.test_placement       # 含退化护栏的用例
 ```
