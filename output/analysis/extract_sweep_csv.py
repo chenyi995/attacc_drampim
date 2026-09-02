@@ -46,6 +46,12 @@ from concurrent.futures import ProcessPoolExecutor
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 CACHE = os.path.join(HERE, ".extract_cache.pkl")
+# Bump whenever read_fields starts producing a field the CSVs use.  A cache
+# entry is (mtime, size) -> fields, so an entry written before a new field
+# existed still LOOKS valid and would hand back a silently empty column.  The
+# schema tag makes that impossible: a mismatch discards the cache and every
+# report is read again.
+CACHE_SCHEMA = 2
 
 RUNGS = ["A1", "A2", "A3", "A3a", "A3b", "A4", "A4b", "A5", "A6"]
 
@@ -94,6 +100,24 @@ RE_TIER = re.compile(
     rb'"([0-9]+)": \{\s*"end_s": ' + NUM +
     rb',\s*"requests": ' + NUM + rb',\s*"start_s": ' + NUM + rb'\s*\}')
 RE_TIERS_BLOCK = re.compile(rb'(?m)^    "tiers": \{(.*?)\n    \}', re.S)
+# summary.requests: one entry per request, keys sorted, so the order is fixed.
+# Distinct from the tier pattern above -- a tier has end_s/requests/start_s, a
+# request has end_s/first_token_s/prefill_end_s/tier -- so the two cannot be
+# confused even before the enclosing block restricts where each is matched.
+RE_REQUESTS_BLOCK = re.compile(rb'(?m)^    "requests": \{(.*?)\n    \}', re.S)
+RE_REQ = re.compile(
+    rb'"([A-Za-z0-9_]+)": \{\s*"end_s": ' + NUM +
+    rb',\s*"first_token_s": ' + NUM +
+    rb',\s*"prefill_end_s": ' + NUM +
+    rb',\s*"tier": ' + NUM + rb'\s*\}')
+# by_event, whose values are flat floats.  The decode phase is exactly the
+# events carrying the `decode_` prefix: the report names every decode op as the
+# prefixed twin of its prefill counterpart (decode_qkv/qkv,
+# decode_ctx_pim_to_gpu/ctx_pim_to_gpu, decode_dram_store_master/
+# dram_store_master, ...), so the split is a naming convention rather than a
+# guess.  Everything without the prefix is prefill-side.
+RE_BY_EVENT = re.compile(rb'(?m)^    "by_event": \{(.*?)\n    \}', re.S)
+RE_EVENT_ITEM = re.compile(rb'"([A-Za-z0-9_]+)": ' + NUM)
 RE_OVERLAP = re.compile(
     rb'(?m)^  "overlap_validation": \{(.*?)\n  \}', re.S)
 RE_PASSED = re.compile(rb'"passed": (true|false)')
@@ -153,11 +177,48 @@ def read_fields(path):
                         "start_s": float(t.group(4)),
                     })
             out["tiers"] = tiers
-            # Requests are counted from the tiers rather than from
-            # summary.requests, which is a per-request object big enough to be
-            # worth not matching over.  The two agree by construction: every
-            # request belongs to exactly one tier.
             out["requests"] = sum(t["requests"] for t in tiers)
+
+            # Per-tier prefill/decode split.  A tier's prefill ends when its
+            # LAST request's prefill ends, so the tier's decode span is whatever
+            # remains of it.  Defined this way the two are exactly additive:
+            # prefill_s + decode_s == the tier's makespan, with no third bucket
+            # to explain away.
+            m = RE_REQUESTS_BLOCK.search(mm)
+            by_tier = {}
+            if m:
+                for q in RE_REQ.finditer(m.group(1)):
+                    t = str(int(float(q.group(5))))
+                    d = by_tier.setdefault(t, {"pe": [], "ft": [], "end": []})
+                    d["end"].append(float(q.group(2)))
+                    d["ft"].append(float(q.group(3)))
+                    d["pe"].append(float(q.group(4)))
+            for t in tiers:
+                d = by_tier.get(t["tier"])
+                if d and d["pe"]:
+                    t["prefill_end_s"] = max(d["pe"])
+                    t["first_token_s"] = max(d["ft"])
+                    t["prefill_s"] = max(0.0, max(d["pe"]) - t["start_s"])
+                    t["decode_s"] = max(0.0, t["end_s"] - max(d["pe"]))
+                else:
+                    for c in ("prefill_end_s", "first_token_s",
+                              "prefill_s", "decode_s"):
+                        t[c] = ""
+
+            m = RE_BY_EVENT.search(mm)
+            e_dec = e_pre = 0.0
+            if m:
+                for it in RE_EVENT_ITEM.finditer(m.group(1)):
+                    try:
+                        v = float(it.group(2))
+                    except ValueError:
+                        continue
+                    if it.group(1).startswith(b"decode_"):
+                        e_dec += v
+                    else:
+                        e_pre += v
+            out["energy_decode_nj"] = e_dec
+            out["energy_prefill_nj"] = e_pre
 
             m = RE_OVERLAP.search(mm)
             if m:
@@ -198,10 +259,30 @@ def check_against_json_load(paths):
         exp["prefill_requests_gpu"] = sum(1 for v in sides.values() if v == "gpu")
         exp["prefill_requests_pim"] = sum(1 for v in sides.values() if v == "pim")
         tiers = ((j.get("summary") or {}).get("tiers") or {})
-        exp["tiers"] = [{"tier": t, "end_s": float(v["end_s"]),
-                         "requests": int(v["requests"]),
-                         "start_s": float(v["start_s"])}
-                        for t, v in sorted(tiers.items(), key=lambda kv: int(kv[0]))]
+        reqs = (j.get("summary") or {}).get("requests") or {}
+        exp["tiers"] = []
+        for t, v in sorted(tiers.items(), key=lambda kv: int(kv[0])):
+            e = {"tier": t, "end_s": float(v["end_s"]),
+                 "requests": int(v["requests"]), "start_s": float(v["start_s"])}
+            pe = [float(r["prefill_end_s"]) for r in reqs.values()
+                  if str(int(r["tier"])) == t]
+            ft = [float(r["first_token_s"]) for r in reqs.values()
+                  if str(int(r["tier"])) == t]
+            if pe:
+                e["prefill_end_s"] = max(pe)
+                e["first_token_s"] = max(ft)
+                e["prefill_s"] = max(0.0, max(pe) - e["start_s"])
+                e["decode_s"] = max(0.0, e["end_s"] - max(pe))
+            else:
+                for c in ("prefill_end_s", "first_token_s",
+                          "prefill_s", "decode_s"):
+                    e[c] = ""
+            exp["tiers"].append(e)
+        bev = (j.get("energy_breakdown_nj") or {}).get("by_event") or {}
+        exp["energy_decode_nj"] = sum(
+            float(v) for k2, v in bev.items() if k2.startswith("decode_"))
+        exp["energy_prefill_nj"] = sum(
+            float(v) for k2, v in bev.items() if not k2.startswith("decode_"))
         exp["requests"] = len((j.get("summary") or {}).get("requests") or {})
         ov = j.get("overlap_validation") or {}
         exp["overlap_passed"] = ov.get("passed", "")
@@ -236,6 +317,11 @@ RUNG_COLUMNS = [
     "pim_pool_time_s_unoverlapped", "die_time_s_unoverlapped",
     "prefill_rows_gpu", "prefill_rows_pim",
     "prefill_requests_gpu", "prefill_requests_pim",
+    # phase split: energy from by_event's decode_ prefix, time from the tiers.
+    # prefill_time_s + decode_time_s == makespan_s by construction.
+    "energy_prefill_nj", "energy_decode_nj",
+    "prefill_time_s", "decode_time_s",
+    "power_prefill_w", "power_decode_w", "power_overall_w",
     "requests", "tiers", "history_rows", "cacheblend_batch_size",
     "gemv_buffer_bytes", "pim_sweep_query_capacity", "pim_pe_freq_ghz",
     "pim_batch_command", "engine",
@@ -246,7 +332,8 @@ RUNG_COLUMNS = [
     "overlap_passed", "overlap_events_checked",
 ]
 TIER_COLUMNS = ["model", "config", "k", "rung", "tier",
-                "start_s", "end_s", "duration_s", "requests"]
+                "start_s", "end_s", "duration_s", "requests",
+                "prefill_end_s", "first_token_s", "prefill_s", "decode_s"]
 COMPLETE_COLUMNS = ["model", "config", "k", "workload", "agents",
                     "rungs_present", "rungs_missing", "n_present",
                     "claim_status"]
@@ -331,9 +418,15 @@ def main():
     cache = {}
     if not a.no_cache and os.path.exists(CACHE):
         try:
-            cache = pickle.load(open(CACHE, "rb"))
+            loaded = pickle.load(open(CACHE, "rb"))
+            if loaded.get("__schema__") == CACHE_SCHEMA:
+                cache = loaded
+            else:
+                print(f"  cache schema {loaded.get('__schema__')} != "
+                      f"{CACHE_SCHEMA}; re-reading every report")
         except Exception:                          # noqa: BLE001
             cache = {}
+    cache["__schema__"] = CACHE_SCHEMA
 
     wl_of = workload_of(root)
     tasks = task_dirs(root, set(wl_of))
@@ -347,7 +440,8 @@ def main():
                 continue
             stamp = (int(st.st_mtime), st.st_size)
             plan.append((model, cfg, k, rung, p, stamp))
-            if cache.get(p, (None,))[0] == stamp:
+            entry = cache.get(p)
+            if isinstance(entry, tuple) and entry[0] == stamp:
                 hits += 1
             else:
                 todo.append((p, stamp))
@@ -394,6 +488,9 @@ def main():
         for col in RUNG_COLUMNS:
             if col in row:
                 continue
+            if col in ("prefill_time_s", "decode_time_s",
+                       "power_prefill_w", "power_decode_w", "power_overall_w"):
+                continue                       # filled in below, needs the sum
             if col == "tiers":
                 # read_fields returns the tiers themselves, which belong in
                 # sweep_tiers.csv; this column is their COUNT.  Writing the
@@ -406,14 +503,38 @@ def main():
                 row[col] = ec.get(col[len("energy_"):-len("_nj")].upper(), "")
             else:
                 row[col] = f.get(col, "")
+        # Phase times are the sum over tiers, which are sequential, so they
+        # add to the run's makespan.  Power is energy over the time that phase
+        # actually occupied -- not over the whole run, which would understate
+        # both.
+        tiers_f = f.get("tiers") or []
+        p_t = sum(t["prefill_s"] for t in tiers_f
+                  if isinstance(t.get("prefill_s"), float))
+        d_t = sum(t["decode_s"] for t in tiers_f
+                  if isinstance(t.get("decode_s"), float))
+        e_p, e_d = f.get("energy_prefill_nj"), f.get("energy_decode_nj")
+        mk, e_all = f.get("makespan_s"), f.get("energy_nj")
+        row["energy_prefill_nj"] = e_p if e_p is not None else ""
+        row["energy_decode_nj"] = e_d if e_d is not None else ""
+        row["prefill_time_s"] = p_t if tiers_f else ""
+        row["decode_time_s"] = d_t if tiers_f else ""
+        row["power_prefill_w"] = (e_p / 1e9 / p_t) if (e_p and p_t > 0) else ""
+        row["power_decode_w"] = (e_d / 1e9 / d_t) if (e_d and d_t > 0) else ""
+        row["power_overall_w"] = ((e_all / 1e9 / mk)
+                                  if (isinstance(e_all, float) and
+                                      isinstance(mk, float) and mk > 0) else "")
         rung_rows.append(row)
-        for t in f.get("tiers") or []:
+        for t in tiers_f:
             tier_rows.append({
                 "model": model, "config": cfg, "k": k, "rung": rung,
                 "tier": t["tier"], "start_s": t["start_s"], "end_s": t["end_s"],
-                # computed, not read: the only derived column in these files
+                # computed, not read
                 "duration_s": t["end_s"] - t["start_s"],
                 "requests": t["requests"],
+                "prefill_end_s": t.get("prefill_end_s", ""),
+                "first_token_s": t.get("first_token_s", ""),
+                "prefill_s": t.get("prefill_s", ""),
+                "decode_s": t.get("decode_s", ""),
             })
     for model, cfg, k, _ in tasks:
         wl = wl_of.get((model, cfg, k), "")
