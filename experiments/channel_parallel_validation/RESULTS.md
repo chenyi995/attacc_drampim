@@ -48,6 +48,9 @@ lane 是同一次逻辑 scan 在 16 个物理 channel 上的分身，物理上�
 | 规模 | 32 requests、input 332 288 token、output 8 192 token、history 4 096 token |
 | broadcast / reduce | 同 N/C/D，widths [1,16] / [16,1] ⇒ 17 agents |
 | run 参数 | `--system dgx-attacc --model LLAMA-7B --ngpu 1 --engine dag --reuse recompute --epic-prefix-recompute-tokens 8 --cacheblend-batch-size 8`，**无** `--pipeopt` |
+| 复用率 | 319 232 / 332 288 = **96.07 %** 的 prefill token 是复用的（fresh 13 056 = 3.93 %） |
+| **重算率** | 5 064 / 319 232 = **1.59 %**（占全部 prefill token 1.52 %）。逐段看：1 247 个可复用 segment 里只有 **633 个**位置偏移、各重算 8 / 256 = 3.125 %，另 **614 个偏移量为 0、一行都不重算** |
+| 每 request 的 scan 形状 | tier0 ×16：`c_master=34, c_diff=0`（**完全没有 correction**）<br>tier1 ×14：`c_master=48, c_diff=2`；另 2 个 `c_master=49, c_diff=2` |
 
 ⚠️ 这三个 workload 的 `meta.kind` 自己写着
 `"parametric sweep (mechanism illustration; NOT evidence-grade)"`——
@@ -68,10 +71,10 @@ slurm array 193281，2026-09-02 06:31 提交、08:00 三个 task 全部 COMPLETE
 A3b 比 A3a 再快 6.42 %。event_count 变多是对的：一个 head 摊到 2 条
 channel，lane 事件本来就该翻倍。
 
-**1.148× 看起来远小于 load 模型的 1.94×（busiest 33→17），但两者其实一致。**
-makespan 里有三块与 placement 无关：GPU prefill 9.53 s、DIE 0.02 s、链路
-1.75 s，合计 11.31 s。扣掉之后 scan 关键路径 4.03 s → 2.04 s，正是 1.94×。
-逐项归因见第 6 节。
+**1.148× 看起来远小于 load 模型的 2×，但两者其实一致。** makespan 里有三块
+与 placement 无关：GPU prefill 9.53 s、DIE 0.02 s、链路 1.75 s，合计 11.31 s。
+扣掉之后 scan 关键路径 4.03 s → 1.99 s，正好是最忙 channel 占比
+0.1250 → 0.0626 的那 2.0×。逐项归因见第 6 节。
 
 ## 4. channel 并行本身的效果（`--num-hbm 1`）
 
@@ -135,25 +138,41 @@ lane 并行之前 A4（140.234 s）略快于 A3（141.635 s）；并行之后 A4
 时各 channel 的不均衡被求和抹平，取 max 之后才显出来。
 
 **总工作量几乎没变**：所有 PIM lane 的耗时之和 A3 130.247 s、A4 129.948 s，
-差 0.2 %。A4 不是多干了活，是**干的活堆歪了**——busiest channel 从 66 涨到 96
-（+45 %）。这次实测的 per-channel load 向量（`c_master=32`、`c_diff=1`）：
+差 0.2 %。A4 不是多干了活，是**干的活堆歪了**——最忙 channel 占总量的份额
+从 A3 的 1/16 = 0.0625 涨到 **0.0915**（+46 %）。
+
+在 A4 里，`stripe_m = max(1, 15 // 32) = 1`，所以**每个 head 只占 1 条
+channel**（不是 2 条），head h → ch(h mod 15)：
 
 ```
-A3 single           : [66] × 16                                    ← 完美均衡
-A4 master-diff-slice: [96, 96, 64 × 13, 32]
-                       ^^^^^^          ^^  diff channel，不是瓶颈
+ch0 : head 0, 15, 30   <== 3 层深
+ch1 : head 1, 16, 31   <== 3 层深
+ch2 : head 2, 17            ch3..ch14 同样 2 层
+ch15: diff pool
 ```
 
-**瓶颈是 master pool，不是 diff channel。** 两件事叠加：
+**32 除不尽 15，最后两个 head（30、31）绕回 ch0 / ch1**，把这两条压成 3 层；
+A3 是 32 head 铺 16 条，每条正好 2 个，一点不歪。实测两类 request 的 load
+向量：
 
-1. master pool 从 16 条 channel 缩到 15 条（ch15 让给 diff）；
-2. `stripe_m = max(1, 15 // 32) = 1`，head h 整块压在 ch(h mod 15)。
+```
+tier0 ×16 (c_master=34, c_diff=0)
+  A3: [68] × 16                          ← 完美均衡
+  A4: [102, 102, 68 × 13, 0]             ← diff channel 整条空转
+tier1 ×14 (c_master=48, c_diff=2)
+  A3: [100] × 16
+  A4: [144, 144, 96 × 13, 64]            ← diff 只有 64，离 144 很远
+```
 
-32 不能被 15 整除 ⇒ ch0 / ch1 各接到 **3** 个 head（96），其余 13 条接 2 个
-（64）；A3 是 32 head 铺 16 条，**每条正好 2 个**（66），一点不歪。而 diff
-channel 只有 32 个 correction chunk（每个复用块只重算 8 token），远够不上
-瓶颈。**A4 把 correction 挪出去省的那点，不抵它为此丢掉一条 master channel
-再撞上 32 ∤ 15 的代价。**
+**瓶颈是 master pool，不是 diff channel。** 而且注意 tier0 那 16 个 request
+的 `c_diff = 0`：它们复用的段没有位置偏移，**一行都不用重算**，A4 让出去的
+那条 diff channel 对它们**完全空转**。整个 workload 的重算率只有 1.59 %
+（见第 2 节），diff channel 根本吃不满。**A4 把 correction 挪出去换来的好处，
+不抵它为此丢掉一条 master channel、再撞上 32 ∤ 15 的代价。**
+
+反事实检验：把 head 数降到 30（正好铺满 15 条 × 2 层），A4 的 busiest 从
+102 掉到 68，就**不再输给 A3** 了（tier0 类 68 vs 68，tier1 类 94 vs 98）。
+31 个 head 时仍是 102——**单独一个 head 30 就足以造成这次回退。**
 
 ### 5.3 更正：`--num-hbm 4` 其实能修掉 A4 的回退
 
@@ -193,34 +212,37 @@ PIM scan 关键路径 = pool_sum × max(loads) / sum(loads)
 在这里是完美均衡的，关键路径占比精确已知），然后**固定住去预测同格其余
 档位**——所以除 A3 外每一行都是样本外预测，残差是对 load 模型的真检验。
 
-`python3 attribute_makespan.py`（`c_master=32`、`c_diff=1`，见第 2 节 workload）：
+`python3 attribute_makespan.py`。scan 形状不是拍的：脚本按 main.py 同样的
+调用重建 workload 与 reuse plan，把每个 request 的上下文换算成
+`(c_master, c_diff)`，再按工作量加权（第 2 节那三类）。
 
-| 格子 | 档位 | busiest | GPU | DIE | 链路 | PIM 关键路径 | 预测 | 实测 | 残差 |
+| 格子 | 档位 | 最忙占比 | GPU | DIE | 链路 | PIM 关键路径 | 预测 | 实测 | 残差 |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| baseline_k8 | A3 | 66 | 9.53 | 0.11 | 1.75 | 8.14 | 19.54 | 19.54 | 反解 |
-| baseline_k8 | A3a | 66 | 9.53 | 0.11 | 1.75 | 8.14 | 19.54 | 18.46 | +5.9 % |
-| baseline_k8 | A4 | 96 | 9.53 | 0.11 | 1.75 | 11.81 | 23.21 | 24.01 | −3.3 % |
-| baseline_k8_hbm4 | A3 | 33 | 9.53 | 0.02 | 1.75 | 4.03 | 15.33 | 15.33 | 反解 |
-| baseline_k8_hbm4 | A3a | 33 | 9.53 | 0.02 | 1.75 | 4.06 | 15.36 | 14.27 | +7.6 % |
-| baseline_k8_hbm4 | A3b | 17 | 9.53 | 0.03 | 1.75 | 2.04 | 13.35 | 13.36 | **−0.0 %** |
-| broadcast_k8 | A4 | 96 | 5.92 | 0.06 | 0.32 | 5.23 | 11.53 | 12.89 | −10.5 % |
-| reduce_k8 | A4 | 96 | 6.74 | 0.06 | 0.30 | 5.12 | 12.22 | 12.56 | −2.7 % |
+| baseline_k8 | A3 | 0.0625 | 9.53 | 0.11 | 1.75 | 8.14 | 19.54 | 19.54 | 反解 |
+| baseline_k8 | A3a | 0.0625 | 9.53 | 0.11 | 1.75 | 8.14 | 19.54 | 18.46 | +5.9 % |
+| baseline_k8 | A4 | **0.0915** | 9.53 | 0.11 | 1.75 | 11.89 | 23.29 | 24.01 | −3.0 % |
+| baseline_k8_hbm4 | A3 | 0.1250 | 9.53 | 0.02 | 1.75 | 4.03 | 15.33 | 15.33 | 反解 |
+| baseline_k8_hbm4 | A3a | 0.1250 | 9.53 | 0.02 | 1.75 | 4.06 | 15.36 | 14.27 | +7.6 % |
+| baseline_k8_hbm4 | A3b | 0.0626 | 9.53 | 0.03 | 1.75 | 1.99 | 13.29 | 13.36 | **−0.5 %** |
+| broadcast_k8 | A4 | 0.0913 | 5.92 | 0.06 | 0.32 | 5.25 | 11.55 | 12.89 | −10.4 % |
+| reduce_k8 | A4 | 0.0934 | 6.74 | 0.06 | 0.30 | 5.26 | 12.36 | 12.56 | −1.6 % |
 
-两个交叉验证：
+A3 的最忙占比恰好是 1/16（hbm4 是 1/8），**与 scan 形状无关**——`single`
+在 head 数是 channel 数整数倍时永远完美均衡，所以反解出来的链路项不依赖
+上面那些形状假设。两个交叉验证：
 
 - 链路项在 `--num-hbm 1` 和 `--num-hbm 4` 两个**独立**反解里得到
-  1.752113 s 和 1.750665 s，差 0.08 %——两套配置的 GPU / DIE / pool_sum
+  1.7521 s 和 1.7507 s，差 0.08 %——两套配置的 GPU / DIE / pool_sum
   完全不同，却反解出同一个链路时间。
-- **A3b @ hbm4 预测 13.35 s、实测 13.356 s，残差 −0.0 %**，是纯样本外。
+- **A3b @ hbm4 预测 13.29 s、实测 13.356 s，残差 −0.5 %**，纯样本外。
 
 不吻合的地方（照实说）：
 
 - **A3a 系统性高估 6–8 %**。读掩码改的是**工作量**（被掩掉的行不算），
-  不只是分布，所以"busiest × pool_sum"这个模型对它本来就不成立。
-- **A4 系统性低估 3–10 %**，即 A4 实际比 chunk 模型算的还要更差一点。
-  chunk 模型按 256 行整块计价，忽略了每条 run 的固定开销与 run 长度差异；
-  broadcast 那格 −10.5 % 最大，多半是它的 `c_master`/`c_diff` 与
-  baseline 不同（本节对三个格子用了同一组假设值，没有逐格测量）。
+  不只是分布，所以"最忙占比 × pool_sum"这个模型对它本来就不成立。
+- **A4 系统性低估 2–10 %**，即 A4 实际比 chunk 模型算的还更差一点。
+  chunk 模型按 256 行整块计价，忽略了每条 run 的固定开销与 run 长度差异。
+  broadcast 那格 −10.4 % 最大，原因未查。
 
 ## 7. 复现
 
