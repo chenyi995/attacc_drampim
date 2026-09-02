@@ -3,6 +3,96 @@
 本页描述 `output/analysis/` 下三个 CSV，以及它们说了什么。**数字全部来自
 committed 的 CSV**，不是另算一遍；要复算就重新生成，不要手抄本页。
 
+## 背景：这些数字在测什么
+
+> 这一节写给**没接触过这个项目的人**。已经熟悉的可以直接跳到 §0。
+
+### 被仿真的系统
+
+`attacc_drampim`（内部代号 **Fugue**，扩展自 AttAcc, ASPLOS'24）模拟的是一台
+**GPU + PIM 混合推理机**在跑**多智能体工作负载**时的行为。
+
+- **GPU**：A100 级加速器，负责 transformer 的绝大部分算子（QKV 投影、FFN、
+  LayerNorm 等）。
+- **PIM**（processing-in-memory，存内计算）：把乘加单元做进 HBM 显存堆栈里。
+  它算得比 GPU 慢，但**数据不用搬出去** —— attention 要扫过整个 KV cache，
+  是典型的访存受限操作，所以放进 PIM 反而可能更快、更省。
+- **HBM 堆栈与通道**：每个 HBM 堆栈有 **16 个通道**，各自独立并行。KV cache
+  按 head 铺到通道上；一次扫描的时间由**最忙的那个通道**决定。一个模型用几个
+  堆栈由 `--num-hbm` 决定（本轮：小模型 1 个，GPT-13B/LLAMA-33B 10 个，
+  LLAMA-65B/GPT-175B 40 个）。
+
+### 要回答的问题
+
+多个 agent 会**读同一份上下文**（同样的文档、同样的上游输出）。于是三件事
+必须各自决定：
+
+1. **prefill 阶段的 attention 放哪**（GPU 还是 PIM）；
+2. **decode 阶段的 attention 放哪**；
+3. **KV cache 怎么在通道上摆**（决定扫描时的通道拥挤程度）。
+
+**九个档（A1–A6）就是这三个决定的消融阶梯，每一档只动一个变量**，所以相邻两档
+之间的差值就是那一个机制的效果。
+
+| 档 | prefill attn | decode attn | KV 布局 | 这一档相对上一档新增了什么 |
+|---|---|---|---|---|
+| **A1** | GPU | PIM | private | **基线**：AttAcc 原样，**不复用** —— 每个 request 自己一份 KV |
+| **A2** | GPU | GPU | none | 只在 GPU 上做**软件复用**（KV 每层过一次链路）|
+| **A3** | GPU | PIM | naive | PIM 做 decode + KV 常驻；**一个 head 全压在一个通道上** |
+| **A3a** | GPU | PIM | naive-mask | 陈旧行改为**流式读入再掩掉**，而不是把扫描切断 |
+| **A3b** | GPU | PIM | naive + slice | **head 切片**：一个 head 的块轮转它那一片通道 |
+| **A4** | GPU | PIM | master-diff | **master/diff 通道分池**：重算的修正行移到 diff 通道（ch15）|
+| **A4b** | GPU | PIM | master-diff + table | **全局 co-read 放置表**：不再按 head 固定切片，把所有 head 的块摊到 15 个 master 通道 |
+| **A5** | **PIM** | PIM | master-diff | **prefill attention 也搬进 PIM** + MQ 批处理 |
+| **A6** | **dynamic** | PIM | master-diff | **Fugue**：逐 request 动态决定 prefill 走 GPU 还是 PIM |
+
+（权威定义在 `src/ablation.py` 的 `PRESETS`；本表是它的中文转述。）
+
+### workload 是怎么构造的
+
+每个 workload 是一个**分层 DAG**：每层若干 agent，**下游 agent 读取上游全部输出**。
+单个 agent 的输入 = `16 token 系统提示` + `全部上游输出` + `C 个共享语料块`
+（每块 **256 token**）。四个标量轴：
+
+| 轴 | 含义 | 本轮取值 |
+|---|---|---|
+| **N** | 宽层的宽度，即**并发 agent 数**（扇入/扇出度）| 4 / 16 / ~~64~~ |
+| **C** | 每个 agent 读多少个共享语料块 → **上下文长度**（×256 token）| 16 / 32 / 64 |
+| **D** | **层数**（DAG 深度，多轮编排的轮数）| 1 / 2 / 4 |
+| **k** | 每个复用块**重算多少 token**（CacheBlend/EPIC 式的复用策略强度）| 2 / 8 / 32 |
+
+五种拓扑（层宽序列）：`broadcast [1,N]`、`reduce [N,1]`、`alltoall [N]*D`、
+`supervisor [1,N,1,N,…]`、`pipeline [1]*D`。另有 `private` 对照组 —— 每个 agent
+用**自己的**语料，即**没有复用**。
+
+14 个配置 = 1 个基线 + 四条单轴扫描（各高低两档）+ 四种拓扑 + private。
+**N-hi（N=64）已整行放弃**，理由见 §4。
+
+### 六个模型
+
+| 模型 | 层数 | 注意力头 | GQA 组 | KV heads | GPU 数 | HBM 堆栈 |
+|---|---:|---:|---:|---:|---:|---:|
+| LLAMA-7B | 32 | 32 | 1 | 32 | 1 | 1 |
+| LLAMA3-8B | 32 | 32 | **4** | 8 | 1 | 1 |
+| GPT-13B | 40 | 40 | 1 | 40 | 2 | 10 |
+| LLAMA-33B | 60 | 52 | 1 | 52 | 2 | 10 |
+| LLAMA-65B | 80 | 64 | 1 | 64 | 8 | 40 |
+| GPT-175B | 96 | 96 | 1 | 96 | 8 | 40 |
+
+LLAMA3-8B 是唯一用 **GQA**（分组查询注意力，4 个 query head 共享 1 个 KV head）
+的模型，这一点在结果里多处造成它与其他五个模型行为不同。
+
+### 指标
+
+| 指标 | 含义 |
+|---|---|
+| **makespan** | 整个 DAG 从开始到最后一个 agent 结束的**墙钟时间**（秒）|
+| **energy** | 全系统总能耗（报告里单位是 nJ，本页换算成 kJ）|
+| **KV link bytes** | KV cache **在 GPU 与 PIM 之间搬运的字节数** —— PIM 的核心卖点就是把这个降下来 |
+| **prefill** | 处理输入、填充 KV cache 的阶段 |
+| **decode** | 逐 token 生成输出的阶段 |
+| **tier** | DAG 的一层；同层 agent 并发，层与层之间串行 |
+
 ## 0. 三个文件
 
 | 文件 | 一行代表 | 行数（本快照） |
