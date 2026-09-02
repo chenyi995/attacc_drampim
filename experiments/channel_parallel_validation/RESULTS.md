@@ -69,13 +69,29 @@ num_hbm=4  heads_per_hbm=8    c_master=16, c_diff=1
 
 要让 A3b 真的是 A3b，`heads_per_hbm` 必须 < 16，即 HBM 堆栈数 > 2。
 
-**在跑的修正实验**：`run_a3_l7b_hbm4.sbatch`（slurm array 193281，
-2026-09-02 06:31 提交，A3 / A3a / A3b 各一个 task）改用 `--num-hbm 4`
-⇒ 8 head/HBM ⇒ 每个 head 2 条 lane，A3b 的 busiest-channel load 应当从
-17 降到 9（≈1.9×）。输出写到
-`output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8_hbm4/`。
-**注意：`--num-hbm 4` 也改了 A3 自己的基线，所以要跟同一批的 A3
-比，不能跟上表的 `--num-hbm 1` A3 比。**
+**修正后的实验（已跑完）**：`run_a3_l7b_hbm4.sbatch`（slurm array 193281，
+2026-09-02 06:31 提交，08:00 三个 task 全部 COMPLETED，各 1.2–1.5 h）
+改用 `--num-hbm 4` ⇒ 8 head/HBM ⇒ 每个 head 2 条 lane。**A3b 不再等于 A3**：
+
+| 档位 | placement | makespan | 相对 A3 | event_count |
+|---|---|---:|---:|---:|
+| A3 | single | 15.330 s | — | 5 480 896 |
+| A3a | single + 读掩码 | 14.272 s | −6.90 % | 5 480 896 |
+| A3b | slice（2 lane/head） | **13.356 s** | **−12.88 %（1.148×）** | 6 853 056 |
+
+A3b 比 A3a 再快 6.42 %。event_count 变多是对的：一个 head 摊到 2 条
+channel，lane 事件本来就该翻倍。
+
+**但只有 1.148×，不是预测的 1.89×。** busiest-channel load 17→9 说的是
+**一次 KV scan** 的时间，而 makespan 里还有 GPU prefill、链路、DIE merge
+等与 placement 无关的部分——lane 并行之后 scan 已经不再是压倒性的大头
+（对比第 2 节：同一批 `--num-hbm 1` 下并行化本身就吃掉了 7×）。要把这
+1.148× 拆开归因，得看 `dag_A3*.json` 的 per-device busy 时间，本次没做。
+
+**注意：`--num-hbm 4` 也改了 A3 自己的基线（15.330 s vs `--num-hbm 1`
+的 19.539 s），energy_nj 也从 2.37e12 涨到 7.34e12（4 个 stack 的器件功耗）。
+所以只能在这张表内部横比，不能跟第 2 节的 `--num-hbm 1` 那张表纵比；
+`collect_summaries.py` 对 `_hbm4` 格子刻意留空 old / speedup 两列。**
 
 ## 4. 顺带暴露的第二件事：A4 现在比 A3 慢
 

@@ -47,3 +47,15 @@ REPORT_SUMMARY {"ablation": "A3b", "decode_attn": "pim", "energy_nj": 2370113173
 Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8/dag_A6.json
 REPORT_SUMMARY {"ablation": "A6", "decode_attn": "pim", "energy_nj": 1151693406841.0168, "engine": "dag", "event_count": 7682624, "kv_mapping": "master-diff", "link_bytes": 123289493536, "makespan_s": 15.308647626638953, "pim_prefill_mode": "dynamic", "policy": "recompute"}
 
+## 193281_0.log
+Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8_hbm4/dag_A3.json
+REPORT_SUMMARY {"ablation": "A3", "decode_attn": "pim", "energy_nj": 7336503810168.601, "engine": "dag", "event_count": 5480896, "kv_mapping": "naive", "link_bytes": 189664354336, "makespan_s": 15.329724332456804, "pim_prefill_mode": "gpu", "policy": "recompute"}
+
+## 193281_1.log
+Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8_hbm4/dag_A3a.json
+REPORT_SUMMARY {"ablation": "A3a", "decode_attn": "pim", "energy_nj": 7398464573431.647, "engine": "dag", "event_count": 5480896, "kv_mapping": "naive-mask", "link_bytes": 189664354336, "makespan_s": 14.27211110839602, "pim_prefill_mode": "gpu", "policy": "recompute"}
+
+## 193281_2.log
+Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8_hbm4/dag_A3b.json
+REPORT_SUMMARY {"ablation": "A3b", "decode_attn": "pim", "energy_nj": 7337399288925.884, "engine": "dag", "event_count": 6853056, "kv_mapping": "naive", "link_bytes": 189664354336, "makespan_s": 13.355695723942885, "pim_prefill_mode": "gpu", "policy": "recompute"}
+

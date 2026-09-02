@@ -8,8 +8,9 @@ costs a grep instead of a 100 MB JSON parse.
 
 The pre-fix (serial-PIM) reference is the collaborator's 2026-08-30 sweep on
 this cluster; the post-fix runs are this experiment's own output tree.  Rows
-are matched on (case, rung) and only emitted when BOTH sides exist, so a
-half-finished array job cannot silently produce a one-sided table.
+are matched on (case, rung); a cell with no comparable pre-fix run (the
+``_hbm4`` cells -- the old sweep only ever ran one HBM) is emitted with the
+old/speedup columns empty rather than compared across configurations.
 """
 from __future__ import annotations
 
@@ -75,9 +76,12 @@ def main() -> int:
     for (model, case, rung), (new, log_name) in sorted(new_summaries().items()):
         if model != args.model:
             continue
-        # The pre-fix sweep has no _hbm4 variant: it only ever ran one HBM.
-        old_case = case.replace('_hbm4', '')
-        old = summary_from_log(OLD_ROOT / model / old_case / f'dag_{rung}.log')
+        # The pre-fix sweep only ever ran one HBM, so an _hbm4 cell has no
+        # comparable old run: --num-hbm changes the placement, the event count
+        # and the device energy, not just the schedule.  Leave those columns
+        # empty rather than print a cross-configuration ratio.
+        old = (None if case.endswith('_hbm4') else
+               summary_from_log(OLD_ROOT / model / case / f'dag_{rung}.log'))
         row = {'case': case, 'rung': rung, 'slurm_log': log_name,
                'new_makespan_s': new['makespan_s'],
                'old_makespan_s': old['makespan_s'] if old else '',
