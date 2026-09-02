@@ -153,8 +153,11 @@ python3 -m unittest discover -s tests     # 41/41
   DAG 七档 × 五个重算比例,一键脚本与图)
 - `README_experiments.md`:论文证据矩阵怎么跑
 - `README_cppcore_branch.md`:`chenyi-822-cppcore-exp` 分支说明(核心 C++ 化)
-- `README_branch_audit_20260902.md`:**合并前分支审计**（当前可保留来源、
-  已被包含的历史线、未提交工作树及建议收口顺序；未执行合并）
+- `README_branch_status_20260902.md`:**分支现状与合并判据**——`xinyao_0902`
+  是当前正确基线（出数用），`xinyao_0902_Analysis_Test` 引入解析模型、仍在
+  验证（不出论文数）；列出闭环还差的四项与合并前置条件
+- `README_branch_audit_20260902.md`:合并前分支审计（**提交前**的工作树盘点；
+  其分支结论已被 `README_branch_status_20260902.md` 取代）
 - `../experiments/analytic_a1_0902/RESULTS.md`:**PIM 定价的解析替代**
   （`--analytic-pim-model`,替掉 Ramulator 子进程）与 **DAG 的解析替代**
   （`src/a1_dag_free.py`）的三层分解与逐层标定/留出验证。两者都遵循
