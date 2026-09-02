@@ -40,10 +40,15 @@ METRICS = [("makespan_s", "makespan"), ("energy_nj", "energy"),
            ("link_bytes", "KV link"), ("event_count", "events")]
 # Below this, a pair is reported as never separating anywhere in the sweep.
 SEPARATION = 0.30
-# num_hbm per model, from output/_orch2/common.sh.  Kept here so this script
+# num_hbm per model, copied from the NHBM table in output/_orch2/common.sh,
+# which is what the runs actually passed as --num-hbm.  Kept here so this script
 # stands alone; if common.sh changes, change this with it.
+# CORRECTED 2026-09-01: the large models were wrong here.  GPT-175B and
+# LLAMA-65B use 40 HBM stacks, not 10, which changes heads_per_hbm from 10 and 7
+# to 3 and 2 -- i.e. they are the LEAST channel-crowded models, not the middle
+# of the pack.  Any conclusion drawn from the old numbers is void.
 NUM_HBM = {"LLAMA-7B": 1, "LLAMA3-8B": 1, "GPT-13B": 10,
-           "LLAMA-33B": 10, "LLAMA-65B": 10, "GPT-175B": 10}
+           "LLAMA-33B": 10, "LLAMA-65B": 40, "GPT-175B": 40}
 
 
 def load(root):
