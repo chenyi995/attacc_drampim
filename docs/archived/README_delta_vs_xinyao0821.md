@@ -1,5 +1,13 @@
 # 相对 xinyao_0821 基线的全部改动(chenyi-822 / chenyi-822-dirty)
 
+> **已归档 2026-09-02。** 本页逐条列出相对 `xinyao_0821` 基线的改动,
+> 内容更新至 2026-08-27。那条基线**已完全并入主线**(`xinyao_0821` 相对
+> `xinyao_0902` 无未合入提交),分支结构也已从 `chenyi-822-dirty` →
+> `chenyi-822-cppcore-exp` → `xinyao_0902` 前移两轮,页内的分支叙述不再
+> 成立。**保留作那次合并的历史记录**;当前改动脉络看 `sessions/` 与
+> `README_manual_audit_findings.md`。
+
+
 基线:`origin/xinyao_0821`(d6fc5a8)——Xinyao 的复用栈(CacheBlend PIM
 仿真:TLB、master/diff 双池、split prefill、事件 DAG、批 decode)。本页
 按主题列出我们在其上的全部改动;干净分支 `chenyi-822` 按逐步审阅移植,

@@ -1,4 +1,4 @@
-# kvpim-sim(chenyi-822-dirty):GPU–PIM 共享 KV 服务仿真器 —— 项目总览
+# kvpim-sim(xinyao_0902):GPU–PIM 共享 KV 服务仿真器 —— 项目总览
 
 目标读者:有计算机背景、但不了解本项目/LLM serving/DRAM-PIM 细节的人。
 概念首次出现即解释,关键术语标注英文;各专题另有独立 README(见文末索引)。
@@ -144,13 +144,10 @@ python3 -m unittest discover -s tests     # 41/41
 
 - `intro/README_A1.md` … `README_A6.md` + `README_A3a.md`:每档定位
 - `README_software_upstream.md`:复用策略族与文献来源
-- `README_delta_vs_xinyao0821.md`:相对 xinyao_0821 基线的全部改动
 - `README_head_hbm_remap.md`:head→HBM 重映射全记录(R18:错误、
   归因、量化、新映射规范)
 - `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
   流程裁决、阶梯诊断与 workload 有效性附录)
-- `README_run_experiments.md`:**当前主线实验怎么跑**(五组拓扑负载 ×
-  DAG 七档 × 五个重算比例,一键脚本与图)
 - `README_experiments.md`:论文证据矩阵怎么跑
 - `README_cppcore_branch.md`:`chenyi-822-cppcore-exp` 分支说明(核心 C++ 化)
 - `RAW_DATA_MANIFEST.md`:**原始数据本地清单**(>50 MB 的事件轨迹
@@ -165,9 +162,19 @@ python3 -m unittest discover -s tests     # 41/41
   参数化 sweep 的 generator / workload / 批跑脚本
 - `../workload/archived/2026-08-29_pre-sweep/`、`../output/archived/2026-08-29_pre-unify/`:
   归档的旧手调 generator 与旧结果(各带 README)
+- `README_sweep_results.md`:**sweep 实测结果**(含面向新读者的背景章节:
+  被仿真的系统、九档各自新增什么、四个轴的物理含义、六个模型几何、指标释义)
+- `README_rung_analysis.md`:**档间区分度**(哪几对档在全 sweep 上分不开)与
+  A6 选边不变量的诊断
+- `README_sweep_progress.md`:sweep 进度快照(由 `output/_orch2/progress_table.py` 生成)
+- `README_engine_future_work.md`:引擎重构提案(列式 + 流式,建在 C++ 核之上)
+- `README_simulator_assessment.md`:仿真器价值/贡献/可改进点评估
 - `sessions/`:每日调整记录(chenyi9 裁决时间线)
-- `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit
-- `PORTING_PLAN.md`(不入库):干净分支 chenyi-822 的逐步移植计划
+- `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit、
+  旧跑法 `README_run_experiments.md`、`README_delta_vs_xinyao0821.md`
+  (各带归档说明,注明被什么取代)
 
-分支说明:本分支 (`chenyi-822-dirty`) 是**快速集成分支**;同容将按
-逐步人工审阅规范挪入干净分支 `chenyi-822`。
+分支说明:当前主线是 **`xinyao_0902`**,它是历史各分支的**代码超集**
+(`xinyao_0821`/`0901`、`chenyi-822`/`-dirty`/`-cppcore-exp` 相对它均无
+未合入的 `src/` 改动)。分支演进:`chenyi-822-dirty` → `chenyi-822-cppcore-exp`
+(核心 C++ 化)→ `xinyao_0902`(PIM 通道并行调度修复)。

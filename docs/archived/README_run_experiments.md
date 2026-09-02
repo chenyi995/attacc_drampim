@@ -1,5 +1,13 @@
 # 怎么跑实验(DAG 阶梯;2026-08-27 版,阶梯 2026-08-29 重切为 9 档)
 
+> **已归档 2026-09-02。** 本页写的是**五组手调 workload × 7 档**的旧跑法。
+> 那五组已于 2026-08-29 被参数化 sweep 取代(`workload/gen_sweep.py` +
+> (topology, N, C, D, k)),阶梯也重切为 9 档。页内引用的
+> `workload/workload_star_repair_r5w3k47.json` 已不存在。
+> **现行跑法见 `README_sweep_design.md`(设计)与 `README_run_sweep_guide.md`
+> (运行指南)。** 本页保留作历史记录。
+
+
 > **2026-08-29 更新**:五组手调 workload 已改为**参数化 sweep**(一个
 > `workload/gen_sweep.py` + (topology, N, C, D, k),零 magic number、cap 天然
 > 不越),见 **`README_sweep_design.md`**、批跑 `experiments/run_sweep.sh`;旧 5
