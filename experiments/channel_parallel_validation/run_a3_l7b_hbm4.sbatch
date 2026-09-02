@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # LLAMA-7B placement ladder with enough HBM stacks for A3b head slicing:
 # 32 KV heads / 4 HBM = 8 heads per HBM, 16 channels / 8 heads = 2 lanes/head.
+#
+# Four stacks is the MINIMUM that makes A3b mean anything for this model:
+# below it the stripe clamps to 1 and A3b is A3.  src/workload_runner.py's
+# placement_degeneracy_warning() prints to stderr when that happens, so check
+# the log before trusting an A3b number.
 #SBATCH --job-name=kvpim-a3-hbm4
 #SBATCH --cpus-per-task=8
 #SBATCH --time=02:00:00

@@ -802,8 +802,11 @@ class WorkloadTests(unittest.TestCase):
                               event["name"] == "decode_dram_store_master"][-1]
         self.assertIn(final_parent_store["id"], first_child_qkv["depends_on"])
         serial = run_reuse_prefill(System(), workload, plan, pipe=False)
-        self.assertEqual(serial["overlap_validation"]["contract"],
-                         "original AttAcc serial decoder")
+        # pipe=False is serial between macro events, but the per-channel
+        # lanes of one PIM KV scan are a parallel phase inside one.
+        self.assertEqual(
+            serial["overlap_validation"]["contract"],
+            "AttAcc serial macro-events with parallel PIM channel phases")
         self.assertLessEqual(report["makespan_s"], serial["makespan_s"])
         context = next(event for event in events if event["name"] == "ctx_pim_to_gpu")
         kv_link = next(event for event in events if event["name"] == "kv_gpu_to_pim")

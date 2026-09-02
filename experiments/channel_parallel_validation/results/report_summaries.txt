@@ -1,7 +1,12 @@
 # REPORT_SUMMARY / target lines extracted from the slurm logs of this experiment.
 # Full logs are raw run data and stay local (docs/RAW_DATA_MANIFEST.md):
 #   experiments/channel_parallel_validation/logs/<jobid>_<task>.log
-# Regenerate: grep -hE 'Wrote ablation report to|^REPORT_SUMMARY' logs/*.log
+# Regenerate: python3 make_report_summaries.py
+#
+# An entry marked INVALID is kept as evidence of a defective RUN, not as a
+# result: its A3b makespan equals the A3 of the same case bit for bit, which
+# means the slice stripe collapsed and the run actually measured A3.
+# See RESULTS.md, the warning at the top.
 
 ## 193109_0.log
 Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8/dag_A3.json
@@ -39,7 +44,7 @@ REPORT_SUMMARY {"ablation": "A4", "decode_attn": "pim", "energy_nj": 12213075664
 Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8/dag_A3a.json
 REPORT_SUMMARY {"ablation": "A3a", "decode_attn": "pim", "energy_nj": 2385813114443.927, "engine": "dag", "event_count": 7840192, "kv_mapping": "naive-mask", "link_bytes": 189664354336, "makespan_s": 18.456204726946318, "pim_prefill_mode": "gpu", "policy": "recompute"}
 
-## 193202_1.log
+## 193202_1.log  <-- INVALID: A3b degenerated to A3 (identical makespan); not a result
 Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8/dag_A3b.json
 REPORT_SUMMARY {"ablation": "A3b", "decode_attn": "pim", "energy_nj": 2370113173950.205, "engine": "dag", "event_count": 7840192, "kv_mapping": "naive", "link_bytes": 189664354336, "makespan_s": 19.538823025675715, "pim_prefill_mode": "gpu", "policy": "recompute"}
 
@@ -58,4 +63,3 @@ REPORT_SUMMARY {"ablation": "A3a", "decode_attn": "pim", "energy_nj": 7398464573
 ## 193281_2.log
 Wrote ablation report to output/channel_parallel_validation_20260902/LLAMA-7B/baseline_k8_hbm4/dag_A3b.json
 REPORT_SUMMARY {"ablation": "A3b", "decode_attn": "pim", "energy_nj": 7337399288925.884, "engine": "dag", "event_count": 6853056, "kv_mapping": "naive", "link_bytes": 189664354336, "makespan_s": 13.355695723942885, "pim_prefill_mode": "gpu", "policy": "recompute"}
-

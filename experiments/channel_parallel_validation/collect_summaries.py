@@ -11,6 +11,12 @@ this cluster; the post-fix runs are this experiment's own output tree.  Rows
 are matched on (case, rung); a cell with no comparable pre-fix run (the
 ``_hbm4`` cells -- the old sweep only ever ran one HBM) is emitted with the
 old/speedup columns empty rather than compared across configurations.
+
+A3b runs that DEGENERATED into A3 are dropped, not reported.  A3b's slice
+policy needs at least two channels per head; give a stack more KV heads than
+it has channels and the stripe clamps to 1 and the placement becomes A3's,
+so the run measures A3 and calling it A3b is simply wrong.  The test is
+direct: same case, same makespan as A3 to the last bit.  See RESULTS.md 3.
 """
 from __future__ import annotations
 
@@ -72,9 +78,24 @@ def main() -> int:
                         'channel_parallel_llama7b.csv')
     args = parser.parse_args()
 
+    summaries = new_summaries()
+    # An A3b whose makespan is bit-identical to the A3 of the same case did
+    # not run A3b.  Report it as a defect in the RUN, never as a data point.
+    degenerate = {
+        (model, case) for (model, case, rung) in summaries
+        if rung == 'A3b' and (model, case, 'A3') in summaries and
+        summaries[(model, case, 'A3b')][0]['makespan_s'] ==
+        summaries[(model, case, 'A3')][0]['makespan_s']}
+
     rows = []
-    for (model, case, rung), (new, log_name) in sorted(new_summaries().items()):
+    for (model, case, rung), (new, log_name) in sorted(summaries.items()):
         if model != args.model:
+            continue
+        if rung == 'A3b' and (model, case) in degenerate:
+            print('DROPPED {}/{}: A3b makespan is identical to A3 '
+                  '({} s) -- the slice stripe collapsed, so this run is A3. '
+                  'Rerun with more HBM stacks.'
+                  .format(case, rung, new['makespan_s']), file=sys.stderr)
             continue
         # The pre-fix sweep only ever ran one HBM, so an _hbm4 cell has no
         # comparable old run: --num-hbm changes the placement, the event count

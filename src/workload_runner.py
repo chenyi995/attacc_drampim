@@ -8,6 +8,7 @@ GPU/PIM prefill split needed for position-independent KV reuse.
 from __future__ import annotations
 
 import math
+import sys
 import time
 from array import array
 from bisect import bisect_left
@@ -657,6 +658,55 @@ def _heads_per_hbm(kv_heads_local: int, num_hbm: int) -> int:
     kv = max(1, int(kv_heads_local))
     nh = max(1, int(num_hbm))
     return max(1, -(-kv // nh))
+
+
+def placement_degeneracy_warning(system, kv_mapping: str,
+                                 channel_placement: str) -> Optional[str]:
+    """Say so when a head-slicing policy has no channels left to slice over.
+
+    ``slice`` gives head h a stripe of ``max(1, 16 // heads_per_hbm)``
+    channels.  Put more KV heads on a stack than it has channels and the
+    stripe clamps to 1: every chunk of a head piles on one channel again and
+    ``_layout_channel_loads`` returns the ``single`` vector EXACTLY.  A3b is
+    then A3 bit for bit -- identical makespan, identical energy -- so an
+    A3-vs-A3b comparison run that way compares A3 with itself and cannot show
+    head slicing doing anything.  Measured 2026-09-02: LLAMA-7B (32 KV heads)
+    at ``--num-hbm 1`` gave A3 and A3b the same 19.538823025675715 s.
+
+    ``master-diff-slice`` (A4) slices within the 15 master channels and
+    collapses the same way, one stack earlier.
+
+    Returns the warning text, or None when the run is fine.  This is a
+    warning and not an error on purpose: a collapsed A4 is still a legitimate
+    data point about that machine, it just is not a data point about slicing.
+    """
+    accelerator = getattr(system, "devices", {}).get("Acc")
+    if accelerator is None or channel_placement not in ("slice",):
+        return None
+    heads = max(1, system.model.num_heads // system.model.tp)
+    heads_per_hbm = _heads_per_hbm(_gqa_kv_heads_local(system, heads),
+                                   getattr(accelerator, "num_hbm", 1))
+    channels = (_MASTER_CHANNELS_DEFAULT if kv_mapping == "master-diff"
+                else _HBM_CHANNELS)
+    if channels // heads_per_hbm >= 2:
+        return None
+    kv_heads_total = heads_per_hbm * getattr(accelerator, "num_hbm", 1)
+    needed = -(-kv_heads_total // (channels // 2))
+    consequence = (
+        "the master pool is placed one-channel-per-head, so this run says\n"
+        "  nothing about slicing -- only about that pile-up plus the diff split"
+        if kv_mapping == "master-diff" else
+        "the placement is now bit-identical to A3, so an A3-vs-A3b\n"
+        "  comparison built on this run is A3 measured against itself")
+    return (
+        "WARNING: channel_placement 'slice' has collapsed to one channel per "
+        "head.\n"
+        "  {} KV heads share one stack and the pool has {} channels, so the\n"
+        "  per-head stripe clamps to 1: {}.\n"
+        "  Fix: raise --num-hbm to at least {} ({} KV heads over {} channels) "
+        "so a head\n  gets >= 2 channels."
+        .format(heads_per_hbm, channels, consequence, needed,
+                kv_heads_total, channels))
 
 
 _ROTATE_MODES = ("gpu", "die", "bank")
@@ -3996,6 +4046,10 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
     """
     if decode_attn not in ("pim", "gpu"):
         raise WorkloadValidationError("--decode-attn must be 'pim' or 'gpu'")
+    degenerate = placement_degeneracy_warning(system, kv_mapping,
+                                              channel_placement)
+    if degenerate is not None:
+        print(degenerate, file=sys.stderr)
     if decode_attn == "gpu":
         if kv_mapping != "none":
             raise WorkloadValidationError(

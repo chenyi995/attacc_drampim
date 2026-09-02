@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Baseline LLAMA-7B validation of the restored channel-parallel DAG and
 # head-folded A6 placement probe.
+#
+# WARNING: the A3b task of this array is NOT a valid A3b run.  --num-hbm 1
+# puts all 32 KV heads on one stack's sixteen channels, so A3b's per-head
+# stripe clamps to 1 and the placement is A3's, bit for bit.  Use
+# run_a3_l7b_hbm4.sbatch for A3b; keep this one for A3a and A6.
 #SBATCH --job-name=kvpim-a3a3ba6
 #SBATCH --cpus-per-task=8
 #SBATCH --time=02:00:00

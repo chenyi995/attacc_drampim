@@ -7,9 +7,12 @@ master-diff-table (A4b).
 """
 import unittest
 
+from types import SimpleNamespace
+
 from src.workload import WorkloadValidationError
 from src.workload_runner import (_layout_channel_loads, _layout_scan_max_load,
-                                  _HBM_CHANNELS, _MASTER_CHANNELS_DEFAULT)
+                                  _HBM_CHANNELS, _MASTER_CHANNELS_DEFAULT,
+                                  placement_degeneracy_warning)
 
 
 class SingleLayoutTest(unittest.TestCase):
@@ -204,6 +207,62 @@ class EnergyByLayerTest(unittest.TestCase):
         by_class = self._breakdown(3)["by_class"]
         self.assertEqual(by_class.get("PIM"), 3.0)     # PIM:pool0-0 -> PIM
         self.assertEqual(by_class.get("GPU"), 12.0)
+
+
+class SliceDegeneracyWarningTest(unittest.TestCase):
+    """A3b run on too few HBM stacks IS A3, and has to say so.
+
+    2026-09-02: every --num-hbm 1 A3-vs-A3b comparison this project had made
+    was A3 against itself -- LLAMA-7B puts 32 KV heads on one stack's sixteen
+    channels, the stripe clamps to 1, and the two rungs return the same load
+    vector.  These pin the warning that makes that impossible to miss again.
+    """
+
+    @staticmethod
+    def _system(q_heads, num_hbm, gqa=1, tp=1):
+        return SimpleNamespace(
+            model=SimpleNamespace(num_heads=q_heads, tp=tp, gqa_size=gqa),
+            devices={"Acc": SimpleNamespace(num_hbm=num_hbm)})
+
+    def test_slice_equals_single_exactly_when_it_warns(self):
+        # The warning must fire on precisely the configurations where the two
+        # policies are indistinguishable, so it is checked against the loads.
+        for heads_per_hbm in range(1, 33):
+            collapsed = (_layout_channel_loads("slice", 16, 1, heads_per_hbm) ==
+                         _layout_channel_loads("single", 16, 1, heads_per_hbm))
+            system = self._system(heads_per_hbm, 1)
+            warned = placement_degeneracy_warning(
+                system, "naive", "slice") is not None
+            self.assertEqual(warned, collapsed,
+                             "heads_per_hbm={}".format(heads_per_hbm))
+
+    def test_llama7b_one_hbm_warns_and_names_the_fix(self):
+        warning = placement_degeneracy_warning(
+            self._system(32, 1), "naive", "slice")
+        self.assertIsNotNone(warning)
+        self.assertIn("bit-identical to A3", warning)
+        self.assertIn("--num-hbm to at least 4", warning)
+
+    def test_llama7b_four_hbm_is_a_real_a3b(self):
+        self.assertIsNone(placement_degeneracy_warning(
+            self._system(32, 4), "naive", "slice"))
+
+    def test_a3_itself_is_never_warned_about(self):
+        # 'single' is not pretending to slice, so it has nothing to collapse.
+        self.assertIsNone(placement_degeneracy_warning(
+            self._system(32, 1), "naive", "single"))
+
+    def test_master_diff_collapses_one_stack_later(self):
+        # A4 slices within 15 master channels, so 8 heads/stack already clamps.
+        self.assertIsNotNone(placement_degeneracy_warning(
+            self._system(32, 4), "master-diff", "slice"))
+        self.assertIsNone(placement_degeneracy_warning(
+            self._system(32, 8), "master-diff", "slice"))
+
+    def test_gqa_counts_kv_heads_not_query_heads(self):
+        # LLAMA3-8B: 32 Q heads, GQA group 4 -> 8 KV heads -> 2 channels each.
+        self.assertIsNone(placement_degeneracy_warning(
+            self._system(32, 1, gqa=4), "naive", "slice"))
 
 
 if __name__ == "__main__":
