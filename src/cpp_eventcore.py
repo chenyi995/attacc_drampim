@@ -31,6 +31,7 @@ def _load_library() -> Optional[ctypes.CDLL]:
     lib.ec_size.argtypes = [ctypes.c_void_p]
     lib.ec_add.restype = ctypes.c_int64
     lib.ec_add.argtypes = [ctypes.c_void_p, ctypes.c_int32, ctypes.c_double,
+                           ctypes.c_int32,
                            ctypes.POINTER(ctypes.c_int32), ctypes.c_int32]
     lib.ec_set_duration.argtypes = [ctypes.c_void_p, ctypes.c_int64,
                                     ctypes.c_double]
@@ -76,12 +77,16 @@ class EventCore:
         return did
 
     def add(self, device: str, duration: float,
-            dep_ids: Sequence[str]) -> None:
+            dep_ids: Sequence[str], *, name: str = "") -> None:
         ndep = len(dep_ids)
         buf = (ctypes.c_int32 * ndep)(*[event_index(d) for d in dep_ids]) \
             if ndep else None
+        # Only per-channel KV scan lanes form a parallel macro phase under
+        # pipe=False.  Other PIM-pool bookkeeping remains serial.
+        pool_scan = int(device.startswith("PIM:pool") and
+                        "pim_kv_scan" in name)
         index = self._lib.ec_add(self._handle, self._device(device),
-                                 float(duration), buf, ndep)
+                                 float(duration), pool_scan, buf, ndep)
         if index < 0:
             raise ValueError("eventcore: dependency on a future event")
 

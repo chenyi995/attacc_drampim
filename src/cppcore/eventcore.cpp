@@ -7,7 +7,8 @@
 // incremental scheduler (an accidental quadratic: finish/availability were
 // rebuilt per decode admission round) and (b) the full-pass Python
 // scheduler.  Semantics replicate _schedule_cacheblend exactly:
-//   resource   = device (pipe) | one serial resource (no pipe)
+//   resource   = device (pipe) | one serial macro resource (no pipe)
+//   no-pipe PIM pool scans emitted together form one parallel channel phase
 //   start      = max(avail[resource], end[dep] for dep in deps)  (left fold)
 //   end        = start + duration; avail[resource] = end
 // Floats are IEEE doubles with the same fold order as the Python max(),
@@ -21,6 +22,7 @@ struct Core {
     int pipe = 0;
     std::vector<double> duration;
     std::vector<int32_t> device;
+    std::vector<int32_t> pool_scan;
     std::vector<int32_t> dep_offset;   // size = n+1
     std::vector<int32_t> deps;
     std::vector<double> start_s;
@@ -55,7 +57,7 @@ int64_t ec_size(void* h) {
 }
 
 // Returns the new event's index; deps must reference earlier indices.
-int64_t ec_add(void* h, int32_t device, double duration,
+int64_t ec_add(void* h, int32_t device, double duration, int32_t pool_scan,
                const int32_t* dep, int32_t ndep) {
     Core* c = static_cast<Core*>(h);
     int64_t index = static_cast<int64_t>(c->duration.size());
@@ -64,6 +66,7 @@ int64_t ec_add(void* h, int32_t device, double duration,
     }
     c->duration.push_back(duration);
     c->device.push_back(device);
+    c->pool_scan.push_back(pool_scan);
     c->deps.insert(c->deps.end(), dep, dep + ndep);
     c->dep_offset.push_back(static_cast<int32_t>(c->deps.size()));
     return index;
@@ -93,6 +96,46 @@ int64_t ec_advance(void* h) {
     c->end_s.resize(n);
     int64_t done = 0;
     for (int64_t i = c->advanced; i < n; ++i, ++done) {
+        // A logical PIM scan is emitted as consecutive per-channel lanes
+        // with identical dependencies.  In the no-pipeline model, channels
+        // still run in parallel; only the resulting phase is serial with
+        // other macro events.
+        if (!c->pipe && c->pool_scan[i]) {
+            int64_t first = i;
+            int64_t last = i + 1;
+            while (last < n && c->pool_scan[last] &&
+                   c->dep_offset[last + 1] - c->dep_offset[last] ==
+                   c->dep_offset[first + 1] - c->dep_offset[first]) {
+                bool same_deps = true;
+                for (int32_t k = c->dep_offset[first];
+                     k < c->dep_offset[first + 1]; ++k) {
+                    if (c->deps[k] != c->deps[c->dep_offset[last] +
+                                              (k - c->dep_offset[first])]) {
+                        same_deps = false;
+                        break;
+                    }
+                }
+                if (!same_deps) break;
+                ++last;
+            }
+            double start = res_avail(c, c->device[first]);
+            for (int32_t k = c->dep_offset[first];
+                 k < c->dep_offset[first + 1]; ++k) {
+                double e = c->end_s[c->deps[k]];
+                if (e > start) start = e;
+            }
+            double phase_end = start;
+            for (int64_t lane = first; lane < last; ++lane) {
+                double end = start + c->duration[lane];
+                c->start_s[lane] = start;
+                c->end_s[lane] = end;
+                if (end > phase_end) phase_end = end;
+            }
+            res_set(c, c->device[first], phase_end);
+            done += last - first - 1;
+            i = last - 1;
+            continue;
+        }
         double start = res_avail(c, c->device[i]);
         for (int32_t k = c->dep_offset[i]; k < c->dep_offset[i + 1]; ++k) {
             double e = c->end_s[c->deps[k]];

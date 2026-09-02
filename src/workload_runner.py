@@ -8,6 +8,7 @@ GPU/PIM prefill split needed for position-independent KV reuse.
 from __future__ import annotations
 
 import math
+import time
 from array import array
 from bisect import bisect_left
 from copy import deepcopy
@@ -305,7 +306,7 @@ def _event(events: List[SplitEvent], transformer_layer: int, request_id: str,
                              0, request_id, name, device, rows, time_s,
                              sum(energy), link_bytes))
     if _EC is not None:
-        _EC.add(device, time_s, ())
+        _EC.add(device, time_s, (), name=name)
 
 
 def _link_layer(template: Layer, name: str, byte_count: int) -> Layer:
@@ -1325,7 +1326,7 @@ def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                                    else ()),
                              tuple(batch_members), masked_rows))
     if _EC is not None:
-        _EC.add(device, time_s, deps)
+        _EC.add(device, time_s, deps, name=name)
     return event_id
 
 
@@ -1374,6 +1375,31 @@ def _append_physical_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     return tuple(scan_events)
 
 
+def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
+                            heads_per_hbm: int,
+                            master_channels: int = _MASTER_CHANNELS_DEFAULT):
+    """Return the head-folded physical channel runs for one placement scan.
+
+    A PIM pool run covers one channel, so head multiplicity must be folded
+    into that channel's row count rather than represented through ``numOp``.
+    Both the committed scan and the A6 probe use this helper to ensure they
+    price the identical workload.
+    """
+    master_rows = sum(1 for location in reads if location.kind != "diff")
+    diff_rows = sum(1 for location in reads if location.kind == "diff")
+    c_master = -(-master_rows // _NAIVE_PAGE_ROWS)
+    c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
+    loads = _layout_channel_loads(policy, c_master, c_diff, heads_per_hbm,
+                                  master_channels)
+    active = [channel for channel, load in enumerate(loads) if load > 0]
+    runs = tuple((channel * _HBM_CHANNEL_BYTES,
+                  channel * _HBM_CHANNEL_BYTES + _ORIGINAL_KV_GAP_BYTES,
+                  max(1, int(round(loads[channel] * _NAIVE_PAGE_ROWS))),
+                  channel, 1)
+                 for channel in active)
+    return loads, active, runs
+
+
 def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
                                layer: int, tier: int, request: str, name: str,
                                reads: Sequence[KVLocation], deps: Sequence[str],
@@ -1397,13 +1423,9 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     """
     accelerator = system.devices["Acc"]
     masked = masked or set()
-    master_rows = sum(1 for location in reads if location.kind != "diff")
-    diff_rows = sum(1 for location in reads if location.kind == "diff")
-    c_master = -(-master_rows // _NAIVE_PAGE_ROWS)          # 256-token chunks
-    c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
-    loads = _layout_channel_loads(policy, c_master, c_diff, heads_per_hbm,
-                                  master_channels)
-    active = [channel for channel, load in enumerate(loads) if load > 0]
+    loads, active, runs = _placement_channel_runs(
+        reads, policy=policy, heads_per_hbm=heads_per_hbm,
+        master_channels=master_channels)
     kv_heads = max(1, int(getattr(op, "numOp", 1)))
     # Heads parallelise across HBMs: each HBM runs ``heads_per_hbm`` heads, so
     # ``num_hbm_used`` HBMs hold the KV.  The busiest channel sets the (per-HBM)
@@ -1449,11 +1471,6 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     # Ramulator so ACT / row-buffer effects and the MQ command (carried on
     # ``op``) are real, NOT extrapolated from a probe.  The busiest channel sets
     # the scan time; the runs stream concurrently as separate pool devices.
-    runs = tuple((channel * _HBM_CHANNEL_BYTES,
-                  channel * _HBM_CHANNEL_BYTES + _ORIGINAL_KV_GAP_BYTES,
-                  max(1, int(round(loads[channel] * _NAIVE_PAGE_ROWS))),
-                  channel, 1)
-                 for channel in active)
     scan_op = deepcopy(op)
     scan_op.numOp = 1                              # heads folded into the rows
     scan_op.n = sum(run[2] for run in runs)
@@ -1547,9 +1564,43 @@ def _schedule_cacheblend(events: Sequence[SplitEvent], *, pipe: bool) -> List[Sp
     finish: Dict[str, float] = {}
     availability: Dict[str, float] = {}
     scheduled: List[SplitEvent] = []
-    for event in events:
+    index = 0
+    while index < len(events):
+        event = events[index]
         if any(dep not in finish for dep in event.depends_on):
             raise WorkloadValidationError("CacheBlend event depends on a future event")
+        # ``pipe=False`` is conservative about *inter-device* overlap, not
+        # about physical lanes inside one PIM scan.  The placement path emits
+        # one consecutive PIM:pool event per active HBM channel; they are the
+        # lanes of one logical scan and must start together.  Charge their
+        # makespan to the serial macro timeline, rather than charging their
+        # sum.  A following DIE merge still depends on every individual lane.
+        if (not pipe and event.device.startswith("PIM:pool") and
+                "pim_kv_scan" in event.name):
+            group = [event]
+            next_index = index + 1
+            while (next_index < len(events) and
+                   events[next_index].device.startswith("PIM:pool") and
+                   events[next_index].name == event.name and
+                   events[next_index].transformer_layer == event.transformer_layer and
+                   events[next_index].tier == event.tier and
+                   events[next_index].request_id == event.request_id and
+                   events[next_index].depends_on == event.depends_on and
+                   events[next_index].query_positions == event.query_positions and
+                   events[next_index].batch_members == event.batch_members):
+                group.append(events[next_index])
+                next_index += 1
+            start = max([availability.get("SERIAL", 0.0)] +
+                        [finish[dep] for dep in event.depends_on])
+            group_end = start
+            for lane in group:
+                end = start + lane.time_s
+                finish[lane.event_id] = end
+                scheduled.append(replace(lane, start_s=start, end_s=end))
+                group_end = max(group_end, end)
+            availability["SERIAL"] = group_end
+            index = next_index
+            continue
         # Links, DIE/TLB and banks are each ordered resources; GPU and PIM
         # work can overlap a link exactly as in the CacheBlend trace.  Without
         # --pipeopt, all operations share one serial timeline.
@@ -1560,6 +1611,7 @@ def _schedule_cacheblend(events: Sequence[SplitEvent], *, pipe: bool) -> List[Sp
         availability[resource] = end
         finish[event.event_id] = end
         scheduled.append(replace(event, start_s=start, end_s=end))
+        index += 1
     return scheduled
 
 
@@ -1676,7 +1728,40 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
     finish: Dict[str, float] = {}
     available: Dict[str, float] = {}
     tolerance = 1e-18
-    for event in scheduled:
+    index = 0
+    while index < len(scheduled):
+        event = scheduled[index]
+        if (not pipe and event.device.startswith("PIM:pool") and
+                "pim_kv_scan" in event.name):
+            group = [event]
+            next_index = index + 1
+            while (next_index < len(scheduled) and
+                   scheduled[next_index].device.startswith("PIM:pool") and
+                   scheduled[next_index].name == event.name and
+                   scheduled[next_index].transformer_layer == event.transformer_layer and
+                   scheduled[next_index].tier == event.tier and
+                   scheduled[next_index].request_id == event.request_id and
+                   scheduled[next_index].depends_on == event.depends_on and
+                   scheduled[next_index].query_positions == event.query_positions and
+                   scheduled[next_index].batch_members == event.batch_members):
+                group.append(scheduled[next_index])
+                next_index += 1
+            expected = max([available.get("SERIAL", 0.0)] +
+                           [finish[dependency] for dependency in event.depends_on])
+            phase_end = expected
+            for lane in group:
+                if abs(lane.start_s - expected) > tolerance:
+                    raise WorkloadValidationError(
+                        "CacheBlend PIM pool phase starts inconsistently at {}".format(
+                            lane.event_id))
+                if abs(lane.end_s - (lane.start_s + lane.time_s)) > tolerance:
+                    raise WorkloadValidationError(
+                        "CacheBlend event duration is inconsistent with the AttAcc timeline")
+                finish[lane.event_id] = lane.end_s
+                phase_end = max(phase_end, lane.end_s)
+            available["SERIAL"] = phase_end
+            index = next_index
+            continue
         resource = event.device if pipe else "SERIAL"
         expected = max([available.get(resource, 0.0)] +
                        [finish[dependency] for dependency in event.depends_on])
@@ -1689,10 +1774,12 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
                 "CacheBlend event duration is inconsistent with the AttAcc timeline")
         available[resource] = event.end_s
         finish[event.event_id] = event.end_s
+        index += 1
     report = {
         "passed": True,
         "pipe": pipe,
-        "contract": ("original AttAcc serial decoder" if not pipe else
+        "contract": ("AttAcc serial macro-events with parallel PIM channel phases"
+                     if not pipe else
                      "AttAcc comm_x2g busy timeline plus explicit CacheBlend resources"),
         "events_checked": len(scheduled),
     }
@@ -2805,6 +2892,11 @@ def _append_physical_no_reuse_prefill_layer(
     op_full = None
     if full_sweeps:
         op_full = _sweep_op(cap_rows)
+        # One priced invocation stands for ``full_sweeps`` identical physical
+        # sweeps.  The multiplicity is declared on the op so a PIM signature
+        # recording reports PHYSICAL runs, not invocations -- otherwise the
+        # DAG-free enumerator would look 16x wrong for agreeing with it.
+        op_full.pim_run_multiplicity = full_sweeps
         time_s, energy = system.devices["Acc"].get_time_and_energy(op_full)
         total_time += full_sweeps * time_s
         total_energy += full_sweeps * sum(energy)
@@ -3224,6 +3316,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ,
                             gemv_buffer_bytes: int = MQ_DEFAULT_GEMV_BUFFER_BYTES,
                             _build_sink: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    build_started = time.perf_counter()
     # W3 (2026-08-28): event address arrays only ever reach the report when
     # events are included; otherwise skip storing them (and the validator's
     # scan-address audit follows the same gate).
@@ -3520,12 +3613,27 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                          mq_query_capacity(gemv_buffer_bytes) //
                                          _gqa_group(system)))
                         sweeps = max(1, math.ceil(len(compute_positions) / cap))
+                        # Price the exact head-folded run shape that the PIM
+                        # branch schedules.  The channel lanes are parallel,
+                        # hence one scan costs the busiest channel, not the
+                        # sum of the per-channel runs.
+                        kv_heads_local = _gqa_kv_heads_local(system, heads)
+                        probe_heads_per_hbm = _heads_per_hbm(
+                            kv_heads_local,
+                            getattr(system.devices["Acc"], "num_hbm", 1))
+                        tlb_runs = tlb.scan_runs(scan_locations)
+                        probe_loads, probe_active, probe_runs = (
+                            _placement_channel_runs(
+                                scan_locations, policy=tlb.layout_policy,
+                                heads_per_hbm=probe_heads_per_hbm))
+                        busiest_run = (max(probe_runs, key=lambda run: run[2])
+                                       if probe_runs else None)
                         est = deepcopy(score)
                         est.m, est.n, est.k, est.numOp = (
                             min(cap, len(compute_positions)),
-                            len(scan_locations), system.model.dhead,
-                            _gqa_kv_heads_local(system, heads))
-                        est.pim_kv_runs = tlb.scan_runs(scan_locations)
+                            busiest_run[2] if busiest_run else 0,
+                            system.model.dhead, 1)
+                        est.pim_kv_runs = (busiest_run,) if busiest_run else ()
                         est.pim_shared_kv = est.m * _gqa_group(system) > 1
                         est.pim_shared_queries = est.m * _gqa_group(system)
                         _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)
@@ -3534,15 +3642,17 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         # placeholders; the side DECISION must be real, so
                         # the probe prices through the original entry (an
                         # inline cold simulation that also warms the cache).
-                        if _WARM_BYPASS is not None:
+                        if not busiest_run:
+                            measured = []
+                        elif _WARM_BYPASS is not None:
                             measured = _WARM_BYPASS[0](est)
                         elif hasattr(accelerator, "get_time_and_energy_runs"):
                             measured = accelerator.get_time_and_energy_runs(est)
                         else:
                             # Aggregate mock-device API of lightweight tests.
                             measured = [accelerator.get_time_and_energy(est)]
-                        t_bank = sum(item[0] for item in measured) * sweeps
-                        t_bank += _tlb_plan_cost(est.pim_kv_runs)[0] * sweeps
+                        t_bank = max([item[0] for item in measured], default=0.0) * sweeps
+                        t_bank += _tlb_plan_cost(tlb_runs)[0] * sweeps
                         for name in ("q_gpu_to_pim", "ctx_pim_to_gpu"):
                             op = _link_layer(x2g, name,
                                              len(compute_positions) * local_hidden * dbyte)
@@ -3751,6 +3861,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "pim_prefill_mode": pim_prefill_mode, "kv_mapping": kv_mapping,
         "pim_pe_freq_ghz": pim_pe_freq_ghz,
         "gemv_buffer_bytes": gemv_buffer_bytes,
+        # Includes layout preparation, event construction and PIM pricing,
+        # but excludes DAG validation/scheduling/report assembly below.
+        "dag_build_s": time.perf_counter() - build_started,
     }
     if _build_sink is not None:
         # W1/W2 warm build: hand the constructed graph to the warm driver;
@@ -3772,6 +3885,7 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
     build once, reprice the Acc events from the warm cache, and finalize --
     identical code path to a cold run from this point on.
     """
+    finalize_started = time.perf_counter()
     events = ctx["events"]
     batch_records = ctx["batch_records"]
     tlb = ctx["tlb"]
@@ -3829,6 +3943,7 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
         "events": ([event.to_dict() for event in scheduled] if include_events
                    else None),
         "event_count": len(scheduled),
+        "dag_build_s": ctx.get("dag_build_s", 0.0),
         "summary": summarize_cacheblend_schedule(scheduled, workload),
         "tlb": tlb_report,
         "link_bytes": sum(event.link_bytes for event in scheduled),
@@ -3849,6 +3964,12 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
     ramulator = getattr(system.devices.get("Acc"), "ramulator", None)
     if ramulator is not None and hasattr(ramulator, "cache_report"):
         report["ramulator_signature_cache"] = ramulator.cache_report()
+    if ramulator is not None and hasattr(ramulator, "dump_pim_signatures"):
+        # Ground truth for the DAG-free enumerator, when requested.
+        dumped = ramulator.dump_pim_signatures()
+        if dumped:
+            report["pim_signature_log"] = dumped
+    report["dag_finalize_s"] = time.perf_counter() - finalize_started
     return report
 
 
