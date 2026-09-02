@@ -1,0 +1,85 @@
+{
+  "layer_A1_aggregate_work": {
+    "mac": {
+      "dag": 2536038400,
+      "enumerator": 2536038400,
+      "relative_error": 0.0
+    },
+    "mvgb": {
+      "dag": 460012544,
+      "enumerator": 425344000,
+      "relative_error": 0.07536434484708313
+    },
+    "mvsb": {
+      "dag": 815086592,
+      "enumerator": 711080960,
+      "relative_error": 0.1276007150906489
+    },
+    "physical_runs": {
+      "dag": 693568,
+      "enumerator": 659712,
+      "relative_error": 0.04881424748546646
+    },
+    "sfm": {
+      "dag": 22192128,
+      "enumerator": 17858560,
+      "relative_error": 0.1952750092284976
+    },
+    "wrgb": {
+      "dag": 177537024,
+      "enumerator": 142868480,
+      "relative_error": 0.1952750092284976
+    }
+  },
+  "layer_A2_invocation_multiset": {
+    "dag_unique": 27,
+    "enumerator_unique": 24,
+    "exact_signature_match": 24,
+    "mismatched_signatures": 7,
+    "run_recall": 0.902371505029067,
+    "runs_dag": 693568,
+    "runs_enumerator": 659712,
+    "runs_matched": 625856
+  },
+  "layer_A3_worst_run_lengths": [
+    {
+      "dag": 67712,
+      "enumerator": 33856,
+      "run_length": 8464
+    },
+    {
+      "dag": 419318,
+      "enumerator": 407680,
+      "run_length": 512
+    },
+    {
+      "dag": 128246,
+      "enumerator": 116608,
+      "run_length": 768
+    },
+    {
+      "dag": 22218,
+      "enumerator": 33856,
+      "run_length": 8976
+    },
+    {
+      "dag": 22218,
+      "enumerator": 33856,
+      "run_length": 9232
+    },
+    {
+      "dag": 10580,
+      "enumerator": 0,
+      "run_length": 256
+    },
+    {
+      "dag": 23276,
+      "enumerator": 33856,
+      "run_length": 8720
+    }
+  ],
+  "model": "LLAMA-7B",
+  "signature_log": "/tmp/claude-1614106/-zpool-00-home-xw338/09c77f20-3fa4-470c-9e66-492ac633afa2/scratchpad/dagfree/out/sigs_pipeD4_7b.json",
+  "verdict": "MISMATCH",
+  "workload": "workload/sweep/wl_pipeline_D4.json"
+}

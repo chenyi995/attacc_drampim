@@ -107,12 +107,14 @@ class System:
         self.model_set = 1
 
     def set_accelerator(self, modelinfos, name: DeviceType, config,
-                        ramulator_workers: int = 1):
+                        ramulator_workers: int = 1,
+                        analytic_pim_model: str = ''):
         self.hetero_name = name
         if self.hetero_name == DeviceType.PIM:
             ramulator = Ramulator(modelinfos, RAMPATH, RAMLOG,
                                   num_hbm=config['NUM_HBM'],
-                                  workers=ramulator_workers)
+                                  workers=ramulator_workers,
+                                  analytic_model_path=analytic_pim_model)
             self.devices['Acc'] = PIM(config,
                                       self.scaling_factor,
                                       ramulator)

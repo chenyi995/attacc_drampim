@@ -1,0 +1,36 @@
+{
+  "entries": 314,
+  "entries_also_in_baseline": 0,
+  "estimate_diagnostics": {
+    "estimates": 314
+  },
+  "label": "LLAMA3-8B, model fitted on LLAMA-7B only",
+  "layer1_command_counts": {
+    "checked": 314,
+    "exact": 314,
+    "mismatches": 0
+  },
+  "layer3_by_prediction_path": {
+    "inside_domain": {
+      "mape": 6.8393702458493095,
+      "max": 27.809307604994327,
+      "n": 314,
+      "p50": 4.679616548940464,
+      "p95": 21.48148148148148
+    }
+  },
+  "layer3_by_regime": {
+    "chunkstripe1|replicate": {
+      "mape": 6.8393702458493095,
+      "max": 27.809307604994327,
+      "n": 314,
+      "p50": 4.679616548940464,
+      "p95": 21.48148148148148
+    }
+  },
+  "model_file": "/tmp/claude-1614106/-zpool-00-home-xw338/09c77f20-3fa4-470c-9e66-492ac633afa2/scratchpad/tm_7b_only.json",
+  "unseen_caches": [
+    "experiments/analytic_a1_0902/llama3_8b/pipeD4_ram/ramulator2/signature_cache.jsonl",
+    "experiments/analytic_a1_0902/llama3_8b/N4_ram/ramulator2/signature_cache.jsonl"
+  ]
+}

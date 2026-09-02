@@ -1,6 +1,7 @@
 import pandas as pd
 import subprocess
 import json
+import time
 import math
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -8,6 +9,8 @@ from threading import Lock
 from src.config import *
 from src.model import *
 from src.type import *
+from src.analytic_pim import estimate as analytic_pim_estimate
+from src.analytic_pim import validation_report as analytic_validation_report
 
 
 # --- MQ-MAC batch command timing (PLAN_mq_command.md §2.1; 2026-08-23 rev) --
@@ -123,7 +126,8 @@ class Ramulator:
                  fast_mode=False,
                  num_hbm=5,
                  workers=1,
-                 signature_cache=True):
+                 signature_cache=True,
+                 analytic_model_path=''):
         self.df = pd.DataFrame()
         self.ramulator_dir = ramulator_dir
         self.output_log = output_log
@@ -153,6 +157,44 @@ class Ramulator:
         self._signature_cache_hits = 0
         self._signature_cache_misses = 0
         self._ramulator_invocations = 0
+        self.analytic_model_path = analytic_model_path
+        self.analytic_timing_models = {}
+        self._analytic_signature_cache = {}
+        self._analytic_cache_hits = 0
+        self._analytic_cache_misses = 0
+        # Every analytic estimate is accounted for: an estimate whose regime
+        # was never calibrated, or whose features sit outside the calibrated
+        # envelope, is a number the reader must be told about.  The counters
+        # travel into the run report via cache_report().
+        self._analytic_diagnostics = {}
+        # Host wall clock spent PRICING PIM runs, split by who did the work.
+        # A speedup claim needs both halves plus the DAG-build time the
+        # workload report already records, otherwise it compares a warm cache
+        # against a cold one.
+        # ``*_thread_s`` are SUMS ACROSS WORKER THREADS: with
+        # ramulator_workers > 1 they exceed the wall clock.  ``pricing_wall_s``
+        # is measured once around the whole dispatch, so it is the number to
+        # subtract from dag_build_s.
+        self._pricing_seconds = {"ramulator_subprocess_thread_s": 0.0,
+                                 "analytic_estimate_thread_s": 0.0,
+                                 "pricing_wall_s": 0.0,
+                                 "pricing_calls": 0}
+        # Optional ground truth for the DAG-free input enumerator: the exact
+        # multiset of PIM invocations this DAG asked for.  Off by default
+        # (it is only needed by the enumerator's validation), enabled with
+        # ATTACC_RECORD_PIM_SIGNATURES=<path>.
+        self._pim_signature_log = os.environ.get("ATTACC_RECORD_PIM_SIGNATURES")
+        self._pim_signature_counts = {}
+        if analytic_model_path:
+            with open(analytic_model_path) as handle:
+                self.analytic_timing_models = json.load(handle)
+            if self.analytic_timing_models.get("version") != 2:
+                raise ValueError(
+                    "{}: expected a version-2 analytic timing model (three-layer, "
+                    "held-out validated).  A version-1 file is a per-configuration "
+                    "lookup table with no out-of-sample error estimate; recalibrate "
+                    "with experiments/analytic_a1_0902/calibrate.py".format(
+                        analytic_model_path))
         # Ruling (chenyi9 2026-08-26): "Ramulator: cache first (up to 64
         # cores), then run."  The in-memory signature cache dies with the
         # process, so it is persisted as append-only JSON lines next to the
@@ -238,6 +280,66 @@ class Ramulator:
             self._address_mapping_signature(value_addr),
         )
 
+    # Fields that determine the PRICED work of a run.  Absolute addresses are
+    # excluded on purpose: the enumerator derives its own placement, and the
+    # question this comparison answers is whether it asks for the same work,
+    # not whether it picked the same bytes.
+    PRICING_FIELDS = ("run_length", "num_ops_per_hbm", "dbyte",
+                      "power_constraint", "channel_count", "shared_kv",
+                      "shared_queries", "channel_base", "mq_command",
+                      "nccdab_override", "phase", "trace_revision")
+
+    @classmethod
+    def pricing_key(cls, signature):
+        """Signature reduced to what actually changes the PIM cost."""
+        revision = signature[16] if len(signature) > 16 else "legacy"
+        fields = dict(run_length=signature[1], num_ops_per_hbm=signature[2],
+                      dbyte=signature[3], power_constraint=signature[4],
+                      channel_count=signature[7], shared_kv=signature[8],
+                      shared_queries=signature[9], channel_base=signature[10],
+                      mq_command=signature[11], nccdab_override=signature[12],
+                      phase=signature[15], trace_revision=revision)
+        return tuple(fields[name] for name in cls.PRICING_FIELDS)
+
+    def _record_pim_signature(self, signature, multiplicity=1):
+        key = self.pricing_key(signature)
+        with self._signature_cache_lock:
+            self._pim_signature_counts[key] = (
+                self._pim_signature_counts.get(key, 0) + max(1, int(multiplicity)))
+
+    def dump_pim_signatures(self):
+        """Write the recorded multiset, if recording was requested."""
+        if not self._pim_signature_log:
+            return None
+        with self._signature_cache_lock:
+            rows = [{"key": dict(zip(self.PRICING_FIELDS, key)), "count": count}
+                    for key, count in sorted(self._pim_signature_counts.items(),
+                                             key=repr)]
+        payload = {"fields": list(self.PRICING_FIELDS),
+                   "unique_signatures": len(rows),
+                   "physical_runs": sum(row["count"] for row in rows),
+                   "signatures": rows}
+        with open(self._pim_signature_log, "w") as handle:
+            json.dump(payload, handle, indent=2, sort_keys=True, default=str)
+        return self._pim_signature_log
+
+    def _add_pricing_time(self, field, seconds):
+        with self._signature_cache_lock:
+            self._pricing_seconds[field] += seconds
+            self._pricing_seconds["pricing_calls"] += 1
+
+    def _merge_analytic_diagnostics(self, local, weight):
+        """Fold one estimate's diagnostics into the run-wide counters."""
+        with self._signature_cache_lock:
+            target = self._analytic_diagnostics
+            for key, value in local.items():
+                if isinstance(value, dict):
+                    bucket = target.setdefault(key, {})
+                    for name, count in value.items():
+                        bucket[name] = bucket.get(name, 0) + count * weight
+                else:
+                    target[key] = target.get(key, 0) + value * weight
+
     def cache_report(self):
         """Host-side signature-cache counters for workload reports/tests."""
         with self._signature_cache_lock:
@@ -247,6 +349,15 @@ class Ramulator:
                 "misses": self._signature_cache_misses,
                 "ramulator_invocations": self._ramulator_invocations,
                 "entries": len(self._signature_cache),
+                "analytic_hits": self._analytic_cache_hits,
+                "analytic_misses": self._analytic_cache_misses,
+                "analytic_entries": len(self._analytic_signature_cache),
+                "analytic_model": self.analytic_model_path or None,
+                "analytic_diagnostics": dict(self._analytic_diagnostics),
+                "host_pricing_seconds": dict(self._pricing_seconds),
+                "analytic_validation": (
+                    analytic_validation_report(self.analytic_timing_models)
+                    if self.analytic_timing_models else None),
             }
 
     def _unique_trace_stem(self, base: str) -> str:
@@ -334,7 +445,8 @@ class Ramulator:
           new_df.loc[0] = log
           df = pd.concat([df, new_df]).drop_duplicates()
           self.df = df
-          self.df.to_csv(self.output_log, index=False)
+          if self.output_log:
+              self.df.to_csv(self.output_log, index=False)
 
     #def run_ramulator(self):
     def run_ramulator(self, pim_type: PIMType, l, num_ops_per_hbm, dbyte,
@@ -493,7 +605,13 @@ class Ramulator:
             # The CacheBlend/EPIC wrapper restarts Ramulator for every run,
             # so an equal mapping signature is exactly the same independent
             # simulator input modulo its unmodelled absolute row number.
-            use_signature_cache = (self.signature_cache_enabled and
+            # The analytic model has an in-memory cache with the exact same
+            # run signature.  It removes repeated Python-side estimation but
+            # intentionally does not persist values: changing a model file
+            # must take effect on the next process.
+            use_analytic_cache = bool(self.analytic_timing_models)
+            use_signature_cache = (not use_analytic_cache and
+                                   self.signature_cache_enabled and
                                    getattr(layer, "pim_kv_runs", None) is not None)
             cached_results = {}
             pending_by_signature = {}
@@ -524,7 +642,22 @@ class Ramulator:
                     # v1 cache can never serve them; legacy runs keep the
                     # v1-compatible keys.
                     signature = signature + ("chunkstripe1",)
-                if use_signature_cache:
+                if self._pim_signature_log:
+                    # Recorded BEFORE the cache short-circuits: the enumerator
+                    # is compared on physical runs, not on cache misses.  An op
+                    # that stands for several identical sweeps declares that on
+                    # ``pim_run_multiplicity``.
+                    self._record_pim_signature(
+                        signature, int(getattr(layer, "pim_run_multiplicity", 1)))
+                if use_analytic_cache:
+                    with self._signature_cache_lock:
+                        cached = self._analytic_signature_cache.get(signature)
+                        if cached is not None:
+                            self._analytic_cache_hits += 1
+                    if cached is not None:
+                        cached_results[index] = cached
+                        continue
+                elif use_signature_cache:
                     with self._signature_cache_lock:
                         cached = self._signature_cache.get(signature)
                         if cached is not None:
@@ -535,7 +668,7 @@ class Ramulator:
                 # With caching disabled every physical run remains a separate
                 # job.  A unique key avoids accidentally deduplicating it in
                 # the grouping code below.
-                pending_key = signature if use_signature_cache else ("uncached", index)
+                pending_key = signature if (use_signature_cache or use_analytic_cache) else ("uncached", index)
                 pending_by_signature.setdefault(pending_key, []).append(
                     (index, run_length, key_addr, value_addr, channel_count,
                      channel_base))
@@ -546,8 +679,9 @@ class Ramulator:
                  channel_base) = equivalent_runs[0]
                 run_file = "{}_run{}".format(file_name, index)
                 yaml_file = os.path.join(self.ramulator_dir, run_file + '.yaml')
-                self.make_yaml_file(yaml_file, run_file, power_constraint,
-                                    nccdab_override=nccdab_override)
+                if not self.analytic_timing_models:
+                    self.make_yaml_file(yaml_file, run_file, power_constraint,
+                                        nccdab_override=nccdab_override)
                 run_jobs.append((signature, equivalent_runs, run_length, yaml_file,
                                  run_file, key_addr, value_addr, channel_count,
                                  channel_base))
@@ -557,20 +691,58 @@ class Ramulator:
                     self._signature_cache_hits += sum(
                         len(equivalent_runs) - 1
                         for _, equivalent_runs, *_ in run_jobs)
+            elif use_analytic_cache:
+                with self._signature_cache_lock:
+                    self._analytic_cache_misses += len(run_jobs)
+                    self._analytic_cache_hits += sum(
+                        len(equivalent_runs) - 1
+                        for _, equivalent_runs, *_ in run_jobs)
 
             def execute(job):
-                (_, _, run_length, yaml_file, run_file, key_addr,
+                (_, equivalent_runs, run_length, yaml_file, run_file, key_addr,
                  value_addr, channel_count, channel_base) = job
-                return self.run_ramulator(
-                    pim_type, run_length, num_ops_per_hbm, layer.dbyte,
-                    yaml_file, run_file, key_addr, value_addr, channel_count,
-                    shared_kv, shared_queries, channel_base,
-                    mq_command=mq_command, phase=phase)
+                if self.analytic_timing_models:
+                    revision = "chunkstripe1" if channel_base is not None else "legacy"
+                    # Per-job sink, merged under the lock: jobs may run on a
+                    # thread pool and a read-modify-write on a shared dict
+                    # would silently lose counts.  Weighted by the physical
+                    # runs this signature stands for, so the report says what
+                    # fraction of the WORKLOAD was uncalibrated, not what
+                    # fraction of the distinct signatures was.
+                    local = {}
+                    started = time.perf_counter()
+                    measured = analytic_pim_estimate(
+                        pim_type=pim_type, run_length=run_length,
+                        num_ops_per_hbm=num_ops_per_hbm, dbyte=layer.dbyte,
+                        power_constraint=power_constraint, dhead=self.dhead,
+                        num_hbm=self.num_hbm, channel_count=channel_count,
+                        shared_kv=shared_kv, shared_queries=shared_queries,
+                        channel_base=channel_base, mq_command=mq_command,
+                        nccdab_override=nccdab_override, key_addr=key_addr,
+                        value_addr=value_addr, phase=phase,
+                        trace_revision=revision,
+                        timing_models=self.analytic_timing_models,
+                        diagnostics=local)
+                    elapsed = time.perf_counter() - started
+                    self._merge_analytic_diagnostics(local, len(equivalent_runs))
+                    self._add_pricing_time("analytic_estimate_thread_s", elapsed)
+                    return measured
+                started = time.perf_counter()
+                try:
+                    return self.run_ramulator(
+                        pim_type, run_length, num_ops_per_hbm, layer.dbyte,
+                        yaml_file, run_file, key_addr, value_addr, channel_count,
+                        shared_kv, shared_queries, channel_base,
+                        mq_command=mq_command, phase=phase)
+                finally:
+                    self._add_pricing_time("ramulator_subprocess_thread_s",
+                                           time.perf_counter() - started)
 
             # Each job gets an unshared trace/YAML filename and contributes a
             # separate physical TLB run.  They are independent host jobs, so
             # parallel execution changes only wall-clock simulation time;
             # aggregation deliberately remains the previous sum.
+            dispatch_started = time.perf_counter()
             try:
                 if self.workers == 1 or len(run_jobs) <= 1:
                     executed = [execute(job) for job in run_jobs]
@@ -579,6 +751,9 @@ class Ramulator:
                                                              len(run_jobs))) as pool:
                         executed = list(pool.map(execute, run_jobs))
             finally:
+                with self._signature_cache_lock:
+                    self._pricing_seconds["pricing_wall_s"] += (
+                        time.perf_counter() - dispatch_started)
                 for _, _, _, yaml_file, _, _, _, _, _ in run_jobs:
                     try:
                         os.remove(yaml_file)
@@ -587,7 +762,10 @@ class Ramulator:
             for job, measured in zip(run_jobs, executed):
                 signature, equivalent_runs, *_ = job
                 frozen = tuple(measured)
-                if use_signature_cache:
+                if use_analytic_cache:
+                    with self._signature_cache_lock:
+                        self._analytic_signature_cache[signature] = frozen
+                elif use_signature_cache:
                     with self._signature_cache_lock:
                         self._signature_cache[signature] = frozen
                     self._persist_signature(signature, frozen)

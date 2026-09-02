@@ -1,0 +1,65 @@
+{
+  "layer_A1_aggregate_work": {
+    "mac": {
+      "dag": 5316608,
+      "enumerator": 5316608,
+      "relative_error": 0.0
+    },
+    "mvgb": {
+      "dag": 8397824,
+      "enumerator": 8397824,
+      "relative_error": 0.0
+    },
+    "mvsb": {
+      "dag": 25193472,
+      "enumerator": 25193472,
+      "relative_error": 0.0
+    },
+    "physical_runs": {
+      "dag": 8480,
+      "enumerator": 8480,
+      "relative_error": 0.0
+    },
+    "sfm": {
+      "dag": 1049728,
+      "enumerator": 1049728,
+      "relative_error": 0.0
+    },
+    "wrgb": {
+      "dag": 8397824,
+      "enumerator": 8397824,
+      "relative_error": 0.0
+    }
+  },
+  "layer_A2_invocation_multiset": {
+    "dag_unique": 5,
+    "enumerator_unique": 5,
+    "exact_signature_match": 5,
+    "mismatched_signatures": 0,
+    "run_recall": 1.0,
+    "runs_dag": 8480,
+    "runs_enumerator": 8480,
+    "runs_matched": 8480
+  },
+  "layer_A3_worst_run_lengths": [
+    {
+      "dag": 2048,
+      "enumerator": 2048,
+      "run_length": 128
+    },
+    {
+      "dag": 4384,
+      "enumerator": 4384,
+      "run_length": 256
+    },
+    {
+      "dag": 2048,
+      "enumerator": 2048,
+      "run_length": 384
+    }
+  ],
+  "model": "LLAMA3-8B",
+  "signature_log": "/tmp/claude-1614106/-zpool-00-home-xw338/09c77f20-3fa4-470c-9e66-492ac633afa2/scratchpad/dagfree/out/sigs_small_l38.json",
+  "verdict": "MATCH",
+  "workload": "experiments/analytic_a1_0902/workload_llama7b_small.json"
+}

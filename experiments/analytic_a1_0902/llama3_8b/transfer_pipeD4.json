@@ -1,0 +1,35 @@
+{
+  "entries": 159,
+  "entries_also_in_baseline": 0,
+  "estimate_diagnostics": {
+    "estimates": 159
+  },
+  "label": "LLAMA3-8B wl_pipeline_D4 (model fitted on LLAMA-7B data only)",
+  "layer1_command_counts": {
+    "checked": 159,
+    "exact": 159,
+    "mismatches": 0
+  },
+  "layer3_by_prediction_path": {
+    "inside_domain": {
+      "mape": 5.943291244953887,
+      "max": 13.675213675213676,
+      "n": 159,
+      "p50": 5.6362784157487695,
+      "p95": 9.372453137734311
+    }
+  },
+  "layer3_by_regime": {
+    "chunkstripe1|replicate": {
+      "mape": 5.943291244953887,
+      "max": 13.675213675213676,
+      "n": 159,
+      "p50": 5.6362784157487695,
+      "p95": 9.372453137734311
+    }
+  },
+  "model_file": "experiments/analytic_a1_0902/timing_models.json",
+  "unseen_caches": [
+    "experiments/analytic_a1_0902/llama3_8b/pipeD4_ram/ramulator2/signature_cache.jsonl"
+  ]
+}

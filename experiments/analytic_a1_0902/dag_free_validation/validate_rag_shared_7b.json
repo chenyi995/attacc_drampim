@@ -1,0 +1,90 @@
+{
+  "layer_A1_aggregate_work": {
+    "mac": {
+      "dag": 3269808128,
+      "enumerator": 3269808128,
+      "relative_error": 0.0
+    },
+    "mvgb": {
+      "dag": 493607168,
+      "enumerator": 493607168,
+      "relative_error": 0.0
+    },
+    "mvsb": {
+      "dag": 951384320,
+      "enumerator": 951384320,
+      "relative_error": 0.0
+    },
+    "physical_runs": {
+      "dag": 245504,
+      "enumerator": 245504,
+      "relative_error": 0.0
+    },
+    "sfm": {
+      "dag": 28611072,
+      "enumerator": 28611072,
+      "relative_error": 0.0
+    },
+    "wrgb": {
+      "dag": 228888576,
+      "enumerator": 228888576,
+      "relative_error": 0.0
+    }
+  },
+  "layer_A2_invocation_multiset": {
+    "dag_unique": 46,
+    "enumerator_unique": 46,
+    "exact_signature_match": 46,
+    "mismatched_signatures": 0,
+    "run_recall": 1.0,
+    "runs_dag": 245504,
+    "runs_enumerator": 245504,
+    "runs_matched": 245504
+  },
+  "layer_A3_worst_run_lengths": [
+    {
+      "dag": 4768,
+      "enumerator": 4768,
+      "run_length": 256
+    },
+    {
+      "dag": 16288,
+      "enumerator": 16288,
+      "run_length": 512
+    },
+    {
+      "dag": 960,
+      "enumerator": 960,
+      "run_length": 768
+    },
+    {
+      "dag": 21408,
+      "enumerator": 21408,
+      "run_length": 5351
+    },
+    {
+      "dag": 22112,
+      "enumerator": 22112,
+      "run_length": 5523
+    },
+    {
+      "dag": 22976,
+      "enumerator": 22976,
+      "run_length": 5739
+    },
+    {
+      "dag": 29088,
+      "enumerator": 29088,
+      "run_length": 7266
+    },
+    {
+      "dag": 29952,
+      "enumerator": 29952,
+      "run_length": 7483
+    }
+  ],
+  "model": "LLAMA-7B",
+  "signature_log": "experiments/analytic_a1_0902/matrix2x2/rag_dag_ram/pim_signatures.json",
+  "verdict": "MATCH",
+  "workload": "workload/archived/2026-08-29_pre-sweep/workload_rag_shared_p24_s8.json"
+}

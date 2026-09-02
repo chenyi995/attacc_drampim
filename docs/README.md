@@ -153,6 +153,16 @@ python3 -m unittest discover -s tests     # 41/41
   DAG 七档 × 五个重算比例,一键脚本与图)
 - `README_experiments.md`:论文证据矩阵怎么跑
 - `README_cppcore_branch.md`:`chenyi-822-cppcore-exp` 分支说明(核心 C++ 化)
+- `README_branch_audit_20260902.md`:**合并前分支审计**（当前可保留来源、
+  已被包含的历史线、未提交工作树及建议收口顺序；未执行合并）
+- `../experiments/analytic_a1_0902/RESULTS.md`:**PIM 定价的解析替代**
+  （`--analytic-pim-model`,替掉 Ramulator 子进程）与 **DAG 的解析替代**
+  （`src/a1_dag_free.py`）的三层分解与逐层标定/留出验证。两者都遵循
+  同一条纪律:每一层各有自己的真值(命令计数对 Ramulator 计数器、
+  trace 结构对重新生成的 trace、调用多重集对真 DAG),**拟合的那一层
+  只在留出集上报误差**。未标定 regime 会直接报错而非静默估值;
+  每次运行的 uncalibrated/extrapolated 计数与模型自带的留出误差写在
+  报告的 `ramulator_signature_cache` 里
 - `RAW_DATA_MANIFEST.md`:**原始数据本地清单**(>50 MB 的事件轨迹
   `dag_A*.json` 不入库、记本机路径手动下载;≤50 MB 报告与 .log 已入库)
 - `../output/analysis/`:结果分析工具与表格(`make_results_tables.py`

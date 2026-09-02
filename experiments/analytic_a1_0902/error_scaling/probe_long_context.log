@@ -1,0 +1,23 @@
+calibrated run_length domain: [93, 39168]
+
+             shape run_length    ramulator     analytic    ratio   in domain
+   decode ch=1 q=1       8192        16644        16285   0.9784         yes   ramulator 1.2s
+ prefill ch=16 q=8       8192         7505         7275   0.9694         yes   ramulator 4.4s
+   decode ch=1 q=1      16384        33442        32610   0.9751         yes   ramulator 0.9s
+ prefill ch=16 q=8      16384        14085        14505   1.0298         yes   ramulator 7.0s
+   decode ch=1 q=1      32768        68259        65260   0.9561         yes   ramulator 2.1s
+ prefill ch=16 q=8      32768        29218        28966   0.9914         yes   ramulator 13.5s
+   decode ch=1 q=1      39168        81078        78014   0.9622         yes   ramulator 1.8s
+ prefill ch=16 q=8      39168        35128        34853   0.9922         yes   ramulator 17.6s
+   decode ch=1 q=1      49152       102612        97910   0.9542  NO (extrap)   ramulator 2.2s
+ prefill ch=16 q=8      49152        43726        43427   0.9932  NO (extrap)   ramulator 20.5s
+   decode ch=1 q=1      65536       136546       130560   0.9562  NO (extrap)   ramulator 2.9s
+ prefill ch=16 q=8      65536        58672        57888   0.9866  NO (extrap)   ramulator 28.1s
+   decode ch=1 q=1      98304       206172       195860   0.9500  NO (extrap)   ramulator 4.2s
+ prefill ch=16 q=8      98304        87688        86810   0.9900  NO (extrap)   ramulator 49.2s
+   decode ch=1 q=1     131072       275361       261160   0.9484  NO (extrap)   ramulator 7.6s
+ prefill ch=16 q=8     131072       117580       115731   0.9843  NO (extrap)   ramulator 59.7s
+   decode ch=1 q=1     196608       413298       391759   0.9479  NO (extrap)   ramulator 8.2s
+ prefill ch=16 q=8     196608       176926       173574   0.9811  NO (extrap)   ramulator 85.5s
+   decode ch=1 q=1     262144       551668       522359   0.9469  NO (extrap)   ramulator 11.1s
+ prefill ch=16 q=8     262144       236710       231418   0.9776  NO (extrap)   ramulator 112.9s

@@ -1,0 +1,12 @@
+{
+  "meta": {"format": "v2-dag", "purpose": "A1 analytic-PIM smoke calibration"},
+  "agents": [
+    {"id": "l128", "tier": 0, "parent": null, "history_len": 0,
+     "segs": [{"role": "sys", "sha": "analytic-sys", "len": 128}], "lout": 2},
+    {"id": "l256", "tier": 0, "parent": null, "history_len": 0,
+     "segs": [{"role": "sys", "sha": "analytic-sys", "len": 256}], "lout": 2},
+    {"id": "l384", "tier": 1, "parent": "l256", "history_len": 256,
+     "segs": [{"role": "parent_out", "sha": "analytic-out", "len": 2},
+              {"role": "user", "sha": "analytic-user", "len": 126}], "lout": 2}
+  ]
+}

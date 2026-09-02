@@ -1,0 +1,75 @@
+{
+  "layer_A1_aggregate_work": {
+    "mac": {
+      "dag": 361848832,
+      "enumerator": 361848832,
+      "relative_error": 0.0
+    },
+    "mvgb": {
+      "dag": 88484864,
+      "enumerator": 88484864,
+      "relative_error": 0.0
+    },
+    "mvsb": {
+      "dag": 265454592,
+      "enumerator": 265454592,
+      "relative_error": 0.0
+    },
+    "physical_runs": {
+      "dag": 98656,
+      "enumerator": 98656,
+      "relative_error": 0.0
+    },
+    "sfm": {
+      "dag": 11060608,
+      "enumerator": 11060608,
+      "relative_error": 0.0
+    },
+    "wrgb": {
+      "dag": 88484864,
+      "enumerator": 88484864,
+      "relative_error": 0.0
+    }
+  },
+  "layer_A2_invocation_multiset": {
+    "dag_unique": 16,
+    "enumerator_unique": 16,
+    "exact_signature_match": 16,
+    "mismatched_signatures": 0,
+    "run_recall": 1.0,
+    "runs_dag": 98656,
+    "runs_enumerator": 98656,
+    "runs_matched": 98656
+  },
+  "layer_A3_worst_run_lengths": [
+    {
+      "dag": 12640,
+      "enumerator": 12640,
+      "run_length": 256
+    },
+    {
+      "dag": 24576,
+      "enumerator": 24576,
+      "run_length": 1536
+    },
+    {
+      "dag": 32768,
+      "enumerator": 32768,
+      "run_length": 2048
+    },
+    {
+      "dag": 24576,
+      "enumerator": 24576,
+      "run_length": 2560
+    },
+    {
+      "dag": 4096,
+      "enumerator": 4096,
+      "run_length": 2816
+    }
+  ],
+  "model": "LLAMA3-8B",
+  "signature_log": "/tmp/claude-1614106/-zpool-00-home-xw338/09c77f20-3fa4-470c-9e66-492ac633afa2/scratchpad/dagfree/out/sigs_medium_l38.json",
+  "verdict": "MATCH",
+  "workload": "experiments/analytic_a1_0902/workload_llama7b_medium.json"
+}

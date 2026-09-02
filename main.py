@@ -283,6 +283,15 @@ def main():
         default=1,
         help="host CPU workers for independent Ramulator trace jobs; does not alter simulated hardware")
     parser.add_argument(
+        "--analytic-pim-model",
+        type=str,
+        default="",
+        help="version-2 JSON timing model from experiments/analytic_a1_0902/"
+             "calibrate.py; prices PIM runs from closed-form command counts and "
+             "trace structure instead of launching Ramulator.  The model's own "
+             "held-out error and this run's uncalibrated/extrapolated counts are "
+             "written to ramulator_signature_cache in the workload report")
+    parser.add_argument(
         "--num-hbm",
         type=int,
         default=5,
@@ -530,7 +539,8 @@ def main():
                                      num_hbm=args.num_hbm,
                                      power_constraint=args.powerlimit)
         system.set_accelerator(modelinfos, DeviceType.PIM, pim_config,
-                               ramulator_workers=args.ramulator_workers)
+                               ramulator_workers=args.ramulator_workers,
+                               analytic_pim_model=args.analytic_pim_model)
 
     elif args.system in ['dgx-cpu']:
         xpu_config = make_xpu_config(gpu_device, gpu_model=args.gpu_model)

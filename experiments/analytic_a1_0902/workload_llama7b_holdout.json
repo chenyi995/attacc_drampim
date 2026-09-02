@@ -1,0 +1,7 @@
+{
+  "meta": {"format": "v2-dag", "purpose": "unseen A1 analytic-PIM holdout"},
+  "agents": [
+    {"id": "holdout192", "tier": 0, "parent": null, "history_len": 0,
+     "segs": [{"role": "sys", "sha": "analytic-holdout", "len": 192}], "lout": 2}
+  ]
+}

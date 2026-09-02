@@ -1,0 +1,18 @@
+{
+  "meta": {"format": "v2-dag", "purpose": "full A1 analytic-PIM validation; long contexts, bounded decode"},
+  "agents": [
+    {"id": "root1536", "tier": 0, "parent": null, "history_len": 0,
+     "segs": [{"role": "sys", "sha": "medium-sys", "len": 1536}], "lout": 8},
+    {"id": "root2048", "tier": 0, "parent": null, "history_len": 0,
+     "segs": [{"role": "sys", "sha": "medium-sys", "len": 2048}], "lout": 8},
+    {"id": "child512", "tier": 1, "parent": "root2048", "history_len": 2048,
+     "segs": [{"role": "parent_out", "sha": "medium-out", "len": 8},
+              {"role": "user", "sha": "medium-user", "len": 504}], "lout": 8},
+    {"id": "child1024", "tier": 1, "parent": "root1536", "history_len": 1536,
+     "segs": [{"role": "parent_out", "sha": "medium-out-2", "len": 8},
+              {"role": "user", "sha": "medium-user-2", "len": 1016}], "lout": 8},
+    {"id": "leaf256", "tier": 2, "parent": "child512", "history_len": 2560,
+     "segs": [{"role": "parent_out", "sha": "medium-out-3", "len": 8},
+              {"role": "user", "sha": "medium-user-3", "len": 248}], "lout": 8}
+  ]
+}

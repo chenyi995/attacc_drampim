@@ -33,3 +33,27 @@ ramulator2.local_backup_0821/
 # cppcore build artifact (see docs/sessions/2026-08-30.md §4)
 src/cppcore/*.so
 /output/analysis/.extract_cache.pkl
+
+# --- analytic-PIM experiment (experiments/analytic_a1_0902) ---
+# Per-cell workload reports are 4-10 MB of raw run output; the same rule as
+# dag_*.json applies, so the EXTRACTED numbers go in instead (matrix_2x2.csv,
+# llama3_8b/cold_cache_2x2.csv, error_scaling/*.csv, RESULTS.md).
+# The Ramulator signature CACHES are ground truth for the calibration and DO go
+# in -- they are the only thing that makes timing_models.json reproducible.
+experiments/analytic_a1_0902/**/report.json
+experiments/analytic_a1_0902/llama3_8b/*/analytic.json
+experiments/analytic_a1_0902/llama3_8b/*/ramulator.json
+experiments/analytic_a1_0902/**/ramulator2/ramulator2
+experiments/analytic_a1_0902/**/ramulator2/trace_gen
+experiments/analytic_a1_0902/**/*.ramulator2/
+experiments/analytic_a1_0902/**/*.trace
+experiments/analytic_a1_0902/**/*.yaml
+experiments/analytic_a1_0902/**/*.out
+experiments/analytic_a1_0902/slurm_*.log
+experiments/analytic_a1_0902/slurm_existing/
+experiments/analytic_a1_0902/slurm_wltiny/
+experiments/analytic_a1_0902/a1_llama7b_*.json
+experiments/analytic_a1_0902/a1_llama7b_*.log
+experiments/analytic_a1_0902/a1_holdout_*.json
+experiments/analytic_a1_0902/timing_models_rag.json
+experiments/analytic_a1_0902/__pycache__/

@@ -1,0 +1,139 @@
+{
+  "fields": [
+    "run_length",
+    "num_ops_per_hbm",
+    "dbyte",
+    "power_constraint",
+    "channel_count",
+    "shared_kv",
+    "shared_queries",
+    "channel_base",
+    "mq_command",
+    "nccdab_override",
+    "phase",
+    "trace_revision"
+  ],
+  "physical_runs": 6576,
+  "signatures": [
+    {
+      "count": 1296,
+      "key": {
+        "channel_base": 0,
+        "channel_count": 16,
+        "dbyte": 2,
+        "mq_command": false,
+        "nccdab_override": null,
+        "num_ops_per_hbm": 2,
+        "phase": "full",
+        "power_constraint": true,
+        "run_length": 128,
+        "shared_kv": true,
+        "shared_queries": 8,
+        "trace_revision": "chunkstripe1"
+      }
+    },
+    {
+      "count": 480,
+      "key": {
+        "channel_base": 0,
+        "channel_count": 1,
+        "dbyte": 2,
+        "mq_command": false,
+        "nccdab_override": null,
+        "num_ops_per_hbm": 1,
+        "phase": "full",
+        "power_constraint": true,
+        "run_length": 256,
+        "shared_kv": false,
+        "shared_queries": 1,
+        "trace_revision": "chunkstripe1"
+      }
+    },
+    {
+      "count": 240,
+      "key": {
+        "channel_base": 1,
+        "channel_count": 1,
+        "dbyte": 2,
+        "mq_command": false,
+        "nccdab_override": null,
+        "num_ops_per_hbm": 1,
+        "phase": "full",
+        "power_constraint": true,
+        "run_length": 256,
+        "shared_kv": false,
+        "shared_queries": 1,
+        "trace_revision": "chunkstripe1"
+      }
+    },
+    {
+      "count": 480,
+      "key": {
+        "channel_base": 8,
+        "channel_count": 1,
+        "dbyte": 2,
+        "mq_command": false,
+        "nccdab_override": null,
+        "num_ops_per_hbm": 1,
+        "phase": "full",
+        "power_constraint": true,
+        "run_length": 256,
+        "shared_kv": false,
+        "shared_queries": 1,
+        "trace_revision": "chunkstripe1"
+      }
+    },
+    {
+      "count": 240,
+      "key": {
+        "channel_base": 9,
+        "channel_count": 1,
+        "dbyte": 2,
+        "mq_command": false,
+        "nccdab_override": null,
+        "num_ops_per_hbm": 1,
+        "phase": "full",
+        "power_constraint": true,
+        "run_length": 256,
+        "shared_kv": false,
+        "shared_queries": 1,
+        "trace_revision": "chunkstripe1"
+      }
+    },
+    {
+      "count": 2576,
+      "key": {
+        "channel_base": 0,
+        "channel_count": 16,
+        "dbyte": 2,
+        "mq_command": false,
+        "nccdab_override": null,
+        "num_ops_per_hbm": 2,
+        "phase": "full",
+        "power_constraint": true,
+        "run_length": 256,
+        "shared_kv": true,
+        "shared_queries": 8,
+        "trace_revision": "chunkstripe1"
+      }
+    },
+    {
+      "count": 1264,
+      "key": {
+        "channel_base": 0,
+        "channel_count": 16,
+        "dbyte": 2,
+        "mq_command": false,
+        "nccdab_override": null,
+        "num_ops_per_hbm": 2,
+        "phase": "full",
+        "power_constraint": true,
+        "run_length": 384,
+        "shared_kv": true,
+        "shared_queries": 8,
+        "trace_revision": "chunkstripe1"
+      }
+    }
+  ],
+  "unique_signatures": 7
+}

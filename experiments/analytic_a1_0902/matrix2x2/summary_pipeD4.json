@@ -1,0 +1,52 @@
+{
+  "pipeD4_dag_ana": {
+    "diagnostics": {
+      "estimates": 159
+    },
+    "engine": "dag",
+    "makespan_s": 5.560865255288618,
+    "pim_device_time_s": 1.3529077577353577,
+    "pim_scan_energy_nj": 1013199288663.5004,
+    "pricer": "analytic",
+    "pricing_s": 0.05966950207948685,
+    "ramulator_invocations": 0,
+    "worklist_s": 876.1514930315316
+  },
+  "pipeD4_dag_ram": {
+    "diagnostics": {},
+    "engine": "dag",
+    "makespan_s": 5.528083983393995,
+    "pim_device_time_s": 1.2931989357562985,
+    "pim_scan_energy_nj": 1013199288663.5004,
+    "pricer": "ramulator",
+    "pricing_s": 455.92801820486784,
+    "ramulator_invocations": 159,
+    "worklist_s": 904.7326803691685
+  },
+  "pipeD4_enum_ana": {
+    "diagnostics": {
+      "estimates": 148
+    },
+    "engine": "enum",
+    "makespan_s": null,
+    "pim_device_time_s": 1.340517305664,
+    "pim_scan_energy_nj": 1012578028355.585,
+    "pricer": "analytic",
+    "pricing_s": 0.003973938524723053,
+    "ramulator_invocations": null,
+    "worklist_s": 2.9629522301256657
+  },
+  "pipeD4_enum_ram": {
+    "diagnostics": {
+      "estimates": 148
+    },
+    "engine": "enum",
+    "makespan_s": null,
+    "pim_device_time_s": 1.2770390656200001,
+    "pim_scan_energy_nj": 1012578028355.585,
+    "pricer": "ramulator",
+    "pricing_s": 505.077109888196,
+    "ramulator_invocations": null,
+    "worklist_s": 2.976566854864359
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "meta": {"format": "v2-dag",
+           "purpose": "total_length % cap_rows == 1 exercises the enumerator's tail-sweep branch"},
+  "agents": [
+    {"id": "t129", "tier": 0, "parent": null, "history_len": 0,
+     "segs": [{"role": "sys", "sha": "tail-sys", "len": 129}], "lout": 3},
+    {"id": "t257", "tier": 0, "parent": null, "history_len": 0,
+     "segs": [{"role": "sys", "sha": "tail-sys2", "len": 257}], "lout": 2}
+  ]
+}
