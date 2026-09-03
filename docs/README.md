@@ -165,6 +165,9 @@ python3 -m unittest discover -s tests     # 41/41
   A6 选边不变量的诊断
 - `README_engine_future_work.md`:引擎重构提案(列式 + 流式,建在 C++ 核之上)
 - `README_simulator_assessment.md`:仿真器价值/贡献/可改进点评估
+- `../workload/handcheck/`:**手算校验**(一个小到能笔算全部布局的 workload,
+  跑完 A3b–A6,把手算的逐 channel 行数/extent/ACT 与实测事件并排;
+  公共扫描与 private 扫描逐格一致。含 `compare_theory_vs_measured.py`)
 - `README_data_layout_walkthrough.md`:**A3b–A6 的数据布局走查**(GPT-13B /
   baseline / 一个 tier-1 请求 / 一个 head,逐 token 说清 KV 落哪条 channel、
   哪个 stripe unit、行内第几个槽;并推出**一次 ACT 恰好覆盖 256 个 token**,

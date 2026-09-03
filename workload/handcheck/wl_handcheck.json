@@ -1,0 +1,190 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "kind": "hand-checkable layout probe (chenyi9 2026-09-03) -- NOT evidence-grade",
+  "block_tokens": 256,
+  "note": "Ownership follows sorted(requests, key=(tier, id)), so A_owner declares the 15 shared blocks first and B_reuser reuses them. A_owner keeps them behind a 256-token pad (offsets 256,512,...) while B_reuser starts at 0, so every block is position-shifted and takes k recomputed rows.  Sizes make the layout exact: B_reuser's stream is 15 x 256 with no remainder, and 15 repair groups divide 4 channels as 4/4/4/3.",
+  "designed_for": {
+   "model": "CACHEBLEND-TINY",
+   "ngpu": 1,
+   "num_hbm": 2,
+   "heads_per_hbm": 4,
+   "channels_per_head": 4
+  }
+ },
+ "agents": [
+  {
+   "id": "A_owner",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 2,
+   "segs": [
+    {
+     "role": "user",
+     "sha": "a4e0fb73f2dbd651",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "259153d85ae6f8bb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "680dfb529de1df9c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8d5b0e3f74bb874",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "774268e404300350",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "889a808522784afc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cbe7c1e598cbff73",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "723dd5e4db878b37",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d37af160cd81f00c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "af28189c742314bb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "484414cf87e6051d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "5528ebaba574b05e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "1c78737e66854baa",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0fced16499510fe3",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25e2d3417d79549d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "331b1e803da1f356",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "B_reuser",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 2,
+   "segs": [
+    {
+     "role": "doc",
+     "sha": "259153d85ae6f8bb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "680dfb529de1df9c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a8d5b0e3f74bb874",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "774268e404300350",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "889a808522784afc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cbe7c1e598cbff73",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "723dd5e4db878b37",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d37af160cd81f00c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "af28189c742314bb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "484414cf87e6051d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "5528ebaba574b05e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "1c78737e66854baa",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0fced16499510fe3",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "25e2d3417d79549d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "331b1e803da1f356",
+     "len": 256
+    }
+   ]
+  }
+ ]
+}

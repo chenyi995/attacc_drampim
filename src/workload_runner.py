@@ -850,12 +850,13 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
                 for rows in master_units:
                     add(slot % master_channels, rows)
                     slot += 1
-        # The diff pool is ONE packed extent per head: the corrections were
-        # produced together and land together, so they share rows instead of
-        # burning one apiece.
-        for _head in range(heads):
-            if repairs:
-                add(master_channels, sum(repairs))
+        # The diff pool is ONE packed extent for the whole stack.  Every head's
+        # corrections are produced by the same prefill and written together
+        # into the dedicated pool, so they share rows instead of each taking
+        # one -- that is precisely what the pool buys, and row-aligning them
+        # per head would have thrown it away.
+        if repairs:
+            add(master_channels, heads * sum(repairs))
 
     groups = []
     for channel in sorted(per_channel):
@@ -1796,6 +1797,21 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
         if retain:                                # address lists only on demand
             per_channel_addr[channel].append(location.key_address)
             per_channel_addr[channel].append(location.value_address)
+    if extent_groups:
+        # The round-robin above is a REPORT approximation: it spreads one
+        # head's reads over the active channels without consulting the
+        # placement, so a scan dominated by corrections (say 1 master row and
+        # 120 diff rows over four heads) leaves the master channels at zero
+        # rows even though each of them really holds a row -- and
+        # validate_cacheblend_events then rejects the graph.  Where the extent
+        # groups exist the true per-channel count is known, so use it; the
+        # masked count is folded the same way and capped, since a channel
+        # cannot mask more rows than it reads.
+        heads = max(1, int(heads_per_hbm))
+        for channel, _count, placed in extent_groups:
+            per_channel_rows[channel] = sum(rows for _k, _v, rows in placed)
+            per_channel_masked[channel] = min(
+                per_channel_masked[channel] * heads, per_channel_rows[channel])
     if not active:
         # Empty context (first token, no reused KV): keep the dependency chain.
         return (_cacheblend_event(

@@ -338,7 +338,7 @@ A5 = A4b 的布局 + prefill 注意力全上 PIM（MQ 批命令）；A6 = A5 + �
 > 2026-09-03 更新：原先列在这里的两条 ——"每条 channel 一个合成 run"和"跨 run 的
 > 行缓冲命中抓不到"—— **已经不再成立**。一条 channel 的真实 extent 列表现在整体
 > 提交给一次 Ramulator 仿真，ACT 由它的行缓冲决定，回到了原版 AttAcc 的记账口径。
-> 见 `sessions/2026-09-03.md` §10。
+> 见 `sessions/2026-09-03.md` §11。
 
 写正文引用前必须知道的边界：
 
@@ -351,10 +351,7 @@ A5 = A4b 的布局 + prefill 注意力全上 PIM（MQ 批命令）；A6 = A5 + �
    "the model has no row-number-dependent timing"）。所以地址只通过
    channel / pCH / rank / BG / bank 字段、行内偏移、以及 **extent 的切法**影响结果 ——
    承载物理的是后者。
-4. **`rows=0` 的报告 bug**：上下文行数少于活跃 channel 数时，报告侧的轮转会给尾部
-   channel 记 0 行，校验器会拒绝。baseline 这种 12560 行的上下文不触发。
-   见 `sessions/2026-09-03.md` §6.2。
-5. **能量的 `num_attacc` 恒为 8**：与 `--ngpu` 无关，GPT-13B（`--ngpu 2`）的 PIM 能量
+4. **能量的 `num_attacc` 恒为 8**：与 `--ngpu` 无关，GPT-13B（`--ngpu 2`）的 PIM 能量
    偏大 4 倍。只影响能量/功率，不影响本页的行数与 ACT 次数。
    见 `sessions/2026-09-03.md` §9。
 
