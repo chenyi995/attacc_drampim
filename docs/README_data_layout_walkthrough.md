@@ -225,32 +225,50 @@ decode 的摆放、ACT 次数、扫描时间三者在这三档上一模一样。
 
 ### 7.1 一次 decode 扫描要开多少次 ACT
 
-一次 decode 扫描要读**整段上下文**（12560 行/head），所以每条 channel 上它自己那
-一段被**从头扫到尾**：`ACT 次数 = ceil(该 channel 的行数 / 256)`。
+一次 decode 扫描要读**整段上下文**（12560 行/head）。**ACT 次数不是我们算的** ——
+一条 channel 的全部 extent 作为**一次** Ramulator 仿真提交，由它的行缓冲决定
+（`pim_kv_extent_groups`，2026-09-03）。下表的 ACT 列是按同一套几何数出来的
+行数（每个 extent 行对齐，`ceil(行数 x 4 B / 1024 B)`），用来读懂量级；
+真正进结果的是 Ramulator 的时间。
 
-| ch | A3b 行 / ACT | A4 行 / ACT | A4b/A5/A6 行 / ACT |
+| ch | A3b 行 / extent / **ACT** | A4 行 / extent / **ACT** | A4b/A5/A6 行 / extent / **ACT** |
 |---:|---|---|---|
-| ch0 | 3328 / 13 | 4352 / 17 | 3584 / 14 |
-| ch1 | 3088 / 13 | 4112 / 17 | 3584 / 14 |
-| ch2 | 3072 / 12 | 4096 / 16 | 3584 / 14 |
-| ch3 | 3072 / 12 | 4352 / 17 | 3584 / 14 |
-| ch4 | 3328 / 13 | 4112 / 17 | 3104 / 13 |
-| ch5 | 3088 / 13 | 4096 / 16 | 3328 / 13 |
-| ch6 | 3072 / 12 | 4352 / 17 | 3328 / 13 |
-| ch7 | 3072 / 12 | 4112 / 17 | 3328 / 13 |
-| ch8 | 3328 / 13 | 4096 / 16 | 3328 / 13 |
-| ch9 | 3088 / 13 | 4352 / 17 | 3088 / 13 |
-| ch10 | 3072 / 12 | 4112 / 17 | 3328 / 13 |
-| ch11 | 3072 / 12 | 4096 / 16 | 3328 / 13 |
-| ch12 | 3328 / 13 | — 闲置 | 3328 / 13 |
-| ch13 | 3088 / 13 | — 闲置 | 3328 / 13 |
-| ch14 | 3072 / 12 | — 闲置 | 3088 / 13 |
-| ch15 | 3072 / 12 | 1056 / 5 | 1056 / 5 |
-| **最忙** | **3328 / 13** | **4352 / 17** | **3584 / 14** |
+| ch0 | 3152 / 22 / **22** | 4352 / 17 / **17** | 3584 / 14 / **14** |
+| ch1 | 3136 / 20 / **20** | 4112 / 17 / **17** | 3584 / 14 / **14** |
+| ch2 | 3136 / 20 / **20** | 4096 / 16 / **16** | 3584 / 14 / **14** |
+| ch3 | 3136 / 20 / **20** | 4352 / 17 / **17** | 3584 / 14 / **14** |
+| ch4 | 3152 / 22 / **22** | 4112 / 17 / **17** | 3104 / 14 / **14** |
+| ch5 | 3136 / 20 / **20** | 4096 / 16 / **16** | 3328 / 13 / **13** |
+| ch6 | 3136 / 20 / **20** | 4352 / 17 / **17** | 3328 / 13 / **13** |
+| ch7 | 3136 / 20 / **20** | 4112 / 17 / **17** | 3328 / 13 / **13** |
+| ch8 | 3152 / 22 / **22** | 4096 / 16 / **16** | 3328 / 13 / **13** |
+| ch9 | 3136 / 20 / **20** | 4352 / 17 / **17** | 3088 / 13 / **13** |
+| ch10 | 3136 / 20 / **20** | 4112 / 17 / **17** | 3328 / 13 / **13** |
+| ch11 | 3136 / 20 / **20** | 4096 / 16 / **16** | 3328 / 13 / **13** |
+| ch12 | 3152 / 22 / **22** | — 闲置 | 3328 / 13 / **13** |
+| ch13 | 3136 / 20 / **20** | — 闲置 | 3328 / 13 / **13** |
+| ch14 | 3136 / 20 / **20** | — 闲置 | 3088 / 13 / **13** |
+| ch15 | 3136 / 20 / **20** | 1056 / 4 / **8** | 1056 / 4 / **8** |
+| **最忙** | **3152 / 22 / 22** | **4352 / 17 / 17** | **3584 / 14 / 14** |
 | 活跃 channel | 16/16 | 13/16 | 16/16 |
 
-**扫描时间 = 最忙那条 channel 的时间**（16 条 channel 并行流），所以这一列
-（A3b 13 次、A4 17 次、A4b/A5/A6 14 次）就是三档 decode 时间的比值来源。
+**扫描时间 = 最忙那条 channel 的时间**（16 条 channel 并行流）。
+
+**关键在 extent 列**：A3b 的 22 次里只有 13 次是 master 的连续 unit，
+**另外 9 次是 9 个 repair group** —— 每个只用掉那一行 1024 B 里的 32 B。
+A4/A4b 把各 head 的 repair 收进 ch15 打包，所以那 9 次消失了。
+master/diff 分离的收益因此是 **22 → 14**，不是早先模型给的 13 → 14（倒退）。
+
+同一条 channel、同样 3144 行，只改 repair 的摆法，真机 Ramulator 实测：
+
+| 场景 | extent | 时间 |
+|---|---:|---:|
+| 1 段连续 3072 行 | 1 | 0.004744 ms |
+| 12 个相邻的 256 行 unit | 12 | 0.005113 ms |
+| **12 unit + 9 个散落的 8 行 repair** | 21 | **0.006431 ms** |
+| **12 unit + 1 个 72 行 repair（集中）** | 13 | **0.005310 ms** |
+
+**差 21%，全部来自 repair 是散落还是集中。**
 
 ### 7.2 一次 ACT 打开的那一行里，装的是哪 256 个 token
 
@@ -296,13 +314,16 @@ decode 的摆放、ACT 次数、扫描时间三者在这三档上一模一样。
 
 ## 8. 四档并排
 
-| | unit → channel 的规则 | diff 行 | 活跃 channel | 最忙 channel | ACT |
-|---|---|---|---:|---:|---:|
-| **A3b** | `base + (u % 4)`，head 独占 4 条 | 内联在 master 流里 | 16/16 | 3328 行 | 13 |
-| **A4** | `base_m + (u % 3)`，head 独占 3 条 master | 独立池 **ch15** | 13/16 | 4352 行 | 17 |
-| **A4b** | 全局表 `(head x 50 + u) % 15` | 独立池 **ch15** | 16/16 | 3584 行 | 14 |
-| **A5** | 同 A4b | 同 A4b | 16/16 | 3584 行 | 14 |
-| **A6** | 同 A4b | 同 A4b | 16/16 | 3584 行 | 14 |
+| | unit → channel 的规则 | repair 行怎么放 | 活跃 ch | 最忙 ch | extent | ACT |
+|---|---|---|---:|---:|---:|---:|
+| **A3b** | `base + (u % 4)`，head 独占 4 条 | **各占一个行对齐的槽**（8 行用掉一整行）| 16/16 | 3152 行 | 22 | **22** |
+| **A4** | `base_m + (u % 3)`，head 独占 3 条 master | 各 head 打包进 **ch15** | 13/16 | 4352 行 | 17 | **17** |
+| **A4b** | 全局表 `(head x 50 + u) % 15` | 各 head 打包进 **ch15** | 16/16 | 3584 行 | 14 | **14** |
+| **A5** | 同 A4b | 同 A4b | 16/16 | 3584 行 | 14 | **14** |
+| **A6** | 同 A4b | 同 A4b | 16/16 | 3584 行 | 14 | **14** |
+
+A3b 的行数最少却 ACT 最多 —— 22 次里 9 次是 9 个 repair group，每个只装 8 个
+token。这就是 master/diff 分离要买下的东西：**22 → 14**。
 
 A5 = A4b 的布局 + prefill 注意力全上 PIM（MQ 批命令）；A6 = A5 + 逐请求选边。
 **三者的 decode 布局逐位相同。**
@@ -314,20 +335,22 @@ A5 = A4b 的布局 + prefill 注意力全上 PIM（MQ 批命令）；A6 = A5 + �
 
 ## 9. 这个模型没有建的东西
 
+> 2026-09-03 更新：原先列在这里的两条 ——"每条 channel 一个合成 run"和"跨 run 的
+> 行缓冲命中抓不到"—— **已经不再成立**。一条 channel 的真实 extent 列表现在整体
+> 提交给一次 Ramulator 仿真，ACT 由它的行缓冲决定，回到了原版 AttAcc 的记账口径。
+> 见 `sessions/2026-09-03.md` §10。
+
 写正文引用前必须知道的边界：
 
-1. **喂给 Ramulator 的是"每条 channel 一个 run"**：
-   `_placement_channel_runs` 发出的是 `(channel x 1 GiB, +8 MiB, 行数, channel, 1)` ——
-   起点是 channel 基址、长度是该 channel 的真实行数。上面第 3–6 节的 unit/槽是
-   **布局模型**，它决定行数；行数之内 token 怎么摆是 **AttAcc 的 trace 生成器**
-   按第 2 节的几何铺的。两者是两层，不要当成一层读。
-2. **跨 run 的行缓冲命中抓不到**：`ramulator_wrapper.run()` 对每个 run 起一次独立的
-   Ramulator 仿真（"restarts Ramulator for every run"），开局没有 open row。
-   段越碎、cold-start ACT 越多；striped-append 把同一条 channel 上的 unit 打包成
-   一段连续地址，正是为了少切几刀。
-3. **同一条 channel 上的多个 head 的交错没有单独建模**：`heads_per_hbm > 16`
-   时（本例不触发）多个 head 共用一条 channel，模型把它们的 unit 当成交错打包后的
-   一整段。
+1. **一条 channel 上多个 head 的 extent 是顺次排布的**：模型把 head 0 的全部
+   extent 排完再排 head 1，没有建模它们在 append 时间上的交错。
+2. **同一请求的 cached chunk 仍假定彼此打包连续**：真实存储里，其他请求的 append
+   会插在中间，把 master 流也切碎。建这个需要全局 append 序，**尚未裁决**；
+   方向上它会进一步加大 A3b 的代价（也就是继续低估 master/diff 分离的收益）。
+3. **绝对 row 号不进 Ramulator 的签名缓存**（`_address_mapping_signature` 原注释：
+   "the model has no row-number-dependent timing"）。所以地址只通过
+   channel / pCH / rank / BG / bank 字段、行内偏移、以及 **extent 的切法**影响结果 ——
+   承载物理的是后者。
 4. **`rows=0` 的报告 bug**：上下文行数少于活跃 channel 数时，报告侧的轮转会给尾部
    channel 记 0 行，校验器会拒绝。baseline 这种 12560 行的上下文不触发。
    见 `sessions/2026-09-03.md` §6.2。
@@ -345,12 +368,34 @@ python3 main.py --system dgx-attacc --model GPT-13B \
   --reuse recompute --epic-prefix-recompute-tokens 8 \
   --validate-workload --workload-plan plan.json --num-hbm 10 --ngpu 2
 
-# 载荷向量
+# 每条 channel 的真实 extent（行数 / extent 数 / ACT）
 python3 -c "
-from src.workload_runner import _striped_append_channel_rows as R, _heads_per_hbm
+from types import SimpleNamespace as NS
+from src.workload_runner import (_striped_append_channel_extents as EX,
+                                 _heads_per_hbm, _GEN_BYTES_PER_TOKEN,
+                                 _GEN_ROW_BYTES)
 H = _heads_per_hbm(40//2, 10, 2)              # = 4
-for p in ('slice-append','master-diff-slice-append','master-diff-table-append'):
-    m = 12560 - (264 if p=='slice-append' else 0)
-    print(p, [int(x) for x in R(m, 264, policy=p, heads_per_hbm=H)])
+def loc(o,f,k): return NS(owner=o,fingerprint=f,kind=k)
+def build(shadow):                            # t1n0 一个 head 的读列表
+    r = [loc('t1n0','hist','master')]*256 + [loc('t1n0','sys','master')]*16
+    for i in range(33):
+        fp = 'reuse%02d' % i
+        r += [loc('t1n0',fp,'diff')]*8
+        r += [loc('t0n0',fp,'master')]*(256 if shadow else 248)
+    for i in range(15):
+        r += [loc('t1n0','user%02d' % i,'master')]*256
+    return r
+for tag, pol, sh in (('A3b','slice-append',False),
+                     ('A4','master-diff-slice-append',True),
+                     ('A4b','master-diff-table-append',True)):
+    g = EX(build(sh), policy=pol, heads_per_hbm=H)
+    b = max(g, key=lambda x: sum(-(-n*_GEN_BYTES_PER_TOKEN//_GEN_ROW_BYTES)
+                                 for _,_,n in x[2]))
+    print(tag, 'ch%d' % b[0], sum(n for _,_,n in b[2]), '行',
+          len(b[2]), 'extent',
+          sum(-(-n*_GEN_BYTES_PER_TOKEN//_GEN_ROW_BYTES) for _,_,n in b[2]), 'ACT')
 "
 ```
+
+真机 Ramulator 那四个数（§7.1 末表）：把 `pim_kv_extent_groups` 直接交给
+`Ramulator.output_runs`，一条 channel 一组，改 repair 的摆法即可复现。
