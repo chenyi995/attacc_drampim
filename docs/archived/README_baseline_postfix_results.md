@@ -1,5 +1,16 @@
 # baseline 配置实测结果（修复后引擎，2026-09-02）
 
+> **已归档 2026-09-03。** 本页是 `baseline_20260902_postfix` 那 54 个数据点的结果页。
+> 这批数跑在 2026-09-03 的三处引擎修正：**heads-per-HBM**（`d3a3c4c`，堆栈也按 GPU 切，GPT-175B 从 1 变 3）、**striped-append 布局**（`84f87f5`，A3b–A6 从「每段补齐到 256-token chunk」换成真实行数）、**真实 extent 进 Ramulator**（`897c294`，一条 channel 的全部 extent 作为一次仿真，ACT 由行缓冲决定）。
+> **之前**，因此绝大多数格子不再对应当前引擎：四个多 GPU 模型的 A1/A3b/A4/A4b/A5/A6
+> 受 heads-per-HBM 影响，全部六个模型的 A3b–A6 受另外两处影响。仍然站得住的只有
+> A2（六个模型）与 A3/A3a（latency，六个模型）—— 逐格判定见论文仓库
+> `fig/plots/exp1/README.md` 的注意事项第 4 条。
+> **本页的 §1 makespan 表、§2 A6 相对 A1、§3 放置阶梯逐步，一律不要引用。**
+> 布局口径改看 `../README_data_layout_walkthrough.md`；重跑方法见
+> `../README_run_slurm_and_local.md`。本页保留作那一轮的记录。
+
+
 六个模型 × `baseline` 配置 × 九档 = **54 个数据点，全部产出，零失败**。跑在
 `75da860` **之后**的引擎上（PIM 通道 lane 并行调度 + A6 探针 head 折叠修正）。
 

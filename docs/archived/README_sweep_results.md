@@ -1,5 +1,14 @@
 # sweep 实测结果（从原始 JSON 提取的 CSV）
 
+> **已归档 2026-09-03。** 本页描述 2026-08-30 那轮 sweep 的三个 CSV。那轮先被
+> `75da860`（通道 lane 并行调度）作废、由 `README_baseline_postfix_results.md`
+> 取代，后者又被 2026-09-03 的三处引擎修正：**heads-per-HBM**（`d3a3c4c`，堆栈也按 GPU 切，GPT-175B 从 1 变 3）、**striped-append 布局**（`84f87f5`，A3b–A6 从「每段补齐到 256-token chunk」换成真实行数）、**真实 extent 进 Ramulator**（`897c294`，一条 channel 的全部 extent 作为一次仿真，ACT 由行缓冲决定）。
+> **再次作废**（同页已归档）。**本页的任何数字都不要引用。**
+> 面向新读者的背景章节（被仿真的系统、九档各自新增什么、四个轴的物理含义、
+> 六个模型几何、指标释义）仍可读，但阶梯的布局口径以
+> `../README_data_layout_walkthrough.md` 为准。
+
+
 本页描述 `output/analysis/` 下三个 CSV，以及它们说了什么。**数字全部来自
 committed 的 CSV**，不是另算一遍；要复算就重新生成，不要手抄本页。
 

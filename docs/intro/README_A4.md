@@ -32,7 +32,7 @@
 
 | 步 | 事件/机制 | 代码位置 |
 |---|---|---|
-| 布局 | master ch0–7 / diff ch8–15、V 在 K 上方 8 MiB、行放置表 | `src/workload_runner.py::CacheBlendTLB`(`_prepare_cacheblend_tlb`) |
+| 布局 | master ch0–14 / diff ch15(`_MASTER_CHANNELS_DEFAULT`,与本页 §1 一致;旧稿此处误写 8/8,2026-09-03 改)、V 在 K 上方 8 MiB、行放置表 | `src/workload_runner.py::CacheBlendTLB`(`_prepare_cacheblend_tlb`) |
 | prefill | `kv_pim_to_gpu` 回读 LINK 事件(字节数=行×2×hidden,校验器核对)→ `gpu_prefill_score/softmax/context` 全上下文 GPU 块 → `dram_store_diff_and_live` 新 KV 落库 | `_run_cacheblend_prefill` 的 gpu 分支 |
 | D_i 位图 | agent 的重算集位图下发 die(master 写过滤) | `_run_cacheblend_prefill` 的 bitmap 块(`di_bitmap_gpu_to_die`/`die_load_di_bitmap`) |
 | decode | TLB 规划 (`tlb_lookup_and_bank_plan`) → 池并发扫描 (`decode_pim_kv_scan_score_softmax_pv`,掩码行统计) | `_append_cacheblend_decode_batched` / `_append_physical_pim_scan` |

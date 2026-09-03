@@ -1,5 +1,15 @@
 # A4b：+ 全局 co-read placement table
 
+> **已归档 2026-09-03。** 两处已经不对：
+> (1)「代码」一节写 A4b 走 `_layout_channel_loads` 的 `master-diff-table` 分支 ——
+> 现在的 policy 是 `master-diff-table-append`，走 `_striped_append_channel_extents`。
+> (2)「结果预期」里说「真实 `num_hbm=16` + LLAMA3-8B(8 KV head) 时 heads_per_hbm=1、
+> A4 ≈ A4b」—— sweep 实际用的是 `--num-hbm 1/1/10/10/40/40`，且 heads-per-HBM 的
+> 口径已于 `d3a3c4c` 修正（堆栈也按 GPU 切），LLAMA3-8B 是 8 而不是 1。
+> 「全局 co-read table 取代固定切片」这个机制描述本身仍然成立。
+> **当前口径见 `../README_data_layout_walkthrough.md` §6 与 `../sessions/2026-09-03.md` §8、§11。**
+
+
 （阶梯定位见 `../README.md` §3。2026-08-29 加。A5/A6 的布局建在 A4b 上。）
 
 ## 比上一档（A4）多做的一件事

@@ -6,7 +6,7 @@
 > 实现**(把 co-read 的 chunk 摊到不同 channel),取代旧"master/diff 条带
 > channel_count=15"。计时:每条活跃 channel 造真实 Ramulator run、跨 channel 取 max
 > (**曾误用 probe 外推、破坏公平,已按 chenyi9 指示改回真实 Ramulator**)。语义见
-> `README.md` §3、`intro/README_A3b.md`/`README_A4b.md`;当天时间线见
+> `README.md` §3、`archived/intro/README_A3b.md`/`README_A4b.md`(2026-09-03 归档);当天时间线见
 > `sessions/2026-08-29.md` §7–8。本页下文按旧 7 档写的条目对**机制方向**仍有效,
 > 具体 channel 布局口径以上述为准。
 

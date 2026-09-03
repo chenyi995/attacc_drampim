@@ -1,5 +1,16 @@
 # A3b：+ head 切片（head slicing）
 
+> **已归档 2026-09-03。** 本页的「代码」一节写 A3b 走
+> `_layout_channel_loads` 的 `slice` 分支 —— **已经不对了**。A3b 现在的 policy 是
+> `slice-append`，走 `_striped_append_channel_extents`：一个 head 的 KV 是一条连续
+> append 流、按 256-token unit 轮转它那几条 channel，**每个重算组各占一个行对齐的
+> extent**，整条 channel 的 extent 列表作为一次 Ramulator 仿真提交。
+> `_layout_channel_loads` 的 `slice` 分支现在只服务 A1。
+> 「head 切片」这个机制描述本身仍然成立。
+> **当前口径见 `../README_data_layout_walkthrough.md`（含逐 token 的落点走查）
+> 与 `../sessions/2026-09-03.md` §3、§11。**
+
+
 （阶梯定位见 `../README.md` §3；物理模型见那里的"一个 head 的一个 chunk = 一条
 channel 的一个 row"。2026-08-29 加。）
 

@@ -60,9 +60,21 @@ head 的一个 chunk(256 token)是**一个 channel 上的一个 row**;一次 dec
 阶梯 diff:A3b−A3 = head 切片;A4−A3b = master/diff 分离;A4b−A4 = 全局
 co-read table 取代固定切片;A5−A4b = prefill 上 PIM + MQ;A6−A5 = 动态。
 物理事件引擎(`workload_runner._append_placement_pim_scan`)是**唯一出数路径**;
-解析引擎只作粗校验、不区分 single/slice/table。真实配置 `num_hbm=16`、
-LLAMA3-8B 8 KV head → `heads_per_hbm=1`,此时 A4≈A4b(切片与全局 table 重合,
-只有 head 挤一个 HBM 时才分开)。
+解析引擎只作粗校验、不区分 single/slice/table。
+
+> **2026-09-03 更新,本表的 `kv_mapping`/`channel_placement` 两列不变,但它们映射到的
+> 布局模型换了。** A1 与 A3/A3a 仍走 `_layout_channel_loads` 的 chunk 计数
+> (每段补齐到 256-token chunk);**A3b 及之后改走 striped-append 的真实行数**
+> (policy 名相应变成 `slice-append` / `master-diff-slice-append` /
+> `master-diff-table-append`),而且一条 channel 的**真实 extent 列表**作为一次
+> Ramulator 仿真提交、**ACT 由行缓冲决定**。逐 token 的落点、逐档的 ACT 次数,
+> 见 `README_data_layout_walkthrough.md`;手算与实测的逐格对照见
+> `../workload/handcheck/README.md`;来龙去脉见 `sessions/2026-09-03.md` §3、§11。
+>
+> 同时,`--num-hbm` 的含义已修正为**整个系统**的堆栈数(`d3a3c4c`):堆栈和 KV head
+> 都按 `--ngpu` 切,`heads_per_hbm = ceil(KV head 总数 / num_hbm)`。此前本段写的
+> "真实配置 `num_hbm=16`、LLAMA3-8B → `heads_per_hbm=1`、A4≈A4b" **已作废** ——
+> sweep 实际用的是 `--num-hbm 1/1/10/10/40/40`,LLAMA3-8B 的 heads_per_hbm 是 8。
 
 关键约定:**attention batching(MQ 批命令)与"prefill 上 PIM"同步启用**
 (A5 起);A1–A6 默认都在多轮 agentic 编排下运行(`history_len`);曾经的
@@ -143,6 +155,9 @@ python3 -m unittest discover -s tests     # 41/41
 ## 7. 文档索引(2026-08-26 重组:intro/ 收 A 档,archived/ 收弃用件)
 
 - `intro/README_A1.md` … `README_A6.md` + `README_A3a.md`:每档定位
+  (**A3b 与 A4b 已于 2026-09-03 归档到 `archived/intro/`**:所写的
+  `_layout_channel_loads` 分支已不再是这两档实际走的 policy;这两档的当前
+  口径见 `README_data_layout_walkthrough.md`)
 - `README_software_upstream.md`:复用策略族与文献来源
 - `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
   流程裁决、阶梯诊断与 workload 有效性附录)
@@ -159,10 +174,12 @@ python3 -m unittest discover -s tests     # 41/41
   参数化 sweep 的 generator / workload / 批跑脚本
 - `../workload/archived/2026-08-29_pre-sweep/`、`../output/archived/2026-08-29_pre-unify/`:
   归档的旧手调 generator 与旧结果(各带 README)
-- `README_sweep_results.md`:**sweep 实测结果**(含面向新读者的背景章节:
-  被仿真的系统、九档各自新增什么、四个轴的物理含义、六个模型几何、指标释义)
-- `README_rung_analysis.md`:**档间区分度**(哪几对档在全 sweep 上分不开)与
-  A6 选边不变量的诊断
+- **结果页三份已于 2026-09-03 全部归档**(`archived/README_sweep_results.md`、
+  `archived/README_baseline_postfix_results.md`、`archived/README_rung_analysis.md`):
+  它们的数字跑在当天三处引擎修正之前(heads-per-HBM `d3a3c4c`、striped-append
+  `84f87f5`、真实 extent 进 Ramulator `897c294`),**不要引用**。
+  逐格哪些还站得住,见论文仓库 `fig/plots/exp1/README.md` 的注意事项第 4 条。
+  **当前没有有效的结果页 —— 要有,得用修正后的引擎重跑。**
 - `README_engine_future_work.md`:引擎重构提案(列式 + 流式,建在 C++ 核之上)
 - `README_simulator_assessment.md`:仿真器价值/贡献/可改进点评估
 - `../workload/handcheck/`:**手算校验**(一个小到能笔算全部布局的 workload,
@@ -183,7 +200,11 @@ python3 -m unittest discover -s tests     # 41/41
   `README_run_experiments.md`、`README_delta_vs_xinyao0821.md`、
   `README_cppcore_branch.md`(分支已并入主线)、
   `README_head_hbm_remap.md`(放置模型已两次改版)、
-  `README_sweep_progress.md`(那轮 sweep 已结束)
+  `README_sweep_progress.md`(那轮 sweep 已结束);
+  **2026-09-03 新归档**:三份结果页(`README_sweep_results.md`、
+  `README_baseline_postfix_results.md`、`README_rung_analysis.md`——数字跑在当天
+  三处引擎修正之前)与 `archived/intro/` 下的 `README_A3b.md`、`README_A4b.md`
+  (所写的 `_layout_channel_loads` 分支已不再是这两档实际走的 policy)
 
 分支说明:当前主线是 **`xinyao_0902`**,它是历史各分支的**代码超集**
 (`xinyao_0821`/`0901`、`chenyi-822`/`-dirty`/`-cppcore-exp` 相对它均无
