@@ -146,6 +146,19 @@ ch3 得 3 组 = 24 行。加上第一个 decode 步的 1 个自有行（落 ch0�
 和 GPU 侧主导，PIM 扫描的差异被稀释。**A6 = A5 逐位相同**，说明选边器把两个
 请求都判给了 PIM（没有混合的余地：只有两个 agent）。
 
+## 5.1 产物在哪
+
+| | |
+|---|---|
+| 入库 | `wl_handcheck.json`、`README.md`（本页）、`compare_theory_vs_measured.py`、**`results_handcheck.csv`** |
+| 只在本机 | `output/handcheck_20260903/`（172 MB）：五档的完整事件流 `{A3b,A4,A4b,A5,A6}.json`（`--workload-report-events full`）+ `.log` + `run.sh` |
+
+`results_handcheck.csv` 是本页两张对照表的**机器可读版**：109 行，逐档 × 逐扫描
+（common / private）× 逐 channel，列为 `theory_rows / theory_extents /
+theory_acts / measured_rows / measured_time_s / agree`，外加该档的
+`makespan_s` 与 `energy_nj`。**`agree` 列 109 行全部 `yes`。**
+原始事件流按 `docs/RAW_DATA_MANIFEST.md` 的口径不入 git。
+
 ## 6. 复现
 
 ```bash

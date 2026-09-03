@@ -11,6 +11,14 @@
   （由 `experiments/run_sweep.sh` 产出；workload 定义 `workload/sweep/`，入库）；
 - **归档的旧手调结果**：`output/archived/2026-08-29_pre-unify/`（21 个 run，
   9.6 GB，含旧 workload 备份与 RESULTS 快照；见该目录 README）。
+- **手算校验（2026-09-03）**：`output/handcheck_20260903/`（172 MB）——
+  `{A3b,A4,A4b,A5,A6}.json`（`--workload-report-events full` 的完整事件流）+
+  `.log` + 复跑脚本 `run.sh`。这是 `workload/handcheck/README.md` 里
+  「理论 vs 实测」那两张表的**唯一原始出处**。
+  **提取出来的证据已入库**：`workload/handcheck/results_handcheck.csv`
+  （109 行，逐档 × 逐扫描 × 逐 channel 的 手算行数/extent/ACT 与实测行数/时间，
+  以及 `agree` 列 —— 全部 `yes`）。所以即使这 172 MB 丢了，结论仍可查；
+  要重算就用 `workload/handcheck/compare_theory_vs_measured.py`。
 
 ## 需要这些原始数据时
 本机直接取；异地复现用 `workload/`（入库的 workload 定义）+
