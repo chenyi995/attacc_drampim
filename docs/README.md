@@ -165,6 +165,11 @@ python3 -m unittest discover -s tests     # 41/41
   A6 选边不变量的诊断
 - `README_engine_future_work.md`:引擎重构提案(列式 + 流式,建在 C++ 核之上)
 - `README_simulator_assessment.md`:仿真器价值/贡献/可改进点评估
+- `README_run_slurm_and_local.md`:**怎么跑**(两套路径:athena Slurm 集群的
+  `output/_orch2/` 编排,与 2026-09-03 新加的本机无-Slurm 跑法;含
+  cppcore 的 gcc-toolset-11 构建坑、scratch 必须放 /data2、退出码 2 的
+  真因,以及排错表)
+- `../experiments/run_local_a3b_a6.sh`:本机(无 Slurm)重跑 A3b..A6 的入口
 - `sessions/`:每日调整记录(chenyi9 裁决时间线)
 - `archived/`:已归档,**每份都带归档说明,注明何时归档、为什么、被什么取代**
   —— 旧 workload 文档、走查稿、三份被合并的 audit、旧跑法
