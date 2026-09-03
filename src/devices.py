@@ -511,7 +511,14 @@ class PIM:
             return [self.get_time_and_energy(layer)]
         measured = self.ramulator.output_runs(self.pim_type, layer,
                                               self.power_constraint)
-        run_lengths = [run[2] for run in getattr(layer, "pim_kv_runs", ())]
+        # One result per CHANNEL when the layer carries extent groups; the
+        # energy split follows each channel's real row count.
+        extent_groups = getattr(layer, "pim_kv_extent_groups", None)
+        if extent_groups:
+            run_lengths = [sum(rows for _, _, rows in extents)
+                           for _, _, extents in extent_groups]
+        else:
+            run_lengths = [run[2] for run in getattr(layer, "pim_kv_runs", ())]
         total_rows = sum(run_lengths)
         results = []
         for index, (time, traffic) in enumerate(measured):

@@ -340,7 +340,8 @@ class Ramulator:
     def run_ramulator(self, pim_type: PIMType, l, num_ops_per_hbm, dbyte,
                       yaml_file, file_name, key_addr=None, value_addr=None,
                       channel_count=16, shared_kv=False, shared_queries=1,
-                      channel_base=None, mq_command=False, phase="full"):
+                      channel_base=None, mq_command=False, phase="full",
+                      kv_extents=None):
         pim_type_name = pim_type.name.lower(
         ) if not pim_type == PIMType.BA else "bank"
         trace_file = os.path.join(self.ramulator_dir, file_name + '.trace')
@@ -377,6 +378,19 @@ class Ramulator:
             trace_args += " --mq"
         if phase != "full":
             trace_args += " --phase {}".format(phase)
+        extents_file = None
+        if kv_extents:
+            # One trace carries EVERY extent this channel holds, so Ramulator's
+            # row buffer decides the activations instead of us summing
+            # independent simulations (chenyi9 ruling 2026-09-03: restore
+            # upstream AttAcc's accounting, where one scan was one simulation).
+            extents_file = os.path.join(self.ramulator_dir,
+                                        file_name + '.extents')
+            with open(extents_file, "w") as handle:
+                for extent_key, extent_value, extent_rows in kv_extents:
+                    handle.write("0x{:x} 0x{:x} {}\n".format(
+                        extent_key, extent_value, extent_rows))
+            trace_args += " --kv-extents-file {}".format(extents_file)
 
         gen_trace_cmd = f"python3 {trace_exc} {trace_args}"
 
@@ -407,6 +421,11 @@ class Ramulator:
             os.remove(trace_file)
         except FileNotFoundError:
             pass
+        if extents_file is not None:
+            try:
+                os.remove(extents_file)
+            except FileNotFoundError:
+                pass
 
         # parsing output
         n_cmds = {"mac": 0, "sfm": 0, "mvgb": 0, "mvsb": 0, "wrgb": 0}
@@ -458,8 +477,21 @@ class Ramulator:
             # time rather than falsely extending the first range over the
             # intervening physical space.  Each run yields a local softmax
             # tuple; the CacheBlend DIE event merges those tuples.
+            # Per-channel extent groups (chenyi9 ruling 2026-09-03): one
+            # entry per CHANNEL, carrying every physical extent that channel
+            # holds.  Each becomes ONE Ramulator simulation, so its row buffer
+            # merges extents that share a DRAM row and charges an ACT for
+            # those that do not -- upstream AttAcc's accounting, which the
+            # per-extent split of the CacheBlend port could not express.
+            extent_groups = getattr(layer, "pim_kv_extent_groups", None)
             kv_runs = getattr(layer, "pim_kv_runs", None)
-            if kv_runs is None:
+            if extent_groups:
+                kv_runs = tuple(
+                    (extents[0][0], extents[0][1],
+                     sum(rows for _, _, rows in extents),
+                     channel_base, channel_count, tuple(extents))
+                    for channel_base, channel_count, extents in extent_groups)
+            elif kv_runs is None:
                 kv_runs = ((getattr(layer, "pim_key_addr", None),
                             getattr(layer, "pim_value_addr", None), l),)
             shared_kv = bool(getattr(layer, "pim_shared_kv", False))
@@ -494,14 +526,19 @@ class Ramulator:
             # so an equal mapping signature is exactly the same independent
             # simulator input modulo its unmodelled absolute row number.
             use_signature_cache = (self.signature_cache_enabled and
-                                   getattr(layer, "pim_kv_runs", None) is not None)
+                                   (getattr(layer, "pim_kv_runs", None) is not None
+                                    or extent_groups))
             cached_results = {}
             pending_by_signature = {}
             for index, run in enumerate(kv_runs):
+                extents = None
                 if len(run) == 3:
                     key_addr, value_addr, run_length = run
                     channel_count = 16
                     channel_base = None
+                elif len(run) == 6:
+                    (key_addr, value_addr, run_length, channel_base,
+                     channel_count, extents) = run
                 else:
                     key_addr, value_addr, run_length, channel_base, channel_count = run
                 if channel_base is None:
@@ -524,6 +561,17 @@ class Ramulator:
                     # v1 cache can never serve them; legacy runs keep the
                     # v1-compatible keys.
                     signature = signature + ("chunkstripe1",)
+                if extents is not None:
+                    # Two channels are interchangeable only when their extents
+                    # agree on every bank-selection field, the byte offset
+                    # inside the row (which decides row-boundary crossings)
+                    # and the row count.  The absolute row index is omitted
+                    # for the same reason it is in _address_mapping_signature.
+                    signature = signature + ("extents1",) + tuple(
+                        (self._address_mapping_signature(extent_key),
+                         self._address_mapping_signature(extent_value),
+                         extent_rows)
+                        for extent_key, extent_value, extent_rows in extents)
                 if use_signature_cache:
                     with self._signature_cache_lock:
                         cached = self._signature_cache.get(signature)
@@ -538,19 +586,19 @@ class Ramulator:
                 pending_key = signature if use_signature_cache else ("uncached", index)
                 pending_by_signature.setdefault(pending_key, []).append(
                     (index, run_length, key_addr, value_addr, channel_count,
-                     channel_base))
+                     channel_base, extents))
 
             run_jobs = []
             for signature, equivalent_runs in pending_by_signature.items():
                 (index, run_length, key_addr, value_addr, channel_count,
-                 channel_base) = equivalent_runs[0]
+                 channel_base, extents) = equivalent_runs[0]
                 run_file = "{}_run{}".format(file_name, index)
                 yaml_file = os.path.join(self.ramulator_dir, run_file + '.yaml')
                 self.make_yaml_file(yaml_file, run_file, power_constraint,
                                     nccdab_override=nccdab_override)
                 run_jobs.append((signature, equivalent_runs, run_length, yaml_file,
                                  run_file, key_addr, value_addr, channel_count,
-                                 channel_base))
+                                 channel_base, extents))
             if use_signature_cache:
                 with self._signature_cache_lock:
                     self._signature_cache_misses += len(run_jobs)
@@ -560,12 +608,12 @@ class Ramulator:
 
             def execute(job):
                 (_, _, run_length, yaml_file, run_file, key_addr,
-                 value_addr, channel_count, channel_base) = job
+                 value_addr, channel_count, channel_base, extents) = job
                 return self.run_ramulator(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     yaml_file, run_file, key_addr, value_addr, channel_count,
                     shared_kv, shared_queries, channel_base,
-                    mq_command=mq_command, phase=phase)
+                    mq_command=mq_command, phase=phase, kv_extents=extents)
 
             # Each job gets an unshared trace/YAML filename and contributes a
             # separate physical TLB run.  They are independent host jobs, so
@@ -579,7 +627,7 @@ class Ramulator:
                                                              len(run_jobs))) as pool:
                         executed = list(pool.map(execute, run_jobs))
             finally:
-                for _, _, _, yaml_file, _, _, _, _, _ in run_jobs:
+                for _, _, _, yaml_file, _, _, _, _, _, _ in run_jobs:
                     try:
                         os.remove(yaml_file)
                     except FileNotFoundError:
@@ -637,7 +685,8 @@ class Ramulator:
         # CacheBlend placement is part of the timing experiment: do not serve
         # a bank/row-resolved request from the legacy shape-only cache.
         if (getattr(layer, "pim_key_addr", None) is not None or
-                getattr(layer, "pim_kv_runs", None) is not None):
+                getattr(layer, "pim_kv_runs", None) is not None or
+                getattr(layer, "pim_kv_extent_groups", None)):
             return self.run(pim_type, layer, power_constraint, record_log=False)
         if self.df.empty:
             self.run(pim_type, layer, power_constraint)
@@ -695,7 +744,8 @@ class Ramulator:
         This deliberately bypasses the legacy shape-only CSV cache.  A run's
         channel/bank address is part of its timing input.
         """
-        if getattr(layer, "pim_kv_runs", None) is None:
+        if (getattr(layer, "pim_kv_runs", None) is None
+                and not getattr(layer, "pim_kv_extent_groups", None)):
             return [self.output(pim_type, layer, power_constraint)]
         return self.run(pim_type, layer, power_constraint,
                         record_log=False, per_run=True)

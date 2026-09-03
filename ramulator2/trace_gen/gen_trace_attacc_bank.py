@@ -99,12 +99,31 @@ def cmd_list_reset():
 
   valid_channel = []
 
-def Attention(L, key_addr, val_addr, itr, valid_channel=None):
+def Attention(L, key_addr, val_addr, itr, valid_channel=None, extents=None):
+  """Emit one scan's command stream.
+
+  ``extents`` (chenyi9 2026-09-03) is the list of PHYSICAL K/V extents this
+  scan actually reads, as ``(key_addr, value_addr, rows)``.  A reuse scan
+  touches several of them -- a reused block's cached chunk, and the handful
+  of recomputed rows that patch it -- and they are NOT contiguous.  Emitting
+  all of them into ONE trace is what lets Ramulator decide the activations:
+  extents that share a DRAM row are merged by its row buffer, extents that do
+  not each pay their own ACT.  This restores upstream AttAcc's accounting,
+  where one scan was one simulation and Ramulator counted every ACT; the
+  per-extent split introduced with the CacheBlend port (0aced82) had to sum
+  independent simulations instead, which can neither merge nor charge
+  correctly across extents.
+
+  ``extents=None`` keeps the single-extent behaviour byte for byte: the
+  stream is exactly what ``(L, key_addr, val_addr)`` produced before.
+  """
   # ``n_channel`` is set from the command line in main().  Do not capture its
   # import-time value (16) as a Python default argument, otherwise a
   # TLB-resolved one-channel run still emits commands to sixteen channels.
   if valid_channel is None:
     valid_channel = n_channel
+  if not extents:
+    extents = [(key_addr, val_addr, L)]
   cmd_score_wrgb.append([])
   cmd_score_mac.append([])
   cmd_score_mvsb.append([])
@@ -129,12 +148,19 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
           hex_addr = hex(addr)[2:]
           cmd_score_wrgb[itr].append("PIM_WR_GB 0x{0:0>8}".format(hex_addr))
 
-  def score_mac(addr_offset, L):
+  def score_mac(extent_list):
     ## (pCH) C, C, R, R (MAC)
     # MAC and move output vector to softmax buffer
     ## Vector (1 x k) x Matrix (k x n) multiplication
     ## GEMV unit = adder tree mode
-    for n_idx in range(math.ceil(L / n_pch / n_rank / n_bg)):# 16 
+    # Each extent walks its OWN base address; the step counter is global so a
+    # softmax-buffer flush still lands every 16 steps of the concatenated
+    # stream rather than at every extent boundary.
+    total_steps = sum(math.ceil(e_len / n_pch / n_rank / n_bg)
+                      for _, _, e_len in extent_list)
+    step = 0
+    for addr_offset, _e_val, e_len in extent_list:
+     for n_idx in range(math.ceil(e_len / n_pch / n_rank / n_bg)):# 16 
       cmd_score_mac[itr].append([])
       for k_idx in range(math.ceil(dhead / n_bank / n_mac)): # 2
         idx = k_idx + n_idx * math.ceil(dhead / n_bank / n_mac) 
@@ -148,7 +174,8 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
 
       ## MVSB command (Move to Softmax buffer) 
       ## A output element is generated for every n_idx
-      if n_idx % 16 == 15 or n_idx == math.ceil(L / n_pch / n_rank / n_bg) - 1:
+      step += 1
+      if step % 16 == 0 or step == total_steps:
         cmd_score_mvsb[itr].append([])
         for bg_idx in range(n_bg):   
           for rank in range(n_rank):
@@ -157,6 +184,7 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
                           bg_idx * HBM_GS['bg']
               hex_addr = hex(bank_addr)[2:]
               cmd_score_mvsb[itr][-1].append("PIM_MV_SB 0x{0:0>8}".format(hex_addr))
+     # end of this extent
 
   ## (pCH) R, R, C, C (MAC)
   def context_cpvec(addr_offset, L):
@@ -175,18 +203,23 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
               hex_addr = hex(addr)[2:]
               cmd_context_mvgb[itr].append("PIM_MV_GB 0x{0:0>8}".format(hex_addr))
 
-  def context_mac(addr_offset, L):
+  def context_mac(extent_list):
     # MAC and move output vector to softmax buffer
     ## Vector (1xk) x Matrix (k x n ) multiplication
     ## GEMV unit = mac mode
+    # n_idx stays the OUTER loop so the assembly below can keep indexing
+    # ``cmd_context_mac[itr][j]`` by n_idx; every extent contributes its own
+    # addresses inside that bucket.
+    addr_offset = extent_list[0][1]
     for n_idx in range(math.ceil(dhead / (n_bank * n_mac))):
       cmd_context_mac[itr].append([])
-      for k_idx in range(math.ceil(L / (n_pch * n_rank * n_bg))):
-        idx = k_idx + n_idx * math.ceil(L / (n_pch * n_rank * n_bg))
-        for lch in range(math.ceil(valid_channel)):
-          addr = addr_offset + ch_delta(addr_offset, lch) + idx * HBM_GS['col']
-          hex_addr = hex(addr)[2:]
-          cmd_context_mac[itr][-1].append("PIM_MAC_AB 0x{0:0>8}".format(hex_addr))
+      for _e_key, e_val, e_len in extent_list:
+        for k_idx in range(math.ceil(e_len / (n_pch * n_rank * n_bg))):
+          idx = k_idx + n_idx * math.ceil(e_len / (n_pch * n_rank * n_bg))
+          for lch in range(math.ceil(valid_channel)):
+            addr = e_val + ch_delta(e_val, lch) + idx * HBM_GS['col']
+            hex_addr = hex(addr)[2:]
+            cmd_context_mac[itr][-1].append("PIM_MAC_AB 0x{0:0>8}".format(hex_addr))
 
       ## parallelization. Generate 16 elements per n_idx
       cmd_context_mvsb[itr].append([])
@@ -205,15 +238,19 @@ def Attention(L, key_addr, val_addr, itr, valid_channel=None):
       hex_addr = hex(addr)[2:]
       cmd_sfm[itr].append("PIM_SFM 0x{0:0>8}".format(hex_addr))
 
+  # Query write-in and softmax are per SCAN, not per extent: the Q vector goes
+  # to the GEMV buffer once and the softmax runs once over the whole context.
+  # The two MAC phases are the ones that walk memory, so they take the extent
+  # list.  ``L`` is the scan's total row count.
   score_cpvec(key_addr, L)
 
-  score_mac(key_addr, L)
+  score_mac(extents)
 
   softmax(L, key_addr)
 
   context_cpvec(val_addr, L)
 
-  context_mac(val_addr, L)
+  context_mac(extents)
 
 
 # n_head and n_req = n_req per a HBM 
@@ -295,7 +332,17 @@ def _shared_query_attention_commands(n_head_per_hbm, L, key_base, value_base,
 
 def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
                   value_base=None, shared_kv=False, shared_queries=1,
-                  mq_command=False, phase="full"):
+                  mq_command=False, phase="full", kv_extents=None):
+  """``kv_extents``: the scan's real physical extents, [(key, value, rows)].
+
+  One trace per CHANNEL carrying every extent that channel holds, so
+  Ramulator's row buffer decides the activations (chenyi9 ruling 2026-09-03).
+  ``None`` keeps the legacy single-extent path byte for byte.
+  """
+  if kv_extents:
+    L = sum(rows for _, _, rows in kv_extents)
+    key_base = kv_extents[0][0]
+    value_base = kv_extents[0][1]
   if shared_queries < 1:
     raise ValueError("shared_queries must be positive")
   if shared_queries > 1:
@@ -306,10 +353,12 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
   if phase not in ("full", "score", "context"):
     raise ValueError("--phase must be full, score, or context")
 
-  if head_hbm_stripe:
+  if head_hbm_stripe and not kv_extents:
     # head->HBM remap (chenyi9 2026-08-27): the run's channels hold this
     # head's OWN token stripes, so every per-channel command count below
     # (generation and assembly alike) is derived from the striped length.
+    # Explicit extents are ALREADY that channel's real rows, so they must not
+    # be striped a second time.
     stripe_width = max(1, n_channel // max(1, n_head_per_hbm))
     L = math.ceil(L / stripe_width)
 
@@ -334,10 +383,13 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
     key_addr = (key_base if key_base is not None else 0) + offset
     val_addr = ((value_base if value_base is not None else key_addr + v_offset) +
                 (offset if value_base is not None else 0))
+    # With explicit extents the caller has already resolved every address, so
+    # the per-head partition offset must not shift them.
+    itr_extents = kv_extents if kv_extents else None
     if remainder == 0:
-      Attention(L, key_addr, val_addr, itr)
+      Attention(L, key_addr, val_addr, itr, extents=itr_extents)
     else:
-      Attention(L, key_addr, val_addr, itr, remainder)
+      Attention(L, key_addr, val_addr, itr, remainder, extents=itr_extents)
 
 
   ##-- Ovelapping Commands --##
@@ -360,7 +412,12 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
       ## BARRIER
     total_cmd += barrier
 
-    length = math.ceil(L/n_pch/n_rank/n_bg/16)
+    # With several extents the concatenated MAC stream is longer than
+    # ceil(L/16) steps (each extent rounds up on its own), so drive the
+    # loop from the real step count.  Identical to the old expression
+    # for a single extent.
+    length = max(math.ceil(L/n_pch/n_rank/n_bg/16),
+                 math.ceil(len(cmd_score_mac[i]) / 16))
     for j in range(0, length+1):
       ## MAC (Head0)
       if not j == length:
@@ -384,7 +441,12 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
         total_cmd += barrier
 
     # Head0: SoftMax, Head1: Score
-    length = math.ceil(L/n_pch/n_rank/n_bg/16)
+    # With several extents the concatenated MAC stream is longer than
+    # ceil(L/16) steps (each extent rounds up on its own), so drive the
+    # loop from the real step count.  Identical to the old expression
+    # for a single extent.
+    length = max(math.ceil(L/n_pch/n_rank/n_bg/16),
+                 math.ceil(len(cmd_score_mac[i+1]) / 16))
     for j in range(0, length+1):
       ## MAC (Head1)
       if not j == length:
@@ -458,7 +520,12 @@ def run_attention(dhead, n_head_per_hbm, L, trace_file_name, key_base=None,
       ## BARRIER
     total_cmd += barrier
 
-    length = math.ceil(L/n_pch/n_rank/n_bg/16)
+    # With several extents the concatenated MAC stream is longer than
+    # ceil(L/16) steps (each extent rounds up on its own), so drive the
+    # loop from the real step count.  Identical to the old expression
+    # for a single extent.
+    length = max(math.ceil(L/n_pch/n_rank/n_bg/16),
+                 math.ceil(len(cmd_score_mac[i]) / 16))
     for j in range(0, length+1):
       ## MAC
       if not j == length:
@@ -590,6 +657,14 @@ def main():
                       help="head->HBM remap: channels carry the head's own "
                            "token stripes (L splits across the run's "
                            "channels); nhead = heads resident on this HBM")
+  parser.add_argument("--kv-extents-file", type=str, default=None,
+                      help="file with the scan's real physical extents, one "
+                           "'<key_addr> <value_addr> <rows>' per line (decimal "
+                           "or 0x...).  One trace then carries EVERY extent of "
+                           "one channel, so Ramulator's row buffer decides the "
+                           "activations -- extents sharing a DRAM row merge, "
+                           "extents that do not each pay an ACT.  Overrides "
+                           "--key-addr/--value-addr/-l.")
   parser.add_argument("--pool-base", type=int, default=None,
                       help="first channel of that KV class's pool; heads then wrap inside "
                            "[pool-base, pool-base + channels) instead of striping past it")
@@ -620,9 +695,23 @@ def main():
   for key, value in args_dict.items():
       print(f"     {key}: {value}")
   print("---------------------------------------------------")
+  kv_extents = None
+  if args.kv_extents_file:
+    kv_extents = []
+    with open(args.kv_extents_file) as handle:
+      for line in handle:
+        line = line.split("#", 1)[0].strip()
+        if not line:
+          continue
+        key_field, value_field, rows_field = line.split()
+        kv_extents.append((int(key_field, 0), int(value_field, 0),
+                           int(rows_field, 0)))
+    if not kv_extents:
+      raise ValueError("--kv-extents-file is empty")
+
   run_attention(dhead, n_head_per_hbm, L, args.output, args.key_addr,
                 args.value_addr, args.shared_kv, args.shared_queries,
-                mq_command=args.mq, phase=args.phase)
+                mq_command=args.mq, phase=args.phase, kv_extents=kv_extents)
 
 
 

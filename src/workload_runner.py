@@ -735,6 +735,136 @@ def _striped_append_channel_rows(master_rows: int, diff_rows: int, *,
     return loads
 
 
+# ---------------------------------------------------------------------------
+# Real physical extents (chenyi9 ruling 2026-09-03).
+#
+# AttAcc's MAC_AB is an ALL-BANK broadcast: one address names 16 partitions
+# (pCH x rank x BG) x 4 banks at once, so a token consumes only 4 B of ADDRESS
+# space and one 1024-B DRAM row covers exactly 256 tokens -- the stripe unit.
+# That is why a repair of k=8 recomputed rows cannot pay its way: it occupies
+# 32 B of a row that would have held 256 tokens, and every further repair
+# lands in a row of its own.  Concentrating the repairs in the diff pool packs
+# them into shared rows instead.  Charging that difference is the whole point
+# of the master/diff split, so the extents have to reach Ramulator as extents.
+# ---------------------------------------------------------------------------
+_GEN_ROW_BYTES = 1024                      # 32 columns x 32 B
+_GEN_BYTES_PER_TOKEN = _GEN_ROW_BYTES // _STRIPE_UNIT_ROWS      # = 4
+
+
+def _read_extents(reads: Sequence[KVLocation]) -> List[Tuple[str, int]]:
+    """Cut a scan's read list into the physical objects it touches.
+
+    An extent is a maximal run of consecutive rows belonging to the same
+    cached object -- same ``(owner, fingerprint, kind)``.  A reused block's
+    cached chunk is one extent; the handful of rows the consumer recomputed to
+    patch it is ANOTHER, because it is a separate allocation the store
+    appended at its own position and can never be written back into the shared
+    copy.  Returns ``[(kind, rows)]`` in read order.
+    """
+    extents: List[List[Any]] = []
+    key = None
+    for location in reads:
+        location_key = (location.owner, location.fingerprint, location.kind)
+        if location_key != key:
+            extents.append([location.kind, 0])
+            key = location_key
+        extents[-1][1] += 1
+    return [(kind, rows) for kind, rows in extents]
+
+
+def _channel_extent_addresses(channel: int, slots: Sequence[int]
+                              ) -> List[Tuple[int, int, int]]:
+    """Lay ``slots`` (row counts) out inside one channel, row-aligned.
+
+    Each slot starts on a fresh DRAM row, so a slot shorter than 256 rows
+    leaves the rest of its row empty -- exactly the waste a small repair pays.
+    Consecutive FULL slots stay contiguous, so a packed master stream still
+    reads as one run and Ramulator merges it.
+    """
+    base = channel * _HBM_CHANNEL_BYTES
+    cursor = 0
+    placed = []
+    for rows in slots:
+        if rows <= 0:
+            continue
+        key_address = base + cursor
+        placed.append((key_address, key_address + _ORIGINAL_KV_GAP_BYTES, rows))
+        span = rows * _GEN_BYTES_PER_TOKEN
+        cursor += -(-span // _GEN_ROW_BYTES) * _GEN_ROW_BYTES   # next row
+    return placed
+
+
+def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
+                                    heads_per_hbm: int,
+                                    master_channels: int = _MASTER_CHANNELS_DEFAULT):
+    """Per-channel physical extents of one scan on one HBM.
+
+    Returns ``[(channel, 1, [(key_addr, value_addr, rows), ...])]`` -- one
+    group per active channel, each carrying every extent that channel holds,
+    for ALL ``heads_per_hbm`` heads.  The group is handed to Ramulator as ONE
+    simulation, so its row buffer decides the activations.
+
+    The master stream stays packed (striped-append, 2026-09-03): units of 256
+    rows round-robin the head's channels and consecutive units are contiguous.
+    The repairs are what differs between the rungs:
+
+    * ``slice-append`` (A3b) has no diff pool, so each repair group is its own
+      row-aligned extent on the head's channels -- k rows in a row that holds
+      256, and one such row per repair.
+    * the master-diff policies gather every head's repairs onto the diff
+      channel, packed, so they share rows and cost a handful of ACTs in total.
+    """
+    if policy not in _APPEND_POLICIES:
+        raise WorkloadValidationError(
+            "unknown striped-append policy '{}'".format(policy))
+    heads = max(1, int(heads_per_hbm))
+    extents = _read_extents(reads)
+    master_rows = sum(rows for kind, rows in extents if kind != "diff")
+    repairs = [rows for kind, rows in extents if kind == "diff"]
+    per_channel: Dict[int, List[int]] = {}
+
+    def add(channel: int, rows: int) -> None:
+        per_channel.setdefault(channel, []).append(rows)
+
+    if policy == "slice-append":
+        stripe = max(1, _HBM_CHANNELS // heads)
+        units = _stream_unit_rows(master_rows)
+        for head in range(heads):
+            base = (head * stripe) % _HBM_CHANNELS
+            for unit, rows in enumerate(units):
+                add((base + (unit % stripe)) % _HBM_CHANNELS, rows)
+            # No diff pool: every repair is its own row on the head's channels.
+            for index, rows in enumerate(repairs):
+                add((base + (index % stripe)) % _HBM_CHANNELS, rows)
+    else:
+        master_units = _stream_unit_rows(master_rows)
+        if policy == "master-diff-slice-append":
+            stripe_m = max(1, master_channels // heads)
+            for head in range(heads):
+                base = (head * stripe_m) % master_channels
+                for unit, rows in enumerate(master_units):
+                    add((base + (unit % stripe_m)) % master_channels, rows)
+        else:                                    # master-diff-table-append
+            slot = 0
+            for _head in range(heads):
+                for rows in master_units:
+                    add(slot % master_channels, rows)
+                    slot += 1
+        # The diff pool is ONE packed extent per head: the corrections were
+        # produced together and land together, so they share rows instead of
+        # burning one apiece.
+        for _head in range(heads):
+            if repairs:
+                add(master_channels, sum(repairs))
+
+    groups = []
+    for channel in sorted(per_channel):
+        placed = _channel_extent_addresses(channel, per_channel[channel])
+        if placed:
+            groups.append((channel, 1, placed))
+    return groups
+
+
 def _layout_policy(kv_mapping: str, channel_placement: str) -> str:
     """Map (kv_mapping, channel_placement) to a placement policy.
 
@@ -1574,12 +1704,21 @@ def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
     master_rows = sum(1 for location in reads if location.kind != "diff")
     diff_rows = sum(1 for location in reads if location.kind == "diff")
     if policy in _APPEND_POLICIES:
-        # A3b/A4/A4b/A5/A6: the packed append stream, so a channel carries the
-        # rows it really holds -- a correction of a handful of rows costs a
-        # handful of rows, not a padded 256-token chunk.
-        loads = _striped_append_channel_rows(
-            master_rows, diff_rows, policy=policy,
-            heads_per_hbm=heads_per_hbm, master_channels=master_channels)
+        # A3b/A4/A4b/A5/A6: real physical extents.  A channel's whole extent
+        # list goes to Ramulator as ONE simulation, so its row buffer decides
+        # the activations -- a repair that shares no row with anything else
+        # pays its own ACT, and a packed diff pool does not.
+        groups = _striped_append_channel_extents(
+            reads, policy=policy, heads_per_hbm=heads_per_hbm,
+            master_channels=master_channels)
+        loads = [0.0] * _HBM_CHANNELS
+        for channel, _count, placed in groups:
+            loads[channel] = float(sum(rows for _, _, rows in placed))
+        active = [channel for channel, _count, _placed in groups]
+        runs = tuple((placed[0][0], placed[0][1],
+                      sum(rows for _, _, rows in placed), channel, 1)
+                     for channel, _count, placed in groups)
+        return loads, active, runs, tuple(groups)
     else:
         # A1/A3/A3a: the legacy chunk-count model, every reservation rounded
         # up to a whole 256-token chunk.  Converted to rows here so both
@@ -1595,7 +1734,7 @@ def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
                   max(1, int(round(loads[channel]))),
                   channel, 1)
                  for channel in active)
-    return loads, active, runs
+    return loads, active, runs, ()
 
 
 def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
@@ -1621,7 +1760,7 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     """
     accelerator = system.devices["Acc"]
     masked = masked or set()
-    loads, active, runs = _placement_channel_runs(
+    loads, active, runs, extent_groups = _placement_channel_runs(
         reads, policy=policy, heads_per_hbm=heads_per_hbm,
         master_channels=master_channels)
     kv_heads = max(1, int(getattr(op, "numOp", 1)))
@@ -1673,6 +1812,12 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     scan_op.numOp = 1                              # heads folded into the rows
     scan_op.n = sum(run[2] for run in runs)
     scan_op.pim_kv_runs = runs
+    if extent_groups:
+        # One Ramulator simulation per channel, carrying that channel's real
+        # extents, so its row buffer counts the activations (2026-09-03).
+        # ``pim_kv_runs`` stays as the one-run-per-channel summary the report
+        # and the A6 probe read; the extent groups are what get simulated.
+        scan_op.pim_kv_extent_groups = extent_groups
     runs_cost = (_WARM_BYPASS[0] if _WARM_BYPASS is not None
                  else getattr(accelerator, "get_time_and_energy_runs", None))
     if runs_cost is not None:
@@ -3824,7 +3969,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             getattr(system.devices["Acc"], "num_hbm", 1),
                             getattr(system.model, "tp", 1))
                         tlb_runs = tlb.scan_runs(scan_locations)
-                        probe_loads, probe_active, probe_runs = (
+                        probe_loads, probe_active, probe_runs, probe_groups = (
                             _placement_channel_runs(
                                 scan_locations, policy=tlb.layout_policy,
                                 heads_per_hbm=probe_heads_per_hbm))
@@ -3836,6 +3981,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             busiest_run[2] if busiest_run else 0,
                             system.model.dhead, 1)
                         est.pim_kv_runs = (busiest_run,) if busiest_run else ()
+                        if busiest_run and probe_groups:
+                            est.pim_kv_extent_groups = tuple(
+                                group for group in probe_groups
+                                if group[0] == busiest_run[3])
                         est.pim_shared_kv = est.m * _gqa_group(system) > 1
                         est.pim_shared_queries = est.m * _gqa_group(system)
                         _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)

@@ -14,6 +14,9 @@ from src.workload_runner import (_layout_channel_loads, _layout_scan_max_load,
                                   _HBM_CHANNELS, _MASTER_CHANNELS_DEFAULT,
                                   _STRIPE_UNIT_ROWS, _layout_policy,
                                   _hbm_stacks_local, _heads_per_hbm,
+                                  _read_extents, _GEN_ROW_BYTES,
+                                  _GEN_BYTES_PER_TOKEN,
+                                  _striped_append_channel_extents,
                                   _stream_unit_rows,
                                   _striped_append_channel_rows,
                                   placement_degeneracy_warning)
@@ -184,6 +187,108 @@ class HeadsPerHBMTest(unittest.TestCase):
         for kv_local, num_hbm in ((32, 1), (8, 1)):
             self.assertEqual(_heads_per_hbm(kv_local, num_hbm, 1),
                              _heads_per_hbm(kv_local, num_hbm))
+
+
+
+class RealExtentTest(unittest.TestCase):
+    """A scan reaches Ramulator as the extents it really touches (2026-09-03).
+
+    AttAcc's MAC_AB names 16 partitions x 4 banks at once, so a token costs
+    4 B of address space and one 1024-B DRAM row holds exactly 256 tokens.  A
+    k-row repair therefore burns a whole row for k tokens, and every further
+    repair burns another -- unless the diff pool packs them together.  These
+    pin that the model now says so.
+    """
+
+    @staticmethod
+    def _loc(owner, fingerprint, kind):
+        return SimpleNamespace(owner=owner, fingerprint=fingerprint, kind=kind)
+
+    def _reads(self, segments, repairs, repair_rows=8, shadow=False):
+        reads = []
+        for index in range(segments):
+            name = "seg{}".format(index)
+            if index < repairs:
+                reads += [self._loc("consumer", name, "diff")] * repair_rows
+                reads += [self._loc("owner", name, "master")] * (
+                    256 if shadow else 256 - repair_rows)
+            else:
+                reads += [self._loc("owner", name, "master")] * 256
+        return reads
+
+    def test_row_geometry(self):
+        # one DRAM row = one stripe unit = 256 tokens
+        self.assertEqual(_GEN_BYTES_PER_TOKEN, 4)
+        self.assertEqual(_GEN_ROW_BYTES // _GEN_BYTES_PER_TOKEN,
+                         _STRIPE_UNIT_ROWS)
+
+    def test_extents_split_a_patch_from_its_chunk(self):
+        reads = self._reads(segments=2, repairs=1)
+        # the recomputed rows are a separate allocation, not part of the chunk
+        self.assertEqual(_read_extents(reads),
+                         [("diff", 8), ("master", 248), ("master", 256)])
+
+    def test_each_repair_burns_its_own_row_without_a_diff_pool(self):
+        reads = self._reads(segments=4, repairs=4)
+        groups = _striped_append_channel_extents(
+            reads, policy="slice-append", heads_per_hbm=16)   # stripe = 1
+        self.assertEqual(len(groups), 16)                     # one head each
+        _channel, _count, placed = groups[0]
+        repair_extents = [rows for _k, _v, rows in placed if rows == 8]
+        self.assertEqual(len(repair_extents), 4)              # 4 separate rows
+        addresses = [key for key, _v, _rows in placed]
+        self.assertEqual(len(set(addresses)), len(addresses))
+        for key, _value, _rows in placed:                     # every row-aligned
+            self.assertEqual(key % _GEN_ROW_BYTES, 0)
+
+    def test_diff_pool_packs_the_repairs_into_one_extent(self):
+        reads = self._reads(segments=4, repairs=4, shadow=True)
+        groups = _striped_append_channel_extents(
+            reads, policy="master-diff-table-append", heads_per_hbm=1)
+        diff = [placed for channel, _c, placed in groups
+                if channel == _MASTER_CHANNELS_DEFAULT]
+        self.assertEqual(len(diff), 1)
+        self.assertEqual(diff[0], [(diff[0][0][0], diff[0][0][1], 4 * 8)])
+
+    def test_the_split_is_what_changes_the_activation_count(self):
+        """The same 64 recomputed rows: 8 activations scattered, 1 pooled."""
+        def act_rows(placed):
+            return sum(-(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
+                       for _k, _v, rows in placed)
+
+        # heads_per_hbm 16 clamps the stripe to one channel per head, so the
+        # arithmetic below is per head.
+        scattered = _striped_append_channel_extents(
+            self._reads(segments=8, repairs=8),
+            policy="slice-append", heads_per_hbm=16)
+        head_channel = {channel: placed
+                        for channel, _count, placed in scattered}[0]
+        repairs = [extent for extent in head_channel if extent[2] == 8]
+        self.assertEqual(len(repairs), 8)          # 8 separate allocations
+        self.assertEqual(act_rows(repairs), 8)     # 64 rows -> 8 activations
+
+        pooled = _striped_append_channel_extents(
+            self._reads(segments=8, repairs=8, shadow=True),
+            policy="master-diff-table-append", heads_per_hbm=16)
+        diff = {channel: placed
+                for channel, _count, placed in pooled}[_MASTER_CHANNELS_DEFAULT]
+        self.assertEqual(len(diff), 16)            # one packed extent per head
+        self.assertEqual(act_rows(diff), 16)       # 16 x 64 rows -> 16
+        # Per head: eight activations scattered against one pooled.
+        self.assertEqual(act_rows(repairs), 8 * (act_rows(diff) // 16))
+
+    def test_every_row_is_placed_once(self):
+        for policy, shadow in (("slice-append", False),
+                               ("master-diff-slice-append", True),
+                               ("master-diff-table-append", True)):
+            for heads in (1, 3, 4, 16):
+                reads = self._reads(segments=6, repairs=6, shadow=shadow)
+                groups = _striped_append_channel_extents(
+                    reads, policy=policy, heads_per_hbm=heads)
+                total = sum(rows for _c, _n, placed in groups
+                            for _k, _v, rows in placed)
+                self.assertEqual(total, heads * len(reads),
+                                 "{} heads={}".format(policy, heads))
 
 
 class StripedAppendLayoutTest(unittest.TestCase):
