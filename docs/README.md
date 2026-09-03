@@ -165,6 +165,10 @@ python3 -m unittest discover -s tests     # 41/41
   A6 选边不变量的诊断
 - `README_engine_future_work.md`:引擎重构提案(列式 + 流式,建在 C++ 核之上)
 - `README_simulator_assessment.md`:仿真器价值/贡献/可改进点评估
+- `README_data_layout_walkthrough.md`:**A3b–A6 的数据布局走查**(GPT-13B /
+  baseline / 一个 tier-1 请求 / 一个 head,逐 token 说清 KV 落哪条 channel、
+  哪个 stripe unit、行内第几个槽;并推出**一次 ACT 恰好覆盖 256 个 token**,
+  以及每档一次 decode 扫描各条 channel 要开几次 ACT;2026-09-03)
 - `README_run_slurm_and_local.md`:**怎么跑**(两套路径:athena Slurm 集群的
   `output/_orch2/` 编排,与 2026-09-03 新加的本机无-Slurm 跑法;含
   cppcore 的 gcc-toolset-11 构建坑、scratch 必须放 /data2、退出码 2 的
