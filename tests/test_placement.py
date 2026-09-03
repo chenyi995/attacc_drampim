@@ -13,6 +13,7 @@ from src.workload import WorkloadValidationError
 from src.workload_runner import (_layout_channel_loads, _layout_scan_max_load,
                                   _HBM_CHANNELS, _MASTER_CHANNELS_DEFAULT,
                                   _STRIPE_UNIT_ROWS, _layout_policy,
+                                  _hbm_stacks_local, _heads_per_hbm,
                                   _stream_unit_rows,
                                   _striped_append_channel_rows,
                                   placement_degeneracy_warning)
@@ -122,6 +123,67 @@ class LadderMonotonicityTest(unittest.TestCase):
         with self.assertRaises(WorkloadValidationError):
             _layout_channel_loads("bogus", 1, 0, 1)
 
+
+
+
+class HeadsPerHBMTest(unittest.TestCase):
+    """--num-hbm is the WHOLE system's stack count (fixed 2026-09-03).
+
+    The old code divided the KV heads by tensor parallelism but handed every
+    GPU the full --num-hbm, so GPT-175B read as 12 local heads over 40 stacks
+    = 1 per stack with 28 stacks never touched.  Heads and stacks must be
+    split the same way, and the result rounds UP because the scan time is the
+    busiest stack's.
+    """
+
+    # (model, KV heads, ngpu, --num-hbm, heads on the busiest stack)
+    SWEEP = [("LLAMA-7B", 32, 1, 1, 32), ("LLAMA3-8B", 8, 1, 1, 8),
+             ("GPT-13B", 40, 2, 10, 4), ("LLAMA-33B", 52, 2, 10, 6),
+             ("LLAMA-65B", 64, 8, 40, 2), ("GPT-175B", 96, 8, 40, 3)]
+
+    def test_sweep_models_match_the_configured_intent(self):
+        for name, kv_total, ngpu, num_hbm, expected in self.SWEEP:
+            kv_local = max(1, kv_total // ngpu)
+            self.assertEqual(_heads_per_hbm(kv_local, num_hbm, ngpu), expected,
+                             name)
+
+    def test_equals_the_global_ratio(self):
+        # splitting per GPU and dividing globally are the same thing whenever
+        # ngpu divides num_hbm -- which every sweep config does.
+        for name, kv_total, ngpu, num_hbm, _ in self.SWEEP:
+            kv_local = max(1, kv_total // ngpu)
+            self.assertEqual(_heads_per_hbm(kv_local, num_hbm, ngpu),
+                             -(-kv_total // num_hbm), name)
+
+    def test_stacks_split_per_gpu_and_floor(self):
+        self.assertEqual(_hbm_stacks_local(40, 8), 5)
+        self.assertEqual(_hbm_stacks_local(10, 2), 5)
+        self.assertEqual(_hbm_stacks_local(1, 1), 1)
+        # a GPU never gets more stacks than the machine has, and a
+        # non-dividing split floors -- the leftovers do not lighten anyone.
+        self.assertEqual(_hbm_stacks_local(10, 4), 2)
+        self.assertEqual(_hbm_stacks_local(3, 8), 1)
+
+    def test_rounds_up_to_the_busiest_stack(self):
+        # 96 heads over 40 stacks: some hold 3, some 2 -- price 3.
+        self.assertEqual(_heads_per_hbm(12, 40, 8), 3)
+        # exact division stays exact
+        self.assertEqual(_heads_per_hbm(20, 10, 2), 4)
+
+    def test_gpt175b_no_longer_leaves_stacks_idle(self):
+        kv_local, num_hbm, ngpu = 12, 40, 8
+        h = _heads_per_hbm(kv_local, num_hbm, ngpu)
+        stacks = _hbm_stacks_local(num_hbm, ngpu)
+        used = -(-kv_local // h)                  # num_hbm_used in the scan
+        self.assertEqual((h, stacks, used), (3, 5, 4))
+        self.assertLessEqual(used, stacks)
+        # the old reading: 1 head per stack, 12 of 40 used, 28 idle.
+        self.assertEqual(-(-kv_local // _heads_per_hbm(kv_local, num_hbm, 1)), 12)
+
+    def test_single_gpu_models_are_unchanged_by_the_fix(self):
+        for kv_local, num_hbm in ((32, 1), (8, 1)):
+            self.assertEqual(_heads_per_hbm(kv_local, num_hbm, 1),
+                             _heads_per_hbm(kv_local, num_hbm))
 
 
 class StripedAppendLayoutTest(unittest.TestCase):

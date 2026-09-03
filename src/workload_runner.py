@@ -752,11 +752,37 @@ def _layout_policy(kv_mapping: str, channel_placement: str) -> str:
     return "slice"
 
 
-def _heads_per_hbm(kv_heads_local: int, num_hbm: int) -> int:
-    """KV heads sharing one HBM = ceil(local KV heads / HBM stacks) (>= 1)."""
+def _hbm_stacks_local(num_hbm: int, tensor_parallel: int) -> int:
+    """HBM stacks serving ONE GPU's share of the KV heads.
+
+    ``--num-hbm`` is the PIM-side stack count of the WHOLE system.  Tensor
+    parallelism splits the KV heads over ``tensor_parallel`` GPUs and splits
+    the stacks the same way, so one GPU's heads live on
+    ``num_hbm // tensor_parallel`` stacks.  Floor, not ceil: a GPU cannot be
+    handed more stacks than the machine has, and the leftover stacks of a
+    non-dividing split do not make any GPU's busiest stack lighter.
+    """
+    return max(1, int(num_hbm) // max(1, int(tensor_parallel)))
+
+
+def _heads_per_hbm(kv_heads_local: int, num_hbm: int,
+                   tensor_parallel: int = 1) -> int:
+    """KV heads on the BUSIEST HBM = ceil(local KV heads / local stacks) (>=1).
+
+    Fixed 2026-09-03 (ruling chenyi9).  This used to divide the heads by
+    tensor parallelism -- ``kv_heads_local`` is already post-split -- while
+    handing every GPU the FULL ``num_hbm``.  GPT-175B therefore read as 12
+    local KV heads over 40 stacks = 1 head per stack, with 28 of the 40 never
+    touched, instead of the 96 heads over 40 stacks = 3 the sweep was
+    configured for.
+
+    Rounds UP on purpose: the scan time is the busiest stack's, so the
+    busiest stack is the only one worth simulating.  96 heads over 40 stacks
+    means some stacks hold 3 and some hold 2; the model prices 3.
+    """
     kv = max(1, int(kv_heads_local))
-    nh = max(1, int(num_hbm))
-    return max(1, -(-kv // nh))
+    stacks = _hbm_stacks_local(num_hbm, tensor_parallel)
+    return max(1, -(-kv // stacks))
 
 
 def placement_degeneracy_warning(system, kv_mapping: str,
@@ -786,13 +812,15 @@ def placement_degeneracy_warning(system, kv_mapping: str,
     if accelerator is None or channel_placement not in ("slice",):
         return None
     heads = max(1, system.model.num_heads // system.model.tp)
+    tp = getattr(system.model, "tp", 1)
     heads_per_hbm = _heads_per_hbm(_gqa_kv_heads_local(system, heads),
-                                   getattr(accelerator, "num_hbm", 1))
+                                   getattr(accelerator, "num_hbm", 1), tp)
     channels = (_MASTER_CHANNELS_DEFAULT if kv_mapping == "master-diff"
                 else _HBM_CHANNELS)
     if channels // heads_per_hbm >= 2:
         return None
-    kv_heads_total = heads_per_hbm * getattr(accelerator, "num_hbm", 1)
+    kv_heads_total = heads_per_hbm * _hbm_stacks_local(
+        getattr(accelerator, "num_hbm", 1), tp)
     needed = -(-kv_heads_total // (channels // 2))
     consequence = (
         "the master pool is placed one-channel-per-head, so this run says\n"
@@ -2507,7 +2535,8 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     policy=tlb.layout_policy, masked=masked_keys,
                     heads_per_hbm=_heads_per_hbm(
                         _gqa_kv_heads_local(system, heads),
-                        getattr(system.devices["Acc"], "num_hbm", 1)))
+                        getattr(system.devices["Acc"], "num_hbm", 1),
+                                getattr(system.model, "tp", 1)))
                 # Every active channel yields one local softmax tuple; the DIE
                 # merges those with the GPU tuple.
                 merge_width = len(scan) + 1
@@ -2868,7 +2897,8 @@ def _append_cacheblend_decode_batched(
                             policy=tlb.layout_policy, masked=common_masked,
                             heads_per_hbm=_heads_per_hbm(
                                 _gqa_kv_heads_local(system, heads),
-                                getattr(system.devices["Acc"], "num_hbm", 1)),
+                                getattr(system.devices["Acc"], "num_hbm", 1),
+                                getattr(system.model, "tp", 1)),
                             batch_members=sweep_members)
                         for request in sweep:
                             scan_deps[request.request_id].extend(shared_scan)
@@ -2917,7 +2947,8 @@ def _append_cacheblend_decode_batched(
                             policy=tlb.layout_policy, masked=private_masked,
                             heads_per_hbm=_heads_per_hbm(
                                 _gqa_kv_heads_local(system, heads),
-                                getattr(system.devices["Acc"], "num_hbm", 1))))
+                                getattr(system.devices["Acc"], "num_hbm", 1),
+                                getattr(system.model, "tp", 1))))
 
                 context_links: Dict[str, str] = {}
                 for request in group:
@@ -3790,7 +3821,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         kv_heads_local = _gqa_kv_heads_local(system, heads)
                         probe_heads_per_hbm = _heads_per_hbm(
                             kv_heads_local,
-                            getattr(system.devices["Acc"], "num_hbm", 1))
+                            getattr(system.devices["Acc"], "num_hbm", 1),
+                            getattr(system.model, "tp", 1))
                         tlb_runs = tlb.scan_runs(scan_locations)
                         probe_loads, probe_active, probe_runs = (
                             _placement_channel_runs(
@@ -3907,7 +3939,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             policy=tlb.layout_policy, masked=masked_prefill_keys,
                             heads_per_hbm=_heads_per_hbm(
                                 _gqa_kv_heads_local(system, heads),
-                                getattr(system.devices["Acc"], "num_hbm", 1)))
+                                getattr(system.devices["Acc"], "num_hbm", 1),
+                                getattr(system.model, "tp", 1)))
                         assembly_bytes = heads * (system.model.dhead + 2) * dbyte
                         for position in grouped_positions:
                             pim_results.append(_cacheblend_event(

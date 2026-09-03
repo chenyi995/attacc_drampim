@@ -286,10 +286,13 @@ def main():
         "--num-hbm",
         type=int,
         default=5,
-        help="PIM-side HBM stacks per accelerator (the remote KV storage; "
-             "GPU HBM is unaffected).  Heads own stacks exclusively; with "
-             "fewer KV heads than stacks each head sequence-splits across "
-             "num_hbm // kv_heads stacks (ruling chenyi9 2026-08-27)")
+        help="PIM-side HBM stacks of the WHOLE system (the remote KV storage; "
+             "GPU HBM is unaffected).  Tensor parallelism splits both the KV "
+             "heads and these stacks over --ngpu GPUs, so one GPU's heads sit "
+             "on num_hbm // ngpu stacks and the busiest stack carries "
+             "ceil(kv_heads / num_hbm) of them (corrected 2026-09-03; it was "
+             "read as per-accelerator, which gave every GPU the full count "
+             "and left most stacks idle)")
     parser.add_argument(
         "--epic-prefix-recompute-tokens",
         type=int,
