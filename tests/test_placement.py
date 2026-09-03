@@ -248,7 +248,8 @@ class RealExtentTest(unittest.TestCase):
         diff = [placed for channel, _c, placed in groups
                 if channel == _MASTER_CHANNELS_DEFAULT]
         self.assertEqual(len(diff), 1)
-        self.assertEqual(diff[0], [(diff[0][0][0], diff[0][0][1], 4 * 8)])
+        self.assertEqual(len(diff[0]), 1)                    # one extent
+        self.assertEqual(diff[0][0][2], 4 * 8)               # all corrections
 
     def test_the_split_is_what_changes_the_activation_count(self):
         """The same 64 recomputed rows: 8 activations scattered, 1 pooled."""
@@ -272,10 +273,12 @@ class RealExtentTest(unittest.TestCase):
             policy="master-diff-table-append", heads_per_hbm=16)
         diff = {channel: placed
                 for channel, _count, placed in pooled}[_MASTER_CHANNELS_DEFAULT]
-        self.assertEqual(len(diff), 16)            # one packed extent per head
-        self.assertEqual(act_rows(diff), 16)       # 16 x 64 rows -> 16
-        # Per head: eight activations scattered against one pooled.
-        self.assertEqual(act_rows(repairs), 8 * (act_rows(diff) // 16))
+        self.assertEqual(len(diff), 1)             # ONE packed extent
+        self.assertEqual(diff[0][2], 16 * 64)      # every head's corrections
+        # 1024 rows x 4 B = 4096 B = four rows, against eight activations for
+        # ONE head's 64 rows when nothing pools them.
+        self.assertEqual(act_rows(diff), 4)
+        self.assertEqual(act_rows(repairs), 8)
 
     def test_every_row_is_placed_once(self):
         for policy, shadow in (("slice-append", False),

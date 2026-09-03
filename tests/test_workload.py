@@ -1001,10 +1001,16 @@ class WorkloadTests(unittest.TestCase):
         # (shadowed rows included); only corrected rows come from the diff
         # channel (chenyi9 2026-08-29: master rows now spread over channels
         # 0..14, corrections on channel 15).
-        self.assertEqual(sum(event["rows"] for event in master), 24)
-        self.assertEqual(sum(event["masked_rows"] for event in master), corrected)
+        # rows/masked_rows on a PIM pool event are HEAD-FOLDED since
+        # 2026-09-03: the event is one CHANNEL's scan and that channel
+        # holds every head it serves, which is what its time_s has always
+        # measured.  heads_per_hbm is 4 in this fixture, so each figure
+        # below is 4x the per-head count it used to be.
+        self.assertEqual(sum(event["rows"] for event in master), 4 * 24)
+        self.assertEqual(sum(event["masked_rows"] for event in master),
+                         4 * corrected)
         self.assertEqual(len(diff), 1)
-        self.assertEqual(diff[0]["rows"], corrected)
+        self.assertEqual(diff[0]["rows"], 4 * corrected)
         self.assertEqual(diff[0]["masked_rows"], 0)
         # Fragmentation-free: exactly as many master channels as with no
         # correction (corrections go to the diff channel, never the master).
@@ -1393,7 +1399,12 @@ class AgenticHistoryTests(unittest.TestCase):
             key = (event["transformer_layer"], tuple(event["query_positions"]))
             sweeps[key] = sweeps.get(key, 0) + event["rows"]
         self.assertTrue(sweeps)
-        self.assertTrue(all(total == 7 for total in sweeps.values()))
+        # rows/masked_rows on a PIM pool event are HEAD-FOLDED since
+        # 2026-09-03: the event is one CHANNEL's scan and that channel
+        # holds every head it serves, which is what its time_s has always
+        # measured.  heads_per_hbm is 4 in this fixture, so each figure
+        # below is 4x the per-head count it used to be.
+        self.assertTrue(all(total == 4 * 7 for total in sweeps.values()))
         self.assertFalse(events(hist, "gpu_prefill_score"))
         # On the "gpu" rung the same history comes back over the link and
         # the GPU runs the block itself -- no PIM prefill scan at all.
@@ -1420,8 +1431,11 @@ class AgenticHistoryTests(unittest.TestCase):
                        if event["query_positions"] == [first] and
                        event["transformer_layer"] == 0)
 
-        self.assertEqual(first_token_scan_rows(base), 4)
-        self.assertEqual(first_token_scan_rows(hist), 7)
+        # Head-folded since 2026-09-03 (see the note above): 4 x the per-head
+        # 4 and 7 rows.  The qkv / kv_gpu_to_pim events above are NOT pool
+        # events and keep their per-head counts.
+        self.assertEqual(first_token_scan_rows(base), 4 * 4)
+        self.assertEqual(first_token_scan_rows(hist), 4 * 7)
         # One resident master-pool extent per request and layer.
         history_blocks = [block for block in hist["tlb"]["blocks"]
                           if block["fingerprint"].endswith("::history")]
@@ -1453,7 +1467,12 @@ class AgenticHistoryTests(unittest.TestCase):
         for event in full_layer_scans:
             key = (event["request"], tuple(event["query_positions"]))
             sweeps[key] = sweeps.get(key, 0) + event["rows"]
-        self.assertTrue(all(total == 8 for total in sweeps.values()))
+        # rows/masked_rows on a PIM pool event are HEAD-FOLDED since
+        # 2026-09-03: the event is one CHANNEL's scan and that channel
+        # holds every head it serves, which is what its time_s has always
+        # measured.  heads_per_hbm is 4 in this fixture, so each figure
+        # below is 4x the per-head count it used to be.
+        self.assertTrue(all(total == 4 * 8 for total in sweeps.values()))
         self.assertTrue(all(
             event["rows"] == 6 for event in report["events"]
             if event["name"] == "qkv" and event["transformer_layer"] == 0))
