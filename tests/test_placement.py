@@ -12,6 +12,9 @@ from types import SimpleNamespace
 from src.workload import WorkloadValidationError
 from src.workload_runner import (_layout_channel_loads, _layout_scan_max_load,
                                   _HBM_CHANNELS, _MASTER_CHANNELS_DEFAULT,
+                                  _STRIPE_UNIT_ROWS, _layout_policy,
+                                  _stream_unit_rows,
+                                  _striped_append_channel_rows,
                                   placement_degeneracy_warning)
 
 
@@ -118,6 +121,91 @@ class LadderMonotonicityTest(unittest.TestCase):
     def test_unknown_policy_raises(self):
         with self.assertRaises(WorkloadValidationError):
             _layout_channel_loads("bogus", 1, 0, 1)
+
+
+
+class StripedAppendLayoutTest(unittest.TestCase):
+    """A3b..A6 (ruling chenyi9 2026-09-03): one head's KV is ONE contiguous
+    append stream cut into 256-token stripe units; units round-robin the
+    head's channels and are PACKED, so a short correction costs its real rows
+    instead of a padded 256-token chunk."""
+
+    def test_policy_routing_leaves_a1_a3_a3a_alone(self):
+        # A1 (private extent) and A3/A3a (single) keep the chunk-count model.
+        self.assertEqual(_layout_policy("private", "slice"), "slice")
+        self.assertEqual(_layout_policy("naive", "single"), "single")
+        self.assertEqual(_layout_policy("naive-mask", "single"), "single")
+        # A3b and every master-diff rung move to striped append.
+        self.assertEqual(_layout_policy("naive", "slice"), "slice-append")
+        self.assertEqual(_layout_policy("master-diff", "slice"),
+                         "master-diff-slice-append")
+        self.assertEqual(_layout_policy("master-diff", "table"),
+                         "master-diff-table-append")
+
+    def test_stream_is_cut_at_unit_boundaries(self):
+        # every unit full except the last -- that is what makes a segment
+        # spill onto the next channel instead of starting a padded page.
+        self.assertEqual(_stream_unit_rows(0), [])
+        self.assertEqual(_stream_unit_rows(256), [256])
+        self.assertEqual(_stream_unit_rows(1040), [256, 256, 256, 256, 16])
+
+    def test_worked_example_a_b_c_d_e_f(self):
+        """The 2026-09-03 example: head owns ch0..ch3, segments
+        a=256 b=256 c=8 d=8 e=256 f=256 appended in that order.
+
+        a -> ch0 unit0, b -> ch1 unit0, c and d TOGETHER on ch2 unit0,
+        e -> ch2 unit0 (240 rows) then ch3 unit0 (16), f -> ch3 unit0 (240)
+        then ch0 unit1 (16).  So ch0 carries 256+16 rows and ch1..ch3 carry
+        256 each.
+        """
+        loads = _striped_append_channel_rows(
+            master_rows=256 * 4, diff_rows=8 + 8,          # a,b,e,f | c,d
+            policy="slice-append", heads_per_hbm=4)
+        self.assertEqual([loads[c] for c in range(4)], [272, 256, 256, 256])
+        # all four heads on this HBM are laid out, each on its own stripe.
+        self.assertEqual([loads[c] for c in range(4, 8)], [272, 256, 256, 256])
+        self.assertEqual(sum(loads), 4 * 1040)             # every row placed once
+
+    def test_short_correction_is_not_padded_to_a_chunk(self):
+        # 16 real diff rows.  The chunk model charged a whole 256-row chunk;
+        # the append model charges 16.
+        chunked = _layout_channel_loads("slice", master_chunks=0,
+                                        diff_chunks=1, heads_per_hbm=1)
+        self.assertEqual(sum(chunked) * _STRIPE_UNIT_ROWS, 256)
+        appended = _striped_append_channel_rows(
+            master_rows=0, diff_rows=16, policy="slice-append",
+            heads_per_hbm=1)
+        self.assertEqual(sum(appended), 16)
+
+    def test_rows_are_conserved_by_every_append_policy(self):
+        for policy in ("slice-append", "master-diff-slice-append",
+                       "master-diff-table-append"):
+            for heads in (1, 2, 3, 4, 8, 16, 32):
+                loads = _striped_append_channel_rows(
+                    master_rows=7936, diff_rows=256, policy=policy,
+                    heads_per_hbm=heads)
+                self.assertEqual(len(loads), _HBM_CHANNELS)
+                self.assertEqual(sum(loads), heads * (7936 + 256),
+                                 "{} heads={}".format(policy, heads))
+
+    def test_corrections_land_on_the_diff_channel(self):
+        loads = _striped_append_channel_rows(
+            master_rows=15 * 256, diff_rows=40,
+            policy="master-diff-table-append", heads_per_hbm=2)
+        self.assertEqual(loads[_MASTER_CHANNELS_DEFAULT], 2 * 40)
+        self.assertEqual(sum(loads[:_MASTER_CHANNELS_DEFAULT]), 2 * 15 * 256)
+
+    def test_heads_sharing_a_channel_interleave(self):
+        # 32 heads, stripe clamps to 1 -> two heads per channel, their units
+        # interleave and pack, so the channel carries both streams' rows.
+        loads = _striped_append_channel_rows(
+            master_rows=512, diff_rows=0, policy="slice-append",
+            heads_per_hbm=32)
+        self.assertEqual(loads, [2 * 512] * _HBM_CHANNELS)
+
+    def test_unknown_append_policy_rejected(self):
+        with self.assertRaises(WorkloadValidationError):
+            _striped_append_channel_rows(1, 0, policy="bogus", heads_per_hbm=1)
 
 
 class PlacementScanIntegrationTest(unittest.TestCase):
@@ -240,7 +328,7 @@ class SliceDegeneracyWarningTest(unittest.TestCase):
         warning = placement_degeneracy_warning(
             self._system(32, 1), "naive", "slice")
         self.assertIsNotNone(warning)
-        self.assertIn("bit-identical to A3", warning)
+        self.assertIn("same one-per-head pile-up as A3", warning)
         self.assertIn("--num-hbm to at least 4", warning)
 
     def test_llama7b_four_hbm_is_a_real_a3b(self):

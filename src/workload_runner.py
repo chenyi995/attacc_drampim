@@ -637,19 +637,118 @@ def _layout_scan_max_load(policy: str, master_chunks: int, diff_chunks: int,
                                      heads_per_hbm, master_channels))
 
 
-def _layout_policy(kv_mapping: str, channel_placement: str) -> str:
-    """Map (kv_mapping, channel_placement) to a ``_layout_channel_loads`` policy.
+# ---------------------------------------------------------------------------
+# Striped-append layout (ruling chenyi9 2026-09-03) -- rungs A3b, A4, A4b,
+# A5, A6.
+#
+# One head's KV is ONE contiguous append stream, not a pile of independently
+# padded pages.  The stream is cut into 256-token STRIPE UNITS and unit ``u``
+# lands on the head's channel ``base + (u % stripe)``.  Within a channel the
+# units are PACKED: a short segment (the handful of recomputed rows of a
+# reused block) is appended right behind its predecessor instead of being
+# rounded up to a whole 256-token chunk, and a segment that fills the current
+# unit simply CONTINUES in the next unit -- that is, on the next channel of
+# the head's stripe.  Worked example, one head owning ch0..ch3, segments
+# a=256, b=256, c=8, d=8, e=256, f=256 tokens appended in that order:
+#
+#   a -> ch0 unit0 rows  0..63      d -> ch2 unit0 rows 2..3
+#   b -> ch1 unit0 rows  0..63      e -> ch2 unit0 rows 4..63, then
+#   c -> ch2 unit0 rows  0..1            ch3 unit0 rows 0..3
+#                                  f -> ch3 unit0 rows 4..63, then
+#                                        ch0 unit1 rows 64..67
+#
+# The scan therefore prices each channel's TRUE row count instead of
+# ``chunks x 256``.  A1 (``slice``) and A3/A3a (``single``) deliberately KEEP
+# the old chunk-count model: A1 is the AttAcc reference point and A3/A3a are
+# the naive floor (ruling chenyi9 2026-09-03).
+# ---------------------------------------------------------------------------
+# 256 tokens, the natural KV block; same value as ``_NAIVE_PAGE_ROWS``,
+# spelled out because that constant is defined further down the file.
+_STRIPE_UNIT_ROWS = 256
+_APPEND_POLICIES = ("slice-append", "master-diff-slice-append",
+                    "master-diff-table-append")
 
-    naive / naive-mask (A3/A3a/A3b) have no master/diff split, so they use
-    ``single`` or ``slice``; master-diff (A4/A4b/A5/A6) adds the split and uses
-    ``master-diff-slice`` or ``master-diff-table``.  private/none keep a single
-    contiguous extent, treated as ``slice``.
+
+def _stream_unit_rows(rows: int) -> List[int]:
+    """Cut an append stream of ``rows`` tokens into 256-token stripe units.
+
+    Every unit is full except the last, because the stream is contiguous and
+    is cut at unit boundaries -- that is what makes a segment spill onto the
+    next channel instead of starting a fresh padded page.
+    """
+    if rows <= 0:
+        return []
+    full, tail = divmod(int(rows), _STRIPE_UNIT_ROWS)
+    units = [_STRIPE_UNIT_ROWS] * full
+    if tail:
+        units.append(tail)
+    return units
+
+
+def _striped_append_channel_rows(master_rows: int, diff_rows: int, *,
+                                 policy: str, heads_per_hbm: int,
+                                 master_channels: int = _MASTER_CHANNELS_DEFAULT
+                                 ) -> List[float]:
+    """Per-physical-channel TRUE row load of one scan under striped append.
+
+    Returns a length-16 vector in ROW units (the chunk-count model returns
+    CHUNK units); the scan time is the busiest channel.  ``heads_per_hbm``
+    heads share the sixteen channels.  When the stripe clamps to one channel
+    the heads that share it interleave their units, which packs to the same
+    contiguous extent, so that channel simply carries every sharing head's
+    rows.
+    """
+    if policy not in _APPEND_POLICIES:
+        raise WorkloadValidationError(
+            "unknown striped-append policy '{}'".format(policy))
+    heads = max(1, int(heads_per_hbm))
+    loads = [0.0] * _HBM_CHANNELS
+    m_rows, d_rows = max(0, int(master_rows)), max(0, int(diff_rows))
+
+    if policy == "slice-append":
+        # No master/diff split: a correction is appended INLINE, right where
+        # the software wrote it, so master and diff are one stream.
+        stripe = max(1, _HBM_CHANNELS // heads)
+        units = _stream_unit_rows(m_rows + d_rows)
+        for head in range(heads):
+            base = (head * stripe) % _HBM_CHANNELS
+            for unit, rows in enumerate(units):
+                loads[(base + (unit % stripe)) % _HBM_CHANNELS] += rows
+        return loads
+
+    # master/diff split (A4/A4b/A5/A6): corrections live on the diff channel,
+    # master rows on the master pool; both pools are packed appends.
+    master_units = _stream_unit_rows(m_rows)
+    if policy == "master-diff-slice-append":
+        stripe_m = max(1, master_channels // heads)
+        for head in range(heads):
+            base = (head * stripe_m) % master_channels
+            for unit, rows in enumerate(master_units):
+                loads[(base + (unit % stripe_m)) % master_channels] += rows
+    else:                                    # master-diff-table-append
+        slot = 0
+        for _head in range(heads):
+            for rows in master_units:
+                loads[slot % master_channels] += rows
+                slot += 1
+    loads[master_channels] += heads * d_rows
+    return loads
+
+
+def _layout_policy(kv_mapping: str, channel_placement: str) -> str:
+    """Map (kv_mapping, channel_placement) to a placement policy.
+
+    ``single`` (A3/A3a) and ``slice`` (A1's private/no-reuse extent) keep the
+    chunk-count model of ``_layout_channel_loads``.  naive / naive-mask with
+    head slicing (A3b) and every master-diff rung (A4/A4b/A5/A6) use the
+    striped-append model of ``_striped_append_channel_rows`` -- real row
+    counts, no 256-token padding (ruling chenyi9 2026-09-03).
     """
     if kv_mapping in ("naive", "naive-mask"):
-        return "single" if channel_placement == "single" else "slice"
+        return "single" if channel_placement == "single" else "slice-append"
     if kv_mapping == "master-diff":
-        return ("master-diff-table" if channel_placement == "table"
-                else "master-diff-slice")
+        return ("master-diff-table-append" if channel_placement == "table"
+                else "master-diff-slice-append")
     return "slice"
 
 
@@ -666,12 +765,15 @@ def placement_degeneracy_warning(system, kv_mapping: str,
 
     ``slice`` gives head h a stripe of ``max(1, 16 // heads_per_hbm)``
     channels.  Put more KV heads on a stack than it has channels and the
-    stripe clamps to 1: every chunk of a head piles on one channel again and
-    ``_layout_channel_loads`` returns the ``single`` vector EXACTLY.  A3b is
-    then A3 bit for bit -- identical makespan, identical energy -- so an
-    A3-vs-A3b comparison run that way compares A3 with itself and cannot show
-    head slicing doing anything.  Measured 2026-09-02: LLAMA-7B (32 KV heads)
-    at ``--num-hbm 1`` gave A3 and A3b the same 19.538823025675715 s.
+    stripe clamps to 1: every unit of a head's append stream piles back onto
+    one channel, so the run says nothing about head slicing.  Under the
+    striped-append model (2026-09-03) A3b is no longer bit-identical to A3 --
+    A3 still pads every reservation up to a 256-token chunk while A3b counts
+    real rows -- but the CHANNEL distribution is the same one-per-head
+    pile-up, so an A3-vs-A3b comparison run that way still cannot show head
+    slicing doing anything.  Measured 2026-09-02 on the previous (chunk)
+    model: LLAMA-7B (32 KV heads) at ``--num-hbm 1`` gave A3 and A3b the same
+    19.538823025675715 s.
 
     ``master-diff-slice`` (A4) slices within the 15 master channels and
     collapses the same way, one stack earlier.
@@ -696,8 +798,9 @@ def placement_degeneracy_warning(system, kv_mapping: str,
         "the master pool is placed one-channel-per-head, so this run says\n"
         "  nothing about slicing -- only about that pile-up plus the diff split"
         if kv_mapping == "master-diff" else
-        "the placement is now bit-identical to A3, so an A3-vs-A3b\n"
-        "  comparison built on this run is A3 measured against itself")
+        "the channel distribution is the same one-per-head pile-up as A3,\n"
+        "  so an A3-vs-A3b comparison built on this run measures the 256-token\n"
+        "  padding difference, not head slicing")
     return (
         "WARNING: channel_placement 'slice' has collapsed to one channel per "
         "head.\n"
@@ -1434,17 +1537,34 @@ def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
     into that channel's row count rather than represented through ``numOp``.
     Both the committed scan and the A6 probe use this helper to ensure they
     price the identical workload.
+
+    ``loads`` is in ROW units.  Which model produced it depends on the rung:
+    A3b..A6 use the striped append of ``_striped_append_channel_rows`` (real
+    rows), A1/A3/A3a the chunk-count model of ``_layout_channel_loads``
+    (every reservation padded up to 256 rows).
     """
     master_rows = sum(1 for location in reads if location.kind != "diff")
     diff_rows = sum(1 for location in reads if location.kind == "diff")
-    c_master = -(-master_rows // _NAIVE_PAGE_ROWS)
-    c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
-    loads = _layout_channel_loads(policy, c_master, c_diff, heads_per_hbm,
-                                  master_channels)
+    if policy in _APPEND_POLICIES:
+        # A3b/A4/A4b/A5/A6: the packed append stream, so a channel carries the
+        # rows it really holds -- a correction of a handful of rows costs a
+        # handful of rows, not a padded 256-token chunk.
+        loads = _striped_append_channel_rows(
+            master_rows, diff_rows, policy=policy,
+            heads_per_hbm=heads_per_hbm, master_channels=master_channels)
+    else:
+        # A1/A3/A3a: the legacy chunk-count model, every reservation rounded
+        # up to a whole 256-token chunk.  Converted to rows here so both
+        # branches return the same unit.
+        c_master = -(-master_rows // _NAIVE_PAGE_ROWS)
+        c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
+        loads = [load * _NAIVE_PAGE_ROWS for load in
+                 _layout_channel_loads(policy, c_master, c_diff, heads_per_hbm,
+                                       master_channels)]
     active = [channel for channel, load in enumerate(loads) if load > 0]
     runs = tuple((channel * _HBM_CHANNEL_BYTES,
                   channel * _HBM_CHANNEL_BYTES + _ORIGINAL_KV_GAP_BYTES,
-                  max(1, int(round(loads[channel] * _NAIVE_PAGE_ROWS))),
+                  max(1, int(round(loads[channel]))),
                   channel, 1)
                  for channel in active)
     return loads, active, runs
