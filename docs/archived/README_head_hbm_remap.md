@@ -1,5 +1,14 @@
 # head→HBM 重映射记录(2026-08-27,裁决:chenyi9)
 
+> **已归档 2026-09-02。** 本页记录 2026-08-27 的一次放置修正
+> (从「一个 head 住一个 channel」改为「一个 head 住一个 HBM」)。
+> 该放置模型已被两轮改动取代:2026-08-29 重切为 **head-aware 通道放置阶梯**
+> (A3b 切片 / A4b 全局 co-read 表,见 `README_sweep_design.md`),
+> 2026-09-02 又修了通道 lane 的并行调度(`75da860`)。
+> **当前放置语义以 `src/workload_runner.py` 的 `_layout_channel_loads`
+> docstring 与 `README_rung_analysis.md` §4 为准。** 本页保留作那次修正的记录。
+
+
 **一句话**:此前所有 PIM 侧数字建立在"一个 attention head 住一个
 **channel**"的放置假设上;在本项目的配置(LLAMA-7B、TP8、5 HBM)下该
 假设退化为**单 channel 扫全部上下文、其余 15 个 channel 闲置**,多

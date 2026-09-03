@@ -1,0 +1,7 @@
+model,config,k,workload,agents,rungs_present,rungs_missing,n_present,claim_status
+GPT-13B,baseline,8,wl_baseline_alltoall_N16_C32_D2.json,32,A1 A2 A3 A3a A3b A4 A4b A5 A6,,9,unclaimed
+GPT-175B,baseline,8,wl_baseline_alltoall_N16_C32_D2.json,32,A1 A2 A3 A3a A3b A4 A4b A5 A6,,9,unclaimed
+LLAMA-33B,baseline,8,wl_baseline_alltoall_N16_C32_D2.json,32,A1 A2 A3 A3a A3b A4 A4b A5 A6,,9,unclaimed
+LLAMA-65B,baseline,8,wl_baseline_alltoall_N16_C32_D2.json,32,A1 A2 A3 A3a A3b A4 A4b A5 A6,,9,unclaimed
+LLAMA-7B,baseline,8,wl_baseline_alltoall_N16_C32_D2.json,32,A1 A2 A3 A3a A3b A4 A4b A5 A6,,9,unclaimed
+LLAMA3-8B,baseline,8,wl_baseline_alltoall_N16_C32_D2.json,32,A1 A2 A3 A3a A3b A4 A4b A5 A6,,9,unclaimed

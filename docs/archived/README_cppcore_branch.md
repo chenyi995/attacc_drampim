@@ -1,5 +1,12 @@
 # chenyi-822-cppcore-exp:核心 C++ 化实验分支(chenyi9 裁决 2026-08-28)
 
+> **已归档 2026-09-02。** 本页把 C++ 核描述成 `chenyi-822-cppcore-exp` 这条
+> **实验分支**上的东西。那条分支已整体并入主线,C++ 核现在是 `xinyao_0902`
+> 的常规组成部分(`src/cppcore/eventcore.cpp` + `src/cpp_eventcore.py`),
+> 并在 `75da860` 里随通道并行相位一起改过(`ec_add` 多一个 `pool_scan`
+> 参数,**改后必须重编 `.so`**)。**页内的设计说明仍然有效,分支叙述已过期。**
+
+
 **一句话**:基于冻结的 `chenyi-822-dirty`(1a231b6)新建的实验分支,把
 DAG 引擎的**调度状态机**迁入原生 C++ 核(`src/cppcore/eventcore.cpp`,
 ctypes 桥 `src/cpp_eventcore.py`),Python 保留全部领域逻辑与

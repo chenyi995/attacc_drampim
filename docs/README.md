@@ -144,12 +144,9 @@ python3 -m unittest discover -s tests     # 41/41
 
 - `intro/README_A1.md` … `README_A6.md` + `README_A3a.md`:每档定位
 - `README_software_upstream.md`:复用策略族与文献来源
-- `README_head_hbm_remap.md`:head→HBM 重映射全记录(R18:错误、
-  归因、量化、新映射规范)
 - `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
   流程裁决、阶梯诊断与 workload 有效性附录)
 - `README_experiments.md`:论文证据矩阵怎么跑
-- `README_cppcore_branch.md`:`chenyi-822-cppcore-exp` 分支说明(核心 C++ 化)
 - `RAW_DATA_MANIFEST.md`:**原始数据本地清单**(>50 MB 的事件轨迹
   `dag_A*.json` 不入库、记本机路径手动下载;≤50 MB 报告与 .log 已入库)
 - `../output/analysis/`:结果分析工具与表格(`make_results_tables.py`
@@ -166,13 +163,15 @@ python3 -m unittest discover -s tests     # 41/41
   被仿真的系统、九档各自新增什么、四个轴的物理含义、六个模型几何、指标释义)
 - `README_rung_analysis.md`:**档间区分度**(哪几对档在全 sweep 上分不开)与
   A6 选边不变量的诊断
-- `README_sweep_progress.md`:sweep 进度快照(由 `output/_orch2/progress_table.py` 生成)
 - `README_engine_future_work.md`:引擎重构提案(列式 + 流式,建在 C++ 核之上)
 - `README_simulator_assessment.md`:仿真器价值/贡献/可改进点评估
 - `sessions/`:每日调整记录(chenyi9 裁决时间线)
-- `archived/`:已归档——旧 workload 文档、走查稿、三份被合并的 audit、
-  旧跑法 `README_run_experiments.md`、`README_delta_vs_xinyao0821.md`
-  (各带归档说明,注明被什么取代)
+- `archived/`:已归档,**每份都带归档说明,注明何时归档、为什么、被什么取代**
+  —— 旧 workload 文档、走查稿、三份被合并的 audit、旧跑法
+  `README_run_experiments.md`、`README_delta_vs_xinyao0821.md`、
+  `README_cppcore_branch.md`(分支已并入主线)、
+  `README_head_hbm_remap.md`(放置模型已两次改版)、
+  `README_sweep_progress.md`(那轮 sweep 已结束)
 
 分支说明:当前主线是 **`xinyao_0902`**,它是历史各分支的**代码超集**
 (`xinyao_0821`/`0901`、`chenyi-822`/`-dirty`/`-cppcore-exp` 相对它均无
