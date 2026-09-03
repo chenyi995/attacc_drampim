@@ -95,7 +95,7 @@ co-read table 取代固定切片;A5−A4b = prefill 上 PIM + MQ;A6−A5 = 动�
 ## 4. 软件上游(复用策略,`--reuse`)
 
 复用策略决定"哪些 KV 可以复用、复用时要重算多少来修正精度"。现有六个,
-分两族(详见 `README_software_upstream.md`):
+分两族(详见 `archived/README_software_upstream.md`,2026-09-03 归档):
 
 - **cacheblend 族**(按比例采样重算行):`cacheblend`(EuroSys'25,在线
   选择,含全重算选择层)、`cachetune`(离线选择,无选择层);
@@ -154,24 +154,33 @@ python3 -m unittest discover -s tests     # 41/41
 
 ## 7. 文档索引(2026-08-26 重组:intro/ 收 A 档,archived/ 收弃用件)
 
-- `intro/README_A1.md` … `README_A6.md` + `README_A3a.md`:每档定位
-  (**A3b 与 A4b 已于 2026-09-03 归档到 `archived/intro/`**:所写的
-  `_layout_channel_loads` 分支已不再是这两档实际走的 policy;这两档的当前
-  口径见 `README_data_layout_walkthrough.md`)
-- `README_software_upstream.md`:复用策略族与文献来源
-- `README_manual_audit_findings.md`:**唯一审计总台账**(R/U 条目、
-  流程裁决、阶梯诊断与 workload 有效性附录)
-- `README_experiments.md`:论文证据矩阵怎么跑
-- `RAW_DATA_MANIFEST.md`:**原始数据本地清单**(>50 MB 的事件轨迹
-  `dag_A*.json` 不入库、记本机路径手动下载;≤50 MB 报告与 .log 已入库)
-- `../output/analysis/`:结果分析工具与表格(`make_results_tables.py`
-  → `RESULTS_k2.md`:七档的延迟/能量/prefill 放置/额外指标四表)
-- `README_sweep_design.md`:**参数化 sweep 设计规范**(一个 gen_sweep.py +
-  (topology, N, C, D, k),取代五组手调 workload,零 magic number;2026-08-29)
-- `README_run_sweep_guide.md`:**运行指南**(另一台机器 clone 后照着跑:
-  setup→跑 98 run→提取→独立复核→写 RESULTS_sweep.md→commit;2026-08-29)
+> **2026-09-03 大清理。** 今天之前写的 md **除运行方法外全部归档**到
+> `archived/`(每份带归档说明,注明何时归档、为什么、被什么取代)。理由是当天的
+> 三处引擎修正 —— heads-per-HBM `d3a3c4c`、striped-append 布局 `84f87f5`、
+> 真实 extent 进 Ramulator `897c294` —— 动了放置与计价的主路径,那些页都没有在
+> 新引擎上复核过。**下面列的就是 `docs/` 现存的全部活跃文档。**
+
+### 怎么跑(保留)
+
+- `README_run_slurm_and_local.md`:**怎么跑**(athena Slurm 集群的 `_orch2` 编排,
+  与本机无-Slurm 跑法;含 cppcore 的 gcc-toolset-11 构建坑、scratch 必须放
+  /data2、退出码 2 的真因、排错表)
+- `README_run_sweep_guide.md`:**sweep 运行指南**(另一台 ~300 核机器 clone 后
+  照着跑:setup→跑→提取→独立复核→commit;2026-08-29 写,流程仍适用,
+  但它引用的设计规范与结果页已归档)
+- `RAW_DATA_MANIFEST.md`:**原始数据本地清单**(>50 MB 的事件轨迹 `dag_A*.json`
+  不入库、记本机路径;≤50 MB 报告与 .log 已入库)
+- `../experiments/run_local_a3b_a6.sh`:本机(无 Slurm)重跑 A3b..A6 的入口
 - `../workload/gen_sweep.py` + `../workload/sweep/` + `../experiments/run_sweep.sh`:
   参数化 sweep 的 generator / workload / 批跑脚本
+- `../output/analysis/`:结果分析工具(`extract_sweep_csv.py` 等)
+
+### 当前口径(今天写的)
+
+- `../workload/gen_sweep.py` + `../workload/sweep/` + `../experiments/run_sweep.sh`:
+  参数化 sweep 的 generator / workload / 批跑脚本
+### 已归档
+
 - `../workload/archived/2026-08-29_pre-sweep/`、`../output/archived/2026-08-29_pre-unify/`:
   归档的旧手调 generator 与旧结果(各带 README)
 - **结果页三份已于 2026-09-03 全部归档**(`archived/README_sweep_results.md`、
@@ -180,8 +189,14 @@ python3 -m unittest discover -s tests     # 41/41
   `84f87f5`、真实 extent 进 Ramulator `897c294`),**不要引用**。
   逐格哪些还站得住,见论文仓库 `fig/plots/exp1/README.md` 的注意事项第 4 条。
   **当前没有有效的结果页 —— 要有,得用修正后的引擎重跑。**
-- `README_engine_future_work.md`:引擎重构提案(列式 + 流式,建在 C++ 核之上)
-- `README_simulator_assessment.md`:仿真器价值/贡献/可改进点评估
+- **其余今天之前的页也已归档**(2026-09-03):`archived/README_sweep_design.md`
+  (sweep 设计规范)、`archived/README_software_upstream.md`(复用策略族)、
+  `archived/README_manual_audit_findings.md`(审计总台账)、
+  `archived/README_experiments.md`(证据矩阵怎么跑)、
+  `archived/README_engine_future_work.md`(引擎重构提案,未实施)、
+  `archived/README_simulator_assessment.md`(仿真器评估),以及
+  `archived/intro/` 下的**全部九档逐档说明**(A1–A6、A3a、A3b、A4b)。
+  每份的归档说明都写明了哪部分仍然成立、哪部分已被取代。
 - `../workload/handcheck/`:**手算校验**(一个小到能笔算全部布局的 workload,
   跑完 A3b–A6,把手算的逐 channel 行数/extent/ACT 与实测事件并排;
   公共扫描与 private 扫描逐格一致。含 `compare_theory_vs_measured.py`)

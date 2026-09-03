@@ -1,5 +1,12 @@
 # 手动审计总台账(唯一合并版;chenyi9 2026-08-26 指令合并)
 
+> **已归档 2026-09-03。** 手动审计总台账,条目截至 2026-08-29(R20 阶梯重切)。
+> 台账里若干条的结论建立在此后已被推翻的口径上:R18 head→HBM 条带映射的
+> `heads_per_hbm` 算法已于 `d3a3c4c` 修正(堆栈也按 GPU 切),A3b/A4b 的布局已于
+> `84f87f5` 换成 striped-append,扫描的 ACT 记账已于 `897c294` 交回 Ramulator。
+> **本页作为审计历史保留;新发现的问题记在 `../sessions/2026-09-03.md`。**
+
+
 > ⚠️ **2026-08-29 阶梯重切(R20)**:放置阶梯改为 head-aware,一个 head 的一个 chunk =
 > 一条 channel 的一个 row、decode 时间 = 最忙 channel;扩到 **9 档**(+A3b head 切片、
 > +A4b 全局 co-read placement table)。**避免 row conflict 由 A3b 切片 + A4b table

@@ -1,5 +1,14 @@
 # 参数化 workload sweep — 设计规范 v2（CS 术语，待审阅，未写代码）
 
+> **已归档 2026-09-03。** 参数化 sweep 的设计规范,页首自陈是"**先于代码写的规划**",
+> `gen_sweep.py` 只实现了它的一个子集(§2.1 已逐处标注未实现的 SL/LL large out、
+> scatter、funnel)。workload 族的设计((N,C,D,k)、零 magic number)仍然有效,
+> 但页内 §7"哪个轴凸显哪对档"的判断建立在旧的 chunk 计价模型上,
+> 已被 2026-09-03 三处引擎修正(heads-per-HBM `d3a3c4c`、striped-append 布局 `84f87f5`、真实 extent 进 Ramulator `897c294`) 取代。
+> **workload 定义看 `../../workload/sweep/`;布局口径看
+> `../README_data_layout_walkthrough.md`。**
+
+
 > ⚠️ **2026-08-29 更新**：阶梯已重切为 **9 档**（A1 A2 A3 A3a **A3b** A4 **A4b**
 > A5 A6，见 `README.md` §3），且 sweep 扩成 **6 模型 × 14 config × 9 档 = 756 run**
 > 的 experiment1。本文下面写的"7 档 / 98 run"是旧口径,workload 族设计（(N,C,D,k)、

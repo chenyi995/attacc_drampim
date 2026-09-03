@@ -1,5 +1,13 @@
 # 软件上游:chunk 复用 + 选择性重算的策略族(`--reuse`)
 
+> **已归档 2026-09-03。** 软件上游复用策略族(`--reuse`:recompute / epic /
+> cachecraft / promptcache 等)的说明。**页内对策略本身的描述大体仍然成立** ——
+> `src/workload.py` 的策略分支没有在 2026-09-03 三处引擎修正(heads-per-HBM `d3a3c4c`、striped-append 布局 `84f87f5`、真实 extent 进 Ramulator `897c294`) 里改动。
+> 归档的理由是它写于 2026-08-25、**没有在新引擎上复核过**,尤其是
+> "重算哪些 token"如何落到物理布局这一段:重算行现在各成独立 extent,
+> 见 `../README_data_layout_walkthrough.md` 与 `../sessions/2026-09-03.md` §11。
+
+
 背景一句话:跨请求复用 KV chunk(位置无关缓存, position-independent
 caching)后,chunk 边界处的交叉注意力是错的,主流软件方案的分歧点只在
 **"重算哪些 token 来修正、按什么规则选"**。本仓库把这一维做成可插拔的

@@ -1,5 +1,16 @@
 # A1:AttAcc 原样、无复用(阶梯参照点)
 
+> **已归档 2026-09-03。** 本档(AttAcc 原样、无复用的参照点)的逐档说明,写于 2026-08-24～27。
+> `src/ablation.py` 的 PRESETS 没变,所以**这一档"多做了哪一件事"仍然准确**;
+> 归档是因为 `intro/` 整个目录写在 2026-09-03 三处引擎修正(heads-per-HBM `d3a3c4c`、striped-append 布局 `84f87f5`、真实 extent 进 Ramulator `897c294`) 之前、
+> 页内的代码指路与"结果预期"都没有在新引擎上复核过。姊妹页
+> `README_A3b.md` / `README_A4b.md` 已于本日先行归档(它们写的
+> `_layout_channel_loads` 分支已不是那两档实际走的 policy)。
+> **当前口径:阶梯定位见 `../../README.md` §3;逐 token 的落点与逐档 ACT
+> 见 `../../README_data_layout_walkthrough.md`;手算与实测的逐格对照见
+> `../../../workload/handcheck/README.md`。**
+
+
 一句话:**原版 AttAcc 行为**——prefill 注意力在 GPU、decode 注意力在
 PIM、每个请求的 KV 私有连续摆放 (private)、无任何跨请求复用、无批命令
 (replicate,一条 MAC 命令服务一条查询)。A1 是整个 A 系列的公平参照:

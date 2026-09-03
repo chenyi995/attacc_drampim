@@ -6,7 +6,10 @@
 commit/push。**原始 run 数据不入 git、只在本机**（见 `docs/RAW_DATA_MANIFEST.md`），
 git 里只留 `output/analysis/` 的分析脚本与 RESULTS 表。
 
-设计规范见 `docs/README_sweep_design.md`；9 档阶梯语义见 `docs/README.md` §3。
+设计规范见 `docs/archived/README_sweep_design.md`（2026-09-03 归档）；
+9 档阶梯语义见 `docs/README.md` §3。**本页写于 2026-08-29,流程仍适用,但它
+要求写的 `RESULTS_sweep.md` 等结果页已随当天三处引擎修正一并归档 ——
+重跑请以 `docs/README_run_slurm_and_local.md` 为准。**
 
 ---
 

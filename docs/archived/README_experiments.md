@@ -1,5 +1,13 @@
 # 我们的实验是怎么做的(822-dirty 实验方法总述)
 
+> **已归档 2026-09-03。** 822-dirty 时期的实验方法总述(流程与口径),
+> 指向的 `experiments/paper_ladder/MATRIX.md` 与 `CLAIMS_CHECK.md` 是那一轮的
+> 证据矩阵。此后阶梯两次重切(2026-08-29 的 9 档、2026-09-03 三处引擎修正(heads-per-HBM `d3a3c4c`、striped-append 布局 `84f87f5`、真实 extent 进 Ramulator `897c294`)),
+> 本页描述的流程与当前口径已经对不上。**当前的跑法见
+> `../README_run_slurm_and_local.md` 与 `../README_run_sweep_guide.md`;
+> 当前的布局口径见 `../README_data_layout_walkthrough.md`。**
+
+
 目标读者:接手人;概念首现即释。本页讲**流程与口径**;矩阵轴的定义在
 `../experiments/paper_ladder/MATRIX.md`,claim 核对在同目录
 `CLAIMS_CHECK.md`,问题台账在 `README_manual_audit_findings.md`。
