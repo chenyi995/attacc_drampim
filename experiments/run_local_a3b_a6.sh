@@ -15,7 +15,7 @@ REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$REPO"
 OUT_ROOT=${1:-$REPO/output/sweep_a3b_a6_20260903_append}
 SCRATCH=${SCRATCH:-/data2/chenyi9/kvpim_run_scratch}
-WL=$REPO/workload/sweep/wl_baseline_alltoall_N16_C32_D2.json
+WL=$REPO/workload/sweep/wl_baseline_alltoall_N16_C16_D2.json
 K=8
 
 # Same model table as output/_orch2/common.sh (ngpu, num_hbm).

@@ -16,7 +16,24 @@ import json
 import os
 import sys
 
-RUNGS = ("A1", "A2", "A3", "A3a", "A4", "A5", "A6")
+# The canonical ladder order.  A3b (head slicing) and A4b (global co-read
+# table) joined the ladder on 2026-08-29 but never reached this tuple, so every
+# dag_ladder.csv written between then and 2026-09-03 silently dropped the two
+# rungs even though their dag_A3b/A4b.json were on disk beside it -- including
+# all six of the 2026-09-02 baseline.  Rungs whose report is absent are
+# SKIPPED rather than an error, because a run may deliberately cover a subset:
+# the baseline runs A1/A2/A3b/A4/A4b/A5/A6 and every other sweep point runs
+# A3b and A6 alone (ruling chenyi9 2026-09-03).
+RUNG_ORDER = ("A1", "A2", "A3", "A3a", "A3b", "A4", "A4b", "A5", "A6")
+
+
+def present_rungs(outdir):
+    """Ladder-ordered rungs that actually have a report in ``outdir``."""
+    found = [rung for rung in RUNG_ORDER
+             if os.path.exists(os.path.join(outdir, "dag_{}.json".format(rung)))]
+    if not found:
+        raise SystemExit("no dag_A*.json reports in {}".format(outdir))
+    return found
 ENERGY_CLASSES = ("GPU", "LINK", "PIM", "DIE", "TLB")
 
 
@@ -46,6 +63,7 @@ def main():
     if len(sys.argv) != 4:
         raise SystemExit("usage: collect_dag_ladder.py <outdir> <workload.json> <model>")
     outdir, workload_path, model = sys.argv[1:4]
+    RUNGS = present_rungs(outdir)
     rows = []
     for rung in RUNGS:
         path = os.path.join(outdir, "dag_{}.json".format(rung))

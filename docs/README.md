@@ -162,7 +162,9 @@ python3 -m unittest discover -s tests     # 41/41
 
 ### 怎么跑(保留)
 
-- `README_run_slurm_and_local.md`:**怎么跑**(athena Slurm 集群的 `_orch2` 编排,
+- `README_run_athena_slurm.md` / `README_run_squire_local.md`:**怎么跑**(两台机器
+  各一份;athena 有 Slurm、没有 `/opt/rh`、scratch 在 `/localdata`,squire 没有
+  Slurm、scratch 必须 `/data2`、cppcore 要 gcc-toolset-11)(旧的合并版
   与本机无-Slurm 跑法;含 cppcore 的 gcc-toolset-11 构建坑、scratch 必须放
   /data2、退出码 2 的真因、排错表)
 - `README_run_sweep_guide.md`:**sweep 运行指南**(另一台 ~300 核机器 clone 后
@@ -170,7 +172,9 @@ python3 -m unittest discover -s tests     # 41/41
   但它引用的设计规范与结果页已归档)
 - `RAW_DATA_MANIFEST.md`:**原始数据本地清单**(>50 MB 的事件轨迹 `dag_A*.json`
   不入库、记本机路径;≤50 MB 报告与 .log 已入库)
-- `../experiments/run_local_a3b_a6.sh`:本机(无 Slurm)重跑 A3b..A6 的入口
+- `../experiments/run_local_a3b_a6.sh`:**squire**(无 Slurm)重跑 A3b..A6 的入口
+- `../output/_orch2/colpack_submit.sh` + `colpack_tasks.sh`:**athena** 上 2026-09-03
+  那轮的槽位提交与 78 任务队列(baseline 七档、其余点 A3b+A6)
 - `../workload/gen_sweep.py` + `../workload/sweep/` + `../experiments/run_sweep.sh`:
   参数化 sweep 的 generator / workload / 批跑脚本
 - `../output/analysis/`:结果分析工具(`extract_sweep_csv.py` 等)
@@ -204,11 +208,14 @@ python3 -m unittest discover -s tests     # 41/41
   baseline / 一个 tier-1 请求 / 一个 head,逐 token 说清 KV 落哪条 channel、
   哪个 stripe unit、行内第几个槽;并推出**一次 ACT 恰好覆盖 256 个 token**,
   以及每档一次 decode 扫描各条 channel 要开几次 ACT;2026-09-03)
-- `README_run_slurm_and_local.md`:**怎么跑**(两套路径:athena Slurm 集群的
+- `README_run_athena_slurm.md` / `README_run_squire_local.md`:**怎么跑**(两台机器
+  各一份)(旧的合并版
   `output/_orch2/` 编排,与 2026-09-03 新加的本机无-Slurm 跑法;含
   cppcore 的 gcc-toolset-11 构建坑、scratch 必须放 /data2、退出码 2 的
   真因,以及排错表)
-- `../experiments/run_local_a3b_a6.sh`:本机(无 Slurm)重跑 A3b..A6 的入口
+- `../experiments/run_local_a3b_a6.sh`:**squire**(无 Slurm)重跑 A3b..A6 的入口
+- `../output/_orch2/colpack_submit.sh` + `colpack_tasks.sh`:**athena** 上 2026-09-03
+  那轮的槽位提交与 78 任务队列(baseline 七档、其余点 A3b+A6)
 - `sessions/`:每日调整记录(chenyi9 裁决时间线)
 - `archived/`:已归档,**每份都带归档说明,注明何时归档、为什么、被什么取代**
   —— 旧 workload 文档、走查稿、三份被合并的 audit、旧跑法

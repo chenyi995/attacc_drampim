@@ -28,8 +28,8 @@ sub() {  # node part cores mem W model
 set -uo pipefail
 bash $ORCH/node_watch.sh $ROOT & WATCH=\$!
 echo "=== \$(date) warm on \$(hostname -s): model ${model}, ${cores} cores, ${mem} RAM, W=${w}"
-bash $ORCH/warm_stream.sh $ROOT ${model} ${w} c64  wl_C64.json & P1=\$!
-bash $ORCH/warm_stream.sh $ROOT ${model} ${w} c32  wl_baseline_alltoall_N16_C32_D2.json wl_N64.json & P2=\$!
+bash $ORCH/warm_stream.sh $ROOT ${model} ${w} c64  wl_C40.json & P1=\$!
+bash $ORCH/warm_stream.sh $ROOT ${model} ${w} c32  wl_baseline_alltoall_N16_C16_D2.json wl_N64.json & P2=\$!
 wait \$P1; wait \$P2
 kill \$WATCH 2>/dev/null
 echo "WARM NODE DONE \$(hostname -s) \$(date)"

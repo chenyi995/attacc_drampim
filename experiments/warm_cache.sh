@@ -30,8 +30,8 @@ RUNGS="A1 A2 A3 A3a A3b A4 A4b A5 A6"
 
 # shape-diverse warm set: biggest context (C64), baseline, most agents (N64)
 WARM_CFG=(
-  "wl_C64.json                           8"
-  "wl_baseline_alltoall_N16_C32_D2.json  8"
+  "wl_C40.json                           8"
+  "wl_baseline_alltoall_N16_C16_D2.json  8"
   "wl_N64.json                           8"
 )
 # tier  model      ngpu  num_hbm  (same as run_sweep_models.sh)

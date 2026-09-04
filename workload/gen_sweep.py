@@ -2,7 +2,7 @@
 """gen_sweep.py -- one parametric generator for the whole workload sweep.
 
 Builds a tiered DAG of nodes from (topology, N, C, D). Every node:
-  segs = [sys(16)] + [ALL previous-tier outputs] + [C shared 256-token blocks]
+  segs = [sys(256)] + [ALL previous-tier outputs] + [C shared 256-token blocks]
   lout = one 256-token block
   history_len = t * 256  (its own prior outputs; small, append-scattered,
                           so depth D never fills the 32,768-token K cap)
@@ -19,13 +19,17 @@ because every node reads ALL previous-tier outputs):
   supervisor [1,N,1,N,...] hub<->workers, D tiers      (fan-out + fan-in)
   pipeline   [1]*D         chain                        (1->1)
 
-    python3 gen_sweep.py --topology supervisor --N 16 --C 32 --D 2
+    python3 gen_sweep.py --topology supervisor --N 16 --C 16 --D 2
 """
 import argparse, hashlib, json
 from pathlib import Path
 
 BLOCK = 256
-SYS = 16
+# The system preamble is a FULL block (ruling chenyi9 2026-09-03).  It used to
+# be 16 tokens, which left every context a fragment short of a whole number of
+# 256-token rows and made the row arithmetic of the placement rungs turn on
+# that fragment instead of on the mechanism being measured.
+SYS = BLOCK
 CAP = 128  # blocks (32,768 token = 8-MiB K partition)
 
 
@@ -53,7 +57,17 @@ def main():
                     choices=["broadcast", "reduce", "alltoall",
                              "supervisor", "pipeline"])
     ap.add_argument("--N", type=int, default=16, help="fan degree (wide-tier width)")
-    ap.add_argument("--C", type=int, default=32, help="shared context blocks")
+    # C = 16 reused blocks (ruling chenyi9 2026-09-03).  With k=8 recomputed
+    # tokens per reused block, a repair is exactly ONE column (32 B of a
+    # 1024-B row), so a head's repairs come to C columns.  At C=16 four heads
+    # generated together make 4 x 16 = 64 columns = EXACTLY two rows once the
+    # diff pool packs them, against four rows when A3b leaves each head's
+    # repairs on its own channels -- two against four.  At C=32 the same
+    # arithmetic gives only three against four, half the payoff.  C=32 also
+    # lays exactly two blocks on each of the sixteen channels, so every
+    # placement policy balances perfectly and the rungs stop separating for a
+    # reason that is an artefact of the number.  The axis runs 8 / 16 / 40.
+    ap.add_argument("--C", type=int, default=16, help="shared context blocks")
     ap.add_argument("--D", type=int, default=2, help="number of tiers")
     ap.add_argument("--private", action="store_true",
                     help="no-reuse control: each node gets a private corpus")

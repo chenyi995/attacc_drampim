@@ -13,7 +13,7 @@ REPO=/home/cw636/chenyi/attacc_drampim
 ORCH=$REPO/output/_orch2
 ROOT=$REPO/output/sweep_baseline_20260902_postfix
 model=$1; node=$2
-WL=wl_baseline_alltoall_N16_C32_D2.json
+WL=wl_baseline_alltoall_N16_C16_D2.json
 K=8
 source "$ORCH/common.sh"
 declare -A PART=( [node1]=athena-mini [node2]=athena [node3]=athena

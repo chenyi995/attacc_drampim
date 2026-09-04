@@ -1,5 +1,16 @@
 # 怎么跑：Slurm 集群 与 本机（无 Slurm）
 
+> **已归档 2026-09-03。** 本页把**两台机器**的跑法写在了一起,而它们的 scratch
+> 路径、编译器、并行度、有没有 Slurm 全都不同。合在一页读的人很容易把 squire 的
+> `/data2` 和 `gcc-toolset-11` 套到 athena 上 —— athena 上两者都不存在,
+> `src/cppcore/Makefile` 里写死的那条 gcc-toolset-11 路径就是这么来的。已拆成
+> **两份**:
+>
+> - `../README_run_athena_slurm.md` —— athena 集群,Slurm,活干在 node1–node6
+> - `../README_run_squire_local.md` —— squire,无 Slurm,`/data2`
+>
+> 本页保留作历史记录。页内的 §2 "本机" 指的是 **squire**,不是 athena。
+
 两套路径。**集群那套是历史上产出 `baseline_20260902_postfix` 那 54 个点的方式**，
 脚本还在 `output/_orch2/`；**本机这套是 2026-09-03 新加的**，因为当前这台机器上
 没有 Slurm。
