@@ -43,3 +43,23 @@
 以及所有 `dag_A*.json` 事件轨迹、`ramulator2/` 的构建与 trace。
 `_verify/` 里保留的 `.sha` / `.cmp` / `.inv` / `.out` 是**验证证据**(几十 KB),
 `snapshot.jsonl`(98 KB)是冻结的缓存种子,留着才能复现那次比对。
+
+## 2026-09-03 column-packed 一轮(2026-09-04 归档)
+
+**本机路径**:`output/archived/2026-09-03_colpack/` —— 2.7 GB,
+144 个 `dag_A*.json` + 334 个日志 + `claims_rung/` + `slurm/` + 当时的队列文件,
+**全部保留在本机,不入库**(带自己的 README,写明里面有什么、口径是什么、怎么续跑)。
+
+**入库的分析产物**:`output/analysis/colpack_20260903/` ——
+`baseline_ladder.csv`(42 行,六模型 × 七档)、
+`points_partial.csv`(102 行,从各 rung 日志的 `REPORT_SUMMARY` 抽出)、
+`README.md`(结果与口径)。
+
+**完成度**:baseline **42/42 跑满**;其余十二个 sweep 点 **102/288,且只有 A5 和 A6**
+—— 队列按档排(A5 → A6 → A4 → A3b),在 A4 开始前按用户要求停机,所以
+**没有任何一个 (模型, 点) 拿到完整四档**。
+
+**口径提醒**:这一轮是 `33331b7`(PIM 能量不再被多乘 `num_hbm`)之后的第一批数,
+**与 2026-09-03 之前的任何一轮能量数都不可比** —— 之前 GPT-175B / LLAMA-65B 虚高
+40 倍、GPT-13B / LLAMA-33B 10 倍。makespan 不受该修复影响,但布局模型
+(column-packed extent)和 workload(C=16 / sys=256)都换过,同样不可跨轮比。
