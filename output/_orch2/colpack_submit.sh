@@ -10,7 +10,15 @@
 # The queue is ordered baseline-first, so the six baseline ladders are claimed
 # before any of the two-rung points.
 #
-#   usage: colpack_submit.sh <node> <big|small>
+# Three classes, each with its OWN queue, so the 72 two-rung point tasks run
+# ALONGSIDE the baselines instead of behind them, and each asks the memory it
+# needs.  Asking 420G for a slot that peaks at 40 does not get backfilled --
+# that is what left three of six slots pending on the first attempt.
+#
+#   usage: colpack_submit.sh <node> <big|base|points>
+#     big     GPT-175B / LLAMA-65B baselines, 7 rungs   24 cpu / 300G
+#     base    the other four baselines,       7 rungs   24 cpu / 170G
+#     points  A3b+A6 on one sweep point,      2 rungs    8 cpu /  90G
 set -euo pipefail
 REPO=/home/cw636/chenyi/attacc_drampim
 ORCH=$REPO/output/_orch2
@@ -18,29 +26,37 @@ ROOT=$REPO/output/sweep_colpack_20260903
 node=$1; class=$2
 declare -A PART=( [node1]=athena-mini [node2]=athena [node3]=athena
                   [node4]=athena-small [node5]=athena-genai [node6]=athena-genai )
-# A baseline task runs seven rungs at once; W Ramulator workers each plus one
-# construction process per rung is 7*(W+1) cores.  W=2 -> 21, which fits the
-# 24-core ask with room for the collector.
-if [ "$class" = big ]; then CORES=24; MEM=420G; NOGC=0
-else                        CORES=24; MEM=180G; NOGC=1; fi
+# A task runs its rungs at once; W Ramulator workers plus one construction
+# process per rung is rungs*(W+1) cores.  Seven rungs at W=2 is 21, which fits
+# the 24-core ask with room for the collector; two rungs is 6, which fits 8.
+# Memory is sized from the measured peaks of the 2026-09-02 nine-rung ladders
+# (461/386/297/194/169/170 GB) scaled for SEVEN rungs on a 4608-token context
+# instead of nine on 8464 -- generous, but not so generous that Slurm cannot
+# backfill the job.
+case "$class" in
+  big)    CORES=24; MEM=300G; NOGC=0; QUEUE=tasks_baseline_big.txt ;;
+  base)   CORES=24; MEM=170G; NOGC=0; QUEUE=tasks_baseline.txt ;;
+  points) CORES=8;  MEM=90G;  NOGC=1; QUEUE=tasks_points.txt ;;
+  *) echo "class must be big|base|points" >&2; exit 1 ;;
+esac
 W=${W:-2}
 mkdir -p "$ROOT/slurm" "$ROOT/claims_bf" "$ROOT/drain" "$ROOT/cachepool"
-sb=$(mktemp "$ROOT/slurm/cp_${node}_XXXX.sbatch")
+sb=$(mktemp "$ROOT/slurm/cp_${class}_${node}_XXXX.sbatch")
 cat > "$sb" <<SB
 #!/usr/bin/env bash
-#SBATCH --job-name=cp_${node}
+#SBATCH --job-name=cp${class:0:1}_${node}
 #SBATCH --partition=${PART[$node]}
 #SBATCH --nodelist=${node}
 #SBATCH --nodes=1 --ntasks=1 --cpus-per-task=${CORES} --mem=${MEM}
 #SBATCH --time=3-00:00:00 --open-mode=append
-#SBATCH --output=${ROOT}/slurm/cp_${node}_%j.out
-#SBATCH --error=${ROOT}/slurm/cp_${node}_%j.out
+#SBATCH --output=${ROOT}/slurm/cp_${class}_${node}_%j.out
+#SBATCH --error=${ROOT}/slurm/cp_${class}_${node}_%j.out
 set -uo pipefail
 export KVPIM_NOGC=${NOGC}
-echo "=== \$(date) column-packed slot on \$(hostname -s) job \$SLURM_JOB_ID"
+echo "=== \$(date) column-packed ${class} slot on \$(hostname -s) job \$SLURM_JOB_ID"
 echo "    layout: 8-token columns, 32 col = 256-token row, charged whole"
 echo "    .so \$(stat -c %y $REPO/src/cppcore/libeventcore.so | cut -c1-19)"
-bash $ORCH/backfill.sh $ROOT ${W} \$SLURM_JOB_ID $ROOT/tasks.txt
+bash $ORCH/backfill.sh $ROOT ${W} \$SLURM_JOB_ID $ROOT/${QUEUE}
 echo "SLOT DONE \$(hostname -s) \$SLURM_JOB_ID \$(date)"
 SB
 sbatch "$sb"

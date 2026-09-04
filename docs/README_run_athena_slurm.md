@@ -113,29 +113,48 @@ workload 是 C=16、sys=256 的新一批(baseline 上下文 `18×256 = 4608`,不
 `output/sweep_colpack_20260903/tasks.txt`,**baseline 排在最前面**,先被认领。
 `N-hi`(`wl_N64.json`,128 个 agent)仍然放弃,和 rungs5 那轮一致。
 
-### 3.1 提交
+### 3.1 提交 —— 三个槽位 class,三条队列
 
-一个节点一个槽:
+**队列是分开的**,这样 72 个两档的 point 任务和 6 个七档的 baseline **同时跑**,
+而不是排在 baseline 后面;而且每个 class 只要它真正需要的内存。
+
+| class | 队列 | 任务 | `--cpus-per-task` | `--mem` |
+|---|---|---|---:|---:|
+| `big` | `tasks_baseline_big.txt` | GPT-175B / LLAMA-65B 的 baseline,7 档 | 24 | 300G |
+| `base` | `tasks_baseline.txt` | 另外四个 baseline,7 档 | 24 | 170G |
+| `points` | `tasks_points.txt` | 一个 sweep 点的 A3b+A6,2 档 | 8 | 90G |
 
 ```bash
-bash output/_orch2/colpack_submit.sh node2 big
+bash output/_orch2/colpack_tasks.sh          # 写三条队列
 bash output/_orch2/colpack_submit.sh node3 big
-bash output/_orch2/colpack_submit.sh node6 big
-bash output/_orch2/colpack_submit.sh node1 small
-bash output/_orch2/colpack_submit.sh node4 small
+bash output/_orch2/colpack_submit.sh node4 big
+bash output/_orch2/colpack_submit.sh node2 base
+for n in node1 node1 node6 node6 node6 node5; do
+  bash output/_orch2/colpack_submit.sh $n points
+done
 ```
 
-`big` / `small` 只差 `--mem`(420G / 180G)和 `KVPIM_NOGC`(0 / 1)。
-每个槽 `--cpus-per-task=24`:一个 baseline 任务七档并行,
-`7 × (W+1) = 21` 核,`W=2` 刚好装得下。改并行宽度用 `W=3 bash ... `。
+槽是**互相独立的认领者**(claim 目录 `claims_bf/` 三个 class 共用,所以不会重复领),
+加槽就是加吞吐。
 
-槽是**互相独立的认领者**,加槽就是加吞吐,不用改队列。
+**内存怎么定的**:2026-09-02 那轮**九档 + C=32(8464 token)**的实测峰值是
+GPT-175B 461 GB、LLAMA-65B 386、LLAMA-33B 297、GPT-13B 194、LLAMA3-8B 169、
+LLAMA-7B 170(`sacct -j <id> --format=MaxRSS`)。这轮是**七档 + 上下文 4608**,
+所以上表的要价按比例留了余量。
+
+> ⚠️ **要价过大会让作业根本排不上。** 第一次提交时六个槽统一要 420G,
+> 结果三个卡在 `(Priority)` 上进不去 —— 而实测一个 GPT-13B 的七档槽当时只用
+> 34 GB。**Slurm 的 backfill 只会塞得下的作业**,所以要价要贴着实际需求。
+
+**分区拥挤是另一回事**:`athena`(node2/3)和 `athena-small`(node4)经常被别人的
+高优先级作业压着,和你要多少无关;`athena-mini`(node1)与 `athena-genai`
+(node5/6)通常能立刻调度。想加并行度,优先往能调度的分区加 `points` 槽。
 
 ### 3.2 看进度
 
 ```bash
 squeue -u $USER
-tail -f output/sweep_colpack_20260903/slurm/cp_node2_*.out
+tail -f output/sweep_colpack_20260903/slurm/cp_*_*.out
 ls output/sweep_colpack_20260903/claims_bf | wc -l        # 已认领的任务数
 find output/sweep_colpack_20260903 -name 'dag_A*.json' | wc -l
 grep -rh REPORT_SUMMARY output/sweep_colpack_20260903/*/*/dag_*.log
@@ -145,9 +164,10 @@ grep -rh REPORT_SUMMARY output/sweep_colpack_20260903/*/*/dag_*.log
 
 - **续跑**:直接再提一个槽。`backfill.sh` 在跑每个档之前会**对着磁盘重新核对**,
   已经有 `dag_<档>.json` 的档跳过,所以死在半路的任务只会补上缺的那几档。
+- **加并行度**:再提几个 `points` 槽(8 核 / 90G,最容易 backfill)。
 - **停某个 job**:`touch output/sweep_colpack_20260903/drain/<JOBID>`,
   它跑完手上这个任务就退出(比 `scancel` 干净,不会留半个 json)。
-- **硬停**:`scancel -u $USER -n cp_node2`。
+- **硬停**:`scancel -u $USER -n cpp_node6`(job 名是 `cpb_`/`cpp_` + 节点)。
 
 ---
 
