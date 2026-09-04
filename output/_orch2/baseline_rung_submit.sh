@@ -22,7 +22,7 @@
 set -euo pipefail
 REPO=/home/cw636/chenyi/attacc_drampim
 ORCH=$REPO/output/_orch2
-ROOT=$REPO/output/sweep_colpack_20260903
+ROOT=${ROOT:-$REPO/output/sweep_20260904_final}
 node=$1; class=${2:-small}; set_=${3:-baseline}
 case "$set_" in
   baseline) QUEUE=tasks_baseline_rungs.txt ;;

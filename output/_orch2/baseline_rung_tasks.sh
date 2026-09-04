@@ -4,7 +4,8 @@
 #   tasks_baseline_rungs.txt   6 models x 7 rungs (A1 A2 A3b A4 A4b A5 A6 --
 #                              no A3, no A3a)                     =  42
 #   tasks_points_rungs.txt     6 models x 12 sweep points x 4 rungs
-#                              (A3b A4 A5 A6)                     = 288
+#                              (A3b A4b A5 A6 -- A4 dropped from the points
+#                              on 2026-09-04, it never ran there)  = 288
 #
 # The fan-out is per RUNG because a rung is independent of its siblings, so
 # these are 330 independently claimable units instead of 78 ladders.
@@ -18,7 +19,7 @@
 #   usage: baseline_rung_tasks.sh [ROOT]
 set -euo pipefail
 REPO=/home/cw636/chenyi/attacc_drampim
-ROOT=${1:-$REPO/output/sweep_colpack_20260903}
+ROOT=${1:-${ROOT:-$REPO/output/sweep_20260904_final}}
 WLB=wl_baseline_alltoall_N16_C16_D2.json
 BIG="GPT-175B LLAMA-65B"
 SMALL="LLAMA-33B GPT-13B LLAMA3-8B LLAMA-7B"
@@ -44,7 +45,7 @@ POINTS="N-lo:wl_N4.json:8 C-lo:wl_C8.json:8 C-hi:wl_C40.json:8
         private:wl_private.json:8"
 # Heaviest first again: the big models, and A5/A6 (prefill on the PIM, the
 # largest graphs of the four) ahead of A3b/A4.
-for r in A5 A6 A4 A3b; do
+for r in A5 A6 A4b A3b; do
   for m in $BIG $SMALL; do
     for p in $POINTS; do
       cfg=${p%%:*}; rest=${p#*:}; wl=${rest%%:*}; k=${rest#*:}
