@@ -9,6 +9,7 @@ import unittest
 
 from types import SimpleNamespace
 
+from src.ramulator_wrapper import hbm_replicas
 from src.workload import WorkloadValidationError
 from src.workload_runner import (_layout_channel_loads, _layout_scan_max_load,
                                   _HBM_CHANNELS, _MASTER_CHANNELS_DEFAULT,
@@ -561,6 +562,53 @@ class SliceDegeneracyWarningTest(unittest.TestCase):
         # LLAMA3-8B: 32 Q heads, GQA group 4 -> 8 KV heads -> 2 channels each.
         self.assertIsNone(placement_degeneracy_warning(
             self._system(32, 1, gqa=4), "naive", "slice"))
+
+
+class HbmReplicaTest(unittest.TestCase):
+    """One trace = one stack of ``num_ops_per_hbm`` heads; scale by the heads
+    it stands for, never by ``num_hbm`` (audit 2026-09-03)."""
+
+    @staticmethod
+    def _per_hbm(num_ops, num_hbm):
+        return -(-num_ops // num_hbm)             # what Ramulator.run computes
+
+    def test_head_folded_scan_stands_for_one_stack(self):
+        # The placement path forces numOp = 1 (heads are folded into the row
+        # count) and applies the real stack count itself as num_hbm_used.  The
+        # trace is one head, so its counters stand for exactly one stack --
+        # whatever --num-hbm says.  This is the double-count that made PIM scan
+        # energy num_hbm times too high.
+        for num_hbm in (1, 4, 5, 10, 16, 40):
+            self.assertEqual(
+                hbm_replicas(1, self._per_hbm(1, num_hbm)), 1.0,
+                "--num-hbm {} invented {} phantom heads".format(
+                    num_hbm, num_hbm - 1))
+
+    def test_replicas_recover_the_real_head_count(self):
+        # The invariant: replicas * heads-in-the-trace == heads on the AttAcc.
+        for num_hbm in (1, 2, 5, 10, 40):
+            for num_ops in (1, 4, 8, 12, 26, 96, 384):
+                per_hbm = self._per_hbm(num_ops, num_hbm)
+                self.assertAlmostEqual(
+                    hbm_replicas(num_ops, per_hbm) * per_hbm, num_ops,
+                    msg="numOp={} num_hbm={}".format(num_ops, num_hbm))
+
+    def test_agrees_with_num_hbm_when_it_divides_the_heads(self):
+        # Where the old expression was right it stays right: the legacy AttAcc
+        # batches (numOp = kv_heads x batch) divide evenly.
+        for num_hbm in (5, 10, 40):
+            for per_hbm in (1, 2, 3, 16, 64):
+                num_ops = num_hbm * per_hbm
+                self.assertEqual(hbm_replicas(num_ops, per_hbm), num_hbm)
+
+    def test_never_exceeds_the_old_value(self):
+        # ceil() can only round the per-stack head count UP, so the corrected
+        # multiplier can only be <= num_hbm: the fix never inflates energy.
+        for num_hbm in (1, 5, 10, 40):
+            for num_ops in range(1, 200):
+                self.assertLessEqual(
+                    hbm_replicas(num_ops, self._per_hbm(num_ops, num_hbm)),
+                    num_hbm)
 
 
 if __name__ == "__main__":

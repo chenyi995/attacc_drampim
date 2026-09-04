@@ -114,6 +114,40 @@ def mq_pe_power_w(shared_queries, interval_cycles, active_banks=16 * 64):
     return active_banks * n * _MQ_E_Q_PJ / (interval_ns * 1000.0)
 
 
+def hbm_replicas(num_ops_per_attacc, num_ops_per_hbm):
+    """How many HBM stacks' worth of heads one trace's counters stand for.
+
+    ``gen_trace_attacc_*.py`` builds the command stream of ONE stack holding
+    ``--nhead`` = ``num_ops_per_hbm`` heads.  Its counters therefore cover
+    exactly that many heads, and scaling them to a whole AttAcc means
+    multiplying by the number of stacks the accelerator's ``numOp`` heads
+    occupy at that per-stack density:
+
+        replicas = num_ops_per_attacc / num_ops_per_hbm
+
+    NOT by ``num_hbm``.  The two agree only when ``num_hbm`` divides the head
+    count; otherwise ``* num_hbm`` counts heads that do not exist, because
+    ``num_ops_per_hbm = ceil(numOp / num_hbm)`` has already rounded up.
+
+    The disagreement is total on the head-folded placement path (audit
+    2026-09-03).  ``workload_runner._append_placement_pim_scan`` forces
+    ``scan_op.numOp = 1`` -- heads are folded into the row count, so the trace
+    is one head-slot on one channel -- and then applies the real stack
+    multiplicity itself as ``num_hbm_used``.  With ``* num_hbm`` here, one
+    ceil(1 / num_hbm) = 1-head trace was blown up to ``num_hbm`` phantom heads
+    on top of that, so every A1/A3-A6 decode scan and every A5/A6
+    prefill-on-PIM scan charged exactly ``num_hbm`` times the PIM energy it
+    should (40x for the GPT-175B / LLAMA-65B sweeps, 10x for GPT-13B /
+    LLAMA-33B, 1x -- i.e. correct -- for the --num-hbm 1 models).
+
+    Returned as a float on purpose: the invariant that must hold is "total
+    energy is proportional to the real head count", and a second integer
+    rounding on top of the ceil above would break it again.
+    """
+    per_hbm = max(1, int(num_ops_per_hbm))
+    return max(1, int(num_ops_per_attacc)) / per_hbm
+
+
 class Ramulator:
 
     def __init__(self,
@@ -460,6 +494,10 @@ class Ramulator:
             dbyte = layer.dbyte
             num_ops_per_attacc = layer.numOp
             num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
+            # Traffic scale-up of this one-stack trace; see hbm_replicas.
+            # Taken BEFORE the fast_mode override below, which replaces
+            # num_ops_per_hbm with a fixed 64 and compensates in num_ops_group.
+            replicas = hbm_replicas(num_ops_per_attacc, num_ops_per_hbm)
             # Sequence split REVERTED with the head->channel restoration
             # (chenyi9 2026-08-27 night): it presupposed token striping.
             hbm_per_head = 1
@@ -656,7 +694,7 @@ class Ramulator:
                 elif pim_type == PIMType.BG:
                     mem_acc *= 2 * 2 * 4
                 traffic = [si_io, tsv_io, giomux_io, bgmux_io, mem_acc]
-                traffic = [i * self.num_hbm for i in traffic]
+                traffic = [i * replicas for i in traffic]
                 traffic = [i * num_ops_group for i in traffic]
                 return self.tCK * cycle / 1000 / 1000 / 1000, traffic
 
@@ -693,6 +731,8 @@ class Ramulator:
 
         num_ops_per_attacc = layer.numOp
         num_ops_per_hbm = math.ceil(num_ops_per_attacc / self.num_hbm)
+        # Same one-stack -> one-AttAcc scale-up as run(); see hbm_replicas.
+        replicas = hbm_replicas(num_ops_per_attacc, num_ops_per_hbm)
         num_ops_group = 1
         if self.fast_mode:
             minimum_heads = 64
@@ -732,7 +772,7 @@ class Ramulator:
 
             ## si, tsv, giomux to bgmux, bgmux to column decoder, bank RD
             traffic = [si_io, tsv_io, giomux_io, bgmux_io, mem_acc]
-            traffic = [i * self.num_hbm for i in traffic]
+            traffic = [i * replicas for i in traffic]
             traffic = [i * num_ops_group for i in traffic]
             exec_time = self.tCK * cycle / 1000 / 1000 / 1000  # ns -> s
             exec_time *= num_ops_group
