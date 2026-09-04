@@ -183,6 +183,45 @@ setsid nohup bash output/_orch2/colpack_reap.sh \
 `athena-mini`(node1)与 `athena-genai`(node5/6)通常更快。但短 walltime 让拥挤分区
 也能塞进去了,所以现在往哪个节点加都行。
 
+### 3.1b baseline 重跑:**一个 rung 一个可认领任务**(2026-09-03 晚)
+
+`backfill.sh` 认领的是一整个 `(model, config)`,所以一个 baseline 任务 = 一个模型的
+七档,**最多只有六个槽能同时忙**在六个 baseline 上 —— 档在槽内部是并行的,但它们被钉在
+同一个节点、同一份 allocation 里。而**一个 rung 和它的兄弟完全独立**(各自的进程、
+各自的报告文件,只共享只读的 signature cache),所以自然的工作单位是 **rung,不是 ladder**。
+拆开之后是 **6 × 7 = 42 个独立可认领的单位**,能铺满集群肯给的每一个节点。
+
+```bash
+bash output/_orch2/baseline_rung_tasks.sh          # 写 42 行的队列
+for i in 1 2 3; do for n in node1 node6 node5 node3 node2 node4; do
+  bash output/_orch2/baseline_rung_submit.sh $n big; done; done
+for i in 1 2 3 4; do for n in node1 node6 node5 node3 node2 node4; do
+  bash output/_orch2/baseline_rung_submit.sh $n small; done; done
+```
+
+- 槽尺寸 **4 核**(一个 rung 构建时是单线程的,余量给暖机的 W 个 Ramulator worker),
+  `big` 120G / `small` 60G,walltime 12h / 8h。小到能在拥挤分区上 backfill。
+- 认领目录是 `claims_rung/<model>__<cfg>_k<k>__<rung>`,原子 mkdir,和 `backfill.sh`
+  同一套纪律;**磁盘上已经有的 rung 直接跳过、连 claim 都不占**,所以停掉之后
+  重新提交就是续跑。
+- 队列**重的排前面**:两个大模型的 A1 打头(A1 图最大、比别的档慢约 3 倍),
+  然后其余模型的 A1,再是 A5/A6/A4/A4b/A3b/A2。槽从上往下领第一条没被占的。
+- `run_dag_ladder.sh` 认 `SKIP_COLLECT=1`:几十个单档进程共用一个 `OUT` 时,
+  谁都不该去写 `dag_ladder.csv`;**等整条阶梯齐了再收一次**。
+
+实测:42 个槽提交下去,**42 个 rung 全部同时在跑**,六个节点全用上。
+六个 A2 档两分钟就完事(纯 GPU、无 PIM 扫描),它们的槽发现队列里没剩的就干净退出了。
+
+收数(全部跑完之后):
+
+```bash
+for m in GPT-13B LLAMA-33B LLAMA3-8B LLAMA-65B GPT-175B LLAMA-7B; do
+  python3 experiments/collect_dag_ladder.py \
+    output/sweep_colpack_20260903/$m/baseline_k8 \
+    wl_baseline_alltoall_N16_C16_D2.json $m
+done
+```
+
 ### 3.2 看进度
 
 ```bash

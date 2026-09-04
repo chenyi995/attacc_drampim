@@ -17,10 +17,12 @@
 set -uo pipefail
 REPO=/home/cw636/chenyi/attacc_drampim
 ROOT=${1:-$REPO/output/sweep_colpack_20260903}
-CLAIMS=$ROOT/claims_bf
+CLAIMS_DIRS="$ROOT/claims_bf $ROOT/claims_rung"
 
 reap_once() {
-  local n=0
+  local n=0 held=0
+  for CLAIMS in $CLAIMS_DIRS; do
+  [ -d "$CLAIMS" ] || continue
   for dir in "$CLAIMS"/*/; do
     [ -d "$dir" ] || continue
     [ -f "$dir/done" ] && continue                 # finished, keep the record
@@ -33,7 +35,9 @@ reap_once() {
     echo "[$(date +%F' '%T)] reap $(basename "$dir") -- job $jid is gone, releasing"
     rm -rf "$dir"; n=$((n+1))
   done
-  echo "[$(date +%F' '%T)] reaped $n claim(s); $(ls "$CLAIMS" 2>/dev/null | wc -l) still held"
+  held=$((held + $(ls "$CLAIMS" 2>/dev/null | wc -l)))
+  done
+  echo "[$(date +%F' '%T)] reaped $n claim(s); $held still held"
 }
 
 if [ "${2:-}" = "--loop" ]; then

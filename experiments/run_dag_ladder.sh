@@ -88,5 +88,14 @@ done
 if [ -n "${SKIP_A1:-}" ]; then
     cp "$A1_JSON" "$OUT/dag_A1.json"
 fi
-python3 "$SCRIPT_DIR/collect_dag_ladder.py" "$OUT" "$WL" "$MODEL"
-echo "CSV: $OUT/dag_ladder.csv"
+# SKIP_COLLECT=1 when several single-rung invocations share one OUT (the
+# per-rung fan-out of output/_orch2/baseline_rung_worker.sh): they would all
+# rewrite dag_ladder.csv at once, racing each other over a file that is only
+# meaningful once the whole ladder is on disk.  Collect once at the end
+# instead -- collect_dag_ladder.py emits whichever rungs it finds.
+if [ -n "${SKIP_COLLECT:-}" ]; then
+    echo "SKIP_COLLECT set -- not writing dag_ladder.csv"
+else
+    python3 "$SCRIPT_DIR/collect_dag_ladder.py" "$OUT" "$WL" "$MODEL"
+    echo "CSV: $OUT/dag_ladder.csv"
+fi
