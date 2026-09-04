@@ -19,6 +19,11 @@ heads-per-HBM 按 per-GPU 重算、**真实 extent 进 Ramulator**(修正各占�
 重设 C=32→16 / sys=16→256(收益从 3 行对 4 行变成 2 行对 4 行)、
 `collect_dag_ladder.py` 漏收 A3b/A4b 的 bug、按机器拆成 athena / squire 两份
 跑法文档、78 任务的重跑编排)。
+2026-09-04(**`shadow_reads` 回答了两个问题**:它本该只决定陈旧 master 行参不参与
+打分(A3 vs A3a),却同时决定了那一行的 DRAM row 进不进 `reads`。于是 A3b 的
+master 流被减掉重算的那部分再连续打包,一加一减抵消,**重算在 A3b 上完全免费、
+ACT 与 k 无关**;折扣落在 master/diff 分池本该打败的那一档。改 `_pool_reads`
+一个条件,只对 striped-append 档生效,A1/A3/A3a 不动)。
 **跑批交接见 `2026-08-30-HANDOFF.md`**(athena Slurm 集群上 756-run sweep 的
 运行状态、续跑方式、资源纪律与已知问题——接手跑批先看这页)。
 更早的移植期(2026-08-22/23,

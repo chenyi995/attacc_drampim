@@ -216,7 +216,9 @@ python3 -m unittest discover -s tests     # 41/41
 - `../experiments/run_local_a3b_a6.sh`:**squire**(无 Slurm)重跑 A3b..A6 的入口
 - `../output/_orch2/colpack_submit.sh` + `colpack_tasks.sh`:**athena** 上 2026-09-03
   那轮的槽位提交与 78 任务队列(baseline 七档、其余点 A3b+A6)
-- `sessions/`:每日调整记录(chenyi9 裁决时间线)
+- `sessions/`:每日调整记录(chenyi9 裁决时间线)。**最新:`sessions/2026-09-04.md`**
+  —— A3b 的重算曾经是免费的(`shadow_reads` 兼管了 DRAM 激活),已修;
+  当前 sweep 值 k=8 上 A3b 最忙通道载荷 +12.5%,A3b 那一档的旧数偏快
 - `archived/`:已归档,**每份都带归档说明,注明何时归档、为什么、被什么取代**
   —— 旧 workload 文档、走查稿、三份被合并的 audit、旧跑法
   `README_run_experiments.md`、`README_delta_vs_xinyao0821.md`、

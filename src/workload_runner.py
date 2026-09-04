@@ -1121,9 +1121,29 @@ def _address_key(location: KVLocation) -> Tuple[int, int]:
 
 
 def _pool_reads(tlb, locations: Sequence[KVLocation]) -> Tuple[List[KVLocation], set]:
-    """Physical read stream per the layout's mask capability (see
-    CacheBlendTLB.shadow_reads)."""
-    if getattr(tlb, "shadow_reads", True):
+    """Physical read stream: which rows the DRAM actually touches.
+
+    ``shadow_reads`` (see CacheBlendTLB) answers a DIE-side question -- is a
+    corrected row's stale master copy scored, or masked out?  That is what
+    separates A3 from A3a and it is the only thing the flag may decide.
+
+    It must NOT decide whether that master row's DRAM row is ACTIVATED.  At
+    4 B of address space per token (``_GEN_BYTES_PER_TOKEN``) one 1024-B row
+    holds 256 tokens, so the k recomputed tokens of a 256-token chunk sit
+    INSIDE a row whose other 256-k tokens still have to be read: the row is
+    opened either way, and the repair is an ADDITION to the stream, not a
+    substitution.  Dropping the shadowed rows from ``reads`` let
+    ``_striped_append_channel_extents`` shorten the master stream by exactly
+    the repair length (``master_rows`` there sums what survives), so the two
+    cancelled and A3b's cost came out independent of k -- the recompute was
+    free on the one rung that is supposed to pay for it.
+
+    Every striped-append rung therefore gets the shadow rows regardless of
+    the mask gate.  A1/A3/A3a keep the legacy chunk-count model and the old
+    behaviour, so the A3-vs-A3a contrast survives (fix chenyi9 2026-09-04).
+    """
+    if (getattr(tlb, "shadow_reads", True)
+            or getattr(tlb, "layout_policy", None) in _APPEND_POLICIES):
         return _physical_reads(locations)
     return list(locations), set()
 

@@ -12,6 +12,8 @@ from types import SimpleNamespace
 from src.ramulator_wrapper import hbm_replicas
 from src.workload import WorkloadValidationError
 from src.workload_runner import (_layout_channel_loads, _layout_scan_max_load,
+                                  _pool_reads, _placement_channel_runs,
+                                  _APPEND_POLICIES,
                                   _HBM_CHANNELS, _MASTER_CHANNELS_DEFAULT,
                                   _STRIPE_UNIT_ROWS, _layout_policy,
                                   _hbm_stacks_local, _heads_per_hbm,
@@ -417,6 +419,117 @@ class StripedAppendLayoutTest(unittest.TestCase):
     def test_unknown_append_policy_rejected(self):
         with self.assertRaises(WorkloadValidationError):
             _striped_append_channel_rows(1, 0, policy="bogus", heads_per_hbm=1)
+
+
+class ShadowRowsAreActivatedTest(unittest.TestCase):
+    """A repaired row's DRAM row is opened whether or not it is scored.
+
+    ``shadow_reads`` is a DIE-side flag: does the stale master copy get
+    masked out of the score, or must the scan skip it?  It used to decide
+    something else as well -- whether that master row appeared in ``reads``
+    at all -- and A3b (``shadow_reads = False``) therefore lost the k
+    recomputed rows from its master stream.  ``_striped_append_channel_
+    extents`` then repacked what survived, so the master stream SHRANK by
+    exactly the repair length and A3b's cost came out independent of k.
+
+    Geometry that makes the skip free: 4 B of address space per token, so a
+    1024-B row holds 256 tokens.  Skipping k of them neither shortens the row
+    nor saves its activation; the repair is an ADDITION (fix 2026-09-04).
+    """
+
+    @staticmethod
+    def _tlb(shadow_reads, layout_policy):
+        return SimpleNamespace(shadow_reads=shadow_reads,
+                               layout_policy=layout_policy)
+
+    @staticmethod
+    def _loc(owner, fingerprint, kind, address, shadow=None):
+        return SimpleNamespace(owner=owner, fingerprint=fingerprint, kind=kind,
+                               key_address=address, value_address=address + 1,
+                               shadow=shadow)
+
+    def _visible(self, chunks, k, chunk_rows=256):
+        """Consumer-visible KV: ``chunks`` chunks, k repaired tokens each."""
+        visible = []
+        address = 0
+        for index in range(chunks):
+            name = "seg{}".format(index)
+            for position in range(chunk_rows):
+                address += 8
+                master = self._loc("owner", name, "master", address)
+                if position < k:
+                    visible.append(self._loc("consumer", name, "diff",
+                                             address + 4, shadow=master))
+                else:
+                    visible.append(master)
+        return visible
+
+    @staticmethod
+    def _acts(groups):
+        """Activations Ramulator sees: each placed extent opens its own row."""
+        return sum(-(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
+                   for _channel, _count, placed in groups
+                   for _key, _value, rows in placed)
+
+    def test_a3b_gets_the_shadow_rows_despite_having_no_mask_gate(self):
+        visible = self._visible(chunks=4, k=8)
+        reads, masked = _pool_reads(self._tlb(False, "slice-append"), visible)
+        # 4 x 256 visible + the 32 shadowed master rows read back
+        self.assertEqual(len(reads), 4 * 256 + 32)
+        # ``masked_rows`` means "streamed by the DRAM, ignored by the score",
+        # which is exactly what happens to a stale row here: the row is opened
+        # for its other tokens and the stale one does not reach the score.
+        # (It is a report field only -- time and energy come from Ramulator.)
+        self.assertEqual(len(masked), 32)
+
+    def test_a3_keeps_the_legacy_behaviour(self):
+        """A1/A3/A3a stay on the chunk-count model, so the A3-vs-A3a contrast
+        (which IS the mask gate) survives the fix."""
+        visible = self._visible(chunks=4, k=8)
+        for policy in ("single", "slice"):
+            self.assertNotIn(policy, _APPEND_POLICIES)
+            reads, masked = _pool_reads(self._tlb(False, policy), visible)
+            self.assertEqual(len(reads), 4 * 256)
+            self.assertEqual(masked, set())
+
+    def test_a3b_master_stream_no_longer_shrinks_with_k(self):
+        """The regression itself: the master side is the owner's chunks and
+        owes nothing to k."""
+        for k in (0, 1, 8, 32, 64, 128):
+            reads, _masked = _pool_reads(self._tlb(False, "slice-append"),
+                                         self._visible(chunks=4, k=k))
+            master = sum(rows for kind, rows in _read_extents(reads)
+                         if kind != "diff")
+            self.assertEqual(master, 4 * 256,
+                             "master stream moved with k={}".format(k))
+
+    def test_a3b_cost_is_monotone_in_k(self):
+        """Nothing pinned this before, which is why the bug survived."""
+        previous_load = previous_acts = -1
+        for k in (0, 1, 8, 16, 32, 64, 128):
+            reads, _masked = _pool_reads(self._tlb(False, "slice-append"),
+                                         self._visible(chunks=4, k=k))
+            loads, _active, _runs, groups = _placement_channel_runs(
+                reads, policy="slice-append", heads_per_hbm=1)
+            self.assertGreaterEqual(max(loads), previous_load)
+            self.assertGreaterEqual(self._acts(groups), previous_acts)
+            previous_load, previous_acts = max(loads), self._acts(groups)
+
+    def test_activations_step_at_the_row_boundary_not_with_k(self):
+        """Ruling example (chenyi9 2026-09-04): four 256-token chunks, A4b.
+
+        The diff pool holds 4k tokens at 4 B each.  k=8 fills 4 columns of one
+        row, k=32 fills 16 columns of the SAME row -- four times the data, the
+        same single activation.  Only crossing 256 tokens buys another ACT.
+        """
+        for k, diff_acts in ((8, 1), (32, 1), (64, 1), (65, 2)):
+            reads, _masked = _pool_reads(self._tlb(True, "master-diff-table-append"),
+                                         self._visible(chunks=4, k=k))
+            groups = _striped_append_channel_extents(
+                reads, policy="master-diff-table-append", heads_per_hbm=1)
+            # 4 master rows (one per chunk) + the packed diff pool
+            self.assertEqual(self._acts(groups), 4 + diff_acts,
+                             "k={} should cost {} diff ACT".format(k, diff_acts))
 
 
 class PlacementScanIntegrationTest(unittest.TestCase):
