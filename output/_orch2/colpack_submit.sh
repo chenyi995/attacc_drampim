@@ -18,7 +18,7 @@
 #   usage: colpack_submit.sh <node> <big|base|points>
 #     big     GPT-175B / LLAMA-65B baselines, 7 rungs   24 cpu / 300G
 #     base    the other four baselines,       7 rungs   24 cpu / 170G
-#     points  A3b+A6 on one sweep point,      2 rungs    8 cpu /  90G
+#     points  A3b+A6 on one sweep point,      2 rungs    6 cpu /  64G
 set -euo pipefail
 REPO=/home/cw636/chenyi/attacc_drampim
 ORCH=$REPO/output/_orch2
@@ -33,10 +33,18 @@ declare -A PART=( [node1]=athena-mini [node2]=athena [node3]=athena
 # (461/386/297/194/169/170 GB) scaled for SEVEN rungs on a 4608-token context
 # instead of nine on 8464 -- generous, but not so generous that Slurm cannot
 # backfill the job.
+# WALLTIME is the other half of getting scheduled.  Slurm's backfill only
+# starts a job that provably finishes before the top-priority job's reserved
+# start, so a 3-day limit -- what this asked at first -- almost never
+# backfills on a partition with 55 jobs queued ahead.  These limits are sized
+# to the work (a two-rung point on a 4608-token context is well under an hour
+# per rung; the 2026-09-02 NINE-rung ladders on a context twice this size took
+# 5.6-9.8 h) and losing one is cheap: colpack_reap.sh releases the claim and
+# the next slot resumes it, skipping the rungs already on disk.
 case "$class" in
-  big)    CORES=24; MEM=300G; NOGC=0; QUEUE=tasks_baseline_big.txt ;;
-  base)   CORES=24; MEM=170G; NOGC=0; QUEUE=tasks_baseline.txt ;;
-  points) CORES=8;  MEM=90G;  NOGC=1; QUEUE=tasks_points.txt ;;
+  big)    CORES=24; MEM=300G; NOGC=0; TIME=1-00:00:00; QUEUE=tasks_baseline_big.txt ;;
+  base)   CORES=24; MEM=170G; NOGC=0; TIME=16:00:00;   QUEUE=tasks_baseline.txt ;;
+  points) CORES=6;  MEM=64G;  NOGC=1; TIME=6:00:00;    QUEUE=tasks_points.txt ;;
   *) echo "class must be big|base|points" >&2; exit 1 ;;
 esac
 W=${W:-2}
@@ -48,7 +56,7 @@ cat > "$sb" <<SB
 #SBATCH --partition=${PART[$node]}
 #SBATCH --nodelist=${node}
 #SBATCH --nodes=1 --ntasks=1 --cpus-per-task=${CORES} --mem=${MEM}
-#SBATCH --time=3-00:00:00 --open-mode=append
+#SBATCH --time=${TIME} --open-mode=append
 #SBATCH --output=${ROOT}/slurm/cp_${class}_${node}_%j.out
 #SBATCH --error=${ROOT}/slurm/cp_${class}_${node}_%j.out
 set -uo pipefail

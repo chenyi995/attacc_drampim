@@ -118,11 +118,11 @@ workload 是 C=16、sys=256 的新一批(baseline 上下文 `18×256 = 4608`,不
 **队列是分开的**,这样 72 个两档的 point 任务和 6 个七档的 baseline **同时跑**,
 而不是排在 baseline 后面;而且每个 class 只要它真正需要的内存。
 
-| class | 队列 | 任务 | `--cpus-per-task` | `--mem` |
-|---|---|---|---:|---:|
-| `big` | `tasks_baseline_big.txt` | GPT-175B / LLAMA-65B 的 baseline,7 档 | 24 | 300G |
-| `base` | `tasks_baseline.txt` | 另外四个 baseline,7 档 | 24 | 170G |
-| `points` | `tasks_points.txt` | 一个 sweep 点的 A3b+A6,2 档 | 8 | 90G |
+| class | 队列 | 任务 | `--cpus-per-task` | `--mem` | `--time` |
+|---|---|---|---:|---:|---:|
+| `big` | `tasks_baseline_big.txt` | GPT-175B / LLAMA-65B 的 baseline,7 档 | 24 | 300G | 24h |
+| `base` | `tasks_baseline.txt` | 另外四个 baseline,7 档 | 24 | 170G | 16h |
+| `points` | `tasks_points.txt` | 一个 sweep 点的 A3b+A6,2 档 | 6 | 64G | 6h |
 
 ```bash
 bash output/_orch2/colpack_tasks.sh          # 写三条队列
@@ -146,9 +146,31 @@ LLAMA-7B 170(`sacct -j <id> --format=MaxRSS`)。这轮是**七档 + 上下文 46
 > 结果三个卡在 `(Priority)` 上进不去 —— 而实测一个 GPT-13B 的七档槽当时只用
 > 34 GB。**Slurm 的 backfill 只会塞得下的作业**,所以要价要贴着实际需求。
 
-**分区拥挤是另一回事**:`athena`(node2/3)和 `athena-small`(node4)经常被别人的
-高优先级作业压着,和你要多少无关;`athena-mini`(node1)与 `athena-genai`
-(node5/6)通常能立刻调度。想加并行度,优先往能调度的分区加 `points` 槽。
+**要价小只是一半,`--time` 是另一半。** Slurm 的 backfill 只会启动那些**能证明在
+最高优先级作业的预约开始之前跑完**的作业。最初这几个槽写的是 `--time=3-00:00:00`,
+在一个前面排着 55 个作业的分区上**几乎永远 backfill 不进去** —— 即使核数和内存都
+压小了也一样。把 walltime 按实际工作量改成 24h / 16h / 6h 之后,原本一直
+`(Priority)` 的 node2/3/4 立刻排上了:**在跑的槽从 12 个变成 22 个,六个节点全用上,
+同时在跑的 rung 进程 60 个。**
+
+**短 walltime 要配回收器。** `backfill.sh` 用 `mkdir claims_bf/<tid>` 原子认领,
+只在跑完时写 `done`;槽要是被 walltime 杀掉,claim 目录会**留着**,别人 `mkdir`
+失败,这个任务就再也没人碰。`output/_orch2/colpack_reap.sh` 负责把
+"owner 的 job 已经不在队列里、又没有 done" 的 claim 释放掉:
+
+```bash
+bash output/_orch2/colpack_reap.sh                      # 跑一次
+setsid nohup bash output/_orch2/colpack_reap.sh \
+  $PWD/output/sweep_colpack_20260903 --loop 600 &       # 每 10 分钟一次
+```
+
+重跑一个被回收的任务是便宜且正确的:`backfill.sh` 在跑每个档之前都对着磁盘重新
+核对,已经跑完的档直接跳过。
+
+**分区拥挤仍然是真的**:`athena`(node2/3)和 `athena-small`(node4)前面压着别人的
+高优先级作业(`squeue -h -t PD -o "%P" | sort | uniq -c` 看得到 55/23/11),
+`athena-mini`(node1)与 `athena-genai`(node5/6)通常更快。但短 walltime 让拥挤分区
+也能塞进去了,所以现在往哪个节点加都行。
 
 ### 3.2 看进度
 
