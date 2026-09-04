@@ -1,5 +1,25 @@
 # A3b–A6 的数据布局走查（GPT-13B / baseline）
 
+> **⚠️ 2026-09-03 晚:本页的数字待重算,机制描述仍然有效。**
+> 本页是在 **C=32 / sys=16 的旧 workload** 上、且在 **A3b 的 repair 打包口径修正
+> 之前**写的,两处都变了:
+>
+> 1. **A3b 的 repair**(chenyi9 裁决):一个 head 自己的 repair 是**一条连续
+>    append**,在 head 内共享行;A3b 买不到的只是**跨 head 共享行**。本页
+>    §7.1 说"A3b 的 22 次 ACT 里有 9 次是九组各占一行的 repair"——**不再成立**,
+>    现在一个 head 的 repair 合成一段。裁决的算式:4 个 head、C 个 chunk、k=8,
+>    diff 池是 `4×C×8` 个 token 打包(C=24 → 恰好 3 行,C=16 → 恰好 2 行),
+>    A3b 恒付 4 行(每 head 一个半行)。
+> 2. **workload**:baseline 已改成 **C=16 / sys=256**,上下文 `18×256 = 4608`。
+>
+> §1–§6 的**几何与放置规则**(一次 ACT 覆盖 256 个 token、unit→channel 的映射、
+> stripe_m 从 4 掉到 3 导致 A4 比 A3b 慢、A4b 修回来)都不受影响。
+> 受影响的是 §7.1 的 ACT 表与 §8 的并排表这两处**具体数字**,
+> 等 `output/sweep_colpack_20260903` 那轮跑完后按新口径重算。
+>
+> 已经按新口径重跑重生成的对照见 `../workload/handcheck/README.md`
+> (小负载,理论与实测逐格一致)。
+
 一个具体请求、一个具体 head，逐 token 说清楚 **KV 摆在哪条 channel、哪个
 stripe unit、行内第几个槽**，以及**一次 ACT 到底打开了哪些 token**。
 

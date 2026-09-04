@@ -228,18 +228,26 @@ class RealExtentTest(unittest.TestCase):
         self.assertEqual(_read_extents(reads),
                          [("diff", 8), ("master", 248), ("master", 256)])
 
-    def test_each_repair_burns_its_own_row_without_a_diff_pool(self):
+    def test_a_head_packs_its_own_repairs_but_cannot_share_across_heads(self):
+        """Ruling chenyi9 2026-09-03: one head's repairs are ONE contiguous
+        append -- that head's prefill produces them together -- so they share
+        rows within the head.  What A3b cannot do is share rows ACROSS heads,
+        and that is the only thing the diff pool adds."""
         reads = self._reads(segments=4, repairs=4)
         groups = _striped_append_channel_extents(
             reads, policy="slice-append", heads_per_hbm=16)   # stripe = 1
         self.assertEqual(len(groups), 16)                     # one head each
         _channel, _count, placed = groups[0]
-        repair_extents = [rows for _k, _v, rows in placed if rows == 8]
-        self.assertEqual(len(repair_extents), 4)              # 4 separate rows
+        repair_extents = [rows for _k, _v, rows in placed if rows == 4 * 8]
+        self.assertEqual(len(repair_extents), 1)              # ONE packed run
+        self.assertNotIn(8, [rows for _k, _v, rows in placed])
         addresses = [key for key, _v, _rows in placed]
         self.assertEqual(len(set(addresses)), len(addresses))
         for key, _value, _rows in placed:                     # every row-aligned
             self.assertEqual(key % _GEN_ROW_BYTES, 0)
+        # Sixteen heads, one partial row each: sixteen rows for what the pool
+        # would fit in 16 x 32 = 512 tokens = two.
+        self.assertEqual(len(groups), 16)
 
     def test_diff_pool_packs_the_repairs_into_one_extent(self):
         reads = self._reads(segments=4, repairs=4, shadow=True)
@@ -252,21 +260,28 @@ class RealExtentTest(unittest.TestCase):
         self.assertEqual(diff[0][0][2], 4 * 8)               # all corrections
 
     def test_the_split_is_what_changes_the_activation_count(self):
-        """The same 64 recomputed rows: 8 activations scattered, 1 pooled."""
+        """The same 16 x 64 recomputed rows: one partial row PER HEAD when
+        nothing pools them, four shared rows when the diff pool does.
+
+        Ruling chenyi9 2026-09-03, and the reason the sweep moved to C=16:
+        the payoff is heads-vs-packed, so it grows as the per-head repair run
+        shrinks relative to a 256-token row.
+        """
         def act_rows(placed):
             return sum(-(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
                        for _k, _v, rows in placed)
 
-        # heads_per_hbm 16 clamps the stripe to one channel per head, so the
-        # arithmetic below is per head.
+        # heads_per_hbm 16 clamps the stripe to one channel per head, so each
+        # head's repairs land alone on its own channel.
         scattered = _striped_append_channel_extents(
             self._reads(segments=8, repairs=8),
             policy="slice-append", heads_per_hbm=16)
-        head_channel = {channel: placed
-                        for channel, _count, placed in scattered}[0]
-        repairs = [extent for extent in head_channel if extent[2] == 8]
-        self.assertEqual(len(repairs), 8)          # 8 separate allocations
-        self.assertEqual(act_rows(repairs), 8)     # 64 rows -> 8 activations
+        per_head = [[extent for extent in placed if extent[2] == 8 * 8]
+                    for _channel, _count, placed in scattered]
+        self.assertEqual([len(extents) for extents in per_head], [1] * 16)
+        # 64 rows is a quarter of a 256-token row, so each head still pays one.
+        self.assertEqual([act_rows(extents) for extents in per_head], [1] * 16)
+        self.assertEqual(sum(act_rows(extents) for extents in per_head), 16)
 
         pooled = _striped_append_channel_extents(
             self._reads(segments=8, repairs=8, shadow=True),
@@ -275,10 +290,35 @@ class RealExtentTest(unittest.TestCase):
                 for channel, _count, placed in pooled}[_MASTER_CHANNELS_DEFAULT]
         self.assertEqual(len(diff), 1)             # ONE packed extent
         self.assertEqual(diff[0][2], 16 * 64)      # every head's corrections
-        # 1024 rows x 4 B = 4096 B = four rows, against eight activations for
-        # ONE head's 64 rows when nothing pools them.
+        # 1024 rows x 4 B = 4096 B = four rows, against sixteen when every head
+        # keeps its own partial row.  Sixteen against four.
         self.assertEqual(act_rows(diff), 4)
-        self.assertEqual(act_rows(repairs), 8)
+
+    def test_ruling_worked_example_four_heads_over_a_corpus(self):
+        """Ruling chenyi9 2026-09-03, stated in rows.
+
+        Four heads generated together, k=8 recomputed tokens per reused chunk:
+
+            C=24   pool 4 x 24 x 8 = 768 tok = EXACTLY 3 rows, A3b pays 4
+            C=16   pool 4 x 16 x 8 = 512 tok = EXACTLY 2 rows, A3b pays 4
+
+        Four against two is why the sweep runs at C=16.
+        """
+        def diff_rows(policy, C):
+            def rows(reads):
+                groups = _striped_append_channel_extents(
+                    reads, policy=policy, heads_per_hbm=4)
+                return sum(-(-n * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
+                           for _c, _n2, placed in groups for _k, _v, n in placed)
+            full = self._reads(segments=C, repairs=C, shadow=policy != "slice-append")
+            master = [r for r in full if r.kind != "diff"]
+            return rows(full) - rows(master)
+
+        self.assertEqual(diff_rows("slice-append", 24), 4)
+        self.assertEqual(diff_rows("master-diff-slice-append", 24), 3)
+        self.assertEqual(diff_rows("slice-append", 16), 4)
+        self.assertEqual(diff_rows("master-diff-slice-append", 16), 2)
+        self.assertEqual(diff_rows("master-diff-table-append", 16), 2)
 
     def test_every_row_is_placed_once(self):
         for policy, shadow in (("slice-append", False),

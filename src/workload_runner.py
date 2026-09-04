@@ -833,9 +833,20 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
             base = (head * stripe) % _HBM_CHANNELS
             for unit, rows in enumerate(units):
                 add((base + (unit % stripe)) % _HBM_CHANNELS, rows)
-            # No diff pool: every repair is its own row on the head's channels.
-            for index, rows in enumerate(repairs):
-                add((base + (index % stripe)) % _HBM_CHANNELS, rows)
+            # No diff pool, but a head's OWN repairs are still one contiguous
+            # append (ruling chenyi9 2026-09-03): they are produced together by
+            # that head's prefill and land back to back, so they share rows --
+            # within the head.  What A3b cannot do is share rows ACROSS heads,
+            # and that is the only thing the diff pool adds.  Worked example
+            # from the ruling, four heads generated together over a 24-chunk
+            # corpus at k=8: each head's 24 x 8 = 192 tokens fit one row, so
+            # A3b pays FOUR rows, one per head, against the pool's
+            # 4 x 24 x 8 = 768 = exactly THREE.  At the swept C=16 it is four
+            # rows against 4 x 16 x 8 = 512 = exactly TWO -- which is why the
+            # sweep moved to C=16: the payoff doubles.
+            if repairs:
+                add((base + (len(units) % stripe)) % _HBM_CHANNELS,
+                    sum(repairs))
     else:
         master_units = _stream_unit_rows(master_rows)
         if policy == "master-diff-slice-append":

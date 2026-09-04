@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """手算 vs 实测：读 A3b/A4/A4b 的报告，逐 channel 对照 (chenyi9 2026-09-03)。
 
-   usage: PYTHONPATH=$PWD python3 workload/handcheck/compare_theory_vs_measured.py [报告目录]
+   usage: PYTHONPATH=$PWD python3 workload/handcheck/compare_theory_vs_measured.py [报告目录] [--csv 输出路径]
    报告目录默认 ./ ，需含 out_A3b.json / out_A4.json / out_A4b.json
    （用 --workload-report-events full 跑出来的）。
 """
@@ -10,7 +10,7 @@ import json, collections
 from types import SimpleNamespace as NS
 from src.workload_runner import (_striped_append_channel_extents as EX,
                                  _GEN_BYTES_PER_TOKEN, _GEN_ROW_BYTES)
-S = sys.argv[1] if len(sys.argv) > 1 else "."
+S = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else "."
 H = 4
 def loc(o, f, k): return NS(owner=o, fingerprint=f, kind=k)
 def act(n): return -(-n * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
@@ -72,3 +72,46 @@ for label, rd, batch, steps in (("公共扫描：15 个共享块", common_reads,
         print("      理论最忙 ch%d: %d 行 / %d extent / %d ACT   |   实测最忙 ch%d: %.4f us"
               % (bt[0], bt[1][0], bt[1][1], bt[1][2], bm[0], bm[1][1] * 1e6))
     print()
+
+
+# ---------------------------------------------------------------------------
+# results_handcheck.csv:同一份对照,机器可读的一行一格 (2026-09-03)。
+# 加 --csv <路径> 时写出,让committed 的证据可以跟着代码一起重生成,而不是靠
+# 手工誊抄 —— A3b 的 repair 打包口径改过一次,那次就是靠这个发现 CSV 落后了。
+# ---------------------------------------------------------------------------
+def _emit_csv(path):
+    import csv as _csv
+    rows = []
+    for tag in ("A3b", "A4", "A4b", "A5", "A6"):
+        pol, sh = POL[tag]
+        report = json.load(open("%s/out_%s.json" % (S, tag)))
+        makespan, energy = report.get("makespan_s"), report.get("energy_nj")
+        for scan, rd, batch in (("common", common_reads, True),
+                                ("private", private_reads, False)):
+            if batch:
+                t = theory(rd(sh), pol)
+            else:
+                t1, t0 = theory(rd(sh, 1), pol), theory(rd(sh, 0), pol)
+                t = {c: tuple(a + b for a, b in zip(t1.get(c, (0, 0, 0)),
+                                                    t0.get(c, (0, 0, 0))))
+                     for c in set(t1) | set(t0)}
+            m = measured(tag, batch, 1)
+            for c in sorted(set(t) | set(m)):
+                th = t.get(c, (0, 0, 0))
+                me = m.get(c, [0, 0.0])
+                rows.append({"rung": tag, "scan": scan, "channel": c,
+                             "theory_rows": th[0], "theory_extents": th[1],
+                             "theory_acts": th[2], "measured_rows": me[0],
+                             "measured_time_s": "%.6e" % me[1],
+                             "agree": "yes" if th[0] == me[0] else "NO",
+                             "makespan_s": makespan, "energy_nj": energy})
+    with open(path, "w", newline="") as fh:
+        w = _csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w.writeheader(); w.writerows(rows)
+    bad = [r for r in rows if r["agree"] != "yes"]
+    print("wrote %s: %d rows, %d disagree" % (path, len(rows), len(bad)))
+    return 1 if bad else 0
+
+
+if "--csv" in sys.argv:
+    raise SystemExit(_emit_csv(sys.argv[sys.argv.index("--csv") + 1]))

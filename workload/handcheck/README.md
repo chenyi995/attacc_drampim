@@ -1,5 +1,10 @@
 # 手算校验：A3b–A6 的布局，理论对实测
 
+> **2026-09-03 更新**:A3b 的 repair 打包口径按 chenyi9 裁决改过 ——
+> 一个 head 自己的 repair 是**一条连续 append**(head 内共享行),A3b 买不到的
+> 只是**跨 head 共享行**。本页的数字与 `results_handcheck.csv` 都已按改后的
+> 代码**重跑重生成**,`agree` 列 100 行全 `yes`。
+
 一个**小到可以用笔算出全部布局**的 workload，跑完 A3b / A4 / A4b / A5 / A6，
 把手算的逐 channel 行数、extent 数、ACT 次数，和仿真器真正吐出来的逐 channel
 事件并排放。**结论：公共扫描与 private 扫描，逐格全部一致。**
@@ -74,11 +79,14 @@ B_reuser 每个 head：15 个复用块 x 8 = 120 个 diff 行
 
 ### 3.2 private 扫描
 
-`A3b` 没有 diff 池：15 组 repair 按 `i % 4` 摊到该 head 的 4 条 channel 上，
-**每组各占一个行对齐的槽**（8 行用掉一整行）→ ch0/ch1/ch2 各 4 组 = 32 行，
-ch3 得 3 组 = 24 行。加上第一个 decode 步的 1 个自有行（落 ch0）。
+`A3b` 没有 diff 池，但**一个 head 自己的 15 组 repair 仍然是一条连续的 append**
+（裁决 chenyi9 2026-09-03：它们由该 head 的同一次 prefill 一起产生、接连写下,
+所以**在 head 内部**共享行）。15 x 8 = 120 行放不满一整行(256)，所以**每个 head
+留一个半行**；A3b 买不到的是**跨 head 共享行**，而那正是 diff 池唯一多出来的东西。
+加上第一个 decode 步的 1 个自有行(落该 head 的第一条 channel)。
 
-`A4/A4b` 有 diff 池：**4 个 head 的 120 行全部打包进 ch15**，一段 480 行。
+`A4/A4b` 有 diff 池：**4 个 head 的 120 行全部打包进 ch15**，一段 480 行 ——
+四个半行合并成两行。
 
 ---
 
@@ -112,31 +120,32 @@ ch3 得 3 组 = 24 行。加上第一个 decode 步的 1 个自有行（落 ch0�
 
 | 档 | 逐 channel（手算/实测）| 一致 |
 |---|---|:--:|
-| **A3b** | ch0 65/65 ch1 64/64 ch2 64/64 ch3 48/48（×4 head，16 条全活跃）| ✅ |
+| **A3b** | ch0 121/121 ch1 120/120（×4 head，落 ch0/1、ch4/5、ch8/9、ch12/13）| ✅ |
 | **A4** | ch0 1/1 ch3 1/1 ch6 1/1 ch9 1/1 **ch15 960/960** | ✅ |
 | **A4b** | ch0 1/1 ch1 1/1 ch2 1/1 ch3 1/1 **ch15 960/960** | ✅ |
 
 | 档 | 手算最忙 | extent | ACT | 实测 |
 |---|---|---:|---:|---:|
-| **A3b** | ch0 65 行 | **9** | **9** | 0.6667 us |
+| **A3b** | ch0 121 行 | **2** | **2** | 0.2099 us |
 | **A4 / A4b** | ch15 960 行 | **2** | **4** | 0.6790 us |
 
-**这一格就是 master/diff 分离要买的东西**：A3b 用 **9 次 ACT 读 65 行**
-（每个 8 行的 repair 各占一整行，利用率 3.1%），A4/A4b 用 **4 次 ACT 读 960 行**。
-每行的激活代价差 **约 30 倍**。
+**这一格就是 master/diff 分离要买的东西**,但要按行数、而不是按这个小负载的时间读：
+A3b 的 120 行 repair **每个 head 留一个半行**,四个 head 就是 **4 行**;
+A4/A4b 把 4 x 120 = 480 行打包成 **2 行**。裁决里的算式是同一件事:
+`4 个 head x C 个 chunk x k=8` 打包进 diff 池,C=24 时 `768 = 恰好 3 行`、
+C=16 时 `512 = 恰好 2 行`,而 A3b 恒付 4 行 —— **所以 sweep 用 C=16,收益翻倍**。
 
-> 但要如实说：**在这个小 workload 上，两者的时间几乎打平（0.667 vs 0.679 us）。**
-> 因为 diff 池把 4 个 head 的 480 行全压到 **一条** channel 上，
-> 集中省下的 ACT 被"只用一条 channel 流"抵掉了。
-> 重算量再大（baseline 的 33 组、或 head 更多）时散落的一侧才会明显吃亏 ——
-> GPT-13B 上最忙 channel 的 ACT 是 A3b 22 次对 A4b 14 次。
-> **这个 workload 证明的是机制被正确建模了，不是它的量级。**
+> 但要如实说：**在这个小 workload 上,A3b 的 private 扫描反而更快
+> (0.210 vs 0.679 us)。** 因为 diff 池把 4 个 head 的 480 行全压到 **一条**
+> channel 上串行流,而 A3b 的 4 个半行分散在 8 条 channel 上并行。
+> 省下的行要在**行数本身成为瓶颈**时才兑现。
+> **这个 workload 证明的是机制被正确建模了(理论与实测逐格一致),不是它的量级。**
 
 ## 5. 整体阶梯
 
 | 档 | makespan (s) | energy (nJ) | prefill 放置 | 事件数 |
 |---|---:|---:|---|---:|
-| **A3b** | 0.026658 | 4.5519e8 | GPU | 882 |
+| **A3b** | 0.026655 | 4.5492e8 | GPU | 802 |
 | **A4** | 0.026614 | 4.5514e8 | GPU | 558 |
 | **A4b** | 0.026609 | 4.5514e8 | GPU | 582 |
 | **A5** | 0.025706 | 5.1261e8 | PIM | 2546 |
@@ -153,10 +162,13 @@ ch3 得 3 组 = 24 行。加上第一个 decode 步的 1 个自有行（落 ch0�
 | 入库 | `wl_handcheck.json`、`README.md`（本页）、`compare_theory_vs_measured.py`、**`results_handcheck.csv`** |
 | 只在本机 | `output/handcheck_20260903/`（172 MB）：五档的完整事件流 `{A3b,A4,A4b,A5,A6}.json`（`--workload-report-events full`）+ `.log` + `run.sh` |
 
-`results_handcheck.csv` 是本页两张对照表的**机器可读版**：109 行，逐档 × 逐扫描
+`results_handcheck.csv` 是本页两张对照表的**机器可读版**：100 行，逐档 × 逐扫描
 （common / private）× 逐 channel，列为 `theory_rows / theory_extents /
 theory_acts / measured_rows / measured_time_s / agree`，外加该档的
-`makespan_s` 与 `energy_nj`。**`agree` 列 109 行全部 `yes`。**
+`makespan_s` 与 `energy_nj`。**`agree` 列 100 行全部 `yes`。**
+它由 `compare_theory_vs_measured.py --csv <路径>` 重生成（2026-09-03 加的开关）：
+A3b 的 repair 打包口径改过一次，那次就是靠"CSV 只能手工誊抄"发现它落后了代码，
+所以现在证据跟着代码一起重生成。
 原始事件流按 `docs/RAW_DATA_MANIFEST.md` 的口径不入 git。
 
 ## 6. 复现
@@ -171,7 +183,8 @@ python3 main.py --system dgx-attacc --model CACHEBLEND-TINY \
   --reuse recompute --epic-prefix-recompute-tokens 8 \
   --validate-workload --workload-plan plan.json --num-hbm 2 --ngpu 1
 
-# 五档（scratch 必须放 /data2，见 docs/README_run_slurm_and_local.md）
+# 五档（scratch:squire 放 /data2、athena 放 /localdata,见 docs/README_run_athena_slurm.md
+#       与 docs/README_run_squire_local.md）
 for A in A3b A4 A4b A5 A6; do
   RD=/data2/chenyi9/kvpim_run_scratch/hc_$A; rm -rf $RD; mkdir -p $RD
   ln -sf $PWD/ramulator2/ramulator2 $RD/; ln -sf $PWD/ramulator2/trace_gen $RD/
