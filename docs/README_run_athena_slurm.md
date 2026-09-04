@@ -120,9 +120,20 @@ workload 是 C=16、sys=256 的新一批(baseline 上下文 `18×256 = 4608`,不
 
 | class | 队列 | 任务 | `--cpus-per-task` | `--mem` | `--time` |
 |---|---|---|---:|---:|---:|
-| `big` | `tasks_baseline_big.txt` | GPT-175B / LLAMA-65B 的 baseline,7 档 | 24 | 300G | 24h |
-| `base` | `tasks_baseline.txt` | 另外四个 baseline,7 档 | 24 | 170G | 16h |
-| `points` | `tasks_points.txt` | 一个 sweep 点的 A3b+A6,2 档 | 6 | 64G | 6h |
+| `big` | `tasks_baseline_big.txt` | GPT-175B / LLAMA-65B 的 baseline,7 档 | 9 | 300G | 24h |
+| `base` | `tasks_baseline.txt` | 另外四个 baseline,7 档 | 9 | 170G | 16h |
+| `points` | `tasks_points.txt` | 一个 sweep 点的 A3b+A6,2 档 | 3 | 48G | 6h |
+
+> **核数按"一个 rung 一个核"定,不是 `档数 × (W+1)`。** 后者算的是**暖机阶段**
+> (每个 rung fork 出 W 个 Ramulator worker),但**真正耗时的是 DAG 构建,而它每个
+> rung 是单线程的**(2026-09-02 GPT-13B:构建 11487 s / 全程 20310 s)。
+> 六个节点实测:**申请 222 核、实际只忙 49.9 核 —— 22%**,72 个 rung 进程平均每个
+> **0.7 个核**,而且当时**一个 `ramulator2` 子进程都没有**。给每个 rung 留两个核,
+> 大部分时间什么也没买到,却让整个 fleet 的密度掉了三分之二。
+>
+> 代价是真实但很小的:暖机阶段会超订自己的 cpuset,那一段变慢。但它只占一小部分
+> 时间、结果又被 signature cache 记住,而换来的密度直接乘在**同时能跑几个任务**上 ——
+> 那才是瓶颈,因为**单个 rung 在构建时无论如何也用不了第二个核**。
 
 ```bash
 bash output/_orch2/colpack_tasks.sh          # 写三条队列

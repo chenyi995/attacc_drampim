@@ -16,9 +16,9 @@
 # that is what left three of six slots pending on the first attempt.
 #
 #   usage: colpack_submit.sh <node> <big|base|points>
-#     big     GPT-175B / LLAMA-65B baselines, 7 rungs   24 cpu / 300G
-#     base    the other four baselines,       7 rungs   24 cpu / 170G
-#     points  A3b+A6 on one sweep point,      2 rungs    6 cpu /  64G
+#     big     GPT-175B / LLAMA-65B baselines, 7 rungs    9 cpu / 300G
+#     base    the other four baselines,       7 rungs    9 cpu / 170G
+#     points  A3b+A6 on one sweep point,      2 rungs    3 cpu /  48G
 set -euo pipefail
 REPO=/home/cw636/chenyi/attacc_drampim
 ORCH=$REPO/output/_orch2
@@ -42,9 +42,9 @@ declare -A PART=( [node1]=athena-mini [node2]=athena [node3]=athena
 # 5.6-9.8 h) and losing one is cheap: colpack_reap.sh releases the claim and
 # the next slot resumes it, skipping the rungs already on disk.
 case "$class" in
-  big)    CORES=24; MEM=300G; NOGC=0; TIME=1-00:00:00; QUEUE=tasks_baseline_big.txt ;;
-  base)   CORES=24; MEM=170G; NOGC=0; TIME=16:00:00;   QUEUE=tasks_baseline.txt ;;
-  points) CORES=6;  MEM=64G;  NOGC=1; TIME=6:00:00;    QUEUE=tasks_points.txt ;;
+  big)    CORES=9;  MEM=300G; NOGC=0; TIME=1-00:00:00; QUEUE=tasks_baseline_big.txt ;;
+  base)   CORES=9;  MEM=170G; NOGC=0; TIME=16:00:00;   QUEUE=tasks_baseline.txt ;;
+  points) CORES=3;  MEM=48G;  NOGC=1; TIME=6:00:00;    QUEUE=tasks_points.txt ;;
   *) echo "class must be big|base|points" >&2; exit 1 ;;
 esac
 W=${W:-2}
