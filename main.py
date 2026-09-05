@@ -277,9 +277,9 @@ def main():
              "batches of at most this many requests (0 = one batch per tier)")
     parser.add_argument(
         "--cacheblend-rotate-mode",
-        choices=("gpu", "die", "bank"),
+        choices=("gpu", "bank"),
         default="gpu",
-        help="where CacheBlend emits position-shifted Q variants")
+        help="Q variants: gpu follows Fugue; bank is an experimental local-rotate assumption")
     parser.add_argument(
         "--no-warm",
         action="store_true",
