@@ -9,6 +9,11 @@ workload 另行迁移，本分支不含。
 （A1 prefill 回到 GPU、A3b 持久写入序放置、fresh prefill 按档选边）；之前是
 [2026-09-05：AttAcc 计量口径与 GPU query 旋转](sessions/2026-09-05-attacc-accounting-and-rotation.md)。
 
+## 运行指南 —— `README_run_guide.md`
+
+跑论文数据必须开的选项（`--gpu-model flash`、`--pipeopt`、`--powerlimit`、k=8、batch 8）、公平规则、
+baseline + 八个 sweep 轴、跑法与汇总；workload 矩阵在 `workload/probe/sweep/`（`gen_sweep.py` 生成，42 个文件）。
+
 ## 设计阶梯 —— `README_design_ladder.md`
 
 | 档 | 论文里的角色 | 相对上一档的变化 |
