@@ -2733,6 +2733,7 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
 
 def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
                                *, local_hidden: int, dbyte: int, dhead: int,
+                               gqa_group: int = 1,
                                heads: int) -> None:
     """Reject malformed CacheBlend event graphs before time/energy scheduling.
 
@@ -2765,7 +2766,8 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
         return by_id[event_id].name
 
     q_bytes_per_row = local_hidden * dbyte
-    kv_bytes_per_row = 2 * q_bytes_per_row
+    # K/V rows are KV-head wide (GQA), Q rows are Q-head wide (re-audit C2)
+    kv_bytes_per_row = 2 * max(1, local_hidden // gqa_group) * dbyte
     tuple_bytes = heads * (dhead + 2) * dbyte
     for event in events:
         if event.name in ("q_gpu_to_pim", "ctx_pim_to_gpu",
@@ -3482,7 +3484,7 @@ def _append_cacheblend_decode_batched(
     local_hidden = system.model.hdim // system.model.tp
     heads = max(1, system.model.num_heads // system.model.tp)
     q_bytes = local_hidden * dbyte
-    kv_bytes = 2 * q_bytes
+    kv_bytes = 2 * _kv_hidden(system, local_hidden) * dbyte      # KV heads (C2)
     tuple_bytes = heads * (system.model.dhead + 2) * dbyte
     requests = [item[0] for item in inputs]
     bindings = {item[0].request_id: item[1] for item in inputs}
@@ -4122,7 +4124,7 @@ def _append_physical_no_reuse_prefill_layer(
         events, layer=layer, tier=tier, request=request.request_id,
         name="q_gpu_to_pim", device="LINK", rows=rows, time_s=time_s,
         energy=energy, deps=(q,), link_bytes=q_bytes, positions=positions)
-    kv_bytes = 2 * q_bytes
+    kv_bytes = rows * 2 * _kv_hidden(system, local_hidden) * dbyte     # KV heads (C2)
     kv_transfer = _link_layer(x2g, "kv_gpu_to_pim", kv_bytes)
     time_s, energy = system.devices["GPU"].get_time_and_energy(kv_transfer)
     addresses = [address for _, _, _, location in fresh
@@ -5147,7 +5149,7 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
     pim_pe_freq_ghz = ctx["pim_pe_freq_ghz"]
     gemv_buffer_bytes = ctx["gemv_buffer_bytes"]
     validate_cacheblend_events(events, workload, local_hidden=local_hidden,
-                               dbyte=dbyte, dhead=system.model.dhead,
+                               dbyte=dbyte, dhead=system.model.dhead, gqa_group=_gqa_group(system),
                                heads=heads)
     scheduled = _schedule_cacheblend(events, pipe=pipe)
     _annotate_batch_q_arrivals(scheduled, batch_records)

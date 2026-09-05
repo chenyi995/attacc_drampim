@@ -1667,6 +1667,49 @@ class AgenticHistoryTests(unittest.TestCase):
                   and e["request"] == "b_consumer"]
         self.assertTrue(rotate)
 
+    def test_gqa_model_builds_every_rung_with_kv_head_wide_links(self):
+        """C2 (2026-09-05): a GQA model (4 Q heads per KV head) must build on
+        every rung, and its K/V links must carry KV-head-wide rows."""
+        from src.ablation import resolve_config
+        from types import SimpleNamespace
+
+        class Device:
+            peak_memory_bandwidth = 10**12
+            softmax_peak_bandwidth = 10**12
+            energy_table = {"mem": 1., "sram": 1., "alu": 1.}
+            ramulator = SimpleNamespace(workers=1)
+
+            def get_time_and_energy(self, op):
+                return 2e-6, (4.,)
+
+            def get_time_and_energy_runs(self, op):
+                return [(2e-6, (4.,)) for _ in op.pim_kv_runs]
+
+        model = Transformer(dict(name="toy-gqa", ndec=1, num_heads=8, hdim=1024,
+                                 ff_scale=4, dtype=DataType.W16A16, gqa_size=4), 1)
+        system = SimpleNamespace(hetero_name=DeviceType.PIM,
+                                 devices={"GPU": Device(), "Acc": Device()}, model=model)
+        workload = Workload("supervisor", (
+            Request("a", 0, None, 2, (Segment("doc", "shared", 8),), 8),
+            Request("b", 0, None, 2, (Segment("user", "private", 2),
+                                      Segment("doc", "shared", 8)), 10)), {})
+        kv_row = 2 * (1024 // 4) * 2                       # KV heads x dhead x 2 (K,V) x 2 B
+        for rung in ("A1", "A3b", "A4c", "A4e", "A5", "A6"):
+            policy = "no-reuse" if rung == "A1" else "recompute"
+            plan = build_reuse_plan(workload, policy, epic_prefix_recompute_tokens=2)
+            cfg = resolve_config(rung, None, None, None, policy=policy)
+            report = run_reuse_prefill(system, workload, plan, pipe=True,
+                                       cacheblend_batch_size=2,
+                                       pim_prefill_mode=cfg.prefill_attn,
+                                       pim_batch_command=cfg.pim_batch_command,
+                                       pim_pe_freq_ghz=cfg.pim_pe_freq_ghz,
+                                       kv_mapping=cfg.kv_mapping,
+                                       channel_placement=cfg.channel_placement)
+            links = [e for e in report["events"] if e["name"].endswith("kv_gpu_to_pim")]
+            self.assertTrue(links, rung)
+            for event in links:
+                self.assertEqual(event["link_bytes"], event["rows"] * kv_row, (rung, event["name"]))
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the
