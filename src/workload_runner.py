@@ -989,6 +989,11 @@ class PhysicalLedger:
                 self.objects[object_key] = (rows, {row: i for i, row in enumerate(rows)},
                                             None, diff_cursor)
                 diff_cursor += len(rows) * _GEN_BYTES_PER_TOKEN
+                if diff_cursor > _ORIGINAL_KV_GAP_BYTES:
+                    # the K side of the diff region would run into the V side
+                    raise WorkloadValidationError(
+                        "diff rows exceed the diff region ({} B); the workload does "
+                        "not fit the ledger".format(_ORIGINAL_KV_GAP_BYTES - _DIFF_REGION_BYTES))
                 self.index.setdefault(key, {}).update({row: object_key for row in rows})
                 previous_diff_owner = None
         return self
