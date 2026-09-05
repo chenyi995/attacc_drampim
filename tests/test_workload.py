@@ -1710,6 +1710,42 @@ class AgenticHistoryTests(unittest.TestCase):
             for event in links:
                 self.assertEqual(event["link_bytes"], event["rows"] * kv_row, (rung, event["name"]))
 
+    def test_a_later_turn_attends_the_diff_its_earlier_turn_wrote(self):
+        """C8 (chenyi9 2026-09-05): the same agent re-reading a chunk it
+        already corrected attends the ORIGINAL master and the diff object of
+        its earlier turn -- nothing is recomputed or re-stored for it."""
+        import hashlib
+        doc = hashlib.sha256(b"doc").hexdigest()[:16]
+        owner = Request("a_owner", 0, None, 4, (Segment("sys", "sa", 2), Segment("doc", doc, 8)), 10)
+        turn0 = Request("w_t0", 0, None, 4, (Segment("sys", "sw", 4), Segment("doc", doc, 8)), 12)
+        turn1 = Request("w_t1", 1, "w_t0", 4,
+                        (Segment("sys", "sw", 4), Segment("doc", doc, 8),
+                         Segment("parent_out", "w_t0-out", 4), Segment("user", "q1", 2)), 18)
+        workload = Workload("supervisor", (owner, turn0, turn1), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=2)
+        by_key = {(d.request_id, d.segment_index): d for d in plan.reusable}
+        first = by_key[("w_t0", 1)]
+        again = by_key[("w_t1", 1)]
+        self.assertEqual(first.inherits_from, None)
+        self.assertEqual(again.inherits_from, "w_t0")
+        self.assertEqual(again.epic_prefix_rows, first.epic_prefix_rows)
+        self.assertTrue(first.epic_prefix_rows)
+        # the re-listed system prompt and the parent's output are unshifted
+        self.assertEqual(by_key[("w_t1", 0)].epic_prefix_rows, ())
+        self.assertEqual(by_key[("w_t1", 2)].epic_prefix_rows, ())
+        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                   pim_prefill_mode="pim")
+        entries = [e for e in report["tlb"]["entries"] if e["request"] == "w_t1"
+                   and e["layer"] == 0 and e["location"]["kind"] == "diff"]
+        self.assertTrue(entries)
+        self.assertEqual({e["location"]["owner"] for e in entries}, {"w_t0"})
+        rows = report["prefill_attention_rows"]
+        # turn 1 computes only its 2 fresh query tokens per layer, not the
+        # inherited corrections
+        # ndec=2; per layer: owner 10 fresh, turn 0 = 4 fresh + 2 own
+        # corrections, turn 1 = its 2 fresh query tokens only
+        self.assertEqual(rows["pim"], 2 * (10 + 6 + 2))
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the
