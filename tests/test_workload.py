@@ -801,7 +801,10 @@ class WorkloadTests(unittest.TestCase):
                               if event["request"] == "sup" and
                               event["name"] == "decode_dram_store_master"][-1]
         self.assertIn(final_parent_store["id"], first_child_qkv["depends_on"])
-        serial = run_reuse_prefill(System(), workload, plan, pipe=False)
+        # The same DAG (same prefill side) serialized: a "dynamic" serial run
+        # would pick the GPU for the fresh supervisor and no longer compare.
+        serial = run_reuse_prefill(System(), workload, plan, pipe=False,
+                                   pim_prefill_mode="pim")
         # pipe=False is serial between macro events, but the per-channel
         # lanes of one PIM KV scan are a parallel phase inside one.
         self.assertEqual(
@@ -1531,6 +1534,66 @@ class AgenticHistoryTests(unittest.TestCase):
                         not event["name"].startswith("decode_")]
             self.assertTrue(matching)
             self.assertTrue(all(event["rows"] == rows for event in matching))
+
+    def _toy_system(self):
+        class GPU:
+            def get_time_and_energy(self, layer):
+                return .001, [1, 0, 0, 0, 0, 0]
+
+        class PIM:
+            peak_memory_bandwidth = 10**12
+            softmax_peak_bandwidth = 10**12
+            energy_table = {"mem": 1, "sram": 1}
+
+            def get_time_and_energy(self, layer):
+                return .002, [2, 0, 0, 0, 0, 0]
+
+        class System:
+            hetero_name = DeviceType.PIM
+            devices = {"GPU": GPU(), "Acc": PIM()}
+            model = Transformer({"name": "toy", "ndec": 2, "num_heads": 4,
+                                 "hdim": 16, "ff_scale": 4,
+                                 "dtype": DataType.W16A16}, tensor_parallel=1)
+
+        return System()
+
+    @staticmethod
+    def _prefill_names(report, request_id=None):
+        return {event["name"] for event in report["events"]
+                if not event["name"].startswith("decode_") and
+                (request_id is None or event["request"] == request_id)}
+
+    def test_fresh_prefill_follows_the_rung_prefill_side(self):
+        """F04 (2026-09-05): a request that reuses nothing used to be sent
+        to the GPU whatever the rung, so A5 never put a fresh prefill in the
+        banks and A6's chooser never saw one."""
+        workload = Workload("rag", (
+            Request("r", 0, None, 2, (Segment("sys", "s", 4),), 4),), {})
+        plan = build_reuse_plan(workload, "epic", epic_prefix_recompute_tokens=1)
+
+        gpu = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                pim_prefill_mode="gpu")
+        names = self._prefill_names(gpu)
+        self.assertIn("gpu_prefill_score", names)
+        self.assertNotIn("pim_kv_scan_score_softmax_pv", names)
+        self.assertEqual(gpu["prefill_attention_rows"]["pim"], 0)
+
+        pim = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                pim_prefill_mode="pim")
+        names = self._prefill_names(pim)
+        self.assertIn("pim_kv_scan_score_softmax_pv", names)
+        self.assertIn("die_score_assembly", names)
+        self.assertNotIn("gpu_prefill_score", names)
+        self.assertNotIn("kv_pim_to_gpu", names)          # nothing resident
+        self.assertEqual(pim["prefill_attention_rows"]["gpu"], 0)
+
+        dyn = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True)
+        self.assertEqual(dyn["pim_prefill_mode"], "dynamic")
+        self.assertIn("r", dyn["pim_prefill_sides"])
+        side = dyn["pim_prefill_sides"]["r"]
+        names = self._prefill_names(dyn)
+        self.assertEqual("die_score_assembly" in names, side == "pim")
+        self.assertEqual("gpu_prefill_score" in names, side == "gpu")
 
     def test_history_is_rejected_by_the_legacy_analytic_model(self):
         class FakeSystem:
