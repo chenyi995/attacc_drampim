@@ -114,6 +114,7 @@ class ReuseDecision:
     # earlier turn already wrote -- it inherits that turn's rows and its diff
     # object instead of recomputing and re-storing them.
     inherits_from: Optional[str] = None
+    inherits_segment_index: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -477,17 +478,30 @@ def build_reuse_plan(workload: Workload,
                 continue
             owner_request, owner_index = owner
             # C8: the nearest ancestor turn that read this chunk at this offset
+            # with the SAME context in front of it.  The correction belongs to
+            # the turn that actually wrote it (the root of the chain, C8.1),
+            # and it is only valid if the prefix that shaped it is unchanged.
             inherited = None
             ancestor_id = request.parent_id
+            prefix = tuple(seg.fingerprint for seg in request.segments[:index])
             while ancestor_id is not None and inherited is None:
-                inherited = decided.get((ancestor_id, segment.fingerprint,
+                candidate = decided.get((ancestor_id, segment.fingerprint,
                                          segment_offsets[(request.request_id, index)]))
+                if candidate is not None:
+                    ancestor = by_request_id[ancestor_id]
+                    same_prefix = tuple(seg.fingerprint for seg in
+                                        ancestor.segments[:candidate.segment_index]) == prefix
+                    inherited = candidate if same_prefix else None
                 ancestor_id = by_request_id[ancestor_id].parent_id
             if inherited is not None:
+                root_id = inherited.inherits_from or inherited.request_id
+                root_index = (inherited.inherits_segment_index
+                              if inherited.inherits_from else inherited.segment_index)
                 decision = ReuseDecision(request.request_id, index, segment.fingerprint,
                                          segment.length, inherited.owner_request_id,
                                          inherited.owner_tier, inherited.epic_prefix_rows,
-                                         inherits_from=inherited.request_id)
+                                         inherits_from=root_id,
+                                         inherits_segment_index=root_index)
                 decisions.append(decision)
                 decided[(request.request_id, segment.fingerprint,
                          segment_offsets[(request.request_id, index)])] = decision
@@ -563,10 +577,18 @@ def build_reuse_plan(workload: Workload,
             for decision in decisions:
                 decisions_by_request.setdefault(decision.request_id, []).append(decision)
             for request_id, request_decisions in decisions_by_request.items():
-                selected = _sample_cacheblend_rows(request_decisions,
-                                                    cacheblend_recompute_ratio, rng)
+                own = [d for d in request_decisions if d.inherits_from is None]
+                selected = _sample_cacheblend_rows(own, cacheblend_recompute_ratio, rng)
                 for (_, segment_index), rows in selected.items():
                     by_request.setdefault(request_id, {})[segment_index] = rows
+                # C8.4: an inherited correction keeps the rows its writer
+                # sampled in this layer (the writer is earlier in this order)
+                for d in request_decisions:
+                    if d.inherits_from is not None:
+                        rows = by_request.get(d.inherits_from, {}).get(
+                            d.inherits_segment_index, ())
+                        if rows:
+                            by_request.setdefault(request_id, {})[d.segment_index] = rows
             partial_rows[layer] = by_request
     return ReusePlan(config, tuple(decisions), total - reused, reused, partial_rows)
 
