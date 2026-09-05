@@ -97,6 +97,15 @@ class Transformer:
         self.dhead = int(self.hdim / self.num_heads)
         self.tp = tensor_parallel
 
+    def kv_width(self):
+        """Local K (or V) projection width: KV heads x dhead, per GPU."""
+        return int(self.hdim / self.gqa_size / self.tp)
+
+    def qkv_width(self):
+        """Local QKV projection width: Q heads + 2 x KV heads, times dhead
+        (re-audit R08, 2026-09-05: it was 3 x hdim/tp whatever the GQA)."""
+        return int(self.hdim / self.tp) + 2 * self.kv_width()
+
     def build(self, batch, lin, lout, attn_on_hetero=False):
         self.sum_decoder = []
         self.gen_decoder = []
@@ -104,12 +113,12 @@ class Transformer:
         # Summarization
         self.sum_decoder.append(
             Layer('sum', 'qkv', LayerType.FC, True, self.dtype, batch * lin,
-                  3 * int(self.hdim / self.tp), self.hdim, 1))
+                  self.qkv_width(), self.hdim, 1))
         if (attn_on_hetero):
             # send kv matrices
             self.sum_decoder.append(
                 Layer('sum', 'comm_x2g', LayerType.X2G, False, self.dtype,
-                      batch * lin, 2 * int(self.hdim / self.tp), 1, 1))
+                      batch * lin, 2 * self.kv_width(), 1, 1))
         self.sum_decoder.append(
             Layer('sum', 'score', LayerType.MATMUL, False, self.dtype, lin,
                   lin, self.dhead,
@@ -172,11 +181,11 @@ class Transformer:
             decoder = []
             decoder.append(
                 Layer('gen', 'qkv', LayerType.FC, True, self.dtype, batch,
-                      3 * int(self.hdim / self.tp), self.hdim, 1))
+                      self.qkv_width(), self.hdim, 1))
             if (attn_on_hetero):
                 decoder.append(
                     Layer('gen', 'comm_x2g', LayerType.X2G, False, self.dtype,
-                          batch, 3 * int(self.hdim / self.tp), 1, 1))
+                          batch, self.qkv_width(), 1, 1))
             decoder.append(
                 Layer('gen', 'score', LayerType.MATMUL, False, self.dtype, 1,
                       lin + stage, self.dhead,
