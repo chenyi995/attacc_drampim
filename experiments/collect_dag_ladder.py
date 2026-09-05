@@ -115,7 +115,14 @@ def main():
     for rung in RUNGS:
         path = os.path.join(outdir, "dag_{}.json".format(rung))
         with open(path) as handle:
-            batches = json.load(handle).get("batches", []) or []
+            report = json.load(handle)
+        batches = report.get("batches", []) or []
+        # completion per tier = the last request END of that tier (re-audit
+        # R14, 2026-09-05: the batch stamps below are attention STARTS)
+        tier_end = {}
+        for record in (report.get("summary", {}).get("requests", {}) or {}).values():
+            tier_end[record.get("tier")] = max(tier_end.get(record.get("tier"), 0.0),
+                                               float(record.get("end_s", 0.0)))
         by_tier = {}
         for batch in batches:
             tier = batch.get("tier")
@@ -149,8 +156,8 @@ def main():
                 "decode_s": last - first,
                 "tier_total_s": prefill_s + (last - first),
                 "first_s": first,
-                "last_s": last,
-                "cum_end_s": last,
+                "last_s": last,                      # last attention START
+                "cum_end_s": tier_end.get(tier, last),   # last request END
                 "decode_batches": count,
             })
             prev_last = last
