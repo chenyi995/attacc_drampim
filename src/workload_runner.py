@@ -2294,6 +2294,15 @@ def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
     return loads, active, runs, ()
 
 
+def _stack_energy_scale(kv_heads: int, heads_per_hbm: int) -> float:
+    """Energy multiplier for a scan simulated on ONE stack of ``heads_per_hbm``
+    heads when ``kv_heads`` heads exist in total: real heads over simulated
+    heads.  ``ceil(kv_heads / heads_per_hbm)`` stacks are BUSY (latency), but
+    the last one may hold fewer heads and costs proportionally less energy
+    (re-audit MP-05, 2026-09-05: 26 heads over stacks of 6 were charged as 30)."""
+    return max(1, int(kv_heads)) / max(1, int(heads_per_hbm))
+
+
 def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
                                layer: int, tier: int, request: str, name: str,
                                reads: Sequence[KVLocation], deps: Sequence[str],
@@ -2324,8 +2333,11 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     kv_heads = max(1, int(getattr(op, "numOp", 1)))
     # Heads parallelise across HBMs: each HBM runs ``heads_per_hbm`` heads, so
     # ``num_hbm_used`` HBMs hold the KV.  The busiest channel sets the (per-HBM)
-    # time; the energy is every HBM's copy.
+    # time; the energy is what ALL the heads actually cost -- the simulated
+    # stack's energy scaled by real heads over simulated heads, so a last,
+    # partly filled stack is not charged as a full one (MP-05, 2026-09-05).
     num_hbm_used = max(1, -(-kv_heads // max(1, int(heads_per_hbm))))
+    energy_scale = _stack_energy_scale(kv_heads, heads_per_hbm)
     diff_channel = master_channels if policy.startswith("master-diff") else None
     master_active = [c for c in active if c != diff_channel]
     diff_pool = [diff_channel] if diff_channel in active else master_active
@@ -2447,7 +2459,7 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
             device="PIM:pool{}-{}".format(channel, channel),
             rows=per_channel_rows[channel],               # K/V rows on channel
             time_s=time_s,
-            energy=tuple(value * num_hbm_used for value in energy_vec),
+            energy=tuple(value * energy_scale for value in energy_vec),
             deps=tuple(deps), positions=tuple(positions),
             addresses=channel_addr,
             masked_rows=per_channel_masked[channel],

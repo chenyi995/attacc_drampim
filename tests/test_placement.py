@@ -679,6 +679,16 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
         self.assertEqual(part, channels(partial, "master-diff-local-append"))
 
 
+class StackEnergyScaleTest(unittest.TestCase):
+    def test_energy_follows_real_heads_not_full_stacks(self):
+        from src.workload_runner import _stack_energy_scale
+        self.assertEqual(_stack_energy_scale(8, 8), 1.0)
+        self.assertEqual(_stack_energy_scale(8, 4), 2.0)
+        # LLaMA-33B on 2 GPUs x 5 stacks: 26 local heads, busiest stack 6
+        self.assertAlmostEqual(_stack_energy_scale(26, 6), 26 / 6)
+        self.assertLess(_stack_energy_scale(26, 6), 5)        # not 5 full stacks
+
+
 class PhysicalLedgerTest(unittest.TestCase):
     """The write-time physical ledger (ruling chenyi9 2026-09-05, re-audit
     R04 / SS03 / R03): channel AND row of an object are fixed when it is
