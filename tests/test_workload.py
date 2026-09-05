@@ -849,9 +849,13 @@ class WorkloadTests(unittest.TestCase):
         workload = Workload("rag", (
             Request("r", 0, None, 1,
                     (Segment("sys", "s", 4),), 4),), {})
+        # "pim" pins the contiguous bank scan of the private extent; the A1
+        # rung itself runs this prefill on the GPU (F01, 2026-09-05), see
+        # test_a1_prefill_runs_on_the_gpu_and_lands_kv_for_pim_decode.
         report = run_reuse_prefill(System(), workload,
                                    build_reuse_plan(workload, "no-reuse"),
-                                   pipe=True, cacheblend_batch_size=2)
+                                   pipe=True, cacheblend_batch_size=2,
+                                   pim_prefill_mode="pim")
         self.assertEqual(report["policy"], "no-reuse-physical")
         self.assertEqual(report["tlb"]["channel_sets"], {"private": list(range(16))})
         self.assertFalse(any(event["device"] == "TLB" for event in report["events"]))
@@ -1519,7 +1523,7 @@ class AgenticHistoryTests(unittest.TestCase):
             Request("r", 0, None, 1, (Segment("sys", "s", 4),), 4),), {}), 2)
         report = run_reuse_prefill(System(), workload,
                                    build_reuse_plan(workload, "no-reuse"),
-                                   pipe=True)
+                                   pipe=True, pim_prefill_mode="pim")
         self.assertEqual(report["policy"], "no-reuse-physical")
         self.assertEqual(report["history_rows"], 2)
         # 4 queries against 4 fresh + 2 resident rows; the resident extent is
@@ -1562,6 +1566,40 @@ class AgenticHistoryTests(unittest.TestCase):
         return {event["name"] for event in report["events"]
                 if not event["name"].startswith("decode_") and
                 (request_id is None or event["request"] == request_id)}
+
+    def test_a1_prefill_runs_on_the_gpu_and_lands_kv_for_pim_decode(self):
+        """F01 (2026-09-05): A1 is AttAcc as published -- prefill attention
+        on the GPU, K/V shipped to the banks, decode in the banks.  The old
+        no-reuse path scanned the private extent in the banks and still
+        booked every row as GPU."""
+        workload = self._with_history(Workload("rag", (
+            Request("r", 0, None, 2, (Segment("sys", "s", 4),), 4),), {}), 2)
+        report = run_reuse_prefill(self._toy_system(), workload,
+                                   build_reuse_plan(workload, "no-reuse"),
+                                   pipe=True, pim_prefill_mode="gpu")
+        self.assertEqual(report["policy"], "no-reuse-physical")
+        names = self._prefill_names(report)
+        for name in ("qkv", "gpu_prefill_score", "gpu_prefill_softmax",
+                     "gpu_prefill_context", "kv_gpu_to_pim",
+                     "dram_store_master", "dram_read_resident", "kv_pim_to_gpu"):
+            self.assertIn(name, names)
+        for name in ("pim_kv_scan_score_softmax_pv", "contiguous_address_plan",
+                     "q_gpu_to_pim", "ctx_pim_to_gpu"):
+            self.assertNotIn(name, names)
+        # the resident history widens the GPU block, not a bank scan
+        score = [event for event in report["events"]
+                 if event["name"] == "gpu_prefill_score"]
+        self.assertTrue(all(event["rows"] == 4 for event in score))
+        readback = [event for event in report["events"]
+                    if event["name"] == "kv_pim_to_gpu"]
+        self.assertTrue(all(event["rows"] == 2 for event in readback))
+        # decode attention stays in the banks
+        self.assertTrue(any(event["name"].startswith("decode_") and
+                            "pim_kv_scan" in event["name"]
+                            for event in report["events"]))
+        rows = report["prefill_attention_rows"]
+        self.assertEqual(rows["pim"], 0)
+        self.assertGreater(rows["gpu"], 0)
 
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent

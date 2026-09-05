@@ -4341,11 +4341,41 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 side_rows = prefill_attn_rows.setdefault(
                     request.request_id, {"pim": 0, "gpu": 0})
                 if physical_no_reuse:
-                    side_rows["gpu"] += request.total_length
-                    request_ready = _append_physical_no_reuse_prefill_layer(
-                        system, events, tlb, templates, post, layer=layer_index,
-                        tier=tier, request=request, bindings=bindings,
-                        initial_deps=request_ready)
+                    # A1 is AttAcc as published: prefill attention on the
+                    # GPU, K/V shipped to the banks for decode (F01,
+                    # 2026-09-05: the old code scanned the private extent
+                    # in the banks and booked the rows as GPU).  The rung's
+                    # prefill side is honoured like everywhere else, so a
+                    # "pim" run of the private layout keeps the contiguous
+                    # bank scan.
+                    history = [loc for _, reused, _, loc in bindings if reused]
+                    prefill_side = _resolve_prefill_side(
+                        system, tlb, x2g, templates,
+                        pim_prefill_mode=pim_prefill_mode,
+                        request_id=request.request_id,
+                        decided=dynamic_prefill_sides, readback_rows=history,
+                        compute_positions=[pos for pos, reused, _, _ in bindings
+                                           if not reused],
+                        scan_locations=history + [loc for _, reused, _, loc in bindings
+                                                  if not reused],
+                        heads=heads, local_hidden=local_hidden, dbyte=dbyte,
+                        batch_size=batch_size, gemv_buffer_bytes=gemv_buffer_bytes,
+                        pim_batch_command=pim_batch_command,
+                        pim_pe_freq_ghz=pim_pe_freq_ghz)
+                    if prefill_side == "pim":
+                        side_rows["pim"] += request.total_length
+                        request_ready = _append_physical_no_reuse_prefill_layer(
+                            system, events, tlb, templates, post, layer=layer_index,
+                            tier=tier, request=request, bindings=bindings,
+                            initial_deps=request_ready)
+                    else:
+                        side_rows["gpu"] += request.total_length
+                        post_last, store = _append_gpu_prefill_layer(
+                            system, events, templates, post, layer=layer_index,
+                            tier=tier, request=request, bindings=bindings,
+                            initial_deps=request_ready, heads=heads)
+                        prefill_store_events.extend(store)
+                        request_ready = (post_last,)
                     continue
                 reusable = [item for item in bindings if item[1]]
                 # (1) D_i bitmap master-write filter (2026-08-21): before this
