@@ -4732,17 +4732,11 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                      name="qkv", rows=len(compute_positions),
                                      deps=request_ready, positions=compute_positions)
                 q_bytes = len(compute_positions) * local_hidden * dbyte
-                q_transfer = _link_layer(x2g, "q_gpu_to_pim", q_bytes)
-                time_s, energy = system.devices["GPU"].get_time_and_energy(q_transfer)
-                q_link = _cacheblend_event(events, layer=layer_index, tier=tier,
-                                            request=request.request_id,
-                                            name="q_gpu_to_pim", device="LINK",
-                                            rows=len(compute_positions), time_s=time_s,
-                                            energy=energy, deps=(q,), link_bytes=q_bytes,
-                                            positions=compute_positions)
-                # Q gets the link first because it is on the PIM-attention
-                # critical path.  K/V is already available at QKV completion,
-                # so its transfer may proceed while GPU/PIM attention runs.
+                # K/V is already available at QKV completion, so its transfer
+                # may proceed while GPU/PIM attention runs.  Q crosses the
+                # link only when the PIM side is chosen (re-audit R06 / I06:
+                # the GPU branch used to pay a Q-to-PIM transfer it never
+                # consumed).
                 kv_bytes = len(compute_positions) * 2 * local_hidden * dbyte
                 writes = [loc for pos, reused, corrected, loc in bindings
                           if pos in compute_positions]
@@ -4800,6 +4794,14 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 side_rows["pim" if prefill_side == "pim" else "gpu"] += (
                     len(compute_positions))
                 if prefill_side == "pim":
+                    q_transfer = _link_layer(x2g, "q_gpu_to_pim", q_bytes)
+                    time_s, energy = system.devices["GPU"].get_time_and_energy(q_transfer)
+                    q_link = _cacheblend_event(events, layer=layer_index, tier=tier,
+                                                request=request.request_id,
+                                                name="q_gpu_to_pim", device="LINK",
+                                                rows=len(compute_positions), time_s=time_s,
+                                                energy=energy, deps=(q,), link_bytes=q_bytes,
+                                                positions=compute_positions)
                     # (2) Bank-whole prefill with causal drop (2026-08-21):
                     # the batch's own K/V lands in the stack first (Fugue
                     # sec 4.5.2 landing order), every query of the sweep scans
