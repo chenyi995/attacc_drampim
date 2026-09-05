@@ -5,6 +5,7 @@
 | 日期 | Session | 内容 |
 |---|---|---|
 | 2026-09-05 | [AttAcc 计量口径与 GPU query 旋转](2026-09-05-attacc-accounting-and-rotation.md) | 仓库/论文审计；确认七档设计口径；核查 PIM 时间来源；排除新增 DIE/TLB 成本与排队；删除 DIE 旋转；验证和剩余问题 |
+| 2026-09-05（晚） | [审阅计量改动并修复 F01 / F02 / F04](2026-09-05-ladder-fixes-f01-f02-f04.md) | 判定上一会话改动对错并按小 commit 提交；A1 prefill 回到 GPU；A3b 按持久写入序 slot 放置；fresh prefill 按档选边；回归测试；未重跑阶梯 |
 
 每份记录应包含以下信息：
 

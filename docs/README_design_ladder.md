@@ -45,7 +45,7 @@
 | 复用 | 无：`--reuse no-reuse`，每个请求的 KV 私有、完整重算 |
 | KV 布局 | `NoReuseKVLayout`（`src/workload_runner.py`）：一个请求一层一段连续 extent，横跨 16 条通道 |
 | 放置 policy | `slice`，AttAcc 的 chunk 计数模型 `_layout_channel_loads` |
-| prefill / decode attention | GPU / PIM |
+| prefill / decode attention | GPU / PIM。prefill 走 `_append_gpu_prefill_layer`：GPU 算 QKV 与整段 attention，K/V 经链路落到 PIM 供 decode；多轮时驻留历史先经 `kv_pim_to_gpu` 回读（2026-09-05 晚修复 F01；此前 A1 的 prefill 实际在 PIM 里做连续扫描，只是记账记成了 GPU） |
 
 ## 2. A2 — 软件 baseline：复用有了，PIM 没了
 
@@ -66,7 +66,10 @@
 ```
 stripe = 16 // heads_per_hbm
 for head h:  base = h × stripe
-    master 与 diff 在同一条流里；第 u 个 256-token unit 落 (base + u % stripe) % 16
+    master 与 diff 在同一条流里；每个对象的 slot 由写入序表决定并持久：
+        chunk  -> _chunk_slot_table(mode="append")，与 A4c 同一张表（第 i 个写入的 chunk 落 slot i % stripe）
+        修正   -> 首次被扫描到时追加到同一轮转的下一个 slot
+    落 (base + slot) % 16；同一 chunk 在任何 scan 里都在同一条通道（2026-09-05 晚修复 F02；此前按本次 scan 的 unit 序号重新轮转）
     一轮里一次产生的修正是一段连续 append（共享行）；不同轮的修正被这一轮自己写的 KV 隔开 → 各占一行
 ```
 

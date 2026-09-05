@@ -72,6 +72,8 @@ A2 可继续使用“远端存 KV、GPU 算 attention”的简单 baseline，不
 
 GQA 的 Q projection 宽度为 `Hq*dhead`，K/V 分别为 `Hkv*dhead`；KV 流量应按 KV heads 计，不能在部分路径仍按 Q heads 计。GPU 数与 stack 数的口径只定义一次，容量和能量不再额外套默认 `NUM_ATTACC=8`。
 
+**状态（2026-09-05 晚，commit `dfac28b`）：** A1 的 prefill 已走 `_append_gpu_prefill_layer`（GPU score / softmax / context，历史 KV 经 `kv_pim_to_gpu` 回读），设备归属按实际分支计入；算子形状、GQA 宽度与 GPU 数口径**未在本轮处理**。
+
 **验收：** A1 的 prefill 有 GPU score / softmax / context；L=256、dhead=128 的 context 为 `(256,128,256)`；LLAMA3-8B QKV projection 宽度为 6144；1/2/8 GPU 的容量和能量复制因子可逐项核对。这些修正是恢复定义，不是给 baseline 新增优化。
 
 ### 3.3 建立一份真正持久的物理地址账本
@@ -84,6 +86,8 @@ GQA 的 Q projection 宽度为 `Hq*dhead`，K/V 分别为 `Hkv*dhead`；KV 流�
 - 物理重排必须由明确的写入或搬移产生；若模型暂不支持搬移，就不允许读时隐式压缩。
 
 **A3b 的 naive 要体现在写入策略简单。** 使用持久 append cursor，不做 co-read 优化；相邻、同批的真实写入应允许正常打包，不应为了增加差距而人为规定“每个修正 token/每个 chunk 必须独占一行”。若有行对齐限制，应统一写进存储模型。
+
+**状态（2026-09-05 晚，commit `5e3c564`）：** A3b 的 scan 放置改为持久写入序 slot（`_place_master_by_slot("append")`，与 A4c 同一张表；修正按首次出现顺序追加到同一轮转）。block_index 级账本、trace 地址回查**未在本轮处理**。
 
 **验收：** 同一个 c4 单独读、与 c0 一起读时物理地址相同；四个 block 不再因同 fingerprint 被强制塞到一个 slot。trace 地址必须能逐个回查写入账本。
 
@@ -198,7 +202,7 @@ collector 检查配置/hash 一致性，缺档或旧 A1 混入时失败。CacheC
 | 1024-token segment | 四个 256-token block 独立寻址 |
 | 同 tier 消费者排在 owner 前 | 仍等待 owner 对应版本 store 完成 |
 | `PIM:pool0-14` 与 `PIM:pool0-0` | 共享物理 channel 上冲突不能并行 |
-| fresh-only prefill | A1/A3b/A4c/A4e 在 GPU；A5 在 PIM；A6 经选边后执行 |
+| fresh-only prefill | A1/A3b/A4c/A4e 在 GPU；A5 在 PIM；A6 经选边后执行（2026-09-05 晚 commit `67ce7c4` 起成立，`test_fresh_prefill_follows_the_rung_prefill_side`） |
 | context / GQA / GPU 数量 | 算子 FLOPs、KV bytes、能量与容量按真实几何计算 |
 | A4e vs A4c | diff 机制相同，只由 placement table 改变 master 放置 |
 | A5 vs A6 的 PIM 候选 | 布局、MQ、频点、算子代价相同；A6 只负责选择 |
