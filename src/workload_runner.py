@@ -3041,26 +3041,35 @@ def _corrected_rows_sha(workload: Workload, plan: ReusePlan, ndec: int) -> str:
     return digest.hexdigest()[:16]
 
 
-def _policy_corrected_rows(plan: ReusePlan, layer: int, request) -> set:
-    """Return consumer positions whose reusable master KV is overlaid by diff.
+def _corrected_rows_by_segment(plan: ReusePlan, layer: int, request) -> Dict[int, set]:
+    """Consumer positions overlaid by diff, per reused segment index.
 
     CacheBlend chooses correction rows independently per layer.  EPIC uses
     its deterministic leading correction prefix on each shifted segment.
     Both policies then share the same address-resolved master/diff DAG.
     """
-    corrected = set()
+    by_segment: Dict[int, set] = {}
     if plan.config.policy in CACHEBLEND_FAMILY:
-        by_segment = plan.cacheblend_partial_rows.get(layer, {}).get(
-            request.request_id, {})
-        for index, rows in by_segment.items():
+        sampled = plan.cacheblend_partial_rows.get(layer, {}).get(request.request_id, {})
+        for index, rows in sampled.items():
             offset = sum(segment.length for segment in request.segments[:index])
-            corrected.update(offset + row for row in rows)
+            by_segment[index] = {offset + row for row in rows}
     elif plan.config.policy in EPIC_FAMILY:
-        decisions = {decision.segment_index: decision for decision in plan.reusable
-                     if decision.request_id == request.request_id}
-        for index, decision in decisions.items():
-            offset = sum(segment.length for segment in request.segments[:index])
-            corrected.update(offset + row for row in decision.epic_prefix_rows)
+        for decision in plan.reusable:
+            if decision.request_id != request.request_id:
+                continue
+            offset = sum(segment.length for segment in
+                         request.segments[:decision.segment_index])
+            by_segment[decision.segment_index] = {offset + row
+                                                  for row in decision.epic_prefix_rows}
+    return by_segment
+
+
+def _policy_corrected_rows(plan: ReusePlan, layer: int, request) -> set:
+    """All consumer positions whose reusable master KV is overlaid by diff."""
+    corrected = set()
+    for rows in _corrected_rows_by_segment(plan, layer, request).values():
+        corrected.update(rows)
     return corrected
 
 
@@ -4333,16 +4342,23 @@ def _software_reuse_rows(plan: ReusePlan, layer: int, request):
     ``(position, reused, corrected)`` classification of
     ``_cacheblend_tlb_rows`` without materializing TLB locations.
     """
-    decisions = {d.segment_index for d in plan.reusable
+    decisions = {d.segment_index: d for d in plan.reusable
                  if d.request_id == request.request_id}
-    corrected = _policy_corrected_rows(plan, layer, request)
+    by_segment = _corrected_rows_by_segment(plan, layer, request)
+    # corrections an EARLIER turn of this agent already computed are resident
+    # in the remote store like any reused row (C8.3, 2026-09-05)
+    own_corrected = set()
+    for index, rows in by_segment.items():
+        decision = decisions.get(index)
+        if decision is not None and decision.inherits_from is None:
+            own_corrected.update(rows)
     compute: List[int] = []
     reused_rows = 0
     position = 0
     for index, segment in enumerate(request.segments):
         reused_segment = index in decisions
         for _ in range(segment.length):
-            if reused_segment and position not in corrected:
+            if reused_segment and position not in own_corrected:
                 reused_rows += 1
             else:
                 compute.append(position)
@@ -4526,7 +4542,7 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                     # the GPU and is not read back (re-audit SS04, 2026-09-05)
                     context_rows = decode_totals[request.request_id] + step
                     reads.append(link_event(
-                        "kv_remote_to_gpu", context_rows * kv_row_bytes * ndec,
+                        "decode_kv_remote_to_gpu", context_rows * kv_row_bytes * ndec,
                         layer=ndec - 1, tier=tier, request=request.request_id,
                         rows=context_rows, deps=last[request.request_id]))
                 step_time = 0.0
@@ -4567,7 +4583,7 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                 for request in group:
                     last[request.request_id] = (compute_event,)
                     last_write[request.request_id] = link_event(
-                        "kv_gpu_to_remote", kv_row_bytes * ndec,
+                        "decode_kv_gpu_to_remote", kv_row_bytes * ndec,
                         layer=ndec - 1, tier=tier,
                         request=request.request_id, rows=1,
                         deps=(compute_event,))
@@ -4904,6 +4920,14 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 # the cheaper one is committed, ties to the PIM).  The former
                 # GPU/PIM "split" hybrid is abolished.
                 location_deltas = _prefill_location_deltas(request, bindings)
+                # A correction an EARLIER turn of this agent wrote is resident:
+                # it is read like a reused row (its diff object), and its stale
+                # master copy is masked -- neither recomputed nor re-stored
+                # (C8.2, 2026-09-05).  Only this turn's own corrections are
+                # in ``writes``.
+                inherited = [loc for _, reused_flag, corrected, loc in bindings
+                             if reused_flag and corrected and
+                             loc.owner != request.request_id]
                 if getattr(tlb, "shadow_reads", True):
                     masked_prefill_keys = {_address_key(loc.shadow)
                                            for _, reused_flag, corrected, loc in bindings
@@ -4912,7 +4936,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     old_reads = [loc.shadow if corrected else loc
                                  for _, reused_flag, corrected, loc in bindings
                                  if reused_flag and
-                                 (not corrected or loc.shadow is not None)]
+                                 (not corrected or loc.shadow is not None)] + inherited
                 else:
                     # No mask gate (naive): read the corrected row from its
                     # own page and SKIP the master copy -- the master run
@@ -4922,7 +4946,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                  if reused_flag]
                 scan_locations = old_reads + list(writes)
                 readback_rows = [loc for _, reused_flag, corrected, loc in bindings
-                                 if reused_flag and not corrected]
+                                 if reused_flag and not corrected] + inherited
                 prefill_side = _resolve_prefill_side(
                     system, tlb, x2g, templates, pim_prefill_mode=pim_prefill_mode,
                     request_id=request.request_id, decided=dynamic_prefill_sides,
