@@ -30,6 +30,15 @@ Environment
 ``KVPIM_LAYOUT_DUMP_LAYER``  only this decoder layer (default 0); ``all``
                              keeps every layer and gets very large
 ``KVPIM_LAYOUT_DUMP_MAX``    stop after this many scan records (default 400)
+``KVPIM_LAYOUT_DUMP_REQUEST`` comma-separated request ids to keep; unset keeps
+                             all.  The cheap way to get a hand-sized dump that
+                             still spans the whole run: name one tier-0
+                             producer and one tier-1 consumer, and every
+                             decode step of both is kept while the thousands
+                             of other scans are dropped -- WITHOUT this the
+                             400-record cap is spent inside tier 0, where no
+                             KV is reused, so no scan carries a diff row and
+                             the master/diff split is invisible.
 ``KVPIM_LAYOUT_DUMP_TAG``    free-form label written on every record, used
                              to say which rung produced the file
 """
@@ -51,6 +60,8 @@ _TAG = os.environ.get("KVPIM_LAYOUT_DUMP_TAG", "").strip()
 _LAYER_ENV = os.environ.get("KVPIM_LAYOUT_DUMP_LAYER", "0").strip()
 _LAYER: Optional[int] = None if _LAYER_ENV == "all" else int(_LAYER_ENV or 0)
 _MAX = int(os.environ.get("KVPIM_LAYOUT_DUMP_MAX", "400"))
+_REQ_ENV = os.environ.get("KVPIM_LAYOUT_DUMP_REQUEST", "").strip()
+_REQUESTS = frozenset(x.strip() for x in _REQ_ENV.split(",") if x.strip())
 
 _lock = threading.Lock()
 _scans = 0
@@ -165,6 +176,7 @@ def record_scan(*, layer: int, tier: int, request: str, name: str,
                 policy: str, heads_per_hbm: int, master_channels: int,
                 kv_heads: int, num_hbm_used: int,
                 n_master: int, n_diff: int,
+                read_extents: Sequence[Tuple[str, int]] = (),
                 loads: Sequence[float], active: Sequence[int],
                 extent_groups: Sequence[Tuple[int, int, Sequence[Tuple[int, int, int]]]],
                 per_channel_rows: Dict[int, int],
@@ -176,10 +188,15 @@ def record_scan(*, layer: int, tier: int, request: str, name: str,
         return
     if _LAYER is not None and layer != _LAYER:
         return
+    if _REQUESTS and request not in _REQUESTS:
+        return
     with _lock:
         if _scans >= _MAX:
             return
         _scans += 1
+    # The rule's INPUT: the scan cut into (kind, tokens) extents.  Capped,
+    # with the totals kept, so a long context does not blow up the record.
+    cut = [[str(kind), int(rows)] for kind, rows in (read_extents or ())]
     extents = {}
     for channel, _count, placed in extent_groups or ():
         extents[str(channel)] = [
@@ -209,6 +226,10 @@ def record_scan(*, layer: int, tier: int, request: str, name: str,
         "master_channels": int(master_channels),
         "kv_heads": int(kv_heads), "num_hbm_used": int(num_hbm_used),
         "reads_master": int(n_master), "reads_diff": int(n_diff),
+        "read_extents": cut[:256],
+        "read_extents_n": len(cut),
+        "read_extents_master_tokens": sum(r for k, r in cut if k != "diff"),
+        "read_extents_diff_runs": [r for k, r in cut if k == "diff"][:256],
         "loads": [float(x) for x in loads],
         "active": [int(c) for c in active],
         "extents": extents,

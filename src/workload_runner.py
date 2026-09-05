@@ -1887,6 +1887,9 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
             kv_heads=kv_heads, num_hbm_used=num_hbm_used,
             n_master=sum(1 for r in reads if r.kind != "diff"),
             n_diff=sum(1 for r in reads if r.kind == "diff"),
+            # the (kind, tokens) cut the placement rule consumes, so the dump
+            # can be re-derived by hand without calling back into the engine
+            read_extents=_read_extents(reads),
             loads=loads, active=active, extent_groups=extent_groups,
             per_channel_rows=per_channel_rows,
             per_channel_masked=per_channel_masked, measured=measured)
