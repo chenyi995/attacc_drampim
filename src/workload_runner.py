@@ -2443,37 +2443,23 @@ def _append_channel_kv_stores(system, events: List[SplitEvent], *, layer: int,
                               tier: int, request: str, name: str,
                               locations: Sequence[KVLocation], dbyte: int,
                               deps: Sequence[str], positions: Sequence[int]) -> Tuple[str, ...]:
-    """Write K/V in parallel across concrete TLB channels.
+    """K/V landing (or resident readback) as DEPENDENCY-ONLY events.
 
-    The configured PIM bandwidth is the 16-channel aggregate.  A CacheBlend
-    master/diff pool has eight channels, so each channel receives one
-    sixteenth of that aggregate and the DAG completion is the slowest active
-    channel rather than a fictitious one-device write.
+    Original AttAcc prices KV movement as the GPU<->AttAcc link transfer and
+    nothing else -- its PIM device has no DRAM write or read term.  Ruling
+    chenyi9 2026-09-05 (re-audit R01 / MP-02): the ladder keeps that
+    accounting.  The per-channel events survive so scans can depend on the
+    rows having landed, and the report keeps their addresses; they carry no
+    time and no energy.
     """
     by_channel: Dict[Tuple[int, int], List[KVLocation]] = {}
     for location in locations:
         by_channel.setdefault((location.channel_base, location.channel_count), []).append(location)
     result = []
     for (channel, channel_count), channel_locations in sorted(by_channel.items()):
-        byte_count = sum(2 * location.bytes_per_vector for location in channel_locations)
-        # head->HBM remap (2026-08-27): a pool event carries ONE head's bytes
-        # on ONE HBM's channels; the concurrent copies on the other stacks
-        # are the head-parallel dimension, so the wall time uses the
-        # PER-HBM bandwidth share, not the aggregate.
-        # Final placement ruling (chenyi9 2026-08-27 night): a pool holds
-        # ONE head's chunks on ONE HBM's channels (softmax accumulates
-        # inside that HBM's die; heads parallelize across HBMs outside the
-        # event).  The store therefore gets the PER-HBM bandwidth share.
-        accelerator = system.devices["Acc"]
-        bandwidth = (accelerator.peak_memory_bandwidth /
-                     max(1, getattr(accelerator, "num_hbm", 1)) *
-                     channel_count / 16)
         result.append(_cacheblend_event(
             events, layer=layer, tier=tier, request=request, name=name,
-            device="PIM:pool{}-{}".format(channel, channel + channel_count - 1),
-            rows=len(channel_locations),
-            time_s=byte_count / bandwidth,
-            energy=(byte_count * system.devices["Acc"].energy_table["mem"],),
+            device="STORE", rows=len(channel_locations), time_s=0.0, energy=(),
             deps=tuple(deps), positions=tuple(positions),
             addresses=tuple(address for location in channel_locations
                             for address in (location.key_address, location.value_address))))
@@ -3369,9 +3355,8 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                 positions=(request.total_length + output_row,))
             store = _cacheblend_event(
                 events, layer=layer_index, tier=tier, request=request.request_id,
-                name="decode_dram_store_master", device="PIM", rows=1,
-                time_s=kv_bytes / system.devices["Acc"].peak_memory_bandwidth,
-                energy=(kv_bytes * system.devices["Acc"].energy_table["mem"],),
+                name="decode_dram_store_master", device="STORE", rows=1,
+                time_s=0.0, energy=(),
                 deps=(kv_link,), positions=(request.total_length + output_row,),
                 addresses=(output_location.key_address, output_location.value_address))
             previous_output[layer_index].append(output_location)
@@ -3798,9 +3783,8 @@ def _append_cacheblend_decode_batched(
                     location = output_locations[request_id]
                     store = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=request_id,
-                        name="decode_dram_store_master", device="PIM", rows=1,
-                        time_s=kv_bytes / system.devices["Acc"].peak_memory_bandwidth,
-                        energy=(kv_bytes * system.devices["Acc"].energy_table["mem"],),
+                        name="decode_dram_store_master", device="STORE", rows=1,
+                        time_s=0.0, energy=(),
                         deps=(kv_links[request_id],), positions=(position,),
                         addresses=(location.key_address, location.value_address))
                     previous_output[request_id][layer_index].append(location)
@@ -4115,9 +4099,7 @@ def _append_physical_no_reuse_prefill_layer(
         rows=rows, dependency=ctx_link, positions=positions)
     store = _cacheblend_event(
         events, layer=layer, tier=tier, request=request.request_id,
-        name="dram_store_master", device="PIM", rows=rows,
-        time_s=kv_bytes / system.devices["Acc"].peak_memory_bandwidth,
-        energy=(kv_bytes * system.devices["Acc"].energy_table["mem"],),
+        name="dram_store_master", device="STORE", rows=rows, time_s=0.0, energy=(),
         deps=(kv_link,), positions=positions, addresses=addresses)
     return post_last, store
 

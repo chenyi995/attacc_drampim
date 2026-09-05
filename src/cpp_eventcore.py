@@ -15,7 +15,7 @@ from array import array
 from typing import Dict, Optional, Sequence
 
 _LIB_PATH = os.path.join(os.path.dirname(__file__), "cppcore", "libeventcore.so")
-DEPENDENCY_ONLY_DEVICES = frozenset(("DIE", "TLB"))
+DEPENDENCY_ONLY_DEVICES = frozenset(("DIE", "TLB", "STORE"))
 
 
 def _load_library() -> Optional[ctypes.CDLL]:
