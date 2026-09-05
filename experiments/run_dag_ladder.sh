@@ -34,6 +34,10 @@ mkdir -p "$OUT"
 # workers + 7 construction processes = 91 <= 96.  Override per-rung width with RAMU_WORKERS if the budget
 # changes.
 RAMU_WORKERS=${RAMU_WORKERS:-14}
+# GPU model (chenyi9 ruling 2026-09-05, re-audit C1): FlashAttention-2 is
+# the common GPU model of every rung.  Default flash here so no entry point
+# silently runs the legacy AttAcc xPU formulas; GPU_MODEL=legacy opts out.
+GPU_MODEL=${GPU_MODEL:-flash}
 # Recompute-ratio knob (chenyi9 2026-08-26: run several ratios, prefer
 # lower recompute): EPIC prefix tokens per shifted segment for A2-A6.
 EPIC_K=${EPIC_K:-8}

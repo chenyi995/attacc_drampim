@@ -11,7 +11,7 @@
 |---|---|---|
 | `--engine dag` | 固定 | 物理事件 DAG 引擎（真实 extent 进 Ramulator） |
 | `--pipeopt` | 开（默认 ON） | 各设备各自的资源时间轴，通道 lane 取 max；`--no-pipeopt` 是 AttAcc 的串行约定，会抹掉布局收益 |
-| `--gpu-model flash` | **必须显式传** | GPU attention 按 FlashAttention-2 融合核定价（每 (head, request, 128 行 Q 块) 一个 CTA，效率随 key 长度取 FA-2 A100 曲线，S 不落 HBM，decode 用 flash-decoding）。默认 `legacy` 是 AttAcc 原版 xPU 公式，attention 只有 ~11 TFLOPS，会让 bank sweep 在任何形状上都赢 GPU，A6 ≡ A5（session 2026-09-05 §9） |
+| `--gpu-model flash` | **阶梯脚本与 sweep 脚本默认 flash**（直接调 `main.py` 时必须显式传；`GPU_MODEL=legacy` 才退回原版公式） | GPU attention 按 FlashAttention-2 融合核定价（每 (head, request, 128 行 Q 块) 一个 CTA，效率随 key 长度取 FA-2 A100 曲线，S 不落 HBM，decode 用 flash-decoding）。默认 `legacy` 是 AttAcc 原版 xPU 公式，attention 只有 ~11 TFLOPS，会让 bank sweep 在任何形状上都赢 GPU，A6 ≡ A5（session 2026-09-05 §9） |
 | `--powerlimit` | 开（默认 ON） | Ramulator 功率受限预设：nCCDAB 6 tCK，MQ 命令按能量钳位（n=8 时 8 tCK）。`--no-powerlimit` 是 NPC 4 tCK |
 | `--pim-link nvlink3` | 默认 | 600 GB/s，AttAcc 原版假设；决定 GPU 侧回读驻留 KV 的代价 |
 | `--word 2` | 默认 | FP16 |
