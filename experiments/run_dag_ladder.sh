@@ -70,6 +70,7 @@ for A in $RUNGS; do
         ${NUM_HBM:+--num-hbm "$NUM_HBM"} \
         ${NGPU:+--ngpu "$NGPU"} \
         ${NO_WARM:+--no-warm} \
+        ${GPU_MODEL:+--gpu-model "$GPU_MODEL"} \
         --ramulator-workers "$RAMU_WORKERS") > "$OUT/dag_${A}.log" 2>&1 &
     PID[$A]=$!
 done
