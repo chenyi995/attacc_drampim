@@ -4383,7 +4383,9 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                                   for request in group)
                 reads = []
                 for request in group:
-                    context_rows = decode_totals[request.request_id] + step + 1
+                    # resident rows only: this step's token is produced on
+                    # the GPU and is not read back (re-audit SS04, 2026-09-05)
+                    context_rows = decode_totals[request.request_id] + step
                     reads.append(link_event(
                         "kv_remote_to_gpu", context_rows * kv_row_bytes * ndec,
                         layer=ndec - 1, tier=tier, request=request.request_id,
