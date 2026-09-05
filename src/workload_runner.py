@@ -1120,6 +1120,9 @@ def _address_key(location: KVLocation) -> Tuple[int, int]:
     return (location.key_address, location.value_address)
 
 
+from src import layout_probe
+
+
 def _pool_reads(tlb, locations: Sequence[KVLocation]) -> Tuple[List[KVLocation], set]:
     """Physical read stream: which rows the DRAM actually touches.
 
@@ -1875,6 +1878,18 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     if len(measured) != len(runs):
         raise WorkloadValidationError(
             "Ramulator run-result count mismatch in placement scan")
+    if layout_probe.enabled():
+        # Hand-check hook (2026-09-04): the extents actually simulated, and
+        # every term of both reductions.  No-op unless KVPIM_LAYOUT_DUMP.
+        layout_probe.record_scan(
+            layer=layer, tier=tier, request=request, name=name, policy=policy,
+            heads_per_hbm=heads_per_hbm, master_channels=master_channels,
+            kv_heads=kv_heads, num_hbm_used=num_hbm_used,
+            n_master=sum(1 for r in reads if r.kind != "diff"),
+            n_diff=sum(1 for r in reads if r.kind == "diff"),
+            loads=loads, active=active, extent_groups=extent_groups,
+            per_channel_rows=per_channel_rows,
+            per_channel_masked=per_channel_masked, measured=measured)
     scan_events: List[str] = []
     for channel, (time_s, energy_vec) in zip(active, measured):
         channel_addr = (per_channel_addr[channel] or
@@ -4308,6 +4323,8 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
     scheduled = _schedule_cacheblend(events, pipe=pipe)
     _annotate_batch_q_arrivals(scheduled, batch_records)
     overlap_validation = validate_cacheblend_attacc_overlap_contract(scheduled, pipe=pipe)
+    if layout_probe.enabled():
+        layout_probe.record_blocks(tlb, note="post-run block table")
     tlb_report = tlb.report()
     if not include_events:
         # The per-position TLB entry list is as large as the event list.
