@@ -199,6 +199,7 @@ class Ramulator:
         # v2 stripe-era file stays on disk as an archive of that detour.
         self._signature_cache_path = (os.path.join(
             ramulator_dir, "signature_cache.jsonl") if ramulator_dir else "")
+        self._toolchain = self._toolchain_fingerprint(ramulator_dir)
         if (self.signature_cache_enabled and self._signature_cache_path and
                 os.path.exists(self._signature_cache_path)):
             with open(self._signature_cache_path) as handle:
@@ -270,7 +271,25 @@ class Ramulator:
             bool(mq_command), nccdab_override,
             self._address_mapping_signature(key_addr),
             self._address_mapping_signature(value_addr),
+            self._toolchain,
         )
+
+    @staticmethod
+    def _toolchain_fingerprint(ramulator_dir):
+        """Hash of the simulator binary and the trace generator, so a cached
+        result can only serve the toolchain that produced it (MP-03)."""
+        import hashlib
+        digest = hashlib.sha256()
+        found = False
+        for name in ("ramulator2", os.path.join("trace_gen", "gen_trace_attacc_bank.py")):
+            path = os.path.join(ramulator_dir, name) if ramulator_dir else name
+            try:
+                with open(path, "rb") as handle:
+                    digest.update(handle.read())
+                found = True
+            except OSError:
+                digest.update(b"missing:" + name.encode())
+        return digest.hexdigest()[:16] if found else "none"
 
     def cache_report(self):
         """Host-side signature-cache counters for workload reports/tests."""
@@ -605,10 +624,16 @@ class Ramulator:
                     # inside the row (which decides row-boundary crossings)
                     # and the row count.  The absolute row index is omitted
                     # for the same reason it is in _address_mapping_signature.
-                    signature = signature + ("extents1",) + tuple(
+                    # Row RELATION between the extents matters even though
+                    # the absolute row does not: two extents in one row
+                    # merge in the row buffer, two rows apart pay two ACTs
+                    # (re-audit R12 / MP-03, 2026-09-05).  Rows are keyed
+                    # relative to the first extent.
+                    first_row = extents[0][0] // 1024
+                    signature = signature + ("extents2",) + tuple(
                         (self._address_mapping_signature(extent_key),
                          self._address_mapping_signature(extent_value),
-                         extent_rows)
+                         extent_rows, extent_key // 1024 - first_row)
                         for extent_key, extent_value, extent_rows in extents)
                 if use_signature_cache:
                     with self._signature_cache_lock:
