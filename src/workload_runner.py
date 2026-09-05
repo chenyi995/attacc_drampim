@@ -815,9 +815,15 @@ def _channel_extent_addresses(channel: int, slots: Sequence[int]
 
 _LEDGER_POLICIES = ("slice-append", "master-diff-local-append",
                     "master-diff-table-local-append")
-# The per-head diff region of A4c/A4e starts half-way up the channel, well
-# clear of the master rows (which grow from row 0), so the two never alias.
-_DIFF_REGION_BYTES = 1 << 29
+# The per-head diff region of A4c/A4e.  The HBM3-PIM mapper decodes a
+# channel-relative byte offset as column (32 B), row (32 columns), bank,
+# bank group, rank, pseudo-channel; an ALL-BANK command drives every bank of
+# the channel at ONE row index.  So the region must differ from the masters
+# in the ROW bits, inside the same bank fields: 4 MiB = row 4096 of bank 0
+# (a 512 MiB offset, used until 2026-09-05, only flipped the pseudo-channel
+# bit and left row 0 aliasing the first master row -- re-audit C3).  Masters
+# grow from row 0 and may not reach the region; the ledger raises if they do.
+_DIFF_REGION_BYTES = 1 << 22
 
 
 def _block_slot_table(order: Sequence[Tuple[str, int]], coread: Sequence[frozenset],
@@ -941,6 +947,11 @@ class PhysicalLedger:
                     start = cursor.get(slot, 0)
                     span = len(block_rows) * _GEN_BYTES_PER_TOKEN
                     cursor[slot] = start + -(-span // _GEN_ROW_BYTES) * _GEN_ROW_BYTES
+                    if policy != "slice-append" and cursor[slot] > _DIFF_REGION_BYTES:
+                        raise WorkloadValidationError(
+                            "master rows of one channel exceed the diff region base "
+                            "({} B); the workload does not fit the ledger".format(
+                                _DIFF_REGION_BYTES))
                     naive_index += 1
                     object_key = (layer, owner, fingerprint, kind, block)
                     self.objects[object_key] = (tuple(block_rows),

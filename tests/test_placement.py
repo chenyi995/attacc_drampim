@@ -770,6 +770,21 @@ class PhysicalLedgerTest(unittest.TestCase):
         self.assertEqual(a3b, a4c)
         self.assertEqual(sum(a3b), 256)
 
+    def test_diff_region_differs_from_masters_in_the_row_bits(self):
+        # C3 (2026-09-05): an ALL-BANK command selects ONE row index of every
+        # bank; the diff region must sit at a different row, not just at a
+        # different pseudo-channel of the same row.
+        from src.ramulator_wrapper import Ramulator
+        reservations = [("owner", "c0", range(256), "master"),
+                        ("consumer", "c0", range(8), "diff")]
+        tlb = self._store(reservations)
+        groups = self._groups(tlb, self._reads(tlb, reservations), "master-diff-local-append")
+        keys = sorted(key for _c, _n, placed in groups for key, _v, _r in placed)
+        fields = [Ramulator._address_mapping_signature(key) for key in keys]
+        rows = {key // _GEN_ROW_BYTES for key in keys}
+        self.assertEqual(len(rows), 2)                       # two distinct rows
+        self.assertEqual(fields[0][:5], fields[1][:5])       # same channel/pc/rank/bg/bank
+
     def test_every_head_sees_the_same_pattern_in_its_own_stripe(self):
         corpus = [("owner", "c%d" % i, range(256), "master") for i in range(4)]
         tlb = self._store(corpus)
