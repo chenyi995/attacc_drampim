@@ -62,10 +62,10 @@ fresh prefill 按档选边；consumer 的扫描等 owner 落地；位移从复�
 两种写法（同一 session）：
 
 - `*_interleaved.json`：一个 agent 一个请求，上下文按轮交替 `chunks | own`，一次 prefill、一次 decode。可手算。
-- `*_turns.json`：一个 (agent, 轮) 一个请求，tier = 轮，`parent` = 上一轮，`parent_out` 段 = 上一轮 decode 输出，
-  `history_len` = 该 agent 之前各轮的 prefill 行（驻留、不重算），每轮 decode lout。真实多轮；上一轮 decode 的行
-  是下一轮要读的——A4e 的表对 decode 输出行没有信息的短板在这里暴露。引擎里 history 是抽象驻留段，
-  不是上一轮真实落的行，论文里要说明。
+- `*_turns.json`：一个 (agent, 轮) 一个请求，tier = 轮，`parent` = 上一轮。第 r 轮把该 agent 此前的整段上下文
+  **按原顺序重新列出**（system prompt、之前每轮检索的 chunk、自写 block、之前每轮的输出——上一轮的作 `parent_out`，
+  更早的作普通复用段），再加本轮的 chunk 与自写 block；没有 `history_len` 占位。复用计划因此引用**同一批物理对象**：
+  之前各轮的 master、该 agent 已写过的修正（继承，不重算不重存，C8）、各轮输出。每轮 decode lout。
 
 ## 5. Sweep（每次只动一个轴；`workload/probe/sweep/manifest.csv`，42 个文件）
 

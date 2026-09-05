@@ -16,4 +16,5 @@
 
 跑法见 `experiments/run_queue.sh`、`experiments/run_after_queue.sh`（≤ 64 核），
 内存监视 `experiments/mem_guard.sh`，汇总 `experiments/summarize_ladder.py <outdir> <wl.json> [ref]`。
+`sweep/*_turns.json` 自 2026-09-05 起每轮重新列出该 agent 的全部早期上下文（无 `history_len`），后一轮继承前一轮写过的修正（C8）。
 结果目录在 /data2 的 scratch 里，不进仓库。
