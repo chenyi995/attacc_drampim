@@ -1,0 +1,46 @@
+"""Apply the independent readability review; no evidence numbers are changed."""
+from pathlib import Path
+import re
+
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A=R/'audit/2026-09-05'
+replacements=[
+ ('一个 **head** 是一组 attention 计算；正常情况下，各 KV head 有自己的 KV 数据。',
+  '一个 **head** 是一组 attention 计算；正常情况下，各 KV head 有自己的 KV 数据。**Q/query** 是当前 token 用来查询历史 KV 的向量；一次 **request** 是一个请求，**prompt** 是它的输入。'),
+ ('它的 GQA 是多个 Q head 共用较少的 KV head：',
+  '普通 **MHA** 是每个 Q head 对应自己的 KV head；它的 **GQA** 则是多个 Q head 共用较少的 KV head：'),
+ ('**具体 case。** 对同一个短 prompt，用 MHA 做控制，再换成 LLaMA3-8B 那样的 GQA 头比例。测试缩小了层数/工作量，并用设备桩提供时间；实际运行的是仓库构图和校验逻辑。设备桩不衡量 GPU/PIM 真正速度。',
+  '**具体 case。** 同一短 workload 分别采用 CACHEBLEND-TINY（MHA）和 LLAMA3-8B（GQA）配置，均缩为一层。两者模型尺寸也不同，这张表不是“只改 GQA 一个参数”的性能对照。测试用固定价格函数代替真实设备（设备桩），实际执行的是列出操作及其依赖的构图逻辑和校验逻辑，不衡量 GPU/PIM 真正速度。'),
+ ('另一个 batch decode 分支还使用旧字节口径：',
+  '另一个 batch decode（合并处理多个请求的一步）分支还使用旧字节口径：'),
+ ('构图却发送 **','被捕获的 batch decode 事件却记录 **'),
+ ('只放宽校验器不能自动消除这处不一致。',
+  '这些事件在最终校验前被捕获，整份报告随后报错，不能说实际传输了这些字节。正确的 prefill 字节也会先被旧校验器拒绝，不能把该 decode 事件当成报错的唯一来源。只放宽校验器不能自动消除这处分支不一致。'),
+ ('| A4c/A4e 的固定存储与实际扫描 |','| A3b–A6 共同的固定存储/子段扫描 |'),
+ ('**具体 case。** 用户直接执行一键 ladder，','**具体 case。** 若直接执行一键 ladder，'),
+ ('| 读取请求 | 同一组输出维度对应的起点，相对 V base |',
+  '| 读取请求 | 第二组输出维度对应的起点，相对 V base（存储起始地址） |'),
+ ('## C7：A3b 的特殊 packing 是否算合理 baseline，需要先定义',
+  '## C7：A3b 的特殊合并存放是否算合理 baseline，需要先定义'),
+ ('原始没有软件复用、diff 或此 packing 规则。','原始没有软件复用、diff 或此合并存放规则。'),
+ ('合成一个连续 burst。','合成一段连续写入（burst）。'),
+ ('可接受为共同静态预分配；STORE 已零成本，',
+  '可作为共同静态预分配理解；是否作为正式定义仍待裁决。STORE 已零成本，'),
+ ('AttAcc 是公式 overlap，没有同型 DAG，',
+  'AttAcc 是公式 overlap，没有同型 DAG（带依赖关系的事件图），'),
+ ('06-methodology.tex:182','06-methodology.tex:172'),
+ ("paper('06-methodology.tex',182)","paper('06-methodology.tex',172)"),
+]
+for p in (A/'CURRENT_ISSUES.md',Path('/tmp/organize_audit_20260905.py')):
+    text=p.read_text()
+    for before,after in replacements:
+        text=text.replace(before,after)
+    text=re.sub(r'(<a id="c\d+"></a>)\n(##)',r'\1\n\n\2',text)
+    p.write_text(text)
+(A/'archive/organize_audit_20260905.txt').write_bytes(Path('/tmp/organize_audit_20260905.py').read_bytes())
+(A/'archive/polish_audit_current.txt').write_bytes(Path(__file__).read_bytes())
+session=R/'docs/sessions/2026-09-05-audit-docs-cleanup.md'
+text=session.read_text().replace('新稿另行交其复核。',
+    '新稿复核后，已按建议明确 GQA 表使用两种模型配置、错误字节来自校验前捕获、C4 涉及共同接口，并保留静态预分配待裁决。措辞修订记录在 `polish_audit_current.txt`，未改变证据数字。')
+session.write_text(text)
+print('Applied independent readability corrections.')

@@ -1,0 +1,296 @@
+"""Archive audit evidence and generate review documents from probe outputs."""
+from pathlib import Path
+import csv
+import hashlib
+import json
+import re
+import subprocess
+
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A=R/'audit/2026-09-05'
+P=json.loads(Path('/tmp/reaudit_8c51672_evidence.json').read_text())
+T=json.loads(Path('/tmp/ledger_trace_boundary_evidence.json').read_text())
+I=json.loads(Path('/tmp/independent_8c51672_storage_evidence.json').read_text())
+log=Path('/tmp/reaudit_8c51672_targeted_tests.log').read_text()
+test_count=int(re.search(r'Ran (\d+) tests',log).group(1))
+copies={
+ '/tmp/reaudit_8c51672_probe.py':'reaudit_8c51672_probe.txt',
+ '/tmp/reaudit_8c51672_evidence.json':'reaudit_8c51672_evidence.json',
+ '/tmp/reaudit_8c51672_targeted_tests.log':'reaudit_8c51672_targeted_tests.log',
+ '/tmp/ledger_trace_boundary_probe.py':'ledger_trace_boundary_8c51672_probe.txt',
+ '/tmp/ledger_trace_boundary_evidence.json':'ledger_trace_boundary_8c51672_evidence.json',
+ '/tmp/independent_8c51672_storage_probe.py':'independent_8c51672_storage_probe.txt',
+ '/tmp/independent_8c51672_storage_evidence.json':'independent_8c51672_storage_evidence.json',
+ '/tmp/independent_8c51672_storage_probe.log':'independent_8c51672_storage_probe.log',
+}
+for source,target in copies.items():
+ if Path(source).exists(): (A/target).write_bytes(Path(source).read_bytes())
+
+gqa_rows=[]
+for rung in ('A1','A2','A3b','A4c','A4e','A5','A6'):
+ m=P['fresh_by_gqa_and_rung']['1'][rung]
+ g=P['fresh_by_gqa_and_rung']['4'][rung]
+ gqa_rows.append(f"| {rung} | {m['status']} | {g['status']}"+
+                 (f"：`{g['error']}`" if g['status']=='error' else '')+' |')
+case_rows=[]
+for name,d in P['A6_estimate_vs_executed_operation_coverage'].items():
+ c=d['choice_log']
+ case_rows.append('| {} | {} | {:.3f} | {:.3f} | {:.3f} | {:.3f} | {} |'.format(
+  name,c['compute_rows'],c['t_xpu_s']*1e6,c['t_bank_s']*1e6,
+  d['gpu_branch_attention_operation_service_s']*1e6,
+  d['pim_attention_operation_service_s']*1e6,c['side']))
+decoded=T['diff_master_region']['first_command_decoded']
+region_table='\n'.join('| {} | {} | {} | {} | {} |'.format(
+ label,d['channel'],d['pseudochannel'],d['row'],d['column'])
+ for label,d in zip(('master 首 MAC','diff 首 MAC'),decoded))
+subset=T['subsets']
+v_base=subset['full']['extents'][0][1]
+v_full=subset['full']['context'][1][0]-v_base
+v_part=subset['first16']['context'][1][0]-v_base
+packed=T['packed_row_boundary']
+dup=T['head_alias']
+full_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+changed=subprocess.check_output(['git','diff','--name-only','cdd89db..HEAD'],cwd=R,text=True).splitlines()
+with (A/'reaudit_8c51672_file_coverage.csv').open('w',newline='') as f:
+ writer=csv.writer(f); writer.writerow(['path','review_scope','reviewer','sha256'])
+ for rel in changed:
+  if rel=='src/workload_runner.py': scope,reviewer='allocator, execution, estimates, dependencies, reports','root + independent_fairness_audit + ledger_trace_boundary_audit'
+  elif rel.startswith(('src/','main.py','experiments/','output/analysis/')): scope,reviewer='changed code, pricing, accounting, entrypoints, report semantics','root + attacc_model_provenance'
+  elif rel.startswith('tests/'): scope,reviewer='new assertions and their coverage boundaries','root + independent_fairness_audit'
+  else: scope,reviewer='document/history/rulings; not current numerical evidence','root'
+  writer.writerow([rel,scope,reviewer,hashlib.sha256((R/rel).read_bytes()).hexdigest()])
+
+report=r'''# 8c51672 修复复核：多项已修，仍有阻断问题
+
+日期：2026-09-05。源码 `@@HEAD@@`，本轮重点比较 `cdd89db..HEAD` 的 @@FILES@@ 个变更文件，并检查改动调用到的 mapper、命令生成器及论文当前工作区。覆盖清单见 [CSV](reaudit_8c51672_file_coverage.csv)。前轮结论以各自 revision 为准；本报告是当前状态。
+
+**chenyi9，不能确认“都正确了”。** 修复并非无效：多项旧反例已关闭。但 GQA 的字节校验出现确定的运行回归，PhysicalLedger 到 ALL-BANK 命令的地址转换仍不成立，A6 的两侧估价也还有操作覆盖遗漏。现有结果不能据此签署逐档公平性保证。
+
+本轮主审、独立公平性 agent、计量 agent、ledger→trace 专项 agent 分别复核。执行的是轻量 helper、真实 DAG+设备桩、命令生成函数和定向单测；时间桩只用于检查结构，解析模型返回值也不冒充硬件测量。所有实现文件保持本轮开始时的内容。
+
+## 1. 使用的最新口径
+
+保留 chenyi9 在前文及 [session §12–13](../../docs/sessions/2026-09-05-ladder-fixes-f01-f02-f04.md) 确认的规则：A1/A2 是独立 baseline；A3b 起逐级加入 diff 布局、co-read 表、PIM prefill+MQ、自动选边。所有复用档共用随机修正计划；A1 使用精确 L。普通 DRAM store/read 不额外计时计能，KV 移动只计 AttAcc 链路，STORE/DIE/TLB 保留依赖。平台使用 A100，decode 当前 token 在 GPU 本地算是允许的。
+
+**A6 只要求逐 request 比较 GPU/PIM 的估计耗时并选较小者；不要求双候选 DAG、排队预测或全局最优。** 本轮指出估价操作缺项，并未恢复旧的复杂选择要求。
+
+## 2. 已确认修复，不再重复旧指控
+
+| 旧问题 | 当前核查 | 状态 |
+|---|---|---|
+| c16 单扫/共扫改变 row | 五档相同对象的 ledger extent 均持久；独立 probe 重做旧反例 | 高层 ledger 的 row 漂移已修；到 MAC 的转换另见 V02/V03 |
+| A3b/A4c 零 diff 子区间几何不同 | 实际两种 allocator 对相同 master 子区间返回相同 extent 几何 | 已修 |
+| 同一连续 burst 的不同 fingerprint 修正不能合并 | A3b 能将它们放为一个连续对象 | 已修；重复同一 fingerprint 的跨段情况另见 V05 |
+| master 普通读写旧的 15 倍差率、pool 争用差异 | store/readback 改为全零 `STORE`，也不占用 Python/native 调度资源 | 按新裁决已修，不要求恢复 DRAM 收费 |
+| A1 256-token 桶、A2 多回读当前 token | A1 返回精确 token/head 数；A2 只读此前驻留行 | 已修；A1 仍是 count/dense 抽象 |
+| 修正集合随 rung 改变 | CLI 固定 `recompute_canonical=False`；主审复用例子五档 hash 相同 | 核心执行计划已修；A2 报告未导出同一 hash，不等于计划不同 |
+| consumer 先扫 owner 后写 | 倒序 JSON 控制组的 consumer scan 均有 owner store ancestor | 已修该反例；预约顺序另见 V05 |
+| GPU prefill 多发 Q-to-PIM | A3b/A4c/A4e 的 GPU prefill 不再生成该 link | 已修 |
+| private / 单请求 decode 遗漏 MQ | 两条路径均调用 `_apply_pim_batch` | 已接入，不再报告旧参数遗漏 |
+| 当前 token 的 GPU local context 形状 | 两条 decode 分支均恢复 dhead 输出宽度 | 已修 |
+| A6 只估一条 lane、尾批按满批收费 | 估价覆盖全部 lane，按 divmod 给尾批实际 query 数定价 | 已修这两项；V06 是其他缺项 |
+| 位移只看 JSON 的 delta=0 | `_apply_plan_deltas` 推导 consumer/owner 偏移，真实 DAG 出现额外 Q variants | 已修位移输入缺失 |
+| GQA QKV/部分 KV bytes/MAC 能量 | QKV 宽与 prefill KV 字节已修，MAC 能量两接口纳入 GQA query 数 | 部分修复；V01 指出未贯通路径 |
+| 缓存丢失 extent 相对 K row | 改 K/V row 关系可使模拟桩重新调用 | 已修这项；实际共享库指纹仍遗漏 |
+| TBT 只有请求均值、tier 完成取 attention start | 加权 TBT 公式正确；`cum_end_s` 改用 request end | 部分修复，V08 说明剩余报表问题 |
+
+本轮实际跑了 **@@TESTS@@ 项定向测试，全部通过**，日志见 [测试记录](reaudit_8c51672_targeted_tests.log)。此前 session 的全套通过记录属于实施时点，不作为本轮执行次数。通过这些测试不覆盖下面的命令映射及 GQA 入口反例。
+
+## 3. V01 · P0：GQA 修正未贯通 validator，默认路径直接失败
+
+[prefill](../../src/workload_runner.py:4837) 已用 `_kv_hidden` 除 GQA group，然而 [validator](../../src/workload_runner.py:2756) 仍要求 `KV bytes = rows × 2 × local_hidden × dbyte`；[finalize](../../src/workload_runner.py:5138) 传入的仍为 Q hidden width。合法的 GQA KV link 因而被拒绝。
+
+主审使用同一个小模型/同一 prompt，仅改变 GQA group；所有设备均为桩，错误发生于真实报告校验：
+
+| 档位 | MHA 控制组 | GQA group=4 |
+|---|---|---|
+@@GQA_TABLE@@
+
+计量 agent 另用仓库 LLAMA3-8B 配置独立复现同样失败，见 [专项](MODEL_PROVENANCE_REAUDIT_8c51672.md)。这不是“数值不够准”，而是该路径不能正常返回结果。
+
+还有独立的遗漏：[batched decode](../../src/workload_runner.py:3474) 仍为 `kv_bytes = 2*q_bytes`，没有像 single decode 那样除 group。仅修改 validator 会放行这个错误流量；应一起核对构造和校验使用的 KV head 数。非默认 private PIM-prefill helper 也保留旧式，计量专项单列，不与正式 A1 GPU-prefill 混淆。
+
+## 4. V02 · P0：diff 区的偏移没有隔离 ALL-BANK 的存储行
+
+新 [PhysicalLedger](../../src/workload_runner.py:820) 用 `_DIFF_REGION_BYTES = 1 << 29` 区分 master/diff。但在本仓库 HBM3_8Gb_2R 地址布局中，这个偏移改变 **pseudochannel**，没有改变 row/column。[mapper](../../pim_ramulator_src/hbm3_pim_linear_mappers.cpp:66) 负责解码地址；[ACTAB](../../pim_ramulator_src/patches/src_dram_lambdas_action.patch:8) 与 [MACAB 行就绪检查](../../pim_ramulator_src/patches/src_dram_lambdas_preq.patch:8) 对 ALL-BANK 命令遍历整个 channel 的所有 pCH/rank/BG/bank。
+
+纯命令生成/地址解码反例的两个首 MAC 为：
+
+| 对象 | channel | pseudochannel | row | column |
+|---|---:|---:|---:|---:|
+@@REGION_TABLE@@
+
+两个数值地址看似相隔很远，却访问 ALL-BANK 同一组物理行/列。不能用这个偏移实现声称独立的 master/diff 区；某些读集还会出现不该有的行命中。因此新的持久地址整数本身不足以证明容量和 ACT 归因正确。
+
+**证据边界：** 这是受版本控制的 generator、mapper 和 HBM action/preq 源码的确定矛盾。未验证运行中二进制的实际周期，也没有将其换算成 speedup。应按实际 ALL-BANK row 地址空间表达独立存放，而不能仅换一个看起来很大的 byte offset。
+
+## 5. V03 · P1：token 子段到 K/V MAC 的转译仍不对应固定存储
+
+[ledger](../../src/workload_runner.py:1030) 以 `start + first*4` 给任意子段地址；mapper 以 transaction 粒度丢弃低位，而 [generator](../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:162) 沿本次 extent 重新执行 MAC tile。平均 bytes/token 不能直接等同于任意 token 在现有 MAC 布局中的独立起点。
+
+更直接的 V 反例不依赖 TLB 与 trace 单位比较：同一已存的 @@VLENGTH@@-token 对象、相同 V base，完整扫描的第二个输出维块从 **V+@@VFULL@@** 开始，仅读 first16 则从 **V+@@VPART@@** 开始。因为 [context_mac](../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:218) 把本次 `e_len` 用作矩阵 stride。期间没有重排或迁移；两者不能都代表同一物理 V 矩阵。
+
+另外，受控 packed diff 例子包含 @@PACKEDTOKENS@@ tokens：ledger 的 row 集合为 `@@LEDGERROWS@@`，生成的 score MAC row 集合却为 `@@TRACEROWS@@`。读取已存满块的最后少量 tokens 也可跨入下一 row。token0/token1 的命令则可能只差会被 mapper 丢弃的低位，接口未携带区分对应 lane 的元数据。
+
+应保留已存 K/V 的 tile/stride、有效 lane 和访问边界，按实际被打开的 row/column 计时；不能按每次读取长度隐式重排。细碎 extent 的逐段向上取整还会增加重复 MAC。这些问题可能同时影响 A3b 和后续档，净偏差不能统一称保守，也不能给出未经计时的倍率。
+
+## 6. V04 · P1（超过 @@CHANNELS@@ heads/HBM）：多个 head 共用 channel 时地址重复
+
+`PhysicalLedger._channel` 对 channel 取模，`extent_groups` 没有为绕回同一 channel 的 head 增加独立 row 区。控制组 heads=@@HEADCOUNT@@ 时，ch0 出现完全相同的 extent `@@DUPEXTENT@@`，分别代表不同 head。
+
+这个边界与当前正文 LLaMA-7B / one GPU / one stack 配置有关，见 [模型段](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/06-methodology.tex:122>)。已有 head-slicing 告警只能解释通道并行退化，不能授权不同 head 使用同一份 KV 地址。该情况需具备独立分配或明确拒绝；小于该边界的控制组不因本条被判错误。
+
+V02–V04 的脚本与完整输出见 [命令探针](ledger_trace_boundary_8c51672_probe.txt)、[JSON](ledger_trace_boundary_8c51672_evidence.json)。它只调用当前受版本控制的命令生成器并按源码解码，不能当作实际 binary 仿真结果。
+
+## 7. V05 · P1/P2：持久扫描账本已建立，但“实际写入驱动”仍不完整
+
+[store helper](../../src/workload_runner.py:2447) 仍只读旧 `KVLocation`；独立 probe 发现创建 store 事件后 `_ledgers` 仍为空，首次 scan 才建立 ledger。报告中的 store 地址、scan 的 `dram_addresses` 与计时 extent 也没有统一。**当前 store 已零收费，所以旧的带宽/争用惩罚已经消失；这一条不能继续写成 15 倍性能差。** 要关闭的是物理身份、容量、报告与写入依赖的验证缺口，不是恢复成本。
+
+新 ledger 使用 `_reserved_rows` 字典的首次插入顺序，而 [_prepare_cacheblend_tlb](../../src/workload_runner.py:3129) 仍按 JSON 顺序预约；实际 DAG 现在按 request_id 排序。两种 JSON 顺序可以对应相同实际执行顺序，却得到不同 append 放置。称其为“预约时静态分配”可以理解；称其为已经重放真实写入流则证据不足。
+
+重复 fingerprint 的 diff reservation 还会合入同一个字典 key，丢失中间 own KV 的写入边界。独立 agent 用实际 reuse plan 构造 `prefix | doc | own | doc`，两组修正被当成一个 burst。这个问题反向给予 A3b 更紧凑的布局，不是弱化 A3b 的证据。是否连续应由明确的写入流/事件定义决定，不能由 fingerprint 是否重复决定。
+
+`diff_cursor` 仍跨 owner/layer 共用；真正交错的同一 agent 后续修正可能被其他 agent 隔开。当前 runner 按 request 整块预约、history 又是预置抽象，因此不能把这个边界直接外推为默认 workload 已发生的性能惩罚。完整反例和已修控制组见 [独立复审](INDEPENDENT_REAUDIT_8c51672.md)。
+
+## 8. V06 · P1：A6 的选择规则接受，但估价仍漏/多计操作
+
+全部 lane 和真实尾批已经修好。剩下两项在真实执行分支与 estimator 之间不一致：
+
+- [_resolve_prefill_side](../../src/workload_runner.py:4000) 在 `readback_rows=0` 时仍给 GPU 侧创建回读算子；fresh GPU 执行路径不会执行它。调用实际 A100a flash 通信解析模型，零字节回读仍返回 **@@ZEROUS@@ µs**；legacy 返回零。这会人为提高 fresh 请求的 GPU 估价。
+- 位移推导修复后，PIM 分支实际产生 `gpu_rotate_q_extra_to_pim`，但 estimator 的 Q 链路仍只覆盖普通 Q/ctx。轮转放在 GPU 是正确的；漏掉已有额外传输才是此处问题。
+
+同一设备桩对所有算子调用给固定价格，比较 estimator 与真实分支已有操作的服务时间之和（并行 scan 每 sweep 取 lane max），得到：
+
+| 控制组 | 本次计算 tokens | GPU 估价 µs | PIM 估价 µs | GPU 分支操作和 µs | PIM 分支操作和 µs | 选择 |
+|---|---:|---:|---:|---:|---:|---|
+@@A6_TABLE@@
+
+这些数值**不是 DAG 完成时间或硬件性能**；只是用相同价格证明估价对象与提交操作不同。简单逐 request 选择本身符合 chenyi9 的定义。修正操作覆盖即可，不需要升级为双 DAG 选择器，也不能由局部选择推导全局 makespan 恒优。
+
+## 9. V07/V08：缓存与结果汇总仍有未闭合项
+
+**V07 · P1：实际 Ramulator 共享库不在工具链指纹中。** 当前 executable 的 ELF `NEEDED` 包含 `libramulator.so`，而 [_toolchain_fingerprint](../../src/ramulator_wrapper.py:284) 只覆盖 executable 与 bank generator。只改共享库的纯文件桩验证不会改变 cache key，可能沿用旧核心实现的结果。K 相对 row 关系修复有效；只改 V row 仍碰撞是更窄的通用 API 边界，当前固定 K/V 间距 ledger 不触发，不能混称默认必现。
+
+**V08 · P1/P2：tier CSV 修复仅覆盖部分字段。** `cum_end_s` 已从 request end 计算，但 [collect](../../experiments/collect_dag_ladder.py:119) 仍只遍历存在 batches 的 tier。A2 的报告没有 PIM batches，整档仍会缺行；`prefill_s/decode_s/tier_total_s` 仍由 attention-start 差构造。计量 agent 用小 JSON 输入复现缺档与终点不一致。新的 step-weighted TBT 公式则正确，不应重报为未修。
+
+计量实现、自动生成数字表和复现方法见 [计量专项](MODEL_PROVENANCE_REAUDIT_8c51672.md) 与 [证据表](model_provenance_8c51672_evidence.md)。多 stack 不满载的能量复制、history 抽象和旧 policy 分派覆盖等前轮局限，当前改动未宣称全部解决，仍按其适用范围解释。
+
+## 10. 对逐档公平性的当前裁定
+
+| 档位/比较 | 当前裁定 |
+|---|---|
+| A1/A2 | 独立 baseline 定义接受；精确 L/远端驻留数量已修。A1 GQA 被 validator 阻断，A2 的 tier 汇总缺行需纠正 |
+| A3b→A4c | master 高层几何、共同修正集合、STORE 计量已明显对齐；diff/master 的 ALL-BANK 地址重叠和子段转译阻断当前物理归因 |
+| A4c→A4e | preset 仍主要只改变 table，未发现新的专属时长系数；公共 ledger→trace 问题及写入账本缺口使真实布局归因仍不能确认 |
+| A4e→A5 | PIM prefill+MQ 为允许机制包，GPU 多余 Q 和 MQ 漏接已修；GQA 入口/批量字节、公共存储命令问题仍影响比较 |
+| A5→A6 | 简单逐 request 规则符合定义，所有 lane/尾批估价已修；零字节回读与 variants 流量覆盖仍不同 |
+
+本轮没有证据证明有人故意弱化 baseline。已有改动中，STORE 清零移除了原先额外惩罚，重复 fingerprint 合并甚至可能增强 A3b；另一方面错误的 diff row 映射和估价缺项仍可能造成不真实的收益或损失。不能据此将全套结果统一解释成保守估计。
+
+论文工作区已经写 A100，并补上 decode 最新 token 在 GPU 的描述；这两条不再判正文不一致。旧的 event-based/DAG 选边文字仍在，以 chenyi9 已确认的简单逐 request 定义审查实现。
+
+## 11. 可复核记录
+
+- [主审脚本归档](reaudit_8c51672_probe.txt)、[主审 JSON](reaudit_8c51672_evidence.json)、[定向单测日志](reaudit_8c51672_targeted_tests.log)。
+- [独立审计](INDEPENDENT_REAUDIT_8c51672.md)、[独立存储 JSON](independent_8c51672_storage_evidence.json)、[命令边界 JSON](ledger_trace_boundary_8c51672_evidence.json)。
+- [覆盖清单](reaudit_8c51672_file_coverage.csv)、[版本/文件核验](reaudit_8c51672_manifest.json)、[session](../../docs/sessions/2026-09-05-8c51672-fix-verification.md)。
+
+以上结论是对当前实现和模型一致性的审计。已修项与现存问题分别列出，没有修改实现或已有性能结果，也没有用设备桩的速度证明论文收益。
+'''
+substitutions={
+ '@@HEAD@@':full_head,'@@FILES@@':str(len(changed)),'@@TESTS@@':str(test_count),
+ '@@GQA_TABLE@@':'\n'.join(gqa_rows),'@@REGION_TABLE@@':region_table,
+ '@@VFULL@@':str(v_full),'@@VPART@@':str(v_part),
+ '@@VLENGTH@@':str(sum(e[2] for e in subset['full']['extents'])),
+ '@@CHANNELS@@':str(dup['channel_count']),
+ '@@PACKEDTOKENS@@':str(packed['token_count']),
+ '@@LEDGERROWS@@':str(packed['ledger_rows']),'@@TRACEROWS@@':str(packed['trace_score_rows']),
+ '@@HEADCOUNT@@':str(dup['head_count']),'@@DUPEXTENT@@':str(dup['channel0_extents'][0]),
+ '@@ZEROUS@@':f"{P['real_analytic_zero_byte_readback']['flash']['time_s']*1e6:.2f}",
+ '@@A6_TABLE@@':'\n'.join(case_rows),
+}
+for before,after in substitutions.items(): report=report.replace(before,after)
+assert '@@' not in report
+(A/'REAUDIT_8c51672.md').write_text(report)
+
+session=r'''# Session：8c51672 大量修复后的只读复核
+
+日期：2026-09-05；对象：`@@HEAD@@`，比较前审 `cdd89db`。chenyi9 本次要求：“刚才进行了大量修改 再检查一下，是不是都正确了？”
+
+**结论：多项旧问题已修，但不能确认全部正确。** 新报告分别关闭已经修好的反例，记录 GQA 校验回归、ledger→MAC 地址转换、A6 操作估价和汇总缺口。完整当前判断见 [主报告](../../audit/2026-09-05/REAUDIT_8c51672.md)。
+
+## 1. 依据与范围
+
+延续 chenyi9 的 audit-only、小 workload 验证、独立 agent、更新 audit/README/session 要求。本轮先读 `agent.md`，用 `whoami` 确认账号名称。读取实施 session §12–13，采纳其记录的新裁决：随机修正共用、A100、A1 精确 L、普通 DRAM 成本清零、decode 当前 token 在 GPU。A6 简单逐 request 选择仍接受，不要求候选 DAG。
+
+修改开始前，tracked 工作树干净；已有 untracked `experiments/paper_ladder/` 保留。主审将全部 tracked 文件的初始 SHA 写入 `/tmp/reaudit_8c51672_start.json`，用于区分本轮文档变更与此前实现修改。
+
+## 2. 为什么再次更新文档
+
+仓库新增了 PhysicalLedger、STORE 零成本、GQA/QKV、owner 依赖、MQ、A6 全 lane/尾批和汇总修复。旧报告不能继续将 c16 row 漂移、旧读写差率、缺失 owner 依赖等标为当前未修。
+
+另一方面，源码注释和新增单测主要验证高层几何，不能替代命令生成器/mapper 的一致性。GQA 改了生产侧字节量但校验仍沿用旧公式，也说明“某处已改正确”不等于完整路径正确。因此文档需要同时记录已关闭项、新回归和未贯通部分，避免一概肯定或一概否定。
+
+## 3. 主审与独立检查
+
+| 审查者 | 具体检查 | 证据 |
+|---|---|---|
+| 主审 | 七档 MHA/GQA 小 DAG、共同修正 hash、owner 依赖、Q 流量、A1 L、A6 估价与执行操作、flash 空回读公式 | `reaudit_8c51672_probe.txt/.json` |
+| `independent_fairness_audit` | 真实 allocator 的持久 row、burst、store/scan 映射、预约顺序和 per-agent diff 边界 | `INDEPENDENT_REAUDIT_8c51672.md`、独立存储探针 |
+| `attacc_model_provenance` | GQA validator/批量 KV bytes、QKV/MAC energy、缓存指纹、STORE、TBT/tier CSV | `MODEL_PROVENANCE_REAUDIT_8c51672.md`、计量探针与数据表 |
+| `ledger_trace_boundary_audit` | PhysicalLedger 到受版本控制 Attention generator、HBM mapper/ACTAB/MACAB 的转译 | `ledger_trace_boundary_8c51672_probe.txt/.json` |
+
+主审与计量 agent 各自复现 GQA 入口失败；主审核对命令 agent 给出的 mapper/action/preq 代码。命令探针只生成命令并解码，没有测量 binary 时间或 KV 数值结果。
+
+主报告写完后，命令 agent 再次只读核对 V02–V04 与 JSON/源码，确认关键事实、数字及证据边界一致。主审采纳其文字建议：区分 mapper 解码与 ACTAB/preq 遍历，明确 V 子段控制组的已存长度，以及 head 混叠的每 HBM 配置边界。
+
+## 4. 实际验证
+
+定向现有测试：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 KVPIM_CPPCORE=0 PYTHONPATH=.:tests python3 -m unittest \
+  test_placement.PhysicalLedgerTest \
+  test_workload.AgenticHistoryTests.test_every_layout_executes_the_same_correction_plan \
+  test_workload.AgenticHistoryTests.test_consumer_waits_for_the_owner_store_even_when_listed_first \
+  test_workload.AgenticHistoryTests.test_shifted_reuse_gets_query_variants_without_a_delta_field
+```
+
+结果：**@@TESTS@@ 项通过**；日志保留。没有把前次全套测试记录作为本轮结果。
+
+主审探针：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 KVPIM_CPPCORE=0 KVPIM_PREFILL_SIDE_LOG= python3 /tmp/reaudit_8c51672_probe.py
+```
+
+设备桩调用真实布局/DAG/校验与选边函数。第一次输出后，为确认 fresh 空回读的真实模型行为，补充只调用 A100a `xPU` 通信解析公式再执行探针；代码仍只在 `/tmp`。最终 JSON、归档文本一致。定向测试在 Python event core 模式执行；本轮 native 的 STORE 映射通过源码核查，不声称重跑了 native 全套。
+
+所有数字复制与计算由 `/tmp/write_reaudit_8c51672_docs.py` 从主审及 agent JSON/日志生成，脚本也归档为 `.txt`。GQA 成功/失败表、A6 操作价格表、地址解码/子段偏移及测试数量均可回查源数据。probe µs 是结构证据；flash 空回读耗时是当前解析公式的返回值，两者都不是硬件测量。
+
+## 5. 文件修改及原因
+
+| 文件 | 本轮内容与原因 |
+|---|---|
+| `audit/2026-09-05/REAUDIT_8c51672.md` | 新当前报告：已修对照、V01–V08、逐档结论、证据范围 |
+| `INDEPENDENT_REAUDIT_8c51672.md` / `MODEL_PROVENANCE_REAUDIT_8c51672.md` | 两名 agent 分别撰写，保留独立证据 |
+| 本轮 probe `.txt`、JSON、日志、计量 evidence.md | 按实际执行输出归档，避免只靠叙述和手抄数字 |
+| `reaudit_8c51672_file_coverage.csv` / `reaudit_8c51672_manifest.json` | 保存本轮改动覆盖、版本、源码初始/最终指纹和文档核验结果 |
+| `docs/README.md` / `docs/README_audit_fixes.md` / design/run guide | 增加当前版本入口和状态，避免旧报告的已修项继续被当作当前问题 |
+| 前次 `REAUDIT_cdd89db.md` / `STORAGE_SCAN_CONSISTENCY.md` | 仅加历史状态提示，旧反例正文与证据原样保留 |
+| `docs/sessions/README.md` / 本文件 | 索引本轮记录，解释为何修改及如何验证 |
+
+前轮 manifest 保存当时文档指纹；当前更新入口后的文件指纹以本轮 manifest 为准。源码、测试、workload、已有实验结果和 HEAD 保持本轮开始时的状态。
+
+## 6. 当前裁定
+
+已确认的修复按主报告表格关闭；GQA 正常执行、ALL-BANK 存储隔离、固定 V 子段转译、多 head 地址身份、真实写入账本与估价覆盖仍有明确问题或证据缺口。普通 DRAM 成本清零是 chenyi9 允许的计量选择，不重新要求加回；A6 的简单规则也是接受的，不升级审稿标准。
+
+本轮完成的是对这批修复的审查和记录，没有实施代码修复。最终文件核验和文档链接结果见 [manifest](../../audit/2026-09-05/reaudit_8c51672_manifest.json)。
+'''
+session=session.replace('@@HEAD@@',full_head).replace('@@TESTS@@',str(test_count))
+(R/'docs/sessions/2026-09-05-8c51672-fix-verification.md').write_text(session)
+# Archive this generator itself as a review artifact, not executable production code.
+(A/'reaudit_8c51672_document_generator.txt').write_bytes(Path(__file__).read_bytes())
+print(json.dumps({'changed_files_reviewed':len(changed),'targeted_tests_passed':test_count,
+                 'copies':copies,'report':'REAUDIT_8c51672.md'},ensure_ascii=False))

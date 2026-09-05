@@ -1,0 +1,57 @@
+from pathlib import Path
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A=R/'audit/2026-09-05'; H=A/'archive'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+V=json.loads((H/'pending_layout_reaudit_evidence.json').read_text())
+S=json.loads(Path('/tmp/audit_cleanup_start.json').read_text())
+P=json.loads((H/'contributions_alignment_evidence.json').read_text())
+implementation=[p for p,h in V['protected_implementation'].items() if sha(R/p)!=h]
+paper=[p for p,h in V['paper_before'].items() if sha(Path(p))!=h]
+results=[x['path'] for x in S['existing_result_inventory'] if sha(R/x['path'])!=x['sha256']]
+existing=[p for p,h in P['protected_hashes_before'].items() if sha(R/p)!=h]
+old_evidence=[e['new'] for e in S['moved_files'] if not e['new'].endswith('.md') and sha(R/e['new'])!=e['sha256_before']]
+links=[]; lines=[]
+manifest=H/'rulings_pending_reaudit_manifest.json'
+for p in [R/'README.md',*list((R/'docs').rglob('*.md')),*list(A.rglob('*.md'))]:
+    for raw in re.findall(r'\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)\)',p.read_text()):
+        link=raw.strip('<>')
+        if link.startswith(('http://','https://','mailto:','app://')): continue
+        pathname,_,anchor=link.partition('#')
+        ln=re.search(r':(\d+)(?:-\d+)?$',pathname)
+        plain=re.sub(r':\d+(?:-\d+)?$','',pathname)
+        target=(Path(plain) if plain.startswith('/') else p.parent/plain) if plain else p
+        if target.resolve()==manifest.resolve(): continue
+        if not target.exists(): links.append([str(p.relative_to(R)),link])
+        elif ln and int(ln[1])>len(target.read_text(errors='replace').splitlines()): lines.append([str(p.relative_to(R)),link])
+        if anchor and target.resolve()==(A/'CURRENT_ISSUES.md').resolve() and f'id="{anchor}"' not in target.read_text(): links.append([str(p.relative_to(R)),link])
+s=(A/'CURRENT_ISSUES.md').read_text()
+assert len(re.findall(r'^## C\d+：',s,re.M))==8
+assert 'Link(0) = 0' in s and 'T_GPU = Link(B_history)' in s
+assert '同一 round' in s and '跨轮' in s
+assert '是否允许同批预分组待定' not in s
+assert '待 chenyi9 选择 baseline 定义' not in s
+head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+check=subprocess.run(['git','diff','--check'],cwd=R,text=True,capture_output=True)
+validation={'head_unchanged':head==V['head'], 'implementation_changes':implementation,'paper_changes':paper,
+    'existing_result_files_checked':len(S['existing_result_inventory']),'existing_result_changes':results,
+    'other_preexisting_protected_changes':existing,'historical_evidence_changes':old_evidence,
+    'contribution_readme_unchanged':sha(R/'docs/README_contributions.md')==V['contribution_README_before'],
+    'broken_markdown_links':links,'invalid_source_line_references':lines,'git_diff_check_exit_code':check.returncode,
+    'git_diff_check_output':check.stdout+check.stderr,'new_performance_experiments':False}
+assert validation['head_unchanged'] and validation['contribution_readme_unchanged'] and not any((implementation,paper,results,existing,old_evidence,links,lines)) and check.returncode==0,validation
+assert sorted(p.name for p in A.iterdir())==['CURRENT_ISSUES.md','README.md','archive']
+shutil.copyfile(Path(__file__),H/'validate_audit_rulings.txt')
+artifacts=[A/'CURRENT_ISSUES.md', A/'README.md', H/'README.md',R/'docs/README_audit_fixes.md',R/'docs/README_design_ladder.md',
+    R/'docs/sessions/README.md',R/'docs/sessions/2026-09-05-rulings-and-pending-reaudit.md']
+artifacts+= [H/p for p in ('pending_layout_reaudit_probe.txt','pending_layout_reaudit_evidence.json','independent_c7_reaudit_probe.txt',
+    'independent_c7_reaudit_evidence.json','record_audit_rulings.txt','apply_round_boundary_ruling.txt','finalize_remaining_audit_items.txt','validate_audit_rulings.txt')]
+artifacts+= list(H.glob('independent_round_boundary_*'))
+manifest.write_text(json.dumps({'head':head,'date':'2026-09-05','scope':'Audit rulings and C4/C7 rechecks; no implementation or paper edits',
+    'independent_agents':['independent_fairness_audit','attacc_model_provenance'],
+    'artifacts_sha256':{str(p.relative_to(R)):sha(p) for p in artifacts},'validation':validation},indent=2,ensure_ascii=False)+'\n')
+print(json.dumps(validation,indent=2,ensure_ascii=False))

@@ -1,0 +1,209 @@
+{
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "cli_arguments": {
+    "--attn-splitk": {
+      "line": 135,
+      "keywords": {
+        "action": "'store_true'",
+        "help": "'flash GPU model only: let short-Q prefill attention split its key range across CTAs (flash-attn num_splits heuristic)'"
+      }
+    },
+    "--gpu-model": {
+      "line": 140,
+      "keywords": {
+        "choices": "('legacy', 'refined', 'flash')",
+        "default": "'legacy'",
+        "help": "'GPU performance model. legacy: original AttAcc xPU formulas; refined: projection and attention GEMMs at the measured cuBLAS efficiency for their size, NVLink latency + far-HBM streaming on GPU<->AttAcc transfers, everything else legacy; flash: refined plus attention as a fused FlashAttention-2 kernel (128-row Q blocks, softmax on-chip, flash-decoding for m = 1)'"
+      }
+    },
+    "--powerlimit": {
+      "line": 165,
+      "keywords": {
+        "action": "argparse.BooleanOptionalAction",
+        "default": "True",
+        "help": "'power constraint for PIM (default on; --no-powerlimit for NPC)'"
+      }
+    },
+    "--pipeopt": {
+      "line": 180,
+      "keywords": {
+        "action": "argparse.BooleanOptionalAction",
+        "default": "True",
+        "help": "'per-device resource timelines with overlap (default ON); --no-pipeopt for the serial AttAcc convention'"
+      }
+    }
+  },
+  "python_api_pipe_default": false,
+  "scheduler_probe": {
+    "False": {
+      "makespan_units": 13.0,
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-1",
+          "deps": [],
+          "start_units": 0.0,
+          "end_units": 10.0
+        },
+        {
+          "id": "cb-1",
+          "device": "GPU",
+          "deps": [
+            "cb-0"
+          ],
+          "start_units": 10.0,
+          "end_units": 11.0
+        },
+        {
+          "id": "cb-2",
+          "device": "GPU",
+          "deps": [],
+          "start_units": 11.0,
+          "end_units": 12.0
+        },
+        {
+          "id": "cb-3",
+          "device": "LINK",
+          "deps": [],
+          "start_units": 12.0,
+          "end_units": 13.0
+        }
+      ],
+      "overlap_validator": {
+        "passed": true,
+        "pipe": false,
+        "contract": "AttAcc serial macro-events with parallel PIM channel phases",
+        "events_checked": 4
+      },
+      "incremental_finish": {
+        "cb-0": 10.0,
+        "cb-1": 11.0,
+        "cb-2": 12.0,
+        "cb-3": 13.0
+      },
+      "native_library_available": true,
+      "native_starts": [
+        0.0,
+        10.0,
+        11.0,
+        12.0
+      ],
+      "native_ends": [
+        10.0,
+        11.0,
+        12.0,
+        13.0
+      ]
+    },
+    "True": {
+      "makespan_units": 12.0,
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-1",
+          "deps": [],
+          "start_units": 0.0,
+          "end_units": 10.0
+        },
+        {
+          "id": "cb-1",
+          "device": "GPU",
+          "deps": [
+            "cb-0"
+          ],
+          "start_units": 10.0,
+          "end_units": 11.0
+        },
+        {
+          "id": "cb-2",
+          "device": "GPU",
+          "deps": [],
+          "start_units": 11.0,
+          "end_units": 12.0
+        },
+        {
+          "id": "cb-3",
+          "device": "LINK",
+          "deps": [],
+          "start_units": 0.0,
+          "end_units": 1.0
+        }
+      ],
+      "overlap_validator": {
+        "passed": true,
+        "pipe": true,
+        "contract": "AttAcc comm_x2g busy timeline plus explicit CacheBlend resources",
+        "events_checked": 4
+      },
+      "incremental_finish": {
+        "cb-0": 10.0,
+        "cb-1": 11.0,
+        "cb-2": 12.0,
+        "cb-3": 1.0
+      },
+      "native_library_available": true,
+      "native_starts": [
+        0.0,
+        10.0,
+        11.0,
+        0.0
+      ],
+      "native_ends": [
+        10.0,
+        11.0,
+        12.0,
+        1.0
+      ]
+    },
+    "same_dag_ready_first": {
+      "makespan_units": 11.0,
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-1",
+          "deps": [],
+          "start_units": 0.0,
+          "end_units": 10.0
+        },
+        {
+          "id": "cb-2",
+          "device": "GPU",
+          "deps": [],
+          "start_units": 0.0,
+          "end_units": 1.0
+        },
+        {
+          "id": "cb-1",
+          "device": "GPU",
+          "deps": [
+            "cb-0"
+          ],
+          "start_units": 10.0,
+          "end_units": 11.0
+        },
+        {
+          "id": "cb-3",
+          "device": "LINK",
+          "deps": [],
+          "start_units": 0.0,
+          "end_units": 1.0
+        }
+      ]
+    }
+  },
+  "existing_result_summary": {
+    "files": 363,
+    "json_files": 27,
+    "files_with_markers": 5,
+    "json_pipe_false": 5,
+    "json_pipe_true": 0,
+    "json_pipe_unknown": 22,
+    "json_gpu_model_unknown": 27,
+    "scope_roots": [
+      "experiments/paper_ladder/results",
+      "output"
+    ],
+    "limitation": "No inference about external scratch results or historical invocation defaults."
+  },
+  "source_files_unchanged_after_probe": true
+}

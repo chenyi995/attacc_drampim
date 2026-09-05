@@ -1,0 +1,44 @@
+"""Structural scheduler probe; arbitrary durations, no performance device calls."""
+import json
+from pathlib import Path
+import sys
+
+sys.path.insert(0, '/data2/chenyi9/KV-PIM/attacc_drampim_822')
+from src import workload_runner as wr
+from src.cpp_eventcore import new_core
+
+spec = [
+    ('GPU', 10.0, (), 'producer'),
+    ('PIM:pool0-1', 1.0, ('cb-0',), 'wait_for_producer'),
+    ('PIM:pool0-1', 1.0, (), 'independent_ready'),
+    ('PIM:pool1-2', 1.0, (), 'independent_other_channel'),
+]
+result = {'kind': 'arbitrary-duration structural probe, not simulated performance'}
+old_core = wr._EC
+try:
+    for backend in ('python', 'native'):
+        core = new_core(True) if backend == 'native' else None
+        if backend == 'native' and core is None:
+            result[backend] = {'available': False}
+            continue
+        wr._EC = core
+        events = []
+        for device, duration, deps, name in spec:
+            wr._cacheblend_event(events, layer=0, tier=0, request=name,
+                                 name=name, device=device, rows=1,
+                                 time_s=duration, energy=(), deps=deps)
+        scheduled = wr._schedule_cacheblend(events, pipe=True)
+        result[backend] = {
+            'events': [{'name': e.name, 'device': e.device,
+                        'start': e.start_s, 'end': e.end_s}
+                       for e in scheduled],
+            'overlap_validation': wr.validate_cacheblend_attacc_overlap_contract(
+                scheduled, pipe=True),
+        }
+        if core is not None:
+            core.close()
+finally:
+    wr._EC = old_core
+target = Path('/tmp/independent_8c51672_pipeline_evidence.json')
+target.write_text(json.dumps(result, indent=2) + '\n')
+print(target.read_text())

@@ -1,0 +1,63 @@
+import importlib.util, json, sys
+from pathlib import Path
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT))
+from src.workload_runner import CacheBlendTLB
+
+def alloc(reservations):
+    t=CacheBlendTLB(256,'slice')
+    for owner,fp,rows,kind in reservations:
+        for row in rows:t.reserve(0,owner,fp,row,kind)
+    t.finalize()
+    return t
+
+def reads(t,reservations):
+    return [t.locate(0,o,f,r,k) for o,f,rs,k in reservations for r in rs]
+
+def groups(t,rs,p='slice-append',heads=1):
+    return t.physical_ledger(p,heads).extent_groups(reads(t,rs))
+
+def decode(addr):
+    bits=[5,14,2,2,1,1,4]
+    names=['column','row','bank','bankgroup','rank','pseudochannel','channel']
+    a=addr>>5
+    fields={}
+    for name,b in zip(names,bits):
+        fields[name]=a&((1<<b)-1)
+        a>>=b
+    return fields
+
+def trace(extents):
+    spec=importlib.util.spec_from_file_location('trace_probe',ROOT/'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py')
+    g=importlib.util.module_from_spec(spec);spec.loader.exec_module(g)
+    g.n_channel=1; g.pool_base=extents[0][0]//(1<<30)
+    g.Attention(sum(e[2] for e in extents),extents[0][0],extents[0][1],0,valid_channel=1,extents=extents)
+    def parse(v):return [[int(cmd.split()[1],16) for cmd in bucket] for bucket in v[0]]
+    return {'score':parse(g.cmd_score_mac),'context':parse(g.cmd_context_mac)}
+
+corpus=[('owner','full',range(256),'master')]
+t=alloc(corpus)
+subset={}
+for name,rs in [('full',range(256)),('first16',range(16)),('token0',[0]),('token1',[1]),('last4',range(252,256))]:
+    es=groups(t,[('owner','full',rs,'master')])[0][2]
+    tr=trace(es)
+    subset[name]={'extents':es,'score':tr['score'],'context':tr['context'],'score_decoded':[[decode(a) for a in b] for b in tr['score']]}
+
+corpus2=[('owner','c%d'%i,range(256),'master') for i in range(16)]+[('consumer','c0',range(8),'diff')]
+t2=alloc(corpus2)
+gs=groups(t2,[corpus2[15],corpus2[-1]],'master-diff-local-append')
+es=gs[0][2]
+region={'groups':gs,'first_command_decoded':[decode(e[0]) for e in es], 'score':trace(es)['score']}
+
+repairs=[('consumer%d'%i,'c',range(8),'diff') for i in range(32)]
+t3=alloc(repairs)
+es=groups(t3,repairs,'master-diff-local-append')[0][2]
+tr=trace(es)
+packed={'token_count':sum(e[2] for e in es),'first_extent':es[0],'last_extent':es[-1],'ledger_rows':sorted(set(decode(e[0])['row'] for e in es)), 'trace_score_rows':sorted(set(decode(a)['row'] for b in tr['score'] for a in b)),'trace_last_score_steps':tr['score'][-2:]}
+
+head_groups=groups(t,corpus,heads=32)
+heads={'head_count':32,'channel_count':len(head_groups),'channel0_extents':head_groups[0][2], 'channel0_exact_duplicate':head_groups[0][2][0]==head_groups[0][2][1]}
+
+out={'head':'8c51672a3ef8b936340354b3211963cde8945c49','method':'PhysicalLedger helper and Attention command construction; mapper bit slicing reimplemented directly from source; no Ramulator execution/timing/numerical result','subsets':subset,'diff_master_region':region,'packed_row_boundary':packed,'head_alias':heads}
+Path('/tmp/ledger_trace_boundary_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({'first16_context':subset['first16']['context'],'full_context_second_dimension_first':subset['full']['context'][1][0], 'token0_score':subset['token0']['score'],'token1_score':subset['token1']['score'], 'token0_decoded':subset['token0']['score_decoded'],'token1_decoded':subset['token1']['score_decoded'],'last4_score_decoded':subset['last4']['score_decoded'],'diff_master_region':region,'packed_row_boundary':packed,'head_alias':heads},indent=2))

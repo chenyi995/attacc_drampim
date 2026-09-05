@@ -1,0 +1,18 @@
+from pathlib import Path
+import shutil
+R = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+H = R / 'audit/2026-09-05/archive'
+path = R / 'audit/2026-09-05/CURRENT_ISSUES.md'
+s = path.read_text()
+s = s.replace('八个 query 的真实 trace 中', '八个 query 的实际命令生成器输出 trace 中')
+s = s.replace('当成整体 workload 的预期收益，会偏乐观。', '当成整体 workload 的预期收益，会把有利场景当作一般情况，存在偏乐观风险，不能据此推算整体收益。')
+marker = '**这些例子是否高估 workload 收益。**'
+paragraph = '**PIM 时间是否由示例比例拟合。** 被检查的 placement 扫描路径调用 Ramulator（或复用其缓存结果），将返回周期乘 `tCK` 换算成时间；没有把 README 的 ACT/读列减少比例直接乘到延迟上。MQ 在送入模拟前按驻留 query 数和频点设置命令间隔，不是在输出后简单除以 query 数。这支持计时来源与声明一致，但地址输入是否代表实际存储仍是 C3/C4，不能仅凭“来自 Ramulator”保证公平。此次没有重跑正式结果或验证每份历史缓存来源。依据：[模拟调用和周期换算](../../src/ramulator_wrapper.py:667)、[MQ 间隔设置](../../src/ramulator_wrapper.py:564)。\n\n'
+assert marker in s
+s = s.replace(marker, paragraph + marker)
+path.write_text(s)
+path = R / 'docs/sessions/2026-09-05-contributions-alignment-audit.md'
+s = path.read_text().replace('具体数值由探针 JSON 自动带入', '独立 agent 随后复核新增对照节，确认例子条件、名义行数和静态展开范围写法准确；按其建议，把 workload 净偏差方向改为“存在偏乐观风险”，避免未测整体就断定一定高估。另核对 placement 扫描仍按 Ramulator 周期换算，MQ 修改模拟输入间隔，没有使用 README 示例比例做输出缩时。\n\n具体数值由探针 JSON 自动带入')
+s = s.replace('python3 /tmp/validate_contributions_audit.py', 'python3 /tmp/finalize_contributions_audit.py\npython3 /tmp/validate_contributions_audit.py')
+path.write_text(s)
+shutil.copyfile(Path(__file__), H / 'finalize_contributions_audit.txt')

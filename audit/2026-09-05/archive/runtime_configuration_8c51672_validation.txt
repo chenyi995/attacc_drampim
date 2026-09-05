@@ -1,0 +1,103 @@
+"""Check supplement evidence, links, source and historical result immutability."""
+from pathlib import Path
+import hashlib
+import json
+import re
+import subprocess
+
+R = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A = R/'audit/2026-09-05'
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+D = json.loads((A/'runtime_configuration_8c51672_evidence.json').read_text())
+I = json.loads((A/'independent_8c51672_pipeline_evidence.json').read_text())
+previous = json.loads((A/'reaudit_8c51672_manifest.json').read_text())
+head = subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+allowed = {'docs/README.md','docs/README_run_guide.md','docs/README_audit_fixes.md','docs/sessions/README.md'}
+changed = [p for p,h in D['initial_tracked_sha256'].items() if not (R/p).is_file() or sha(R/p)!=h]
+unexpected = sorted(set(changed)-allowed)
+unchanged_results = all(sha(R/x['path'])==x['sha256'] for x in D['existing_result_inventory'])
+implementation_changes = [p for p,h in previous['initial_source_sha256'].items() if not p.startswith(('docs/','audit/')) and (not (R/p).is_file() or sha(R/p)!=h)]
+artifacts = {
+    'audit/2026-09-05/RUNTIME_CONFIGURATION_AUDIT.md',
+    'audit/2026-09-05/REAUDIT_8c51672.md',
+    'docs/sessions/2026-09-05-runtime-configuration-audit.md',
+} | allowed
+manifest_path = A/'runtime_configuration_8c51672_manifest.json'
+(A/'runtime_configuration_8c51672_validation.txt').write_bytes(Path(__file__).read_bytes())
+for pattern in ('runtime_configuration_8c51672_*','independent_8c51672_pipeline_*'):
+    artifacts.update(str(p.relative_to(R)) for p in A.glob(pattern) if p.is_file() and p!=manifest_path)
+bad_links = []
+for rel in sorted(artifacts):
+    path = R/rel
+    if path.suffix != '.md':
+        continue
+    for link in re.findall(r'\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)\)',path.read_text()):
+        link = link.strip('<>')
+        if link.startswith(('#','http://','https://','mailto:','app://')):
+            continue
+        link = link.split('#',1)[0]
+        line = re.search(r':(\d+)$',link)
+        plain = re.sub(r':\d+$','',link)
+        target = Path(plain) if plain.startswith('/') else path.parent/plain
+        if target.resolve() == manifest_path.resolve():
+            continue
+        if not target.exists():
+            bad_links.append({'file':rel,'link':link,'error':'missing'})
+        elif line and int(line.group(1))>len(target.read_text(errors='replace').splitlines()):
+            bad_links.append({'file':rel,'link':link,'error':'line outside file'})
+
+assert D['cli_arguments']['--gpu-model']['keywords']['default']=="'legacy'"
+assert D['cli_arguments']['--pipeopt']['keywords']['default']=='True'
+assert D['python_api_pipe_default'] is False
+P = D['scheduler_probe']
+assert P['True']['events'][2]['start_units'] == 11.
+assert P['True']['makespan_units']>P['same_dag_ready_first']['makespan_units']
+assert P['True']['overlap_validator']['passed']
+assert P['True']['native_starts']==[e['start_units'] for e in P['True']['events']]
+assert I['python']['events']==I['native']['events']
+assert I['python']['events'][2]['start']==11.
+assert I['native']['overlap_validation']['passed']
+S = D['existing_result_summary']
+assert S['json_files']==S['json_pipe_false']+S['json_pipe_true']+S['json_pipe_unknown']
+assert S['json_gpu_model_unknown']==S['json_files']
+assert all(not re.search(r'gpu_model|gpu-model|"GPU_MODEL"',h['text'],re.I) for x in D['existing_result_inventory'] for h in x['config_markers'])
+for tmp, archive in (
+    ('/tmp/audit_runtime_config_8c51672.py','runtime_configuration_8c51672_probe.txt'),
+    ('/tmp/write_runtime_configuration_audit.py','runtime_configuration_8c51672_document_generator.txt'),
+    ('/tmp/independent_8c51672_pipeline_probe.py','independent_8c51672_pipeline_probe.txt'),
+):
+    assert sha(Path(tmp))==sha(A/archive)
+check = subprocess.run(['git','diff','--check'],cwd=R,text=True,capture_output=True)
+validation = {
+    'head_unchanged':head==D['head'],
+    'tracked_files_checked':len(D['initial_tracked_sha256']),
+    'changed_tracked_files_this_supplement':changed,
+    'unexpected_tracked_changes':unexpected,
+    'implementation_changes_since_previous_audit_start':implementation_changes,
+    'historical_result_files_checked':len(D['existing_result_inventory']),
+    'historical_results_unchanged':unchanged_results,
+    'invalid_markdown_links':bad_links,
+    'evidence_assertions_passed':True,
+    'git_diff_check_exit_code':check.returncode,
+    'git_diff_check_output':check.stdout+check.stderr,
+    'hardware_or_ramulator_performance_run':False,
+}
+assert head==D['head'] and not unexpected and not implementation_changes and unchanged_results and not bad_links and check.returncode==0, validation
+manifest = {
+    'date':'2026-09-05','head':head,
+    'scope':'Pipeline and FlashAttention audit supplement; documentation and audit evidence only.',
+    'previous_manifest_sha256':sha(A/'reaudit_8c51672_manifest.json'),
+    'native_scheduler_library_sha256':sha(R/'src/cppcore/libeventcore.so'),
+    'independent_agent':'independent_fairness_audit',
+    'commands':[
+        'PYTHONDONTWRITEBYTECODE=1 python3 /tmp/audit_runtime_config_8c51672.py',
+        'python3 /tmp/independent_8c51672_pipeline_probe.py',
+        'python3 /tmp/write_runtime_configuration_audit.py',
+        'python3 /tmp/validate_runtime_configuration_audit.py',
+    ],
+    'artifacts_sha256':{rel:sha(R/rel) for rel in sorted(artifacts)},
+    'validation':validation,
+}
+manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps(validation,ensure_ascii=False,indent=2))

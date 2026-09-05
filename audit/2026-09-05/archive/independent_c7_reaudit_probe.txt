@@ -1,0 +1,81 @@
+"""C7: real reuse-plan reservations to persistent extents; no device timing."""
+from pathlib import Path
+from itertools import groupby
+import json
+import sys
+sys.path.insert(0, '/data2/chenyi9/KV-PIM/attacc_drampim_822')
+from src import workload_runner as wr
+from src.workload import Request, Segment, Workload, build_reuse_plan
+
+def req(name, segments):
+    return Request(name, 0, None, 1, tuple(segments), sum(s.length for s in segments))
+
+producer = req('a', [Segment('doc', 'D', 256), Segment('doc', 'E', 256)])
+cases = {
+    'same_fingerprint_separated': [Segment('own', 'prefix', 8), Segment('doc', 'D', 256),
+                                   Segment('own', 'middle', 256), Segment('doc', 'D', 256)],
+    'different_fingerprint_separated': [Segment('own', 'prefix', 8), Segment('doc', 'D', 256),
+                                        Segment('own', 'middle', 256), Segment('doc', 'E', 256)],
+    'different_fingerprint_adjacent': [Segment('own', 'prefix', 8), Segment('doc', 'D', 256),
+                                       Segment('doc', 'E', 256)],
+}
+out = {'revision': '8c51672', 'scope': 'reservation and allocator geometry, no PIM/Ramulator execution',
+       'producer_segments': [(s.fingerprint, s.length) for s in producer.segments], 'cases': {}}
+for name, segments in cases.items():
+    consumer = req('b', segments)
+    workload = Workload('supervisor', (producer, consumer), {})
+    plan = build_reuse_plan(workload, 'epic', epic_prefix_recompute_tokens=8)
+    tlb = wr.NaiveKVLayout(256)
+    original_reserve = tlb.reserve
+    reservation_calls = []
+    def capture(layer, owner, fingerprint, owner_row, kind):
+        reservation_calls.append((layer, owner, fingerprint, owner_row, kind))
+        original_reserve(layer, owner, fingerprint, owner_row, kind)
+    tlb.reserve = capture
+    wr._prepare_cacheblend_tlb(workload, plan, 1, tlb, {})
+    bindings = wr._cacheblend_tlb_rows(workload, plan, 0, consumer, tlb)
+    corrected = [(pos, loc) for pos, _, is_diff, loc in bindings if is_diff]
+    ledger = tlb.physical_ledger(tlb.layout_policy, 4)
+    def head0_scan(locs):
+        return [g for g in ledger.extent_groups(locs) if g[0] < ledger.stripe]
+    diff_maps = []
+    for pos, loc in corrected:
+        key = (loc.layer, loc.owner, loc.fingerprint, loc.kind)
+        oid = ledger.index[key][loc.owner_row]
+        rows, ordinals, slot, start = ledger.objects[oid]
+        ordinal = ordinals.get((key, loc.owner_row), ordinals.get(loc.owner_row))
+        diff_maps.append({'logical_position': pos, 'fingerprint': loc.fingerprint,
+                         'object_id': oid, 'ordinal': ordinal,
+                         'channel_head0': ledger._channel(0, slot),
+                         'within_channel_K_offset': start + ordinal * wr._GEN_BYTES_PER_TOKEN})
+    filtered_calls = [c for c in reservation_calls if c[1] == 'b']
+    groups = []
+    for key, calls in groupby(filtered_calls, key=lambda c: (c[2], c[4])):
+        calls = list(calls)
+        groups.append({'fingerprint': key[0], 'kind': key[1],
+                       'first_row': calls[0][3], 'last_row': calls[-1][3],
+                       'tokens': len(calls)})
+    own_objects = []
+    for key, index in ledger.index.items():
+        if key[1] == 'b' and key[3] == 'master':
+            for oid in dict.fromkeys(index.values()):
+                rows, _, slot, start = ledger.objects[oid]
+                own_objects.append({'fingerprint': key[2], 'channel_head0': ledger._channel(0, slot),
+                                    'within_channel_K_offset': start, 'tokens': len(rows)})
+    out['cases'][name] = {
+        'consumer_segments': [(s.fingerprint, s.length) for s in segments],
+        'consumer_reservation_call_groups': groups,
+        'consumer_dictionary_key_order': [key for key in tlb._reserved_rows if key[1] == 'b'],
+        'diff_token_count': len(corrected),
+        'distinct_diff_object_count': len({tuple(d['object_id']) for d in diff_maps}),
+        'diff_mappings': diff_maps,
+        'own_objects': own_objects,
+        'both_diff_groups_scan_head0': head0_scan([loc for _, loc in corrected]),
+        'first_diff_group_scan_head0': head0_scan([loc for _, loc in corrected[:8]]),
+        'second_diff_group_scan_head0': head0_scan([loc for _, loc in corrected[8:]]),
+    }
+target = Path('/tmp/independent_c7_8c51672_evidence.json')
+target.write_text(json.dumps(out, indent=2) + '\n')
+print(json.dumps({name: {key: value for key, value in data.items()
+                        if key not in ('diff_mappings', 'own_objects')}
+                  for name, data in out['cases'].items()}, indent=2))

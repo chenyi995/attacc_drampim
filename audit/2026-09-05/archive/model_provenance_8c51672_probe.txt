@@ -1,0 +1,261 @@
+"""Read-only model audit probes; external simulators are replaced by stubs."""
+import sys
+sys.dont_write_bytecode = True
+from pathlib import Path
+ROOT = Path.cwd()  # Run from the repository root.
+sys.path.insert(0, str(ROOT))
+import contextlib
+import csv
+import hashlib
+import importlib.util
+import io
+import json
+import subprocess
+import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from src.ablation import resolve_config
+from src.config import make_model_config, make_pim_config, SCALING_FACTOR
+from src.devices import PIM
+from src.model import Layer, Transformer
+from src.ramulator_wrapper import Ramulator
+from src.type import DataType, DeviceType, InterfaceType, LayerType, PIMType
+from src.workload import Request, Segment, Workload, build_reuse_plan
+import src.workload_runner as wr
+
+
+def module(name, path):
+    spec = importlib.util.spec_from_file_location(name, ROOT / path)
+    out = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(out)
+    return out
+
+
+class DeviceStub:
+    num_hbm = 1
+    num_attacc = 1
+    num_xpu = 1
+    peak_memory_bandwidth = 10**12
+    energy_table = {"mem": 1.0}
+
+    def get_time_and_energy(self, op):
+        return 1e-6, (1.0,)
+
+    def get_time_and_energy_runs(self, op):
+        return [(1e-6, (1.0,)) for _ in op.pim_kv_runs]
+
+
+def rung_probe(model_name="LLAMA3-8B"):
+    model = make_model_config(model_name, DataType.W16A16)
+    model["ndec"] = 1
+    workload = Workload("supervisor", (
+        Request("a", 0, None, 2, (Segment("doc", "shared", 32),), 32),
+        Request("b", 0, None, 2, (Segment("user", "private", 1),
+            Segment("doc", "shared", 32, position_delta=1)), 33)), {})
+    results = {}
+    for rung in ("A1", "A2", "A3b", "A4c", "A4e", "A5", "A6"):
+        policy = "no-reuse" if rung == "A1" else "recompute"
+        plan = build_reuse_plan(workload, policy, epic_prefix_recompute_tokens=1)
+        cfg = resolve_config(rung, None, None, None, policy=policy)
+        system = SimpleNamespace(hetero_name=DeviceType.PIM,
+            devices={"GPU": DeviceStub(), "Acc": DeviceStub()},
+            model=Transformer(model, 1))
+        captured = []
+        finalize = wr._finalize_cacheblend_report
+        def capture(*args, **kwargs):
+            captured.extend(args[3]["events"])
+            return finalize(*args, **kwargs)
+        with patch.object(wr, "_new_event_core", return_value=None), \
+                patch.object(wr, "_finalize_cacheblend_report", side_effect=capture):
+            try:
+                report = wr.run_reuse_prefill(system, workload, plan,
+                    warm=False, pipe=True, cacheblend_batch_size=2,
+                    pim_prefill_mode=cfg.prefill_attn, decode_attn=cfg.decode_attn,
+                    pim_batch_command=cfg.pim_batch_command,
+                    pim_pe_freq_ghz=cfg.pim_pe_freq_ghz,
+                    kv_mapping=cfg.kv_mapping,
+                    channel_placement=cfg.channel_placement)
+                result = {"status": "ok"}
+            except Exception as error:
+                result = {"status": type(error).__name__, "message": str(error)}
+        result["kv_events"] = [{"name": e.name, "rows": e.rows,
+            "link_bytes": e.link_bytes,
+            "expected_kv_bytes": e.rows * 2 * system.model.kv_width() * 2}
+            for e in captured if e.name in ("kv_gpu_to_pim", "decode_kv_gpu_to_pim")]
+        stores = [e for e in captured if e.device == "STORE"]
+        result["store_count"] = len(stores)
+        result["store_zero"] = all(e.time_s == e.energy_nj == 0 for e in stores)
+        results[rung] = result
+    return results
+
+
+def cache_probe():
+    model = make_model_config("CACHEBLEND-TINY", DataType.W16A16)
+    with tempfile.TemporaryDirectory(prefix="kvpim-audit-model-") as temporary:
+        root = Path(temporary)
+        (root / "trace_gen").mkdir()
+        (root / "ramulator2").write_bytes(b"simulator-stub-v1")
+        (root / "trace_gen/gen_trace_attacc_bank.py").write_bytes(b"generator-v1")
+        library = root / "libramulator.so"
+        library.write_bytes(b"library-v1")
+        initial = Ramulator._toolchain_fingerprint(temporary)
+        library.write_bytes(b"library-v2")
+        changed_library = Ramulator._toolchain_fingerprint(temporary)
+        (root / "trace_gen/gen_trace_attacc_bank.py").write_bytes(b"generator-v2")
+        changed_generator = Ramulator._toolchain_fingerprint(temporary)
+        simulator = Ramulator(model, temporary, str(root / "empty.csv"), num_hbm=1)
+        calls = []
+        def fake(*args, **kwargs):
+            calls.append({"rows": args[1], "extents": kwargs.get("kv_extents")})
+            return [1000, 1, 1, 1, 1, 1]
+        gap = 1 << 23
+        counts = []
+        with patch.object(simulator, "run_ramulator", side_effect=fake):
+            for second_key, second_value in ((64, gap + 64),
+                                             (1088, gap + 1088),
+                                             (64, gap + 1088)):
+                op = Layer("sum", "score", LayerType.MATMUL, False,
+                           DataType.W16A16, 1, 32, 128, 1)
+                extents = ((0, gap, 16), (second_key, second_value, 16))
+                op.pim_kv_extent_groups = ((0, 1, extents),)
+                simulator.run(PIMType.BA, op, True, record_log=False, per_run=True)
+                counts.append(len(calls))
+            exact = Layer("gen", "score", LayerType.MATMUL, False,
+                          DataType.W16A16, 1, 257, 128, 1)
+            exact.pim_kv_runs = ((0, gap, 257),)
+            simulator.run(PIMType.BA, exact, True, record_log=False, per_run=True)
+        return {"fingerprint_ignores_shared_library": initial == changed_library,
+                "fingerprint_tracks_bank_generator": changed_generator != changed_library,
+                "invocations_after_each_extent_input": counts,
+                "exact_contiguous_length_received_by_stub": calls[-1]["rows"],
+                "calls": calls}
+
+
+def arithmetic_probe():
+    geometry = {}
+    for name in ("LLAMA-7B", "LLAMA3-8B"):
+        model = Transformer(make_model_config(name, DataType.W16A16), 1)
+        model.build(1, 4, 2, True)
+        geometry[name] = {"qkv_width": model.qkv_width(), "kv_width": model.kv_width(),
+            "prefill_qkv_n": model.sum_decoder[0].n,
+            "prefill_kv_link_bytes": model.sum_decoder[1].m * model.sum_decoder[1].n * 2}
+    class RamulatorStub:
+        def output(self, *args):
+            return 0., [0.] * 5
+        def output_runs(self, *args):
+            return [(0., [0.] * 5)]
+    acc = PIM(make_pim_config(PIMType.BA, InterfaceType.NVLINK3,
+                            num_attacc=1, num_hbm=1), SCALING_FACTOR, RamulatorStub())
+    mac = []
+    for group in (1, 4):
+        op = Layer("sum", "score", LayerType.MATMUL, False,
+                   DataType.W16A16, 2, 256, 128, 1)
+        op.pim_shared_queries = op.m * group
+        op.pim_kv_runs = ((0, 1 << 23, op.n),)
+        mac.append({"group": group, "query_groups": acc._query_groups(op),
+                    "aggregate_alu_pj": acc.get_time_and_energy(op)[1][4],
+                    "runs_alu_pj": acc.get_time_and_energy_runs(op)[0][1][4]})
+    return {"geometry": geometry, "mac_energy": mac,
+        "gqa_alu_ratio": mac[1]["runs_alu_pj"] / mac[0]["runs_alu_pj"]}
+
+
+def store_probe():
+    events = []
+    with patch.object(wr, "_EC", None):
+        def add(device, duration, deps=()):
+            return wr._cacheblend_event(events, layer=0, tier=0, request="r",
+                name="dependency-check", device=device, rows=1,
+                time_s=duration, energy=(7.,), deps=deps)
+        gpu = add("GPU", 10.)
+        link = add("LINK", 1.)
+        add("STORE", 9., (gpu,))
+        early = add("STORE", 9., (link,))
+        add("PIM", 2., (early,))
+        scheduled = wr._schedule_cacheblend(events, pipe=True)
+    return [{"device": e.device, "time_s": e.time_s, "energy_nj": e.energy_nj,
+             "start_s": e.start_s, "end_s": e.end_s} for e in scheduled]
+
+
+def summary_probe():
+    summary = module("audit_summary", "experiments/summarize_ladder.py")
+    collector = module("audit_collector", "experiments/collect_dag_ladder.py")
+    records = {"short": {"first_token_s": 1., "end_s": 5., "tier": 0},
+               "long": {"first_token_s": 1., "end_s": 10., "tier": 0}}
+    tbt = summary.tbt_stats({"summary": {"requests": records}}, {"short": 3, "long": 10})
+    with tempfile.TemporaryDirectory(prefix="kvpim-audit-summary-") as temporary:
+        root = Path(temporary)
+        for rung, batches in (("A2", []), ("A3b", [{"tier": 0, "q_arrival_s": 1.,
+                                                     "attention_start_s": 2.}])):
+            (root / f"dag_{rung}.json").write_text(json.dumps({"summary": {"requests": records},
+                "batches": batches}))
+        with patch.object(sys, "argv", ["collect", temporary, "fixture.json", "toy"]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            collector.main()
+        tier_rows = list(csv.DictReader((root / "dag_ladder_tiers.csv").open()))
+    return {"tbt_mean_max_weighted": tbt, "expected_weighted": (4 + 9) / (2 + 9),
+            "tier_rows": tier_rows, "input_rungs": ["A2", "A3b"]}
+
+
+def main():
+    evidence = {"source_revision": subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+        "method": "Device/Ramulator boundary stubs and pure functions; no external simulation",
+        "rung_gqa": rung_probe(), "rung_mha_control": rung_probe("CACHEBLEND-TINY"),
+        "cache": cache_probe(),
+        "arithmetic": arithmetic_probe(), "store": store_probe(), "summary": summary_probe()}
+    evidence["elf_dynamic"] = subprocess.check_output(
+        ["readelf", "-d", str(ROOT / "ramulator2/ramulator2")], text=True)
+    evidence["source_sha256"] = {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+        for path in ("src/ramulator_wrapper.py", "src/model.py", "src/devices.py",
+                     "src/workload_runner.py", "src/cpp_eventcore.py",
+                     "experiments/summarize_ladder.py", "experiments/collect_dag_ladder.py")}
+    output = ROOT / "audit/2026-09-05/model_provenance_8c51672_probe.json"
+    output.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n")
+    lines = ["# 模型复审的轻量验证数据", "",
+        "来源：`model_provenance_8c51672_probe.txt` 自动生成；设备成本为桩，不能用作性能数据。", "",
+        "| 档次 | MHA 控制组 | GQA | STORE 全零 |", "|---|---|---|---|"]
+    for rung, record in evidence["rung_gqa"].items():
+        lines.append("| {} | {} | {} | {} |".format(rung,
+            evidence["rung_mha_control"][rung]["status"],
+            record["status"] + ": " + record.get("message", ""), record["store_zero"]))
+    lines.extend(["", "| 模型 | QKV 宽度 | K/V 单向宽度 | 4 行 prefill KV bytes |",
+                  "|---|---:|---:|---:|"])
+    for name, record in evidence["arithmetic"]["geometry"].items():
+        lines.append("| {} | {} | {} | {} |".format(name, record["qkv_width"],
+            record["kv_width"], record["prefill_kv_link_bytes"]))
+    bad = evidence["rung_gqa"]["A3b"]["kv_events"]
+    lines.extend(["", "| A3b GQA 事件 | 实际 bytes/row | 应有 bytes/row | 倍率 |",
+                  "|---|---:|---:|---:|"])
+    seen = set()
+    for record in bad:
+        if record["name"] in seen:
+            continue
+        seen.add(record["name"])
+        lines.append("| {} | {} | {} | {} |".format(record["name"],
+            record["link_bytes"] / record["rows"], record["expected_kv_bytes"] / record["rows"],
+            record["link_bytes"] / record["expected_kv_bytes"]))
+    lines.extend(["", "| 检查 | 输出 |", "|---|---|"])
+    fields = {"GQA MAC group 能量倍率": evidence["arithmetic"]["gqa_alu_ratio"],
+        "只改共享库后 fingerprint 不变": evidence["cache"]["fingerprint_ignores_shared_library"],
+        "只改 bank generator 后 fingerprint 改变": evidence["cache"]["fingerprint_tracks_bank_generator"],
+        "原 extent / 改 K+V row / 只改 V row 的累计模拟桩调用": evidence["cache"]["invocations_after_each_extent_input"],
+        "连续 scan 传给模拟桩的实际 L": evidence["cache"]["exact_contiguous_length_received_by_stub"],
+        "TBT 请求均值 / 最大值 / step 加权": evidence["summary"]["tbt_mean_max_weighted"],
+        "理论 step 加权": evidence["summary"]["expected_weighted"],
+        "tier CSV 实际档次": [r["ablation"] for r in evidence["summary"]["tier_rows"]],
+        "tier CSV 输入档次": evidence["summary"]["input_rungs"],
+        "tier_total_s / cum_end_s": [[r["tier_total_s"], r["cum_end_s"]]
+                                      for r in evidence["summary"]["tier_rows"]]}
+    for key, value in fields.items():
+        lines.append("| {} | `{}` |".format(key, json.dumps(value, ensure_ascii=False)))
+    (ROOT / "audit/2026-09-05/model_provenance_8c51672_evidence.md").write_text("\n".join(lines) + "\n")
+    print(json.dumps({"evidence": str(output),
+        "gqa_statuses": {rung: info["status"] + ": " + info.get("message", "")
+                         for rung, info in evidence["rung_gqa"].items()},
+        "cache": evidence["cache"], "arithmetic": evidence["arithmetic"],
+        "summary": evidence["summary"]}, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

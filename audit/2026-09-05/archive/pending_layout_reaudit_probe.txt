@@ -1,0 +1,63 @@
+"""Re-audit unresolved V-subset address case using actual layout classes.
+
+Only command/address construction. No devices, Ramulator timing or implementation changes.
+"""
+from pathlib import Path
+import hashlib
+import importlib.util
+import json
+import subprocess
+import sys
+sys.dont_write_bytecode = True
+R = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(R))
+import src.workload_runner as w
+
+def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+tracked = subprocess.check_output(['git','ls-files','-z'],cwd=R).decode().split('\0')
+protected = {p:digest(R/p) for p in tracked if p and not p.startswith(('docs/','audit/')) and (R/p).is_file()}
+paper = R.parent/'KVPIM-1Fugue-ASPLOS2027'
+paper_hashes = {str(p):digest(p) for p in paper.rglob('*.tex')}
+doc_hash = digest(R/'docs/README_contributions.md')
+out = {'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip(),
+       'scope':'Actual layout classes and Attention generator; no latency, numerical KV values, or simulator performance.',
+       'protected_implementation':protected,'paper_before':paper_hashes,'contribution_README_before':doc_hash,
+       'V_subset_by_rung':{}}
+classes = {'A3b':w.NaiveKVLayout,'A4c':w.LocalDiffKVLayout,'A4e':w.TableLocalDiffKVLayout,
+           'A5':w.TableLocalDiffKVLayout,'A6':w.TableLocalDiffKVLayout}
+for rung, cls in classes.items():
+    t = cls(256)
+    for row in range(256): t.reserve(0,'owner','stored256',row,'master')
+    t.finalize()
+    l = t.physical_ledger(t.layout_policy,4)
+    case = {}
+    for name, requested in [('full',range(256)),('first16',range(16)),('second16',range(16,32))]:
+        locs = [t.locate(0,'owner','stored256',row,'master') for row in requested]
+        groups = l.extent_groups(locs)
+        extents = groups[0][2]
+        spec = importlib.util.spec_from_file_location('pending_trace',R/'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py')
+        g = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(g)
+        g.n_channel = 1
+        g.pool_base = groups[0][0]
+        g.Attention(sum(x[2] for x in extents),extents[0][0],extents[0][1],0,valid_channel=1,extents=extents)
+        buckets = [[int(s.split()[1],16) for s in bucket] for bucket in g.cmd_context_mac[0]]
+        case[name] = {'extent':extents[0],'dimension_group_starts':[b[0] for b in buckets],
+                      'second_group_offset_from_this_extent_V':buckets[1][0]-extents[0][1],
+                      'command_count':sum(len(b) for b in buckets)}
+    assert case['full']['extent'][1] == case['first16']['extent'][1]
+    assert case['full']['second_group_offset_from_this_extent_V'] != case['first16']['second_group_offset_from_this_extent_V']
+    out['V_subset_by_rung'][rung] = case
+
+upstream_path = 'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py'
+original = subprocess.check_output(['git','show','c600051:'+upstream_path],cwd=R,text=True)
+lines = original.splitlines()
+anchor = next(i for i,line in enumerate(lines) if 'def context_mac(' in line)
+end = next((i for i in range(anchor+1,len(lines)) if 'def softmax(' in lines[i]),anchor+45)
+out['AttAcc_original_context_mac'] = [{'line':i+1,'text':lines[i]} for i in range(anchor,end)]
+out['AttAcc_original_has_extent_interface'] = 'extents' in original
+out['same_subset_command_pattern_all_rungs'] = all(v == out['V_subset_by_rung']['A3b'] for v in out['V_subset_by_rung'].values())
+out['implementation_changes'] = [p for p,h in protected.items() if digest(R/p)!=h]
+assert not out['implementation_changes']
+Path('/tmp/pending_layout_reaudit_evidence.json').write_text(json.dumps(out,indent=2,ensure_ascii=False)+'\n')
+print(json.dumps({k:v for k,v in out.items() if k not in ('protected_implementation','paper_before')},indent=2,ensure_ascii=False))

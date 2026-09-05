@@ -1,0 +1,393 @@
+"""Organize audit documents and derive reader-facing cases from existing evidence."""
+from pathlib import Path
+import hashlib
+import json
+import os
+import re
+import subprocess
+
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A=R/'audit/2026-09-05'
+H=A/'archive'
+P=Path('/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections')
+assert not H.exists(), 'One-shot reorganization: archive already exists'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def readj(name): return json.loads((A/name).read_text())
+tracked=subprocess.check_output(['git','ls-files','-z'],cwd=R).decode().split('\0')
+initial={p:sha(R/p) for p in tracked if p and (R/p).is_file()}
+head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+L=readj('ledger_trace_boundary_8c51672_evidence.json')
+M=readj('model_provenance_8c51672_probe.json')
+E=readj('reaudit_8c51672_evidence.json')
+S=readj('independent_8c51672_storage_evidence.json')
+runtime=readj('runtime_configuration_8c51672_evidence.json')
+old_files=sorted(p for p in A.iterdir() if p.is_file())
+mapping={p.resolve():(H/p.name).resolve() for p in old_files}
+original_bytes={p:p.read_bytes() for p in old_files}
+external_paths=[R/'README.md']+list((R/'docs').rglob('*.md'))
+external_original={p:p.read_text() for p in external_paths if p.is_file()}
+old_fixes=external_original[R/'docs/README_audit_fixes.md']
+
+def relocate_links(content, oldpath, newpath, *, active=False):
+    def change(match):
+        raw=match.group(2)
+        link=raw.strip('<>')
+        if link.startswith(('http://','https://','mailto:','app://','#')):
+            return match.group(0)
+        pathpart, separator, fragment=link.partition('#')
+        ln=re.search(r':\d+(?:-\d+)?$',pathpart)
+        suffix=ln.group(0) if ln else ''
+        plain=pathpart[:-len(suffix)] if suffix else pathpart
+        target=(Path(plain) if plain.startswith('/') else oldpath.parent/plain).resolve()
+        dest=mapping.get(target,target)
+        if active and target.name=='ATTACC_RELATIVE_FAIRNESS_REVIEW.md' and target in mapping:
+            dest=A/'CURRENT_ISSUES.md'
+        if target==dest and oldpath.parent==newpath.parent:
+            return match.group(0)
+        newlink=(str(dest) if plain.startswith('/') else os.path.relpath(dest,newpath.parent))+suffix
+        if separator: newlink+='#'+fragment
+        if raw.startswith('<') or ' ' in newlink: newlink='<'+newlink+'>'
+        return match.group(1)+newlink+')'
+    return re.sub(r'(\[[^\]\n]*\]\()(<[^>]+>|[^)\s]+)\)',change,content)
+
+H.mkdir()
+for old,new in mapping.items():
+    old.rename(new)
+for old,new in mapping.items():
+    if new.suffix=='.md':
+        content=original_bytes[old].decode()
+        content=relocate_links(content,old,new)
+        notice='> 历史记录：保留当时的技术证据和评价，当前待审事项统一看 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md)。\n\n'
+        new.write_text(notice+content)
+removed_cache=[]
+cache=A/'__pycache__'
+if cache.exists():
+    for p in cache.iterdir():
+        assert p.is_file() and p.suffix=='.pyc', 'Unexpected cache content; do not delete'
+        removed_cache.append({'path':str(p.relative_to(R)),'sha256':sha(p),'reason':'regenerable Python bytecode cache, not audit evidence'})
+        p.unlink()
+    cache.rmdir()
+for p,content in external_original.items():
+    migrated=relocate_links(content,p,p,active='sessions' not in p.parts)
+    if migrated!=content: p.write_text(migrated)
+history_fixes=H/'README_audit_fixes_history.md'
+history_fixes.write_text('> 已归档的旧修改建议；不是当前整改决定。请看 [当前事项](../CURRENT_ISSUES.md)。\n\n'+relocate_links(old_fixes,R/'docs/README_audit_fixes.md',history_fixes))
+
+full,part=L['subsets']['full'],L['subsets']['first16']
+kv=next(x for x in M['rung_gqa']['A3b']['kv_events'] if x['name']=='decode_kv_gpu_to_pim')
+facts={
+ 'source_revision':head,
+ 'scope':'Reformatted prior evidence only; no new performance run. Addresses and costs below are helper/analytic results, not hardware speedups.',
+ 'gqa_status':{r:{'mha':M['rung_mha_control'][r]['status'],'gqa':v['status']} for r,v in M['rung_gqa'].items()},
+ 'gqa_batched_kv':{'actual_bytes':kv['link_bytes'],'expected_bytes':kv['expected_kv_bytes'],'ratio':kv['link_bytes']/kv['expected_kv_bytes']},
+ 'diff_master_commands':L['diff_master_region']['first_command_decoded'],
+ 'v_subsets':{'stored_tokens':full['extents'][0][2],'subset_tokens':part['extents'][0][2],
+   'full_second_group_offset':full['context'][1][0]-full['extents'][0][1],
+   'subset_second_group_offset':part['context'][1][0]-part['extents'][0][1]},
+ 'a6_fresh_readback_rows':E['A6_estimate_vs_executed_operation_coverage']['fresh_16']['choice_log']['readback_rows'],
+ 'a6_extra_q_events':sum(x['name']=='gpu_rotate_q_extra_to_pim' for x in E['A6_estimate_vs_executed_operation_coverage']['shifted_reuse']['executed_pim_attention_links']),
+ 'tier_input_rungs':M['summary']['input_rungs'],
+ 'tier_output_rungs':sorted({x['ablation'] for x in M['summary']['tier_rows']}),
+ 'repeated_diff':S['repeated_fingerprint_real_plan'],
+ 'source_json_files':['ledger_trace_boundary_8c51672_evidence.json','model_provenance_8c51672_probe.json','reaudit_8c51672_evidence.json','independent_8c51672_storage_evidence.json'],
+}
+(H/'current_case_facts.json').write_text(json.dumps(facts,ensure_ascii=False,indent=2)+'\n')
+paper=lambda filename,line:f'<{P/filename}:{line}>'
+gqa_rows='\n'.join(f"| {r} | {'完成' if v['mha']=='ok' else v['mha']} | {'完成' if v['gqa']=='ok' else 'KV 字节校验失败'} |" for r,v in facts['gqa_status'].items())
+address_rows='\n'.join(f"| {name} | {v['channel']} | {v['pseudochannel']} | {v['row']} | {v['column']} |" for name,v in zip(('master 原块','diff 修正块'),facts['diff_master_commands']))
+v=facts['v_subsets']
+doc=f'''# 这一轮需要过目的事项：具体 case、论文声明与相对公平性
+
+**本轮问题统一看这一份。** 对象是代码 `8c51672`、原始 AttAcc `c600051` 和当前论文正文。这里整理已有审计证据，没有新增性能实验。除“必须开启 FlashAttention”已经由用户确定外，下列候选事项是否需要处理，仍由 chenyi9 裁决。
+
+审计只问：**不同档位的性能变化，能不能归因于论文允许增加的机制？** 原始 AttAcc 已有或所有档共同使用的模型近似，有依据即可接受；不要求绝对精确，也不要求它对各档造成完全相等的误差。本文说“复现”，指真实代码的构图、地址或汇总行为，不等于测到了硬件加速比。
+
+## 先认识系统和七个比较点
+
+LLM 先处理整段输入，这叫 **prefill**；之后逐 token 生成，这叫 **decode**。为了不重复计算历史内容，系统保存 **KV 缓存**，即每个 token 的 K、V 向量。GPU 负责大部分计算；**PIM** 是内存旁的计算单元，可以直接扫描内存里的 KV 做 attention。
+
+多个 agent 复用同一段内容时，共享的原始 KV 块叫 **master**；为某个 agent 重算的少量 token 叫 **diff**。这里的 diff 是重新计算的 KV，**不是两个数值相减的差**。一个 **head** 是一组 attention 计算；正常情况下，各 KV head 有自己的 KV 数据。**Q/query** 是当前 token 用来查询历史 KV 的向量；一次 **request** 是一个请求，**prompt** 是它的输入。
+
+| 档位 | 系统做什么 | 允许增加的机制 |
+|---|---|---|
+| A1 | 不做跨请求软件复用；GPU prefill，PIM decode | 独立硬件 baseline |
+| A2 | 软件复用；attention 全在 GPU，远端内存存 KV | 独立软件 baseline |
+| A3b | 软件复用 + PIM decode；修正跟着普通写入存放 | 后续消融的朴素起点 |
+| A4c | 把同一 agent、同一 KV head 的修正集中存放 | diff 布局，允许跨轮修正共享行 |
+| A4e | 将以后可能一起读取的 master 块分散到不同通道 | 软件放置表；diff 规则沿用 A4c |
+| A5 | prefill attention 也在 PIM，多个 query 共用 KV 读取 | PIM prefill + MQ 及已接受的配套频点，是一组机制 |
+| A6 | 每个 request 估算 GPU/PIM 哪边快，选择较快的一边 | 简单选边；其他硬件与 A5 相同 |
+
+MQ 指多个 query 利用同一次 KV 列读取。A1/A2 不要求逐步只改一项；从 A3b 开始才按允许机制比较。表格对应论文 [Comparison points]({paper('06-methodology.tex',65)})；A6 以用户后来明确的简单逐 request 定义为准，**不要求实现正文旧公式里的两套候选 DAG**。
+
+## 本轮阅读地图
+
+| Case | 一句话说明 | 对应的论文机制 / 比较 | 当前状态 |
+|---|---|---|---|
+| [C1](#c1) | 运行命令可能没开启 FlashAttention | 所有档共同 GPU baseline | 已确定必须开；没有证据说所有历史运行都没开 |
+| [C2](#c2) | LLaMA3-8B 一类的 GQA 输入在 PIM 路径被拒绝，batch 字节也未统一 | 论文模型覆盖；A2 与 PIM 档 | 已复现，待用户决定处理 |
+| [C3](#c3) | 新 diff 区的地址看似不同，ALL-BANK 实际选到同一组行 | A3b→A4c，后续档继承 | 已复现地址矛盾，未量化收益偏差 |
+| [C4](#c4) | 同一块 V，读整块和读子段会用不同的物理步长 | A3b–A6 共同的固定存储/子段扫描 | 新增共同接口的条件性问题，待裁决 |
+| [C5](#c5) | A6 给不存在的传输加价，又漏掉实际存在的传输 | A5→A6 的简单选边 | 已复现操作覆盖差异，待裁决 |
+| [C6](#c6) | 有 A2 输入，tier 汇总表却不输出 A2 | 七档结果呈现 | 已复现报表差异，待裁决 |
+| [C7](#c7) | A3b 某种重复文档输入也会把不连续修正合并 | A3b baseline 与 A4c 集中修正的界线 | baseline 定义选择，不能说是故意削弱 A3b |
+
+**关于 A4e 和 A5：** 当前没有发现 A4e 私有的缩时系数；也没有新证据表明 A5 的 MQ 接入又丢失。C3/C4 是这些档共同依赖的存储问题，不能改写成“A4e 表独有作弊”或“MQ 已测出虚假加速”。
+
+<a id="c1"></a>
+
+## C1：同样跑七档，命令入口可能选择了不同 GPU 模型
+
+**论文/用户允许什么。** 论文 [平台说明]({paper('06-methodology.tex',21)}) 把 GPU kernel 和设备计价作为比较背景；用户进一步明确：我们新增的 FlashAttention 必须给所有档共同开启。不是只有 A2 要开，A1 和 A3b–A6 的 GPU 部分也一样。
+
+**具体 case。** 若直接执行一键 ladder，没有设置 `GPU_MODEL`。脚本没有传 `--gpu-model`，于是 main.py 使用默认 `legacy`；改用 sweep 脚本则默认传 flash。
+
+| 入口 | 实际默认行为 |
+|---|---|
+| `python3 main.py …` | legacy，需加 `--gpu-model flash` |
+| `bash experiments/run_dag_ladder.sh …` | 未设环境变量时是 legacy，需加 `GPU_MODEL=flash` |
+| `bash experiments/run_sweep.sh …` | 默认 flash，环境变量仍可覆盖 |
+
+**AttAcc 本身有没有。** 原始 AttAcc 没有我们新增的 flash 模型。它的 legacy 不能用作“不必开启 flash”的依据。flash 参数来自共同解析模型、有论文图来源即可；非本库硬件实测本身不算公平性问题。
+
+**影响什么比较。** 如果不同档实际混用模型，GPU 的快慢就不只由消融机制决定；即使全用 legacy，也没有执行用户指定的共同配置。当前证据只确认入口默认，**没有证明每份历史结果都使用 legacy**。
+
+**当前决定。** 必须开启已经确定。README 示例已补齐；代码默认未改。建议只核对共同实际配置，不因缺少某个日志字段就直接否定全部结果。证据：[main 参数](../../main.py:140)、[ladder 透传](../../experiments/run_dag_ladder.sh:73)、[sweep 默认](../../experiments/run_sweep.sh:22)；旧编号 RC01。
+
+<a id="c2"></a>
+
+## C2：论文中的 GQA 模型，有的档能够构图，有的档直接报错
+
+**论文声明什么。** [Models]({paper('06-methodology.tex',122)}) 包含 LLaMA3-8B。普通 **MHA** 是每个 Q head 对应自己的 KV head；它的 **GQA** 则是多个 Q head 共用较少的 KV head：要存、要传的是 KV head 的数据，不能把每个 Q head 都当成一份独立 KV。
+
+**具体 case。** 同一短 workload 分别采用 CACHEBLEND-TINY（MHA）和 LLAMA3-8B（GQA）配置，均缩为一层。两者模型尺寸也不同，这张表不是“只改 GQA 一个参数”的性能对照。测试用固定价格函数代替真实设备（设备桩），实际执行的是列出操作及其依赖的构图逻辑和校验逻辑，不衡量 GPU/PIM 真正速度。
+
+| 档位 | MHA 控制 | GQA 输入 |
+|---|---|---|
+{gqa_rows}
+
+**代码实际做什么。** 发送 KV 的一部分代码已按较少的 KV head 算字节；校验器却仍按 Q head 要求字节数，于是拒绝正确的 KV link。另一个 batch decode（合并处理多个请求的一步）分支还使用旧字节口径：同一控制例的一步 KV，按 KV head 应为 **{facts['gqa_batched_kv']['expected_bytes']:,} B**，被捕获的 batch decode 事件却记录 **{facts['gqa_batched_kv']['actual_bytes']:,} B**。这些事件在最终校验前被捕获，整份报告随后报错，不能说实际传输了这些字节。正确的 prefill 字节也会先被旧校验器拒绝，不能把该 decode 事件当成报错的唯一来源。只放宽校验器不能自动消除这处分支不一致。
+
+**AttAcc 本身有没有。** 原始模型没有当前完整 GQA 数据通路，也没有这个新多请求 validator。这是新增路径之间没有同步，不能当成大家共同使用同一常数的近似。GPU attention 内部是否完整优化 GQA 复用是另一项共同模型假设，不在这里要求改进。
+
+**影响什么比较、需要决定什么。** 报错意味着该路径不能产出结果，**不是测到了 PIM 较慢**。batch 多传字节则影响走这条路径的链路成本。建议将新增执行回归/分支不一致作为待处理事项，请用户裁决；不据此声称 MQ 本身不公平。
+
+证据：[实际构图 JSON](archive/model_provenance_8c51672_probe.json) 的 `rung_gqa`/`rung_mha_control`；[validator](../../src/workload_runner.py:2756)、[batch 字节](../../src/workload_runner.py:3474)。旧编号 V01a/V01b、MR-01/MR-02。
+
+<a id="c3"></a>
+
+## C3：A4c 说“另存 diff 行”，地址却没有隔开实际访问的行
+
+**论文声明什么。** [Master and Per-Agent Diff]({paper('04-design.tex',69)}) 与 [A4c 定义]({paper('06-methodology.tex',81)}) 允许 master 和 diff 使用同一 head 的通道，但要求修正集中在独立 diff 行。它们是两份不同的数据；集中后的收益应来自修正布局。
+
+**理解这个 case 只需三个概念。** 通道 channel 是可以并行工作的内存资源；每个通道内有多个 bank，bank 里有 row（行）。AttAcc 的 **ALL-BANK** 命令用一个地址驱动该通道内的多个 bank。因此“两个地址整数不相等”不一定表示两次命令访问不同的一组行。
+
+**具体 case。** 同一通道放一个 master 块和一个 diff 块。新 allocator（分配记录，代码名 PhysicalLedger）给 diff 加了一段很大的地址偏移。按照实际 mapper 解码，两者首条命令是：
+
+| 数据 | channel | pseudochannel 子通道 | row | column |
+|---|---:|---:|---:|---:|
+{address_rows}
+
+**应发生与实际发生的区别。** 这个偏移只变了子通道位；ALL-BANK 操作会覆盖两边的 bank，行和列却相同。因此不能靠该偏移证明 master/diff 已存到独立的 ALL-BANK 行。这个检查直接运行命令生成函数并按源代码解码，没有运行 Ramulator 性能实验。
+
+**AttAcc 本身有没有。** 原始 AttAcc 有上述 ALL-BANK 语义；mapper 和相关 action/preq 文件与当前逐字节相同。它没有新增的 master/diff 区分配。**来源不是“原始 mapper 被我们改坏”，而是新地址选择是否符合未改的原语义。**
+
+**影响什么比较、需要决定什么。** A3b 没有这个专门 diff 区，A4c 起使用它。行地址重合可能改变行命中/激活，因而使收益混入布局声明以外的因素；目前没有周期数据能量化或断言一定高估。建议作为 A3b→A4c 的候选问题交用户决定，后续档继承该地址规则。
+
+证据：[命令/解码 JSON](archive/ledger_trace_boundary_8c51672_evidence.json) 的 `diff_master_region`；[新 diff 区](../../src/workload_runner.py:820)、[AttAcc 来源核对](archive/ATTACC_UPSTREAM_REVIEW_EXCERPTS.md)。旧编号 V02。
+
+<a id="c4"></a>
+
+## C4：同一块 V 不应因为这次少读一些 token，就换一套存储步长
+
+**论文声明什么。** [固定 placement]({paper('04-design.tex',116)}) 说写入时决定的 channel/row 在以后扫描中保持；[PIM attention]({paper('04-design.tex',159)}) 说共享 master 的字节保持不动。扫描应从已存的数据中取需要的部分。
+
+**具体 case。** 先放好同一份 {v['stored_tokens']}-token V。一次读完整块，另一次只读前 {v['subset_tokens']} 个 token，期间没有搬移或重排。V 是一个矩阵，计算不同输出维度时，要按它存好时的步长找到对应数据。
+
+| 读取请求 | 第二组输出维度对应的起点，相对 V base（存储起始地址） |
+|---|---:|
+| 完整块 | +{v['full_second_group_offset']} B |
+| 仅前一段 | +{v['subset_second_group_offset']} B |
+
+**代码实际做什么。** 新扫描接口用 extent 表示连续读取子段，但 generator 把“本次读多少 token”当作矩阵存储步长。相同的存储对象因此得到不同的维度起点。这里展示的是命令地址，不是测量延迟。
+
+**AttAcc 本身有没有。** 原始 generator 建模整块 dense attention，没有当前“持久对象中任意子段”的接口。这个接口是新增的，同时被多个布局使用；**共同使用接口并不自动证明某一档获得了额外优惠**。
+
+**影响什么比较、需要决定什么。** A3b 与 A4c/A4e 的分段不同，地址/取整行为可能影响扫描成本归因。但本轮没有测出档间净偏置。请用户决定是否需要进一步约束“每次扫描对应已存布局”，或接受当前共同子段近似；不直接列必修，也不宣称 A4e 的软件表已经不公平。
+
+证据：[同一对象两次读取](archive/ledger_trace_boundary_8c51672_evidence.json) 的 `subsets.full`/`subsets.first16`；[子段起点](../../src/workload_runner.py:1030)、[V 命令生成](../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:218)。旧编号 V03。
+
+<a id="c5"></a>
+
+## C5：A6 的“哪边快选哪边”，候选成本应该包含实际会做的操作
+
+**论文/用户允许什么。** [选边说明]({paper('05-execution.tex',28)}) 区分两条路径：GPU 侧可能把已有 KV 搬回来，PIM 侧保留 KV、传 query。用户已明确采用简单逐 request 估价；正文旧的双候选 DAG 文字不作为额外要求。
+
+**Case A：全新 prompt，没有历史 KV 要回读。** 如果选 GPU，GPU 就用新计算的数据做 attention。实际执行路径确实没有历史回读，但 A6 的估价仍创建回读操作。flash 链路模型带启动开销，空传输仍可能抬高 GPU 候选成本。
+
+**Case B：复用同一文档，但它在新 request 的位置发生变化。** 论文 [query rotation]({paper('04-design.tex',174)}) 说明 GPU 生成旋转后的额外 Q 并经链路发送。当前执行路径有这些 extra-Q 传输，A6 的 PIM 估价却只覆盖普通 Q/结果向量传输。
+
+| 操作 | 实际分支 | A6 估价 | 候选价格的偏向 |
+|---|---|---|---|
+| 全新 prompt 的历史 KV 回读 | 没有 | 多算 | 把 GPU 候选算贵 |
+| 位移复用的额外 Q 传输 | 有 | 漏算 | 把 PIM 候选算便宜 |
+
+**AttAcc 本身有没有。** 原始没有 A6 自动选边，也没有上述位置复用的 extra-Q 机制。共同采用同一链路单价可以接受；这里的问题候选是“算了不存在的操作/漏了已存在的操作”。
+
+**影响什么比较、需要决定什么。** 这直接涉及 A5→A6：A5 固定放在 PIM，A6 才依赖两侧比较。上述价格偏向可能改变选择，但不能据此推导全局 E2E 一定变差或一定高估 Fugue。建议用户裁决是否校对候选操作集合；不要求全局最优或更复杂的调度器。
+
+证据：[真实分支与估价操作](archive/reaudit_8c51672_evidence.json) 的 `A6_estimate_vs_executed_operation_coverage`；[_resolve_prefill_side](../../src/workload_runner.py:3970)。原 JSON 的设备桩时间仅验证操作覆盖，本页不将其作为真实 GPU/PIM 性能。旧编号 V06a/V06b。
+
+<a id="c6"></a>
+
+## C6：A2 已提供结果，按 tier 汇总时却被漏掉
+
+**论文声明什么。** [七档 comparison]({paper('06-methodology.tex',65)}) 包含 A2；[Metrics]({paper('06-methodology.tex',172)}) 要按统一指标比较各档。tier 是一组同阶段的 request，tier 表是展示结果的一种汇总。
+
+**具体 case。** 给 collector 两份小 JSON，分别标为 {'、'.join(facts['tier_input_rungs'])}。A2 只有 GPU attention，没有 PIM batch；另一档有 PIM batch 记录。输出的 tier 表只出现 **{'、'.join(facts['tier_output_rungs'])}**。
+
+**代码实际做什么。** collector 用“有没有 PIM batch”找应该输出的 tier，因此跳过了 A2；部分时间列又从 attention 开始时刻推导，不是完整 request 的结束时刻。这里的 JSON 是受控汇总输入，不是新跑出的实验结果。
+
+**AttAcc 本身有没有。** 原始没有这个七档、多 tier 汇总器。问题在新增报表逻辑，不属于共同硬件近似。
+
+**影响什么比较、需要决定什么。** 缺行会使读者看不到 A2 的同口径对照；它不等于原始模拟没跑，也不否定已经正确的 `makespan_s` 或 step-weighted TBT。建议保留为报表候选问题，由用户决定是否处理。
+
+证据：[汇总输入和输出](archive/model_provenance_8c51672_probe.json) 的 `summary`；[collector](../../experiments/collect_dag_ladder.py:119)。旧编号 V08/MR-04。
+
+<a id="c7"></a>
+
+## C7：A3b 的特殊合并存放是否算合理 baseline，需要先定义
+
+**论文声明什么。** [A3b/A4c 对照]({paper('06-methodology.tex',75)}) 与 [跨轮 diff 行]({paper('04-design.tex',85)}) 区分：朴素写入流里夹在中间的新内容会隔开修正；A4c 才把同一 agent/head 的修正集中。
+
+**具体 case。** 一个 request 的内容是 `前缀 → 文档 D → 自己的新内容 → 同一个文档 D`。两个 D 都需要少量修正，中间插着自己的新 KV。按严格连续写入理解，两批修正应分开；现有预约表按文档 fingerprint（文档身份）聚合，可能把两批修正合成一段连续写入（burst）。
+
+**AttAcc 本身有没有。** 原始没有软件复用、diff 或此合并存放规则。它是新 baseline 的具体定义。受控复现使用真实 reuse plan，但不代表正式随机 workload 都遇到同样输入。
+
+**影响什么比较、需要决定什么。** 这个行为使 A3b 更紧凑，可能缩小 A4c 的增益，**不是削弱 A3b 的证据**。用户可以接受它作为合理的简单 baseline，并让正文描述与实现一致；也可以要求严格按连续写入分组。本文不替用户选择，也不把“naive”解释成故意写得更慢。
+
+证据：[真实复用计划的重复 D case](archive/independent_8c51672_storage_evidence.json) 的 `repeated_fingerprint_real_plan`；旧编号 V05c/N02。A3b 的两套轮转计数本身已按此前约束接受，不在此重开。
+
+## 其他边界：已说明，不当作新的必须修复事项
+
+| 场景 | 与论文的关系 | 按当前口径怎样看 |
+|---|---|---|
+| 同一 stack 的 KV heads 多于 channel，head 映射绕回同一地址 | 关系到论文 LLaMA-7B 等配置及每 head 独立 KV | 新 ledger 的共同边界；未证明某档单独获益。原 V04 留待需要该边界时裁决 |
+| JSON 预约次序与执行次序不同；STORE 元数据未与 scan ledger 统一 | 论文称写入时确定 placement | 可作为共同静态预分配理解；是否作为正式定义仍待裁决。STORE 已零成本，不因字段未统一就认定额外性能惩罚。原 V05a/b |
+| 不同 agent 的修正交错预约，同一 agent 的 diff 被隔开 | 对应 per-agent 跨轮集中 | 条件性 case，当前默认静态构图未证明必现；原 V05d |
+| pipeline 开启后，后来已就绪的任务仍错过空闲窗口 | 对应跨设备并行；当前所有档共用调度器 | 有结构反例，但按共同近似不要求直接换调度器。AttAcc 是公式 overlap，没有同型 DAG（带依赖关系的事件图），不能声称代码完全一样。原 RC02 |
+| 旧报告缺 GPU/pipe 字段、缓存缺完整库指纹 | 关系到比较是否用同一配置 | 未证明实际分档混配置/版本，不仅因元数据缺失判不公平。原 RC03、V07 |
+
+AttAcc energy 单价、QK/PV ALU 记账、ACT 摊销、整 stack 复制、共同 FA 近似、history/人工 workload，以及已统一的 STORE/DIE/TLB 零成本继续接受。原始依据见 [共同口径记录](archive/ATTACC_RELATIVE_FAIRNESS_REVIEW.md)。这些不再挤进当前整改清单。
+
+## 证据入口与已关闭事项
+
+本页数表由脚本读取已有 JSON 自动生成；提取结果在 [current_case_facts.json](archive/current_case_facts.json)，每个 case 均链接原始证据。主审与独立 agent 的历史全文在 [archive 索引](archive/README.md)。没有用旧严重级别替代用户裁决，没有证明有人故意削弱 baseline。
+
+高层 scan 地址持久、共同随机修正计划、STORE 零收费、A1 GPU prefill/精确长度、owner 先写依赖、MQ 接入、A6 全 lane/尾批估价等已确认的修复，不再重复列为当前问题。当前候选只以上面 C1–C7 及条件边界为准。整理原因见 [session](../../docs/sessions/2026-09-05-audit-docs-cleanup.md)。
+'''
+(A/'CURRENT_ISSUES.md').write_text(doc)
+(A/'README.md').write_text('''# 2026-09-05 Audit：从这里开始
+
+**这一轮的问题在 [CURRENT_ISSUES.md](CURRENT_ISSUES.md)。** 不需要按时间顺序读历次报告。
+
+这份文档先解释系统与七档，再逐个 case 说明：论文声明什么、用什么小输入验证、应当怎样、代码实际怎样、AttAcc 是否已有对应建模、影响哪两档，以及哪些结论还需要用户裁决。
+
+| 想看什么 | 打开哪里 |
+|---|---|
+| 本轮需要过目的 case 与修改方向 | [CURRENT_ISSUES.md](CURRENT_ISSUES.md) |
+| 原始代码定位、JSON、独立 agent 和历史裁决 | [archive/README.md](archive/README.md) |
+| 本次为什么这样整理、验证了什么 | [session](../../docs/sessions/2026-09-05-audit-docs-cleanup.md) |
+
+当前口径：接受 AttAcc 和各档共同的模型限制；不强求绝对精度。FlashAttention 必须共同启用。其他候选事项先展示来源和分档影响，再由 chenyi9 决定是否处理。A1/A2 是独立 baseline，A5 的 prefill+MQ 是已接受机制包，A6 是简单逐 request 比价。
+
+源码审计时点为 `8c51672`，上游对照 `c600051`。本次整理没有跑新性能实验，没有修改实现或已有结果。
+''')
+(H/'README.md').write_text('''# 历史报告和证据索引
+
+这里保留追溯材料，不是当前整改清单。当前只读 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md) 即可；旧报告标题中的“阻断 / P0 / 必须修”按后续用户裁决重新解释。
+
+| 用途 | 文档 / 证据 |
+|---|---|
+| 8c51672 主审 | [技术报告](REAUDIT_8c51672.md)、[JSON](reaudit_8c51672_evidence.json)、[probe](reaudit_8c51672_probe.txt) |
+| 独立存储复核 | [报告](INDEPENDENT_REAUDIT_8c51672.md)、[JSON](independent_8c51672_storage_evidence.json) |
+| 存储到命令的地址边界 | [JSON](ledger_trace_boundary_8c51672_evidence.json)、[probe](ledger_trace_boundary_8c51672_probe.txt) |
+| GQA / 能量 / 汇总专项 | [报告](MODEL_PROVENANCE_REAUDIT_8c51672.md)、[JSON](model_provenance_8c51672_probe.json) |
+| pipeline / flash 入口复核 | [报告](RUNTIME_CONFIGURATION_AUDIT.md)、[JSON](runtime_configuration_8c51672_evidence.json) |
+| 相对公平裁决与 AttAcc 来源 | [逐项记录](ATTACC_RELATIVE_FAIRNESS_REVIEW.md)、[原始源码摘录](ATTACC_UPSTREAM_REVIEW_EXCERPTS.md) |
+| 更早的审计 | [初审](REPORT.md)、[cdd89db 复审](REAUDIT_cdd89db.md)、[旧存储专项](STORAGE_SCAN_CONSISTENCY.md) |
+| 被替代的长篇修改建议 | [旧 README 快照](README_audit_fixes_history.md) |
+| 本次简明案例的数据摘取 | [current_case_facts.json](current_case_facts.json)、[整理脚本](organize_audit_20260905.txt) |
+| 本次文件移动和验证 | [cleanup_manifest.json](cleanup_manifest.json)、[验证脚本](validate_audit_cleanup.txt) |
+
+JSON、日志、历史 probe 的计算内容保持原样；Markdown 只修复移动后的链接并标为历史。旧 manifest 和脚本中写死的原目录保留为执行时点记录，路径迁移见 cleanup_manifest；不要把历史生成/验证脚本当作当前自动执行入口。后续若复现历史调用，需按映射恢复它们所引用的当时路径。所有当前 case 都能直接查看原 JSON，不需要先运行脚本。
+''')
+
+index=R/'docs/README.md'
+tail=index.read_text().split('## 运行指南',1)[1]
+index.write_text('''# Fugue（`chenyi-0905`）：文档索引
+
+**本轮 audit 只需看 [CURRENT_ISSUES.md](../audit/2026-09-05/CURRENT_ISSUES.md)。** 每个 case 都解释论文声明、实际行为、AttAcc 来源和相对影响；旧报告与证据已归档，不再作为并列的“最新报告”。[Audit 目录入口](../audit/2026-09-05/README.md)；[整理 session](sessions/2026-09-05-audit-docs-cleanup.md)。
+
+本仓库在原始 AttAcc 上实现 Fugue 的七档比较。当前口径接受共同模型限制，FlashAttention 必须启用，候选问题由用户逐项裁决；设计说明见下方，历次记录见 [session 索引](sessions/README.md)。
+
+## 运行指南'''+tail)
+(R/'docs/README_audit_fixes.md').write_text('''# Audit 修改建议入口
+
+**当前问题、具体 case 和修改方向统一放在 [CURRENT_ISSUES.md](../audit/2026-09-05/CURRENT_ISSUES.md)。** 这份入口不再维护另一套 P0/P1 清单，避免已修事项和后续接受的共同近似被反复当成必须修改。
+
+每个 case 均给出论文对应段落、AttAcc 是否建模、当前实现差异、影响哪些档、证据边界和需要用户决定的内容。FlashAttention 必须开启已确定；其余建议不是代码修复授权。
+
+A1/A2 的独立 baseline、A3b 起逐级机制、A5 的 prefill+MQ 机制包、A6 的简单逐 request 比价，以及共同 AttAcc energy/调度近似，继续按用户已确认口径理解。
+
+原来的长篇建议已归档为 [历史快照](../audit/2026-09-05/archive/README_audit_fixes_history.md)。需要追溯原始证据时看 [archive 索引](../audit/2026-09-05/archive/README.md)。
+''')
+for p in (R/'docs/README_run_guide.md',R/'docs/README_design_ladder.md'):
+    content=p.read_text()
+    content=re.sub(r'> \*\*审计状态[^\n]+',
+        '> **审计入口：** 本轮候选问题统一看 [CURRENT_ISSUES.md](../audit/2026-09-05/CURRENT_ISSUES.md)。其中逐项对照论文和 AttAcc，状态以用户裁决为准；本页介绍运行/机制，不另列必须修复清单。',content,count=1)
+    p.write_text(content)
+
+session=R/'docs/sessions/2026-09-05-audit-docs-cleanup.md'
+session.write_text('''# 2026-09-05：整理 audit 目录，按论文 case 写清当前事项
+
+## 用户要求与修改原因
+
+chenyi9 要求整理 `audit/2026-09-05`，去掉不必要的重复入口，明确这一轮的问题在哪个文档，写到不了解项目的人也能看懂，尤其说明具体 case 与论文 claim 的关系。
+
+之前同一日期目录混有多轮报告、后续纠正、模型专项、脚本和 JSON；读者可能把旧“必须修复”当成当前裁决。因此将当前说明合并成 `CURRENT_ISSUES.md`，其他报告和原始证据归档，不再并列多个“最新报告”。接受共同 AttAcc 限制和用户逐项裁决的口径未变。
+
+## 改动内容
+
+- audit 顶层保留 `README.md` 和 `CURRENT_ISSUES.md`；历史报告、JSON、日志和 probe 移到 `archive/`，删除可重新生成的 Python 字节码缓存。
+- 当前文档先解释 KV/master/diff、prefill/decode 和七档；每个 case 按“论文/用户定义→具体输入→预期和实际→AttAcc 是否已有→相对影响与待裁决内容”组织。GQA 失败、diff 地址、V 子段读取、A6 选边、A2 汇总和 A3b packing 均有具体例子；flash 启用单列为已明确要求。
+- 已修和共同限制从当前问题段移走，只留简短状态说明；没有用旧 P0/P1 标签替代用户裁决。
+- 数表由 `organize_audit_20260905.txt` 读取已有 JSON 生成 `current_case_facts.json`，没有新跑性能实验；设备桩/命令生成证据与硬件性能明确区分。
+- 修复移动后的 Markdown 链接；历史正文里的当时命令、manifest 路径及 probe 计算内容保留。路径变化及前后 hash 记录在 cleanup_manifest。
+- `docs/README.md` 统一指向当前文档；`docs/README_audit_fixes.md` 改为简短入口，旧长篇先保存到 archive；运行/设计指南更新审计入口。其余 docs/session 只更新受影响的链接。
+
+## 独立可读性检查与验证
+
+独立 agent `independent_fairness_audit` 只读核对论文与旧报告，建议按具体 claim 和 case 组织、解释首次出现的术语、避免把桩时间展示成硬件收益；其编辑建议已用于新稿。新稿另行交其复核。
+
+运行 `python3 /tmp/organize_audit_20260905.py` 执行可追溯移动、链接修复和证据提取；`python3 /tmp/validate_audit_cleanup.py` 验证原 JSON/日志/probe 字节不变、实现/测试/workload/已有运行结果未改、文档链接和表格数据一致。这里只整理文档，不新增代码修复或实验。
+
+当前实现仍是 `8c51672`，整理不改变之前的技术事实或用户裁决。最终入口：[CURRENT_ISSUES.md](../../audit/2026-09-05/CURRENT_ISSUES.md)；详细验证：[cleanup_manifest.json](../../audit/2026-09-05/archive/cleanup_manifest.json)。
+''')
+session_index=R/'docs/sessions/README.md'
+content=session_index.read_text()
+content=content.replace('|---|---|---|','|---|---|---|\n| 2026-09-05（审计目录整理） | [按论文 case 整理当前事项](2026-09-05-audit-docs-cleanup.md) | 当前问题统一到 CURRENT_ISSUES；历史证据归档、链接迁移、独立可读性核对 |',1)
+session_index.write_text(content)
+(H/'organize_audit_20260905.txt').write_bytes(Path(__file__).read_bytes())
+record={'head':head,'initial_tracked_sha256':initial,
+ 'moved_files':[{'old':str(old.relative_to(R)),'new':str(new.relative_to(R)),
+                'sha256_before':hashlib.sha256(original_bytes[old]).hexdigest(),
+                'sha256_after':sha(new),'markdown_links_relocated':new.suffix=='.md'} for old,new in mapping.items()],
+ 'removed_generated_cache':removed_cache,
+ 'old_fixes_sha256':hashlib.sha256(old_fixes.encode()).hexdigest(),
+ 'external_markdown_before_sha256':{str(p.relative_to(R)):hashlib.sha256(text.encode()).hexdigest() for p,text in external_original.items()},
+ 'paper_sha256':{str(P/name):sha(P/name) for name in ('04-design.tex','05-execution.tex','06-methodology.tex')},
+ 'existing_result_inventory':runtime['existing_result_inventory'],
+ 'scope':'Documentation organization and case explanation only; no source edits or new experiments.'}
+Path('/tmp/audit_cleanup_start.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'root_entries':sorted(p.name for p in A.iterdir()),'archived_files':len(mapping),'removed_regenerable_cache_files':len(removed_cache)},ensure_ascii=False))

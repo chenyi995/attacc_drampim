@@ -1,0 +1,85 @@
+"""Verify that this audit changed documentation/evidence only and record hashes."""
+from pathlib import Path
+import hashlib
+import json
+import re
+import subprocess
+
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A=R/'audit/2026-09-05'
+S=json.loads(Path('/tmp/reaudit_8c51672_start.json').read_text())
+def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+allowed={
+ 'audit/2026-09-05/REAUDIT_cdd89db.md',
+ 'audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md',
+ 'docs/README.md','docs/README_audit_fixes.md','docs/README_design_ladder.md',
+ 'docs/README_run_guide.md','docs/sessions/README.md'}
+changed=[p for p,h in S['source'].items() if not (R/p).exists() or sha(R/p)!=h]
+unexpected=[p for p in changed if p not in allowed]
+tracked=set(subprocess.check_output(['git','diff','HEAD','--name-only'],cwd=R,text=True).splitlines())
+check=subprocess.run(['git','diff','--check'],cwd=R,text=True,capture_output=True)
+manifest_path=A/'reaudit_8c51672_manifest.json'
+validation_archive=A/'reaudit_8c51672_validation.txt'
+validation_archive.write_bytes(Path(__file__).read_bytes())
+artifacts={p.relative_to(R).as_posix() for p in A.glob('*8c51672*') if p.is_file() and p!=manifest_path}
+artifacts.update(allowed)
+artifacts.add('docs/sessions/2026-09-05-8c51672-fix-verification.md')
+broken=[]
+invalid_lines=[]
+for rel in sorted(artifacts):
+ path=R/rel
+ if path.suffix!='.md': continue
+ for match in re.finditer(r'\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)\)',path.read_text()):
+  link=match.group(1).strip('<>')
+  if link.startswith(('#','http://','https://','mailto:','app://')): continue
+  link=link.split('#',1)[0]
+  line_match=re.search(r':(\d+)$',link)
+  plain=re.sub(r':\d+(?:-\d+)?$','',link)
+  target=Path(plain) if plain.startswith('/') else path.parent/plain
+  if not target.exists():
+   if target.resolve()!=manifest_path.resolve(): broken.append({'file':rel,'target':link})
+  elif line_match and target.is_file():
+   count=len(target.read_text(errors='replace').splitlines())
+   if int(line_match.group(1))>count: invalid_lines.append({'file':rel,'target':link,'line_count':count})
+
+P=json.loads((A/'reaudit_8c51672_evidence.json').read_text())
+assert all(d['status']=='ok' for d in P['fresh_by_gqa_and_rung']['1'].values())
+assert {r for r,d in P['fresh_by_gqa_and_rung']['4'].items() if d['status']=='error'}=={'A1','A3b','A4c','A4e','A5','A6'}
+plans=P['common_plan_and_owner_dependency']
+assert len({d['corrected_rows_sha'] for d in plans.values()})==1
+assert all(d['consumer_scans_have_owner_store_ancestor'] for d in plans.values())
+assert all(not plans[r]['prefill_q_links'] for r in ('A3b','A4c','A4e'))
+T=json.loads((A/'ledger_trace_boundary_8c51672_evidence.json').read_text())
+master,diff=T['diff_master_region']['first_command_decoded']
+assert master['row']==diff['row'] and master['column']==diff['column'] and master['channel']==diff['channel']
+assert master['pseudochannel']!=diff['pseudochannel']
+assert T['head_alias']['channel0_exact_duplicate']
+assert (A/'reaudit_8c51672_targeted_tests.log').read_text().rstrip().endswith('OK')
+assert sha(A/'reaudit_8c51672_probe.txt')==sha('/tmp/reaudit_8c51672_probe.py')
+assert sha(A/'reaudit_8c51672_document_generator.txt')==sha('/tmp/write_reaudit_8c51672_docs.py')
+assert sha(A/'model_provenance_8c51672_probe.txt')==sha('/tmp/model_provenance_8c51672_probe.py')
+validation={'head_unchanged':head==S['head'],'initial_tracked_paths_checked':len(S['source']),
+ 'changed_tracked_paths':changed,'unexpected_tracked_changes':unexpected,
+ 'git_diff_matches_allowed_documentation':tracked<=allowed,
+ 'git_diff_check_exit_code':check.returncode,'git_diff_check_output':check.stdout+check.stderr,
+ 'broken_local_markdown_links':broken,'invalid_source_line_references':invalid_lines,
+ 'probe_evidence_assertions_passed':True,
+ 'implementation_tests_workloads_and_existing_results_unchanged':not unexpected and tracked<=allowed,
+ 'hardware_timing_measured':False,
+ 'targeted_tests_log':'reaudit_8c51672_targeted_tests.log'}
+assert head==S['head'] and not unexpected and tracked<=allowed and check.returncode==0 and not broken and not invalid_lines, validation
+paper=Path('/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections')
+record={'date':'2026-09-05','head':head,'comparison_base':'cdd89db04a85edae029fd3151165f1a488d6139c',
+ 'attacc_base':'c600051','scope':'Audit only; current user rulings recorded in implementation session sections 12-13; per-request A6 accepted.',
+ 'initial_status':S['initial_status'],'initial_source_sha256':S['source'],
+ 'current_paper_working_tree_sha256':{str(p):sha(p) for p in sorted(paper.glob('*.tex'))},
+ 'artifacts_sha256':{p:sha(R/p) for p in sorted(artifacts)},
+ 'agents':['independent_fairness_audit','attacc_model_provenance','ledger_trace_boundary_audit'],
+ 'commands':[
+  'PYTHONDONTWRITEBYTECODE=1 KVPIM_CPPCORE=0 KVPIM_PREFILL_SIDE_LOG= python3 /tmp/reaudit_8c51672_probe.py',
+  'PYTHONDONTWRITEBYTECODE=1 KVPIM_CPPCORE=0 PYTHONPATH=.:tests python3 -m unittest test_placement.PhysicalLedgerTest test_workload.AgenticHistoryTests.test_every_layout_executes_the_same_correction_plan test_workload.AgenticHistoryTests.test_consumer_waits_for_the_owner_store_even_when_listed_first test_workload.AgenticHistoryTests.test_shifted_reuse_gets_query_variants_without_a_delta_field',
+  'python3 /tmp/write_reaudit_8c51672_docs.py','python3 /tmp/validate_reaudit_8c51672.py'],
+ 'validation':validation}
+manifest_path.write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps(validation,ensure_ascii=False,indent=2))

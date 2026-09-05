@@ -1,0 +1,63 @@
+"""Verify documentation-only reclassification and source/result immutability."""
+from pathlib import Path
+import hashlib
+import json
+import re
+import subprocess
+
+R = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A = R/'audit/2026-09-05'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+E = json.loads((A/'attacc_relative_fairness_review_evidence.json').read_text())
+run = json.loads((A/'runtime_configuration_8c51672_evidence.json').read_text())
+old = json.loads((A/'reaudit_8c51672_manifest.json').read_text())
+allowed = {'docs/README.md','docs/README_audit_fixes.md','docs/README_run_guide.md','docs/sessions/README.md'}
+head = subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+changed = [p for p,h in E['initial_tracked_sha256'].items() if not (R/p).is_file() or sha(R/p)!=h]
+unexpected = sorted(set(changed)-allowed)
+impl = [p for p,h in old['initial_source_sha256'].items() if not p.startswith(('docs/','audit/')) and (not (R/p).is_file() or sha(R/p)!=h)]
+results_unchanged = all(sha(R/x['path'])==x['sha256'] for x in run['existing_result_inventory'])
+archives = {'audit/2026-09-05/'+n for n in (
+    'ATTACC_RELATIVE_FAIRNESS_REVIEW.md','ATTACC_UPSTREAM_REVIEW_EXCERPTS.md',
+    'REAUDIT_8c51672.md','MODEL_PROVENANCE_REAUDIT_8c51672.md',
+    'INDEPENDENT_REAUDIT_8c51672.md','RUNTIME_CONFIGURATION_AUDIT.md',
+    'attacc_relative_fairness_review_generator.txt',
+    'attacc_relative_fairness_review_evidence.json',
+    'attacc_relative_fairness_review_validation.txt',
+)} | allowed | {'docs/sessions/2026-09-05-attacc-relative-fairness-ruling.md'}
+(A/'attacc_relative_fairness_review_validation.txt').write_bytes(Path(__file__).read_bytes())
+manifest_path = A/'attacc_relative_fairness_review_manifest.json'
+broken = []
+for rel in archives:
+    p = R/rel
+    if p.suffix!='.md': continue
+    for link in re.findall(r'\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)\)',p.read_text()):
+        link=link.strip('<>')
+        if link.startswith(('#','http://','https://','mailto:','app://')): continue
+        plain=re.sub(r':\d+$','',link.split('#',1)[0])
+        target=Path(plain) if plain.startswith('/') else p.parent/plain
+        if not target.exists() and target.resolve()!=manifest_path.resolve(): broken.append([rel,link])
+check = subprocess.run(['git','diff','--check'],cwd=R,text=True,capture_output=True)
+assert all(v['identical'] for v in E['unchanged_all_bank_semantics'].values())
+assert all(E['new_files_absent_upstream'].values())
+assert sha(A/'attacc_relative_fairness_review_generator.txt')==sha(Path('/tmp/attacc_relative_fairness_review.py'))
+for rel, info in E['upstream_files'].items():
+    data=subprocess.check_output(['git','show',E['upstream']+':'+rel],cwd=R)
+    assert hashlib.sha256(data).hexdigest()==info['sha256']
+validation = {'head_unchanged':head==E['head'],'tracked_files_checked':len(E['initial_tracked_sha256']),
+    'changed_tracked_documents_this_turn':changed,'unexpected_tracked_changes':unexpected,
+    'implementation_changes_since_original_audit_start':impl,
+    'historical_result_files_checked':len(run['existing_result_inventory']),
+    'historical_results_unchanged':results_unchanged,'broken_links':broken,
+    'git_diff_check_exit_code':check.returncode,'git_diff_check_output':check.stdout+check.stderr,
+    'upstream_hash_assertions_passed':True,'experiments_run':False}
+assert head==E['head'] and not unexpected and not impl and results_unchanged and not broken and check.returncode==0,validation
+record={'date':'2026-09-05','head':head,'upstream':E['upstream'],
+    'scope':'User ruling: accept shared AttAcc limitations; show provenance and relative differences for user adjudication; FlashAttention remains required.',
+    'independent_agent':'attacc_model_provenance',
+    'previous_manifests_sha256':{n:sha(A/n) for n in ('reaudit_8c51672_manifest.json','runtime_configuration_8c51672_manifest.json')},
+    'artifact_sha256':{p:sha(R/p) for p in sorted(archives)},
+    'commands':['python3 /tmp/attacc_relative_fairness_review.py','python3 /tmp/validate_attacc_relative_fairness_review.py'],
+    'validation':validation}
+manifest_path.write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps(validation,ensure_ascii=False,indent=2))

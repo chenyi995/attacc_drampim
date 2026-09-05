@@ -1,3 +1,5 @@
+> 历史记录：保留当时的技术证据和评价，当前待审事项统一看 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md)。
+
 # Fugue / AttAcc 独立审计：实现、消融公平性与 workload 偏差
 
 > **当前状态请看 [cdd89db 复审](REAUDIT_cdd89db.md) 和 [存储扫描专项](STORAGE_SCAN_CONSISTENCY.md)。** 本文是 `8750b5b` 的历史快照。A1 GPU prefill、fresh prefill 路由、fresh GPU context、A3b master channel slot、CLI `num_attacc` 已有修复，不应再按旧条目判未修。当前仍有零 diff master 15 倍读写差率、分档修正集合、store/scan 映射分离等问题。用户后续明确 A6 只需简单逐 request 选边，旧 F05 的候选 DAG 强制要求已撤回，仅保留估价对应性审查。旧 JSON/日志没有覆盖。
@@ -6,7 +8,7 @@
 
 后续代码修正：按用户确认的 AttAcc 计量口径，已删除 DIE 旋转/position-transform，并排除各档新增 DIE/TLB latency、energy 与资源排队。105 个测试通过。具体来源核查与仍未修复的 PIM 读写计价差异见 [补充报告](PIM_TIMING_PROVENANCE.md)。下文其余反例与 `evidence.json` 为初始审计快照。
 
-**口径更新（用户确认）：A1/A2 是独立 baseline，不要求它们之间或到 A3b 为单变量；从 A3b 起按 claim 增量。A5 的 PIM prefill + MQ 组合可以接受，自行构造合理的 baseline/workload 展示收益也可以接受。具体修改按 [修改建议 README](../../docs/README_audit_fixes.md) 执行。** 下文保留代码证据；不能把上述已接受的实验设计本身当作违规。
+**口径更新（用户确认）：A1/A2 是独立 baseline，不要求它们之间或到 A3b 为单变量；从 A3b 起按 claim 增量。A5 的 PIM prefill + MQ 组合可以接受，自行构造合理的 baseline/workload 展示收益也可以接受。具体修改按 [修改建议 README](../../../docs/README_audit_fixes.md) 执行。** 下文保留代码证据；不能把上述已接受的实验设计本身当作违规。
 
 **修订后的审稿结论：当前 A3b 起的部分实现仍有超出 claim 的差异，以及不符合各档定义的执行错误，需要修正模型后重跑。** 包括基线执行设备错误、输入重算集合随档位变化、非持久物理布局、缺失数据依赖等可复现问题。此判断针对实现与证据有效性，不否定已确认的七档设计，也不等于证明 Fugue 的设计没有收益。
 
@@ -260,4 +262,4 @@ MultiHop-RAG 的极短答案确实可能是任务特性，不能为放大 PIM de
 5. **冻结输入与平台。** 当前论文 C32 基线、C16/C64 邻点都要提供原文件；保留不利的单通道/head 点。合成 workload 明确标为机制实验，覆盖错位/不整齐长度/低共享/多轮 diff 与 arrivals；真实 trace 报原始分布、采样方法、tokenizer、history、输出长度。原生结果与合成敏感性结果分开。
 6. **重新生成结果。** 清洁构建并绑定 source/build/cache hash，所有运行验证相同平台参数，缺档/混版本即失败；输出逐请求 arrival/TTFT、逐 token decode latency、定义明确的加权汇总、PIM 请求比例与行比例、峰值实际 KV bytes、命令计数及闭合 energy breakdown，再重跑论文矩阵。
 
-在修复结构错误和超出 claim 的差异之前，当前性能评估仍需要修改和重跑。合成机制展示可以作为本阶段正式目标；按 [修改建议 README](../../docs/README_audit_fixes.md) 落地，不要求先证明生产流量代表性，也不要求重新拆分已确认的档位。
+在修复结构错误和超出 claim 的差异之前，当前性能评估仍需要修改和重跑。合成机制展示可以作为本阶段正式目标；按 [修改建议 README](../../../docs/README_audit_fixes.md) 落地，不要求先证明生产流量代表性，也不要求重新拆分已确认的档位。

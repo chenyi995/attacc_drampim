@@ -1,0 +1,778 @@
+{
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "method": "PhysicalLedger helper and Attention command construction; mapper bit slicing reimplemented directly from source; no Ramulator execution/timing/numerical result",
+  "subsets": {
+    "full": {
+      "extents": [
+        [
+          0,
+          8388608,
+          256
+        ]
+      ],
+      "score": [
+        [
+          0,
+          32
+        ],
+        [
+          64,
+          96
+        ],
+        [
+          128,
+          160
+        ],
+        [
+          192,
+          224
+        ],
+        [
+          256,
+          288
+        ],
+        [
+          320,
+          352
+        ],
+        [
+          384,
+          416
+        ],
+        [
+          448,
+          480
+        ],
+        [
+          512,
+          544
+        ],
+        [
+          576,
+          608
+        ],
+        [
+          640,
+          672
+        ],
+        [
+          704,
+          736
+        ],
+        [
+          768,
+          800
+        ],
+        [
+          832,
+          864
+        ],
+        [
+          896,
+          928
+        ],
+        [
+          960,
+          992
+        ]
+      ],
+      "context": [
+        [
+          8388608,
+          8388640,
+          8388672,
+          8388704,
+          8388736,
+          8388768,
+          8388800,
+          8388832,
+          8388864,
+          8388896,
+          8388928,
+          8388960,
+          8388992,
+          8389024,
+          8389056,
+          8389088
+        ],
+        [
+          8389120,
+          8389152,
+          8389184,
+          8389216,
+          8389248,
+          8389280,
+          8389312,
+          8389344,
+          8389376,
+          8389408,
+          8389440,
+          8389472,
+          8389504,
+          8389536,
+          8389568,
+          8389600
+        ]
+      ],
+      "score_decoded": [
+        [
+          {
+            "column": 0,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 1,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 2,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 3,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 4,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 5,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 6,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 7,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 8,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 9,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 10,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 11,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 12,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 13,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 14,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 15,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 16,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 17,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 18,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 19,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 20,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 21,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 22,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 23,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 24,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 25,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 26,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 27,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 28,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 29,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ],
+        [
+          {
+            "column": 30,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 31,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ]
+      ]
+    },
+    "first16": {
+      "extents": [
+        [
+          0,
+          8388608,
+          16
+        ]
+      ],
+      "score": [
+        [
+          0,
+          32
+        ]
+      ],
+      "context": [
+        [
+          8388608
+        ],
+        [
+          8388640
+        ]
+      ],
+      "score_decoded": [
+        [
+          {
+            "column": 0,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 1,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ]
+      ]
+    },
+    "token0": {
+      "extents": [
+        [
+          0,
+          8388608,
+          1
+        ]
+      ],
+      "score": [
+        [
+          0,
+          32
+        ]
+      ],
+      "context": [
+        [
+          8388608
+        ],
+        [
+          8388640
+        ]
+      ],
+      "score_decoded": [
+        [
+          {
+            "column": 0,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 1,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ]
+      ]
+    },
+    "token1": {
+      "extents": [
+        [
+          4,
+          8388612,
+          1
+        ]
+      ],
+      "score": [
+        [
+          4,
+          36
+        ]
+      ],
+      "context": [
+        [
+          8388612
+        ],
+        [
+          8388644
+        ]
+      ],
+      "score_decoded": [
+        [
+          {
+            "column": 0,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 1,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ]
+      ]
+    },
+    "last4": {
+      "extents": [
+        [
+          1008,
+          8389616,
+          4
+        ]
+      ],
+      "score": [
+        [
+          1008,
+          1040
+        ]
+      ],
+      "context": [
+        [
+          8389616
+        ],
+        [
+          8389648
+        ]
+      ],
+      "score_decoded": [
+        [
+          {
+            "column": 31,
+            "row": 0,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          },
+          {
+            "column": 0,
+            "row": 1,
+            "bank": 0,
+            "bankgroup": 0,
+            "rank": 0,
+            "pseudochannel": 0,
+            "channel": 0
+          }
+        ]
+      ]
+    }
+  },
+  "diff_master_region": {
+    "groups": [
+      [
+        15,
+        1,
+        [
+          [
+            16106127360,
+            16114515968,
+            256
+          ],
+          [
+            16642998272,
+            16651386880,
+            8
+          ]
+        ]
+      ]
+    ],
+    "first_command_decoded": [
+      {
+        "column": 0,
+        "row": 0,
+        "bank": 0,
+        "bankgroup": 0,
+        "rank": 0,
+        "pseudochannel": 0,
+        "channel": 15
+      },
+      {
+        "column": 0,
+        "row": 0,
+        "bank": 0,
+        "bankgroup": 0,
+        "rank": 0,
+        "pseudochannel": 1,
+        "channel": 15
+      }
+    ],
+    "score": [
+      [
+        16106127360,
+        16106127392
+      ],
+      [
+        16106127424,
+        16106127456
+      ],
+      [
+        16106127488,
+        16106127520
+      ],
+      [
+        16106127552,
+        16106127584
+      ],
+      [
+        16106127616,
+        16106127648
+      ],
+      [
+        16106127680,
+        16106127712
+      ],
+      [
+        16106127744,
+        16106127776
+      ],
+      [
+        16106127808,
+        16106127840
+      ],
+      [
+        16106127872,
+        16106127904
+      ],
+      [
+        16106127936,
+        16106127968
+      ],
+      [
+        16106128000,
+        16106128032
+      ],
+      [
+        16106128064,
+        16106128096
+      ],
+      [
+        16106128128,
+        16106128160
+      ],
+      [
+        16106128192,
+        16106128224
+      ],
+      [
+        16106128256,
+        16106128288
+      ],
+      [
+        16106128320,
+        16106128352
+      ],
+      [
+        16642998272,
+        16642998304
+      ]
+    ]
+  },
+  "packed_row_boundary": {
+    "token_count": 256,
+    "first_extent": [
+      16642998272,
+      16651386880,
+      8
+    ],
+    "last_extent": [
+      16642999264,
+      16651387872,
+      8
+    ],
+    "ledger_rows": [
+      0
+    ],
+    "trace_score_rows": [
+      0,
+      1
+    ],
+    "trace_last_score_steps": [
+      [
+        16642999232,
+        16642999264
+      ],
+      [
+        16642999264,
+        16642999296
+      ]
+    ]
+  },
+  "head_alias": {
+    "head_count": 32,
+    "channel_count": 16,
+    "channel0_extents": [
+      [
+        0,
+        8388608,
+        256
+      ],
+      [
+        0,
+        8388608,
+        256
+      ]
+    ],
+    "channel0_exact_duplicate": true
+  }
+}

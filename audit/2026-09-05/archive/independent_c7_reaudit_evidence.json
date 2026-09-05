@@ -1,0 +1,1078 @@
+{
+  "revision": "8c51672",
+  "scope": "reservation and allocator geometry, no PIM/Ramulator execution",
+  "producer_segments": [
+    [
+      "D",
+      256
+    ],
+    [
+      "E",
+      256
+    ]
+  ],
+  "cases": {
+    "same_fingerprint_separated": {
+      "consumer_segments": [
+        [
+          "prefix",
+          8
+        ],
+        [
+          "D",
+          256
+        ],
+        [
+          "middle",
+          256
+        ],
+        [
+          "D",
+          256
+        ]
+      ],
+      "consumer_reservation_call_groups": [
+        {
+          "fingerprint": "prefix",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 7,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "D",
+          "kind": "diff",
+          "first_row": 8,
+          "last_row": 15,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "middle",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 255,
+          "tokens": 256
+        },
+        {
+          "fingerprint": "D",
+          "kind": "diff",
+          "first_row": 520,
+          "last_row": 527,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "b::output",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 0,
+          "tokens": 1
+        }
+      ],
+      "consumer_dictionary_key_order": [
+        [
+          0,
+          "b",
+          "prefix",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "D",
+          "diff"
+        ],
+        [
+          0,
+          "b",
+          "middle",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "b::output",
+          "master"
+        ]
+      ],
+      "diff_token_count": 16,
+      "distinct_diff_object_count": 1,
+      "diff_mappings": [
+        {
+          "logical_position": 8,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 0,
+          "channel_head0": 3,
+          "within_channel_K_offset": 0
+        },
+        {
+          "logical_position": 9,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 1,
+          "channel_head0": 3,
+          "within_channel_K_offset": 4
+        },
+        {
+          "logical_position": 10,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 2,
+          "channel_head0": 3,
+          "within_channel_K_offset": 8
+        },
+        {
+          "logical_position": 11,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 3,
+          "channel_head0": 3,
+          "within_channel_K_offset": 12
+        },
+        {
+          "logical_position": 12,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 4,
+          "channel_head0": 3,
+          "within_channel_K_offset": 16
+        },
+        {
+          "logical_position": 13,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 5,
+          "channel_head0": 3,
+          "within_channel_K_offset": 20
+        },
+        {
+          "logical_position": 14,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 6,
+          "channel_head0": 3,
+          "within_channel_K_offset": 24
+        },
+        {
+          "logical_position": 15,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 7,
+          "channel_head0": 3,
+          "within_channel_K_offset": 28
+        },
+        {
+          "logical_position": 520,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 8,
+          "channel_head0": 3,
+          "within_channel_K_offset": 32
+        },
+        {
+          "logical_position": 521,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 9,
+          "channel_head0": 3,
+          "within_channel_K_offset": 36
+        },
+        {
+          "logical_position": 522,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 10,
+          "channel_head0": 3,
+          "within_channel_K_offset": 40
+        },
+        {
+          "logical_position": 523,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 11,
+          "channel_head0": 3,
+          "within_channel_K_offset": 44
+        },
+        {
+          "logical_position": 524,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 12,
+          "channel_head0": 3,
+          "within_channel_K_offset": 48
+        },
+        {
+          "logical_position": 525,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 13,
+          "channel_head0": 3,
+          "within_channel_K_offset": 52
+        },
+        {
+          "logical_position": 526,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 14,
+          "channel_head0": 3,
+          "within_channel_K_offset": 56
+        },
+        {
+          "logical_position": 527,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 15,
+          "channel_head0": 3,
+          "within_channel_K_offset": 60
+        }
+      ],
+      "own_objects": [
+        {
+          "fingerprint": "prefix",
+          "channel_head0": 2,
+          "within_channel_K_offset": 0,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "middle",
+          "channel_head0": 3,
+          "within_channel_K_offset": 1024,
+          "tokens": 256
+        },
+        {
+          "fingerprint": "b::output",
+          "channel_head0": 1,
+          "within_channel_K_offset": 1024,
+          "tokens": 1
+        }
+      ],
+      "both_diff_groups_scan_head0": [
+        [
+          3,
+          1,
+          [
+            [
+              3221225472,
+              3229614080,
+              16
+            ]
+          ]
+        ]
+      ],
+      "first_diff_group_scan_head0": [
+        [
+          3,
+          1,
+          [
+            [
+              3221225472,
+              3229614080,
+              8
+            ]
+          ]
+        ]
+      ],
+      "second_diff_group_scan_head0": [
+        [
+          3,
+          1,
+          [
+            [
+              3221225504,
+              3229614112,
+              8
+            ]
+          ]
+        ]
+      ]
+    },
+    "different_fingerprint_separated": {
+      "consumer_segments": [
+        [
+          "prefix",
+          8
+        ],
+        [
+          "D",
+          256
+        ],
+        [
+          "middle",
+          256
+        ],
+        [
+          "E",
+          256
+        ]
+      ],
+      "consumer_reservation_call_groups": [
+        {
+          "fingerprint": "prefix",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 7,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "D",
+          "kind": "diff",
+          "first_row": 8,
+          "last_row": 15,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "middle",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 255,
+          "tokens": 256
+        },
+        {
+          "fingerprint": "E",
+          "kind": "diff",
+          "first_row": 520,
+          "last_row": 527,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "b::output",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 0,
+          "tokens": 1
+        }
+      ],
+      "consumer_dictionary_key_order": [
+        [
+          0,
+          "b",
+          "prefix",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "D",
+          "diff"
+        ],
+        [
+          0,
+          "b",
+          "middle",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "E",
+          "diff"
+        ],
+        [
+          0,
+          "b",
+          "b::output",
+          "master"
+        ]
+      ],
+      "diff_token_count": 16,
+      "distinct_diff_object_count": 2,
+      "diff_mappings": [
+        {
+          "logical_position": 8,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 0,
+          "channel_head0": 3,
+          "within_channel_K_offset": 0
+        },
+        {
+          "logical_position": 9,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 1,
+          "channel_head0": 3,
+          "within_channel_K_offset": 4
+        },
+        {
+          "logical_position": 10,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 2,
+          "channel_head0": 3,
+          "within_channel_K_offset": 8
+        },
+        {
+          "logical_position": 11,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 3,
+          "channel_head0": 3,
+          "within_channel_K_offset": 12
+        },
+        {
+          "logical_position": 12,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 4,
+          "channel_head0": 3,
+          "within_channel_K_offset": 16
+        },
+        {
+          "logical_position": 13,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 5,
+          "channel_head0": 3,
+          "within_channel_K_offset": 20
+        },
+        {
+          "logical_position": 14,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 6,
+          "channel_head0": 3,
+          "within_channel_K_offset": 24
+        },
+        {
+          "logical_position": 15,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 7,
+          "channel_head0": 3,
+          "within_channel_K_offset": 28
+        },
+        {
+          "logical_position": 520,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 0,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1024
+        },
+        {
+          "logical_position": 521,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 1,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1028
+        },
+        {
+          "logical_position": 522,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 2,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1032
+        },
+        {
+          "logical_position": 523,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 3,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1036
+        },
+        {
+          "logical_position": 524,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 4,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1040
+        },
+        {
+          "logical_position": 525,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 5,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1044
+        },
+        {
+          "logical_position": 526,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 6,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1048
+        },
+        {
+          "logical_position": 527,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            6
+          ],
+          "ordinal": 7,
+          "channel_head0": 1,
+          "within_channel_K_offset": 1052
+        }
+      ],
+      "own_objects": [
+        {
+          "fingerprint": "prefix",
+          "channel_head0": 2,
+          "within_channel_K_offset": 0,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "middle",
+          "channel_head0": 3,
+          "within_channel_K_offset": 1024,
+          "tokens": 256
+        },
+        {
+          "fingerprint": "b::output",
+          "channel_head0": 1,
+          "within_channel_K_offset": 2048,
+          "tokens": 1
+        }
+      ],
+      "both_diff_groups_scan_head0": [
+        [
+          1,
+          1,
+          [
+            [
+              1073742848,
+              1082131456,
+              8
+            ]
+          ]
+        ],
+        [
+          3,
+          1,
+          [
+            [
+              3221225472,
+              3229614080,
+              8
+            ]
+          ]
+        ]
+      ],
+      "first_diff_group_scan_head0": [
+        [
+          3,
+          1,
+          [
+            [
+              3221225472,
+              3229614080,
+              8
+            ]
+          ]
+        ]
+      ],
+      "second_diff_group_scan_head0": [
+        [
+          1,
+          1,
+          [
+            [
+              1073742848,
+              1082131456,
+              8
+            ]
+          ]
+        ]
+      ]
+    },
+    "different_fingerprint_adjacent": {
+      "consumer_segments": [
+        [
+          "prefix",
+          8
+        ],
+        [
+          "D",
+          256
+        ],
+        [
+          "E",
+          256
+        ]
+      ],
+      "consumer_reservation_call_groups": [
+        {
+          "fingerprint": "prefix",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 7,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "D",
+          "kind": "diff",
+          "first_row": 8,
+          "last_row": 15,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "E",
+          "kind": "diff",
+          "first_row": 264,
+          "last_row": 271,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "b::output",
+          "kind": "master",
+          "first_row": 0,
+          "last_row": 0,
+          "tokens": 1
+        }
+      ],
+      "consumer_dictionary_key_order": [
+        [
+          0,
+          "b",
+          "prefix",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "D",
+          "diff"
+        ],
+        [
+          0,
+          "b",
+          "E",
+          "diff"
+        ],
+        [
+          0,
+          "b",
+          "b::output",
+          "master"
+        ]
+      ],
+      "diff_token_count": 16,
+      "distinct_diff_object_count": 1,
+      "diff_mappings": [
+        {
+          "logical_position": 8,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 0,
+          "channel_head0": 3,
+          "within_channel_K_offset": 0
+        },
+        {
+          "logical_position": 9,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 1,
+          "channel_head0": 3,
+          "within_channel_K_offset": 4
+        },
+        {
+          "logical_position": 10,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 2,
+          "channel_head0": 3,
+          "within_channel_K_offset": 8
+        },
+        {
+          "logical_position": 11,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 3,
+          "channel_head0": 3,
+          "within_channel_K_offset": 12
+        },
+        {
+          "logical_position": 12,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 4,
+          "channel_head0": 3,
+          "within_channel_K_offset": 16
+        },
+        {
+          "logical_position": 13,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 5,
+          "channel_head0": 3,
+          "within_channel_K_offset": 20
+        },
+        {
+          "logical_position": 14,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 6,
+          "channel_head0": 3,
+          "within_channel_K_offset": 24
+        },
+        {
+          "logical_position": 15,
+          "fingerprint": "D",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 7,
+          "channel_head0": 3,
+          "within_channel_K_offset": 28
+        },
+        {
+          "logical_position": 264,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 8,
+          "channel_head0": 3,
+          "within_channel_K_offset": 32
+        },
+        {
+          "logical_position": 265,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 9,
+          "channel_head0": 3,
+          "within_channel_K_offset": 36
+        },
+        {
+          "logical_position": 266,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 10,
+          "channel_head0": 3,
+          "within_channel_K_offset": 40
+        },
+        {
+          "logical_position": 267,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 11,
+          "channel_head0": 3,
+          "within_channel_K_offset": 44
+        },
+        {
+          "logical_position": 268,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 12,
+          "channel_head0": 3,
+          "within_channel_K_offset": 48
+        },
+        {
+          "logical_position": 269,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 13,
+          "channel_head0": 3,
+          "within_channel_K_offset": 52
+        },
+        {
+          "logical_position": 270,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 14,
+          "channel_head0": 3,
+          "within_channel_K_offset": 56
+        },
+        {
+          "logical_position": 271,
+          "fingerprint": "E",
+          "object_id": [
+            0,
+            "b",
+            "burst",
+            4
+          ],
+          "ordinal": 15,
+          "channel_head0": 3,
+          "within_channel_K_offset": 60
+        }
+      ],
+      "own_objects": [
+        {
+          "fingerprint": "prefix",
+          "channel_head0": 2,
+          "within_channel_K_offset": 0,
+          "tokens": 8
+        },
+        {
+          "fingerprint": "b::output",
+          "channel_head0": 0,
+          "within_channel_K_offset": 1024,
+          "tokens": 1
+        }
+      ],
+      "both_diff_groups_scan_head0": [
+        [
+          3,
+          1,
+          [
+            [
+              3221225472,
+              3229614080,
+              16
+            ]
+          ]
+        ]
+      ],
+      "first_diff_group_scan_head0": [
+        [
+          3,
+          1,
+          [
+            [
+              3221225472,
+              3229614080,
+              8
+            ]
+          ]
+        ]
+      ],
+      "second_diff_group_scan_head0": [
+        [
+          3,
+          1,
+          [
+            [
+              3221225504,
+              3229614112,
+              8
+            ]
+          ]
+        ]
+      ]
+    }
+  }
+}

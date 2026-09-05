@@ -1,0 +1,98 @@
+"""Apply latest round-boundary ruling; all reported counts come from saved evidence."""
+from pathlib import Path
+import json
+import shutil
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822'); A=R/'audit/2026-09-05'; H=A/'archive'
+J=json.loads(Path('/tmp/independent_c7_round_boundary_evidence.json').read_text())
+for src,dst in [('independent_c7_round_boundary_evidence.json','independent_round_boundary_evidence.json'),
+                ('independent_c7_round_boundary_probe.py','independent_round_boundary_probe.txt')]:
+    shutil.copyfile(Path('/tmp')/src,H/dst)
+path=A/'CURRENT_ISSUES.md'; s=path.read_text()
+s=s.replace('C4/C7 重新审计后仍区分事实与待定的 baseline 定义。','C7 的同轮/跨轮边界已确定，同轮合并不再列为问题；仍待过目的是 C4 和新整理的 C8 多轮覆盖。')
+s=s.replace('| [C6](#c6) 报表 | 更新 | A2 纳入 tier 汇总，相关时间列使用对应指标的起止范围 |', '| [C6](#c6) 报表 | 更新 | A2 纳入 tier 汇总，相关时间列使用对应指标的起止范围 |\n| [C7](#c7) A3b 轮次边界 | 同一 round 的多组 diff 可正常追加紧排；跨轮有输出/新写入后不能重新并成同批 | 撤回单 prefill 合并的违规判断；真实跨轮存储覆盖另见 C8 |')
+s=s.replace('**仍未裁决：C4 的共同子段地址近似、C7 的 A3b 同批分组定义。** 两项已重新审计，见各自 case。','**还需过目：C4 的共同子段地址近似、C8 的多轮 workload 是否覆盖旧 diff 的持久布局。** C7 定义已由用户明确，不再问是否允许同轮合并。')
+s=s.replace('| [C7](#c7) | 同一 prefill 内按文档分组，会把逻辑上隔开的修正紧排 | A3b baseline 与 A4c 集中修正的界线 | 已重审；是否允许同批预分组待定 |', '| [C7](#c7) | 同轮可合并，跨轮输出/写入后须保留分隔 | A3b baseline 与 A4c 跨轮聚合的界线 | 定义已裁决；撤回原同轮反例 |\n| [C8](#c8) | 当前多轮输入未沿用前一轮 diff 的物理布局 | A3b→A4c 的跨轮收益覆盖 | 新证据待过目；未测总体偏差 |')
+s=s.replace('同一 consumer 内静态展开八段修正，真实 planner/ledger 中两档 master 通道相同', '同一 consumer 的单次 prefill 中静态展开八段修正，真实 planner/ledger 中两档 master 通道相同')
+s=s.replace('支持高层聚合机制；未测到 ACT 从 16 降为 9。', '支持给定分配规则的高层几何；单次 prefill 不能证明跨轮行为（C8），也未测到 ACT 从 16 降为 9。')
+s=s.replace('此次是一个 request 的静态展开，未回放八个服务回合的生命周期。', '按最新 round 裁决，此次是一个 request 的静态展开，只能核对分配几何，不能当成八个真实服务回合的验证；同轮紧排本身允许，跨轮证据另见 C8。')
+# Incorporate independent formula review: TP-local heads, sweep/query distinction, exact flash link model.
+s=s.replace('每个 request 比较一次以下 attention 服务时间，相等选 PIM。', '当前实现对每个 request 在首次选边的那一层比较以下 attention 服务时间，后续层沿用该选择，相等选 PIM。')
+s=s.replace('Link(B > 0) = 使用现有同一链路模型估算 B 字节的时间', 'Link(B > 0) = τ_link + max(B / BW_link, B / BW_far_HBM)\n             （当前 flash X2G 模型；参数直接使用共同设备配置）')
+s=s.replace('| H_KV、H_Q | 当前 GPU/stack 分片内的 KV heads 和 Q heads；d_head 是每 head 维度 |', '| H_KV、H_Q | 一个 GPU 的 TP 分片负责的全部本地 KV/Q heads，覆盖其全部 HBM；d_head 是每 head 维度，不能再除 stack 数 |')
+s=s.replace('与真实 PIM 分支相同的各通道 extents、MQ 参数及实际 query 数；各 sweep 内并行通道取 max，sweep 之间求和', '与真实 PIM 分支相同的通道完整 extents、MQ 参数及实际驻留 query 数；每通道含完整 QK+softmax+PV，通道间取 max，sweep 间求和')
+s=s.replace('按现有缓冲容量、batch 限制和 GQA 分组划分 query sweep，尾批用实际数量', '每 sweep 计算 q_s 个 token；`op.m=q_s`，驻留 query 数 `queries_s=q_s×gqa_size`；按缓冲/batch 限制分组，尾批用实际数量')
+s=s.replace('实际 PIM 扫描区间可能还含被遮罩 master 行等数据', '链路式直接对应 [flash X2G 计价](../../src/devices.py:379)：τ_link 为现有启动时间，BW_link 为当前 `pim_link_bandwidth/2`，BW_far_HBM 为 `far_hbm_bandwidth`。不重新拟合参数；没有传输时不创建空操作。独立 agent 已复核 TP/GQA 宽度、query 数和完整 attention 命令范围。\n\n实际 PIM 扫描区间可能还含被遮罩 master 行等数据')
+start=s.index('## C7：'); end=s.index('## 其他边界：',start)
+two=J['public_two_rounds']; h=two['A3b']['second_round_history']; b=J['existing_B0_JSON_readonly_summary']
+round_rows=[]
+for rid in ('A_t0','A_t1'):
+    d=two['A3b'][rid]
+    round_rows.append(f"| `{rid}` | {len(d['D_diff_positions'])} | `{d['D_diff_object_ids'][0][1]}` |")
+form_rows=[]
+for name in ('interleaved','turns'):
+    d=b[name]
+    form_rows.append(f"| `{name}` | {d['declared_rounds']} | {d['worker_w00_requests']} | {d['worker_w00_total_decode_tokens']:,} |")
+c7=f'''## C7：同一 round 可以紧排；跨轮须保留输出/新写入的分隔
+
+**chenyi9 已明确裁决。** 同一 round 有多组修正 diff，A3b 可以按自己的排列方法正常追加、紧凑存放。多轮之间已有输出或其他新 KV 写入时，A3b 不得把两轮修正重新当成同一批聚合；这正是 A4c 跨轮 diff 区要解决的不足。不能为了让 A4c 显得更快，强行把同轮每组 diff 都拆成独占行。
+
+**撤回旧反例。** `前缀 → D → own → D` 的旧控制只有一个 request、一次 prefill。预约表按 fingerprint 聚合、ledger 将两组修正紧排，确实发生；但该轮内的 QKV/写入是整批提交，`own` 在上下文中出现，不等于发生了“前一轮已输出、下一轮再写”的时间边界。因此它不能证明 A3b 违反跨轮规则，原“是否允许同批分组”的待定项撤回。
+
+**重新核对公开的两轮输入。** 独立 agent 经 `load_workload` 载入两个不同 request，以 parent/parent_out 和 history_len 表达前后关系；两轮复用同一 D，结果如下：
+
+| 轮次 request | D 的修正 token 数 | A3b diff 对象的 owner |
+|---|---:|---|
+{chr(10).join(round_rows)}
+
+两个 owner 对应两个独立 burst/extent，A3b 没有将其折成同一个修正对象。公开 loader 拒绝重复 request_id，因此手工把相同 owner 的两轮预约塞进一个字典，再观察合并，不能当成这个公开输入的反例。证据：[两轮公开输入与 helper 边界](archive/independent_round_boundary_evidence.json)。
+
+**AttAcc 来源与当前判断。** 原始没有这类多轮共享 KV baseline；按用户定义审核新增逻辑即可。本轮没有发现上述公开两 request 路径跨轮合并 diff，C7 的同轮指控关闭。这里证明的是对象未合并，尚未证明后续扫描继承所有旧物理位置；后者是下面 C8 的实际覆盖问题。
+
+<a id="c8"></a>
+
+## C8：多轮 workload 没有完整保留“旧 diff 散落、以后继续扫描”的布局
+
+**与论文声明的关系。** [A3b/A4c 定义](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/06-methodology.tex:75>)、[per-agent 跨轮修正](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/04-design.tex:85>) 和用户最新裁决都依赖一件事：旧轮的 diff 仍以原布局存在，以后的 request 会继续扫描它。这样才能呈现 A3b 的跨轮分散与 A4c 的集中存放之差。
+
+**Case A：interleaved 是布局代理，不是逐轮执行。** [gen_sweep](../../workload/probe/gen_sweep.py:95) 把多个 round 的 doc/own 段放进一个 request；[gen_multiround](../../workload/probe/gen_multiround.py:68) 也采用这种展开，且标为 `NOT evidence-grade`。它能作为预设多轮末态的静态布局控制，但不能仅凭段落交错就证明执行发生了多轮输出和再次 prefill。两个现有 B0 JSON 的只读摘要是：
+
+| 编码 | meta 声明 round 数 | worker w00 的 request 数 | w00 总 decode token 数 |
+|---|---:|---:|---:|
+{chr(10).join(form_rows)}
+
+两种编码的执行工作量也不同，不能把它们的 E2E 差异直接解释为只改了 diff 布局。此表没有运行这些 workload，也没有声称七档在同一编码内用了不同输入。
+
+**Case B：turns 有逐 request 边界，但 history 把旧布局抽象掉了。** [turns 生成器](../../workload/probe/gen_sweep.py:104) 将每轮的旧 prefill 行数累计进 history_len。当前 [_history_tlb_rows](../../src/workload_runner.py:3250) 为新 request 找的是 `新request::history` 的 master 占位，并不回指旧 request 的 master/diff 对象。真实两轮小输入中，第二轮 history 的 {h['binding_count']} 条 binding 全部是新 owner `A_t1` 的 master；前一轮 diff 出现在第二轮 bindings 中的数量是 {h['earlier_round_diff_in_second_round_bindings']}。A3b 和 A4c 得到相同的这种抽象。
+
+这不是发现第二轮没有计算历史 attention，而是历史长度被计入、历史原有的碎片位置没有保留。旧 diff 的额外散落行因此没有作为旧 diff 再次进入后续扫描。该路径不能证明论文所说的完整跨轮布局收益；也不能靠同轮的聚合例子补上这份证据。
+
+**AttAcc 本身有没有。** 原始没有当前跨 request 的软件 KV 复用和旧 diff 持久布局；history_len 是新增共同抽象。共同近似按用户口径可接受，所以这不是自动要求重做调度/执行器。需要单独过目，是因为这个抽象恰好不保留 A3b→A4c 所声称的一个收益来源。
+
+**需要判断什么。** 是否接受当前输入仅支持静态布局/历史长度的比较；还是要求用于跨轮 claim 的验证保留旧 master/diff 引用和中间输出的物理追加关系。后者属于跨轮覆盖补齐，不能通过惩罚同轮 A3b 来制造收益。本轮先记录，不实施修复。当前能确认跨轮收益来源未完整呈现，不能据此确定正式总体加速一定高估或低估。
+
+证据：[两轮 binding 与 B0 JSON 摘要](archive/independent_round_boundary_evidence.json)、[独立 probe](archive/independent_round_boundary_probe.txt)。只调用公开 loader、reuse plan、allocator/bindings 并读取 JSON，没有运行 Ramulator 或性能实验。
+
+'''
+s=s[:start]+c7+s[end:]
+s=s.replace('已确定的修复与 C4/C7 待定定义分别跟踪。','已确定的修复与 C4/C8 待过目项分别跟踪，C7 同轮合并不再算问题。')
+path.write_text(s)
+for path in (A/'README.md',R/'docs/README_audit_fixes.md'):
+    s=path.read_text().replace('C4/C7 复审后待定','C7 同轮/跨轮边界已定；C4 与 C8 多轮覆盖待过目')
+    path.write_text(s)
+path=H/'README.md'
+s=path.read_text().replace('| 最新裁决后的 C4/C7 复审 |','| round 边界裁决与多轮覆盖 | [两轮证据及 B0 摘要](independent_round_boundary_evidence.json)、[独立 probe](independent_round_boundary_probe.txt) |\n| 最新裁决后的 C4/C7 复审 |')
+path.write_text(s)
+path=R/'docs/sessions/2026-09-05-rulings-and-pending-reaudit.md';s=path.read_text()
+s=s.replace('记录裁决，重新审计 C4/C7，并给出 C5 估算式','记录裁决，重新审计 C4/C7/C8，并给出 C5 估算式')
+s=s.replace('- C7：用户要求解释为何朴素 baseline 能合并；尚未选择是否允许分组。C4 同样未明确裁决，二者重新做只读审计。','- C7：用户进一步明确同一 round 多组 diff 可以正常追加紧排，跨轮已有输出/新写入后不能聚成同批。因此定义已定，撤回旧单 prefill 反例；重新核对公开两轮输入及现有 turns/interleaved 编码，形成 C8 多轮覆盖边界。C4 仍待过目。')
+s=s.replace('新报告把“同批可安排紧凑布局”和“严格追加定义是否允许预分组”拆开，撤回将其直接称为跨真实写入时点的证据。','新报告按用户最新 round 定义关闭同轮合并的指控；公开两轮的 owner 不同，没有折成同一个 diff 对象。')
+s=s.replace('原始 JSON 和 session 不改写，新增证据另存。','原始 JSON 和旧 session 不改写，新增证据另存。')
+s=s.replace('这些是 planner/地址/命令构造检查', '独立两轮复审还确认：下一轮 history_len 使用新 owner 的 master 占位，没有沿用旧 diff 对象；interleaved 是单 prefill 展开，turns 虽有 parent 关系仍抽象掉旧布局。该限制记为 C8，先问是否需要为跨轮 claim 补齐引用，未将整体净收益方向写成定论。\n\n另一独立 agent `attacc_model_provenance` 复核 C5 公式，确认现有共同项处理可接受，补清 GPU TP 分片 heads 宽度、GQA 驻留 query 数、完整 QK/softmax/PV 命令流，以及当前每 request 首次层选择、后层沿用的范围。链路式直接使用现有 flash X2G 的启动时间和带宽。\n\n这些是 planner/地址/命令构造检查')
+s=s.replace('C4/C7 写入复审与证据边界','C7 按最新裁决关闭同轮指控；C4/C8 写入仍待过目的证据边界')
+s=s.replace('python3 /tmp/record_audit_rulings.py\n','python3 /tmp/record_audit_rulings.py\nPYTHONDONTWRITEBYTECODE=1 python3 /tmp/independent_c7_round_boundary_probe.py\npython3 /tmp/apply_round_boundary_ruling.py\n')
+s=s.replace('C4/C7 的最终取舍仍待用户决定','C7 定义已定，C4/C8 的取舍仍待用户决定')
+path.write_text(s)
+path=R/'docs/sessions/README.md';s=path.read_text().replace('C5 实际项估价、C4/C7 重新 audit','C5 实际项估价、round 边界及 C4/C8 复审').replace('解释 A3b 软件分组与物理写入边界；只改审计文档','关闭同轮合并指控，补查两轮旧 diff 继承；只改审计文档')
+path.write_text(s)
+shutil.copyfile(Path(__file__),H/'apply_round_boundary_ruling.txt')
+print('Applied round boundary ruling, closed same-round C7 allegation, added C8 coverage evidence, clarified C5 formula.')

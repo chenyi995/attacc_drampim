@@ -1,0 +1,124 @@
+"""Independent structural ledger probes; no devices/simulator timing is measured."""
+from pathlib import Path
+from types import SimpleNamespace
+import json
+import sys
+sys.path.insert(0, '/data2/chenyi9/KV-PIM/attacc_drampim_822')
+import src.workload_runner as w
+from src.workload import Request, Segment, Workload, build_reuse_plan
+
+w._EC = None
+classes = {'A3b': w.NaiveKVLayout, 'A4c': w.LocalDiffKVLayout,
+           'A4e': w.TableLocalDiffKVLayout, 'A5': w.TableLocalDiffKVLayout,
+           'A6': w.TableLocalDiffKVLayout}
+def put(t, owner, fp, kind, rows):
+    for r in rows: t.reserve(0, owner, fp, r, kind)
+def reads(t, owner, fp, kind, rows):
+    return [t.locate(0, owner, fp, r, kind) for r in rows]
+def scan(t, loc, heads=1):
+    return w._striped_append_channel_extents(loc, policy=t.layout_policy,
+                                            heads_per_hbm=heads, tlb=t)
+out = {'head': '8c51672', 'scope': 'helper geometry; no real Ramulator or speedup'}
+out['store_and_scan'] = {}
+out['persistent_row'] = {}
+for rung, cls in classes.items():
+    t = cls(256)
+    put(t, 'producer', 'c0', 'master', range(256))
+    put(t, 'consumer', 'c0', 'diff', range(8))
+    put(t, 'consumer', 'c1', 'master', range(256))
+    t.chunk_coread = [frozenset(['c0','c1'])]
+    t.finalize()
+    loc = reads(t, 'consumer', 'c1', 'master', range(256))
+    events = []
+    w._append_channel_kv_stores(SimpleNamespace(), events, layer=0, tier=0,
+        request='consumer', name='store', locations=loc, dbyte=2, deps=(), positions=())
+    out['store_and_scan'][rung] = {
+        'ledger_count_after_store': len(t._ledgers),
+        'store': [{'device': e.device, 'time_s': e.time_s, 'energy_nj': e.energy_nj,
+                   'first_key': e.dram_addresses[0]} for e in events],
+        'scan': scan(t, loc), 'ledger_count_after_scan': len(t._ledgers)}
+    t = cls(256)
+    for i in range(17): put(t, 'owner', f'c{i}', 'master', range(256))
+    t.finalize()
+    a = reads(t, 'owner', 'c0', 'master', range(256))
+    b = reads(t, 'owner', 'c16', 'master', range(256))
+    alone, both = scan(t, b), scan(t, a+b)
+    out['persistent_row'][rung] = {'alone': alone, 'both': both,
+        'same_extent_is_present': all(ext in [e for _,_,p in both for e in p]
+                                     for _,_,p in alone for ext in p)}
+
+# Repeated same fingerprint corrections on either side of own KV.
+t = w.NaiveKVLayout(256)
+put(t, 'producer', 'doc', 'master', range(256))
+put(t, 'consumer', 'doc', 'diff', range(8))
+put(t, 'consumer', 'own', 'master', range(256))
+put(t, 'consumer', 'doc', 'diff', range(264,272))
+t.finalize()
+loc = reads(t, 'consumer', 'doc', 'diff', list(range(8))+list(range(264,272)))
+ledger = t.physical_ledger(t.layout_policy, 1)
+out['repeated_fingerprint_burst'] = {
+    'reservation_key_order': list(t._reserved_rows),
+    'diff_object_ids': [ledger.index[(0,'consumer','doc','diff')][r] for r in (0,264)],
+    'diff_scan': scan(t, loc)}
+
+a = Request('a',0,None,1,(Segment('doc','doc',256),),256)
+b = Request('b',0,None,1,(Segment('own','prefix',8),Segment('doc','doc',256),
+                        Segment('own','middle',256),Segment('doc','doc',256)),776)
+wl = Workload('supervisor',(a,b),{})
+plan = build_reuse_plan(wl,'epic',epic_prefix_recompute_tokens=8)
+t = w.NaiveKVLayout(256)
+w._prepare_cacheblend_tlb(wl,plan,1,t,{})
+positions = sorted(t._reserved_rows[(0,'b','doc','diff')])
+loc = reads(t,'b','doc','diff',positions)
+ledger = t.physical_ledger(t.layout_policy,1)
+out['repeated_fingerprint_real_plan'] = {
+    'consumer_segments': [(s.fingerprint,s.length) for s in b.segments],
+    'diff_positions': positions,
+    'diff_object_ids': [ledger.index[(0,'b','doc','diff')][r] for r in (8,520)],
+    'diff_scan': scan(t,loc)}
+
+# A4c's cursor is global across owners; unread owner B separates A's repairs.
+t = w.LocalDiffKVLayout(256)
+put(t, 'A', 'd0', 'diff', range(8))
+put(t, 'B', 'db', 'diff', range(256))
+put(t, 'A', 'd1', 'diff', range(8))
+t.finalize()
+loc = reads(t,'A','d0','diff',range(8))+reads(t,'A','d1','diff',range(8))
+out['global_diff_cursor'] = {'A_only_scan': scan(t,loc),
+                            'all_scan': scan(t,loc+reads(t,'B','db','diff',range(256)))}
+
+out['fixed_controls'] = {}
+geometry = {}
+for rung, cls in [('A3b',w.NaiveKVLayout),('A4c',w.LocalDiffKVLayout)]:
+    t = cls(256)
+    put(t,'owner','big','master',range(512))
+    t.finalize()
+    geometry[rung] = scan(t,reads(t,'owner','big','master',range(128,384)),4)
+out['fixed_controls']['zero_diff_subrange_actual_classes_equal'] = geometry['A3b']==geometry['A4c']
+t = w.NaiveKVLayout(256)
+put(t,'owner','c0','master',range(256))
+put(t,'owner','c1','master',range(256))
+put(t,'consumer','c0','diff',range(8))
+put(t,'consumer','c1','diff',range(8))
+t.finalize()
+out['fixed_controls']['distinct_fingerprint_same_burst_scan'] = scan(t,
+    reads(t,'consumer','c0','diff',range(8))+reads(t,'consumer','c1','diff',range(8)))
+
+# The reservation order still follows the JSON list; owner order follows sorted ids.
+a = Request('a',0,None,1,(Segment('doc','shared',256),),256)
+b = Request('b',0,None,1,(Segment('own','private',8),Segment('doc','shared',256)),264)
+out['request_order_vs_allocation'] = {}
+for seq in [(a,b),(b,a)]:
+    wl = Workload('supervisor',seq,{})
+    plan = build_reuse_plan(wl,'epic',epic_prefix_recompute_tokens=8)
+    t = w.NaiveKVLayout(256)
+    w._prepare_cacheblend_tlb(wl,plan,1,t,{})
+    loc = reads(t,'a','shared','master',range(256))
+    out['request_order_vs_allocation'][','.join(r.request_id for r in seq)] = {
+        'reservation_key_order': list(t._reserved_rows),
+        'DAG_request_order_from_code': sorted(r.request_id for r in seq),
+        'shared_scan': scan(t,loc)}
+
+encoded = json.dumps(out, indent=2)
+Path('/tmp/independent_8c51672_storage_evidence.json').write_text(encoded+'\n')
+print(encoded)

@@ -1,0 +1,17 @@
+{
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "scope": "Audit decision status and handoff only; implementation not fixed in this turn",
+  "protected_files_changed": [],
+  "paper_changes": [],
+  "broken_links": [],
+  "git_diff_check_exit_code": 0,
+  "new_performance_experiments": false,
+  "artifacts_sha256": {
+    "audit/2026-09-05/CURRENT_ISSUES.md": "c7349127edb04253ada47c102f0f79cc3f146977d3893c035d6c9db53b89ea93",
+    "audit/2026-09-05/README.md": "3ac08586d36ee8ffac04c4a8b28e61c93d6afbba455b82fc33d45959b37b57a7",
+    "docs/README_audit_fixes.md": "b1a6ba88ddd4af4de054cdd663e76f0fb29a8928bf4f9d84b72bff8d3059452c",
+    "docs/sessions/README.md": "ffa9b0383fef16ff6bfce45c48f0138d2214cbf05fb984e7a49d413eb5b9afa2",
+    "docs/sessions/2026-09-05-audit-decisions-finalized.md": "aa665def26d5ee1583b18b735ce3e89cf61fb7aea9bfa814289f223646c316de",
+    "audit/2026-09-05/archive/finalize_audit_decisions.txt": "fea38efcab4c7af025f2e0981850f63ec995f4b3102761de2a62f03463062bbe"
+  }
+}

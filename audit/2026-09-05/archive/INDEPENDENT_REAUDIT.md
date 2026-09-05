@@ -1,3 +1,5 @@
+> 历史记录：保留当时的技术证据和评价，当前待审事项统一看 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md)。
+
 # 独立 agent 复审：当前阶梯的因果归因仍不能签字
 
 日期：2026-09-05。审查快照：`cdd89db04a85edae029fd3151165f1a488d6139c`；原始 AttAcc 比较点：`c600051`。执行者为独立子 agent `independent_fairness_audit`。本报告由独立阅读当前代码和论文正文得出；没有把旧 audit 的“未修复”直接当作当前事实。

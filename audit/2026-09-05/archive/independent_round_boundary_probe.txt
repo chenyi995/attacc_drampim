@@ -1,0 +1,99 @@
+"""One public two-request workload plus same-owner helper; no performance calls."""
+from copy import deepcopy
+from pathlib import Path
+import json
+import sys
+sys.path.insert(0, '/data2/chenyi9/KV-PIM/attacc_drampim_822')
+from src import workload_runner as wr
+from src.workload import load_workload, build_reuse_plan
+
+def seg(role, fp, length):
+    return {'role': role, 'sha': fp, 'len': length}
+
+# First round contains the original D and a later shifted use: both rounds
+# therefore have a real D correction without a third corpus-owner request.
+first_segments = [seg('doc', 'D', 256), seg('user', 'prefix', 8),
+                  seg('doc', 'D', 256), seg('user', 'own0', 8)]
+history = sum(s['len'] for s in first_segments)
+source = {'agents': [
+    {'id': 'A_t0', 'tier': 0, 'parent': None, 'history_len': 0, 'lout': 16,
+     'segs': first_segments},
+    {'id': 'A_t1', 'tier': 1, 'parent': 'A_t0', 'history_len': history, 'lout': 16,
+     'segs': [seg('parent_out', 'A_t0_out', 16), seg('doc', 'D', 256),
+              seg('user', 'own1', 8)]},
+]}
+input_path = Path('/tmp/independent_c7_two_rounds_input.json')
+input_path.write_text(json.dumps(source, indent=2) + '\n')
+workload = load_workload(input_path)
+plan = build_reuse_plan(workload, 'epic', epic_prefix_recompute_tokens=8)
+out = {'kind': 'public parser + real reuse plan + allocator; no timing',
+       'request_count': len(workload.requests), 'public_two_rounds': {}}
+for rung, cls in [('A3b', wr.NaiveKVLayout), ('A4c', wr.LocalDiffKVLayout)]:
+    tlb = cls(256)
+    wr._prepare_cacheblend_tlb(workload, plan, 1, tlb, wr._parent_output_fingerprints(workload))
+    ledger = tlb.physical_ledger(tlb.layout_policy, 4)
+    round_data = {}
+    for request in workload.requests:
+        key = (0, request.request_id, 'D', 'diff')
+        rows = sorted(tlb._reserved_rows[key])
+        locs = [tlb.locate(0, request.request_id, 'D', r, 'diff') for r in rows]
+        objects = list(dict.fromkeys(ledger.index[key].values()))
+        round_data[request.request_id] = {
+            'D_diff_positions': rows, 'D_diff_object_ids': objects,
+            'D_diff_scan_head0': [g for g in ledger.extent_groups(locs) if g[0] < 4],
+        }
+    second = workload.requests[1]
+    bindings = wr._cacheblend_tlb_rows(workload, plan, 0, second, tlb)
+    negative_history = [loc for pos, _, _, loc in bindings if pos < 0]
+    round_data['second_round_history'] = {
+        'binding_count': len(negative_history),
+        'owners': sorted({l.owner for l in negative_history}),
+        'fingerprints': sorted({l.fingerprint for l in negative_history}),
+        'kinds': sorted({l.kind for l in negative_history}),
+        'earlier_round_diff_in_second_round_bindings': sum(
+            l.kind == 'diff' and l.owner == 'A_t0' for _,_,_,l in bindings),
+    }
+    out['public_two_rounds'][rung] = round_data
+
+duplicate = deepcopy(source)
+duplicate['agents'][1]['id'] = duplicate['agents'][0]['id']
+duplicate_path = Path('/tmp/independent_c7_duplicate_id_input.json')
+duplicate_path.write_text(json.dumps(duplicate) + '\n')
+try:
+    load_workload(duplicate_path)
+    out['duplicate_request_id'] = 'unexpectedly accepted'
+except Exception as e:
+    out['duplicate_request_id'] = {'type': type(e).__name__, 'message': str(e)}
+
+tlb = wr.NaiveKVLayout(256)
+for row in range(8): tlb.reserve(0, 'A', 'D', row, 'diff')
+for row in range(16): tlb.reserve(0, 'A', 'out', row, 'master')
+for row in range(256, 264): tlb.reserve(0, 'A', 'D', row, 'diff')
+tlb.finalize()
+ledger = tlb.physical_ledger(tlb.layout_policy, 4)
+out['manual_same_owner_not_a_public_two_round_input'] = {
+    'reservation_keys': list(tlb._reserved_rows),
+    'diff_rows': sorted(tlb._reserved_rows[(0,'A','D','diff')]),
+    'diff_object_ids': list(dict.fromkeys(ledger.index[(0,'A','D','diff')].values())),
+}
+out['existing_B0_JSON_readonly_summary'] = {}
+root = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+for form in ('interleaved', 'turns'):
+    path = root / 'workload/probe/sweep' / f'B0_{form}.json'
+    existing = json.loads(path.read_text())
+    worker = [a for a in existing['agents'] if a['id'] == 'w00' or a['id'].startswith('w00_t')]
+    out['existing_B0_JSON_readonly_summary'][form] = {
+        'source': str(path), 'declared_rounds': existing['meta']['rounds'],
+        'all_requests': len(existing['agents']), 'worker_w00_requests': len(worker),
+        'worker_w00_total_decode_tokens': sum(a['lout'] for a in worker),
+        'worker_w00_records': [
+            {'id': a['id'], 'tier': a['tier'], 'parent': a['parent'],
+             'history_len': a['history_len'], 'lout': a['lout'],
+             'prefill_tokens': sum(s['len'] for s in a['segs']),
+             'doc_segments': sum(s['role'] == 'doc' for s in a['segs']),
+             'distinct_doc_fingerprints': len({s['sha'] for s in a['segs'] if s['role'] == 'doc'})}
+            for a in worker],
+    }
+target = Path('/tmp/independent_c7_round_boundary_evidence.json')
+target.write_text(json.dumps(out, indent=2) + '\n')
+print(target.read_text())

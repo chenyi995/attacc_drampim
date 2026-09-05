@@ -1,0 +1,39 @@
+{
+  "date": "2026-09-05",
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "scope": "README contributions crosswalk, helper/command evidence and documentation only",
+  "independent_agent": "independent_fairness_audit",
+  "contributions_readme_sha256": "105c3e1d8e755fdaa9ac6489c5103ad8e5722707faedac093c9108841e27b8d9",
+  "prior_cleanup_manifest_sha256": "a570f547a6998df7b43bc1642c84b61c317f92322ec00c993028dd8e6f543af0",
+  "artifacts_sha256": {
+    "audit/2026-09-05/CURRENT_ISSUES.md": "4026a0ccdc109506adc4f635f6892b85823a9b3b9603b09d2d26e45f5e530523",
+    "audit/2026-09-05/README.md": "9b40b8589f65349109e43ad021f79b5b7f00051fd9deef357a506ddba7a42e94",
+    "audit/2026-09-05/archive/README.md": "cf2aca57905f66acf977847742147a0108c76843ed624e050d8e40d9eece4343",
+    "docs/sessions/README.md": "2fa8c65080f8c8cd266b16af055bb30d1919be93b04c7819933aeb2a2d163d6a",
+    "docs/sessions/2026-09-05-contributions-alignment-audit.md": "f81d631f074d2c35c932c23e0c55593c9369000d6e57e06cec357f7e4abbdee4",
+    "audit/2026-09-05/archive/contributions_alignment_probe.txt": "1b7e0708c25efe4262486b5632f8f868cc7b34d9fdb7f937d0cc778749ca74da",
+    "audit/2026-09-05/archive/contributions_alignment_evidence.json": "9ee4bbe3ce0a010156ca8a0a59682caeb65136ddb97de89febca7ea07d201e82",
+    "audit/2026-09-05/archive/independent_contributions_probe.txt": "54933829bf79f532c4829b3a9f8b1e36c1827fc06dec0746bc00dd549d51d4ab",
+    "audit/2026-09-05/archive/independent_contributions_evidence.json": "6c4fede3ab29d3fdea86d5d67478dea7812799355da2ce5781126da12b77fbc9",
+    "audit/2026-09-05/archive/update_contributions_audit_docs.txt": "4ac93ed6cdb7b6a8825d2bda93f67319f42c009d89366b27fbefed018b8d8306",
+    "audit/2026-09-05/archive/finalize_contributions_audit.txt": "69331b83c3c6bc5cf6e6efeeff941bd9b55f3c414ceb5027a62898a027c75011",
+    "audit/2026-09-05/archive/validate_contributions_audit.txt": "3ee672d5cbc382b4feac46ae317d1eed28e75a89525e8014f09dfa66e1a22f09"
+  },
+  "validation": {
+    "head_unchanged": true,
+    "protected_implementation_results_and_readme_files_checked": 263,
+    "protected_files_changed": [],
+    "implementation_changes_since_cleanup_start": [],
+    "old_non_markdown_evidence_changes": [],
+    "paper_changes": [],
+    "broken_markdown_links": [],
+    "invalid_source_line_references": [],
+    "original_case_count": 7,
+    "contribution_crosswalk_count": 4,
+    "independent_review_correction_applied": true,
+    "git_diff_check_exit_code": 0,
+    "git_diff_check_output": "",
+    "new_performance_experiments": false,
+    "implementation_modified": false
+  }
+}

@@ -1,0 +1,211 @@
+"""Record user rulings and generate C4/C7 evidence summaries without modifying implementation."""
+from pathlib import Path
+import json
+import shutil
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A=R/'audit/2026-09-05'
+H=A/'archive'
+V=json.loads(Path('/tmp/pending_layout_reaudit_evidence.json').read_text())
+J=json.loads(Path('/tmp/independent_c7_8c51672_evidence.json').read_text())
+for source,target in [('reaudit_pending_layout_cases.py','pending_layout_reaudit_probe.txt'),
+                      ('pending_layout_reaudit_evidence.json','pending_layout_reaudit_evidence.json'),
+                      ('independent_c7_8c51672_recheck.py','independent_c7_reaudit_probe.txt'),
+                      ('independent_c7_8c51672_evidence.json','independent_c7_reaudit_evidence.json')]:
+    shutil.copyfile(Path('/tmp')/source,H/target)
+path=A/'CURRENT_ISSUES.md'
+s=path.read_text()
+s=s.replace('除“必须开启 FlashAttention”已经由用户确定外，下列候选事项是否需要处理，仍由 chenyi9 裁决。', '最新裁决已落在下表：C2/C3/C6 待执行，C5 按实际需要的成本估算并忽略 Q 传输；C4/C7 重新审计后仍区分事实与待定的 baseline 定义。本文记录裁决，不代表代码已修。')
+decision='''<a id="decisions"></a>
+
+## 已裁决的交接清单
+
+以下是 chenyi9 本轮裁决。执行 agent 可按此修改；本次主审和独立 agent 只做 audit、证据及文档，没有实施代码或论文修复。
+
+| 项目 | 已确定的处理 | 执行时要核对什么 |
+|---|---|---|
+| [C1](#c1) FlashAttention | 继续执行此前“所有档共同开启”的决定 | 各入口实际配置一致；pipeline 按共同口径开启 |
+| [C3](#c3) diff 地址 | 修正新增 diff 区分配 | 不只要求地址整数不同，还应对应不重叠的实际 ALL-BANK 行；保持 head 的 master 通道范围和已声明布局 |
+| [C5](#c5) A6 估价 | 按实际路径需要哪些项，就估算哪些项；Q 传输可忽略 | 没有历史时回读为零，有真实回读时按真实字节估算；论文与 codebase 同步到简单公式，详见 C5 |
+| [C2](#c2) GQA | 修复 | 校验器、prefill/batch decode KV 字节统一按 KV heads；不能只放宽校验 |
+| [C6](#c6) 报表 | 更新 | A2 纳入 tier 汇总，相关时间列使用对应指标的起止范围 |
+
+**仍未裁决：C4 的共同子段地址近似、C7 的 A3b 同批分组定义。** 两项已重新审计，见各自 case。其他既有共同边界按原口径记录，不据此自动扩大执行清单。最新 session 见 [裁决与未定项复审](../../docs/sessions/2026-09-05-rulings-and-pending-reaudit.md)。
+
+'''
+assert 'id="decisions"' not in s
+s=s.replace('## 先认识系统和七个比较点\n',decision+'## 先认识系统和七个比较点\n')
+s=s.replace('估价是否包含实际操作仍看 [C5](#c5)，假设数没有验证这个前提', '估价按最新 [C5](#c5) 裁决列实际需要的项，Q 传输接受忽略；假设数没有验证实际估价')
+s=s.replace('候选操作覆盖是否改变档间归因', '除已接受的 Q 传输近似外，候选计价是否符合实际需要')
+s=s.replace('| 已复现，待用户决定处理 |','| 已裁决修复，尚未实施 |',1)
+s=s.replace('| 已复现地址矛盾，未量化收益偏差 |','| 已裁决修正分配，尚未实施 |')
+s=s.replace('| 新增共同接口的条件性问题，待裁决 |','| 已重审；同输入各档一致，是否接受近似待定 |')
+s=s.replace('| [C5](#c5) | A6 给不存在的传输加价，又漏掉实际存在的传输 | A5→A6 的简单选边 | 已复现操作覆盖差异，待裁决 |', '| [C5](#c5) | A6 按实际需要的项估价，Q 传输接受忽略 | A5→A6 的简单选边 | 已裁决估算原则；公式和实现待同步 |')
+s=s.replace('| 已复现报表差异，待裁决 |','| 已裁决更新报表，尚未实施 |')
+s=s.replace('| [C7](#c7) | A3b 某种重复文档输入也会把不连续修正合并 | A3b baseline 与 A4c 集中修正的界线 | baseline 定义选择，不能说是故意削弱 A3b |','| [C7](#c7) | 同一 prefill 内按文档分组，会把逻辑上隔开的修正紧排 | A3b baseline 与 A4c 集中修正的界线 | 已重审；是否允许同批预分组待定 |')
+s=s.replace('建议将新增执行回归/分支不一致作为待处理事项，请用户裁决；不据此声称 MQ 本身不公平。','**chenyi9 已裁决修复 GQA。** 执行时同时统一校验器和 batch KV 字节口径；本次只写交接，没有修改实现。该问题不等于 MQ 本身不公平。')
+s=s.replace('建议作为 A3b→A4c 的候选问题交用户决定，后续档继承该地址规则。','**chenyi9 已裁决修正 diff 地址分配。** 要验证的是两份数据不占用同一实际 ALL-BANK 行；仅检查地址整数不相等不够。后续档继承该地址规则，本次未改实现。')
+
+v=V['V_subset_by_rung']['A3b']
+c4=f'''**本轮重新 audit。** 使用实际的 A3b/A4c/A4e/A5/A6 layout 类各存同一份 master，然后分别读整块、前段、第二段。五档的同输入结果一致：完整块第二组 V 输出起点相对本次 V base 为 +{v['full']['second_group_offset_from_this_extent_V']} B，前段为 +{v['first16']['second_group_offset_from_this_extent_V']} B，第二段也为 +{v['second16']['second_group_offset_from_this_extent_V']} B。原始 AttAcc 的 `context_mac(addr_offset, L)` 也用 L 算矩阵跨度，但没有当前固定对象的 extent 子段接口；新增接口将本次 extent 长度代入该 dense 公式，却未携带对象原始跨度。这是沿用原公式时的接口边界，不能声称原始 AttAcc 已验证持久对象的子段地址。
+
+**复审结论。** 地址随读取范围变化的事实仍成立；相同输入下它是各档共同的行为，没有证据证明 A4c/A4e 独享优惠。本轮没有数值 KV 校验或周期实验，不能确定对不同分段 workload 的净偏置。按用户的共同近似口径，仍保留为待定边界，不列入已授权整改。新证据：[各档与原始 AttAcc 公式对照](archive/pending_layout_reaudit_evidence.json)。
+
+'''
+c4_pos=s.index('证据：[同一对象两次读取]')
+s=s[:c4_pos]+c4+s[c4_pos:]
+
+start=s.index('## C5：')
+end=s.index('<a id="c6"></a>',start)
+c5='''## C5：A6 按实际需要的操作，使用简单公式估价
+
+**最新裁决。** chenyi9 明确：“C5 就实际找一个公式估算一下啊？需要哪些部分就估算哪些项。”结合此前“Q 传输很容易，可以不考虑”，本轮采用以下交接口径：**Q 传输在选边估算中忽略；没有历史 KV 时删除空回读费用；真正需要的历史回读仍按真实字节估算。** 此前对删除范围的澄清由这条最新指令收敛，不解释成一律删除有用的历史回读。
+
+**审计建议的公式。** 每个 request 比较一次以下 attention 服务时间，相等选 PIM。它是简单局部估价，不是两套候选 DAG，也不是整个 workload 的完成时间保证。
+
+```text
+T_GPU = Link(B_history) + FlashAttention(q, N)
+T_PIM = Σ_s max_c RamulatorTime(extents_c, queries_s, MQ配置)
+        + Link(B_context)
+
+选择 PIM 当且仅当 T_PIM ≤ T_GPU；否则选择 GPU。
+
+Link(0) = 0
+Link(B > 0) = 使用现有同一链路模型估算 B 字节的时间
+B_history = 2 × R × H_KV × d_head × bytes_per_element
+B_context = q × H_Q × d_head × bytes_per_element
+```
+
+| 量 / 项 | 从实际路径取什么 | 为什么保留或省略 |
+|---|---|---|
+| q | `len(compute_positions)`，当前 request 真正新算/修正的 token 数 | GPU/PIM 都要为这些 query 做 attention |
+| R、N | R 为 GPU 分支真正回读的未重算驻留 KV 行数，即 `len(readback_rows)`；GPU 逻辑上下文 N = R + q | GPU 已经重算的 KV 不再回读；全新 prompt 的 R=0 |
+| H_KV、H_Q | 当前 GPU/stack 分片内的 KV heads 和 Q heads；d_head 是每 head 维度 | GQA 下 KV 回读按 KV heads，context 返回按 Q heads；与 C2 修复采用同一口径 |
+| `FlashAttention(q,N)` | 当前 GPU 分支在 `--gpu-model flash` 下的 score/softmax/context 同一计价接口 | 沿用共同 FA 模型，融合 softmax 按现有模型处理，不另造单价或乘收益系数 |
+| `RamulatorTime` | 与真实 PIM 分支相同的各通道 extents、MQ 参数及实际 query 数；各 sweep 内并行通道取 max，sweep 之间求和 | 必须读全需要的物理区间；不能只抽一条 lane 或给尾批套满批价格 |
+| s、queries_s | 按现有缓冲容量、batch 限制和 GQA 分组划分 query sweep，尾批用实际数量 | 复用现有扫描计价，不套 README 中的假设耗时或读列加速比 |
+| Q 输入传输 | 普通 Q 和额外旋转 Q 的传输时间在这套选边估算中按零近似 | 用户已接受忽略，不再要求通过补 extra-Q 费用修复 C5 |
+| context 返回 | PIM attention 结果需要返回 GPU，按实际返回字节计价 | 当前 GPU 侧后续投影需要结果；用户未将它裁定为零 |
+| GPU 线性计算、新 KV 写入链路 | 两侧相同的操作作为共同项，保持原执行与 pipeline | 本式比较随选边改变的 attention 服务成本；不另做全局调度优化 |
+| DIE/TLB、普通 STORE | 按已裁决口径为零额外成本 | 不添加缺乏 AttAcc 依据的费用 |
+
+实际 PIM 扫描区间可能还含被遮罩 master 行等数据，应使用执行分支给出的 extents，不能仅用 GPU 的 N 重建一份更短的扫描。上述 Q 忽略是估价近似，不代表删除 query 数据、GPU 旋转操作或执行依赖。
+
+**现代码要改哪里。** [_resolve_prefill_side](../../src/workload_runner.py:3970) 目前无条件创建 `kv_pim_to_gpu`，flash 链路给空操作带来启动成本；应先判断实际回读字节。其 PIM 候选目前计普通 Q/ctx 链路，extra-Q 不计；按上述统一口径，选边公式中的 Q 输入项应明确忽略，ctx 保留。复用真实分支的形状、GQA 宽度、lane 和尾批；保留逐 request 比较和 PIM tie-break。当前没有执行这些修改。
+
+**论文与 codebase 的交接位置。** 论文 [05-execution 的选边段](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/05-execution.tex:28>) 当前主要是文字，仍描述构造双候选 DAG；执行 agent 应同步为上述简单估价原则，若添加公式，零字节项必须为零、Q 输入项标明忽略、有历史时保留真实回读。代码对应上述选择器；仓库 [设计阶梯的现状公式](../../docs/README_design_ladder.md:134) 也需同步。本次未修改论文或这些实现公式。
+
+**AttAcc 本身有没有。** 原始没有 A6 选择器或 query 旋转复用；这里的选择式是新增逻辑。链路/GPU 采用共同设备模型，PIM 采用 Ramulator 返回周期，不引入新拟合单价。Q 传输差异已按用户裁决接受，不再列成待修的公平性指控。
+
+**怎样审查执行结果。** 全新 prompt：`B_history=0`、回读费用为零；有驻留历史：只按实际需搬的 KV heads 字节计回读；位置偏移产生 extra-Q：按接受的 Q 忽略近似处理；MQ 尾批/多通道：实际数量计价。核对这些组成项即可，不要求构建复杂调度器或用硬件加速比拟合选边。
+
+旧反例仍留在 [操作覆盖证据](archive/reaudit_8c51672_evidence.json) 的 `A6_estimate_vs_executed_operation_coverage`，用于追溯“空回读为何要删”和“extra-Q 漏项为何撤回”，不把设备桩时间当成 GPU/PIM 性能。旧编号 V06a/V06b。
+
+'''
+s=s[:start]+c5+s[end:]
+s=s.replace('建议保留为报表候选问题，由用户决定是否处理。','**chenyi9 已裁决更新报表。** 执行时补齐 A2，并核对相关时间列的指标范围；本次未改 collector 或已有结果。')
+
+start=s.index('## C7：')
+end=s.index('## 其他边界：',start)
+cases=J['cases']
+case_rows=[]
+labels={'same_fingerprint_separated':'前缀 → D → own → D', 'different_fingerprints_separated':'前缀 → D → own → E', 'different_fingerprints_consecutive':'前缀 → D → E'}
+# Name each independent case from its recorded input, so report generation does not assume key spelling.
+for name,data in cases.items():
+    label=' → '.join(fp for fp,_ in data['consumer_segments'])
+    case_rows.append(f"| `{label}` | {data['diff_token_count']} | {data['distinct_diff_object_count']} |")
+same=cases['same_fingerprint_separated']
+c7=f'''## C7：A3b 为什么会合并，是否允许这种 baseline 定义
+
+**重新审计后的解释。** 合并来自软件预约表按文档身份分组，随后 allocator 把这些修正紧排进同一物理对象。PIM 并没有把原本分散的物理行自动合并；也不是认为两份修正数值相同而去重。独立 agent 用真实 reuse plan、预约调用跟踪、ledger 和 scan extents 重新验证了完整路径。
+
+**具体发生了什么。** 同一 prefill 输入是 `前缀 → 文档 D → own 新内容 → 文档 D`。遍历逻辑位置时，两组 D 修正中间确实遇到了 own。可是 [reserve](../../src/workload_runner.py:1608) 的字典键只有 `(layer, owner, fingerprint, kind)`，两组 D 会加进同一个集合，后来的 D 不形成新的顺序节点。原来的 `D修正 → own → D修正` 因此变成预约表中的 `D的全部修正 → own`。
+
+[PhysicalLedger](../../src/workload_runner.py:931) 读取该集合后，给修正依次编号并连续放置。扫描再按固定编号找地址，合扫和分开扫描使用同一存储关系；不是每次扫描临时压缩空洞。两次出现的修正 token 全部保留。
+
+| 控制输入（同一 producer 预存 D/E） | 保留的 diff token 数 | A3b 分配的 diff 对象数 |
+|---|---:|---:|
+{chr(10).join(case_rows)}
+
+上表是 helper 的对象/布局结果，不是 ACT 或速度测量。同文档被 own 隔开时，仍能得到一个连续对象；改为两种文档，own 就能在字典顺序中截断 burst。没有 own 的连续两组修正正常合并，是合理控制，不应为“naive”而强行每组独占一行。证据：[本次独立复审](archive/independent_c7_reaudit_evidence.json)。
+
+**为什么可能允许这种合并。** 当前执行把一个 request 的所有新算/修正 token 用一批 [GPU QKV 和 KV link](../../src/workload_runner.py:4819) 提交，STORE 再按通道组织。没有证据证明这个例子中发生了三个独立服务时刻的 `写D → 写own → 再写D`。因此，如果 A3b 允许在同一 prefill 提交前按文档分组，软件可以直接安排连续地址；这不需要跨轮搬迁，也没有数据依赖强制按上下文顺序落盘。
+
+**但它不是自动获得的 baseline 合法性。** 论文 [A3b 定义](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/06-methodology.tex:75>) 说修正跟着追加流，中间写入会隔开不同轮的修正；ledger 类注释也把 burst 写成“中间没有 own 写入”的连续预约。若严格把原始预约顺序当作必须保留的写入顺序，当前按 fingerprint 折叠就是定义与实现不一致。此前 audit 直接说“own 已将两次真实写入隔开”证据过强，本次撤回；实际证明的是逻辑/预约遍历边界被折叠。
+
+| 可以选择的定义 | 对 C7 的处理 | 与 A4c 的区别 |
+|---|---|---|
+| A3b 保持原始追加边界 | 执行时需要保留 own 截断的 burst 身份，不能让同 fingerprint 自动越过它 | A4c 才允许跨这些边界紧排 |
+| A3b 允许同一 prefill 先按文档分组 | 接受当前这个例子，并在 baseline 说明中写明同批分组 | A3b 仍没有 A4c 对同一 agent/head 的跨文档、跨轮独立 diff 区聚合 |
+
+**AttAcc 本身有没有。** 原始没有软件复用修正、这张预约表或 A3b 的定义，不能用 AttAcc 替这项新增分组背书。它是合理 baseline 可以选择的组织方式，需与论文声明一致。局部布局会让 A3b 更紧凑，可能压小 A4c 的布局收益；本轮没有 E2E 证据，不能断言净加速变化，也不能说有人故意弱化 baseline。
+
+**当前状态：待 chenyi9 选择 baseline 定义。** 本轮未修改实现，没有因为“更强 baseline 可以接受”就替用户接受这项分组。旧编号 V05c/N02；两套轮转计数按此前口径继续接受。
+
+'''
+s=s[:start]+c7+s[end:]
+s=s.replace('当前候选只以上面 C1–C7 及条件边界为准。','当前以顶部裁决清单为准：已接受的 Q 近似不重列问题；已确定的修复与 C4/C7 待定定义分别跟踪。')
+path.write_text(s)
+
+session='''# 2026-09-05：记录裁决，重新审计 C4/C7，并给出 C5 估算式
+
+代码 revision：`8c51672a3ef8b936340354b3211963cde8945c49`。chenyi9 明确当前 agent 的任务仍是 audit；已裁决内容写入文档，供执行 agent 修改。主审只更新审计/索引/session，独立 agent 只生成 `/tmp` 证据。
+
+## 用户裁决与最新解释
+
+- C3：diff 地址需要修正。主审将验收目标写为“在原始 ALL-BANK 语义下不重叠”，避免仅比较地址整数。
+- C5：Q 传输容易，可忽略；历史回读需要删除无依据项，并同步论文和 codebase。用户随后明确“实际找一个公式估算，需要哪些部分就估算哪些项”。因此当前交接保留实际需要的历史回读、空回读为零；忽略 Q 输入传输，按真实模型估 attention/扫描和结果返回。先前删除范围澄清由最新指令收敛，不再等待重复批准。
+- C2：修复 GQA；C6：更新报表。已从待裁决移到已确定待执行，没有写成修复已完成。
+- C7：用户要求解释为何朴素 baseline 能合并；尚未选择是否允许分组。C4 同样未明确裁决，二者重新做只读审计。
+
+## 为什么调整原来的审计结论
+
+原 C5 将漏算 extra-Q 当作待修问题，现已被用户接受的近似取代；继续要求补费会违背裁决。新 C5 给执行 agent 一个可落地的局部服务时间估算式：GPU 的真实回读 + 共同 FA 计价，PIM 的每 sweep 通道 max 求和 + 结果返回，零字节 Link=0，Q 输入传输忽略。它沿用设备和 Ramulator 模型，不加入手拟合系数，不要求双候选 DAG。正文当前还是双 DAG 的文字描述，需由执行 agent 同步，主审只定位。
+
+原 C7 的上下文 `D → own → D` 不能直接证明物理上曾按三个时刻写入。真实 prefill 整批 QKV/链路提交，合并又在软件预约前置发生。新报告把“同批可安排紧凑布局”和“严格追加定义是否允许预分组”拆开，撤回将其直接称为跨真实写入时点的证据。token 并未去重或丢失，合扫/分扫对应同一高层存储。
+
+## 独立复核与主审验证
+
+独立 agent `independent_fairness_audit` 用同一个 producer 预存 D/E，比较同文档被 own 隔开、不同文档被 own 隔开、无 own 的连续修正。实际记录预约调用顺序、字典键顺序、diff 对象、ordinal、固定地址和 scan extents。结果确认合并来源于 `(layer, owner, fingerprint, kind)` 聚合；不是 PIM 必须提供的自动合并。数据自动带入当前 C7。
+
+主审使用五个实际 layout 类存同一份 master，分别生成整块、前子段、后子段的 V 命令。五档同输入结果一致，原子段步长现象仍在。读取 `git show c600051:pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py` 对照：原公式使用 dense L，没有 extents 接口。保留为新增接口的共同边界；没有以“共同代码”证明任何分段 workload 的误差会完全抵消，也没有自动扩大整改清单。
+
+这些是 planner/地址/命令构造检查，未运行 Ramulator、GPU 性能、完整 workload 或数值 attention。原始 JSON 和 session 不改写，新增证据另存。
+
+## 文件变更与验证
+
+| 文件 | 本次变更原因 |
+|---|---|
+| CURRENT_ISSUES.md | 顶部新增已裁决交接表；更新各 case 状态；C5 改为实际项估算式；C4/C7 写入复审与证据边界 |
+| audit README、archive README | 链接最新裁决和新证据，维持单一当前问题文档 |
+| docs/README_audit_fixes.md、README_design_ladder.md | 更新裁决入口；把设计阶梯已有公式标作代码现状并指向 C5 的待执行新口径 |
+| docs/sessions/README.md、本 session | 记录用户原话、范围变化、复审原因与交接原则 |
+| archive 新 probe/JSON/manifest | 保存数据来源、主审/独立验证以及未改实现的摘要 |
+
+执行命令：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 /tmp/reaudit_pending_layout_cases.py
+PYTHONDONTWRITEBYTECODE=1 python3 /tmp/independent_c7_8c51672_recheck.py
+python3 /tmp/record_audit_rulings.py
+python3 /tmp/validate_audit_rulings.py
+git diff --check
+```
+
+独立 probe 由 agent 执行。脚本及 JSON 见 [archive 索引](../../audit/2026-09-05/archive/README.md)。最终验证见 [rulings_pending_reaudit_manifest.json](../../audit/2026-09-05/archive/rulings_pending_reaudit_manifest.json)。实现、论文、贡献 README 和既有性能结果保持；没有 commit。本轮交接入口为 [CURRENT_ISSUES](../../audit/2026-09-05/CURRENT_ISSUES.md#decisions)，C4/C7 的最终取舍仍待用户决定。
+'''
+(R/'docs/sessions/2026-09-05-rulings-and-pending-reaudit.md').write_text(session)
+path=R/'docs/sessions/README.md'
+path.write_text(path.read_text().replace('|---|---|---|\n','|---|---|---|\n| 2026-09-05（裁决与未定项复审） | [C5 实际项估价、C4/C7 重新 audit](2026-09-05-rulings-and-pending-reaudit.md) | 记录 C2/C3/C6 待执行、Q 忽略裁决；解释 A3b 软件分组与物理写入边界；只改审计文档 |\n',1))
+path=A/'README.md'
+text=path.read_text().replace('| 想看什么 | 打开哪里 |\n|---|---|','| 想看什么 | 打开哪里 |\n|---|---|\n| 已经确定、交给执行 agent 的事项 | [裁决清单](CURRENT_ISSUES.md#decisions) |')
+text=text.replace('其他候选事项先展示来源和分档影响，再由 chenyi9 决定是否处理。','C2/C3/C6 已裁决修改；C5 按实际项估算并忽略 Q，C4/C7 复审后待定。')
+path.write_text(text)
+path=H/'README.md'
+path.write_text(path.read_text().replace('| 用途 | 文档 / 证据 |\n|---|---|','| 用途 | 文档 / 证据 |\n|---|---|\n| 最新裁决后的 C4/C7 复审 | [C4 JSON](pending_layout_reaudit_evidence.json)、[C4 probe](pending_layout_reaudit_probe.txt)、[C7 独立 JSON](independent_c7_reaudit_evidence.json)、[C7 probe](independent_c7_reaudit_probe.txt)、[验证记录](rulings_pending_reaudit_manifest.json) |'))
+path=R/'docs/README_audit_fixes.md'
+path.write_text(path.read_text().replace('FlashAttention 必须开启已确定；其余建议不是代码修复授权。','FlashAttention 必须开启；C2/C3/C6 已裁决修改，C5 按实际项估算并忽略 Q，C4/C7 复审后待定。执行交接见 [当前裁决清单](../audit/2026-09-05/CURRENT_ISSUES.md#decisions)；本次审计没有实施修复。'))
+path=R/'docs/README_design_ladder.md'
+s=path.read_text().replace('按用户确认，逐 request 比较这两侧估计耗时的机制可以接受。全部 lane/尾批已修；空回读和额外 Q variants 的估价仍未与执行对齐，见 [V06](../audit/2026-09-05/archive/REAUDIT_8c51672.md)。','上式记录当前代码现状。chenyi9 最新裁决为按实际需要的项估算，Q 输入传输可忽略、空回读为零；执行 agent 应将实现与论文同步到 [C5 交接公式](../audit/2026-09-05/CURRENT_ISSUES.md#c5)。全部 lane/尾批已修，逐 request 比价继续接受；本次只更新审计说明。')
+path.write_text(s)
+shutil.copyfile(Path(__file__),H/'record_audit_rulings.txt')
+print('Recorded rulings, C5 formula handoff, and re-audited C4/C7; no implementation or paper edits.')

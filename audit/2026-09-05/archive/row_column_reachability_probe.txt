@@ -1,0 +1,49 @@
+import importlib.util, json, sys
+from pathlib import Path
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT))
+from src.workload import Segment, Request, Workload, build_reuse_plan
+from src.workload_runner import (NaiveKVLayout,LocalDiffKVLayout,_prepare_cacheblend_tlb,_cacheblend_tlb_rows,_pool_reads,_policy_corrected_rows)
+
+def score_summary(extent):
+    s=importlib.util.spec_from_file_location('bank_generator',ROOT/'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py')
+    g=importlib.util.module_from_spec(s);s.loader.exec_module(g)
+    g.n_channel=1;g.pool_base=extent[0]//(1<<30)
+    g.Attention(extent[2],extent[0],extent[1],0,valid_channel=1,extents=[extent])
+    addrs=[int(c.split()[1],16) for b in g.cmd_score_mac[0] for c in b]
+    return {'extent':extent,'mac_count':len(addrs),'address_offsets':[a%(1<<30) for a in addrs], 'row_col':[[((a>>10)&((1<<14)-1)),((a>>5)&31)] for a in addrs]}
+
+wl=Workload('rag',(
+    Request('a_owner',0,None,1,(Segment('doc','doc',256),),256),
+    Request('b_consumer',0,None,1,(Segment('doc','doc',256,position_delta=1),),256)
+),{})
+# The real plan builder is asked for the controlled first-eight correction.
+# CLI defaults instead select random rows; this probe does not change files or CLI defaults.
+plan=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8,recompute_canonical=True)
+r=wl.requests[1]
+out={'method':'real reuse plan -> reservation -> bindings -> pool_reads -> PhysicalLedger -> tracked Attention function; no Ramulator run',
+     'plan_control':'recompute_canonical=True explicitly for this first-eight boundary; not CLI default',
+     'corrected_rows':sorted(_policy_corrected_rows(plan,0,r)), 'rungs':{}}
+for name,cls in [('A3b',NaiveKVLayout),('A4c',LocalDiffKVLayout)]:
+    tlb=cls(256,'slice')
+    _prepare_cacheblend_tlb(wl,plan,1,tlb,{})
+    bindings=_cacheblend_tlb_rows(wl,plan,0,r,tlb)
+    visible=[l for _,_,_,l in bindings]
+    physical,masked,plan_reads=_pool_reads(tlb,visible)
+    ledger=tlb.physical_ledger(tlb.layout_policy,1)
+    def master_extent(rs):
+        return ledger.extent_groups([l for l in rs if l.kind=='master'])[0][2][0]
+    actual=master_extent(physical)
+    logical=master_extent(plan_reads)
+    naive_raw=master_extent(visible)
+    out['rungs'][name]={'layout_policy':tlb.layout_policy,'shadow_reads':tlb.shadow_reads,
+        'physical_master_rows':sum(l.kind=='master' for l in physical),
+        'plan_master_rows':sum(l.kind=='master' for l in plan_reads),
+        'decode_actual':score_summary(actual),
+        'plan_only':score_summary(logical),
+        'raw_visible_master':score_summary(naive_raw)}
+Path('/tmp/ledger_prefix8_reachability_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({k:{'policy':v['layout_policy'],'physical_master_rows':v['physical_master_rows'],'plan_master_rows':v['plan_master_rows'],
+    'decode_extent':v['decode_actual']['extent'],'decode_row_col_first_last':[v['decode_actual']['row_col'][0],v['decode_actual']['row_col'][-1]],
+    'plan_extent':v['plan_only']['extent'],'plan_row_col_first_last':[v['plan_only']['row_col'][0],v['plan_only']['row_col'][-1]],
+    'raw_extent':v['raw_visible_master']['extent'],'raw_row_col_first_last':[v['raw_visible_master']['row_col'][0],v['raw_visible_master']['row_col'][-1]]} for k,v in out['rungs'].items()},indent=2))

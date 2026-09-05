@@ -1,0 +1,580 @@
+{
+  "head": "8c51672",
+  "scope": "helper geometry; no real Ramulator or speedup",
+  "store_and_scan": {
+    "A3b": {
+      "ledger_count_after_store": 0,
+      "store": [
+        {
+          "device": "STORE",
+          "time_s": 0.0,
+          "energy_nj": 0.0,
+          "first_key": 2147483648
+        }
+      ],
+      "scan": [
+        [
+          1,
+          1,
+          [
+            [
+              1073742848,
+              1082131456,
+              256
+            ]
+          ]
+        ]
+      ],
+      "ledger_count_after_scan": 1
+    },
+    "A4c": {
+      "ledger_count_after_store": 0,
+      "store": [
+        {
+          "device": "STORE",
+          "time_s": 0.0,
+          "energy_nj": 0.0,
+          "first_key": 65536
+        }
+      ],
+      "scan": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "ledger_count_after_scan": 1
+    },
+    "A4e": {
+      "ledger_count_after_store": 0,
+      "store": [
+        {
+          "device": "STORE",
+          "time_s": 0.0,
+          "energy_nj": 0.0,
+          "first_key": 65536
+        }
+      ],
+      "scan": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "ledger_count_after_scan": 1
+    },
+    "A5": {
+      "ledger_count_after_store": 0,
+      "store": [
+        {
+          "device": "STORE",
+          "time_s": 0.0,
+          "energy_nj": 0.0,
+          "first_key": 65536
+        }
+      ],
+      "scan": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "ledger_count_after_scan": 1
+    },
+    "A6": {
+      "ledger_count_after_store": 0,
+      "store": [
+        {
+          "device": "STORE",
+          "time_s": 0.0,
+          "energy_nj": 0.0,
+          "first_key": 65536
+        }
+      ],
+      "scan": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "ledger_count_after_scan": 1
+    }
+  },
+  "persistent_row": {
+    "A3b": {
+      "alone": [
+        [
+          0,
+          1,
+          [
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "both": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "same_extent_is_present": true
+    },
+    "A4c": {
+      "alone": [
+        [
+          0,
+          1,
+          [
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "both": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "same_extent_is_present": true
+    },
+    "A4e": {
+      "alone": [
+        [
+          0,
+          1,
+          [
+            [
+              16384,
+              8404992,
+              256
+            ]
+          ]
+        ]
+      ],
+      "both": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              16384,
+              8404992,
+              256
+            ]
+          ]
+        ]
+      ],
+      "same_extent_is_present": true
+    },
+    "A5": {
+      "alone": [
+        [
+          0,
+          1,
+          [
+            [
+              16384,
+              8404992,
+              256
+            ]
+          ]
+        ]
+      ],
+      "both": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              16384,
+              8404992,
+              256
+            ]
+          ]
+        ]
+      ],
+      "same_extent_is_present": true
+    },
+    "A6": {
+      "alone": [
+        [
+          0,
+          1,
+          [
+            [
+              16384,
+              8404992,
+              256
+            ]
+          ]
+        ]
+      ],
+      "both": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              16384,
+              8404992,
+              256
+            ]
+          ]
+        ]
+      ],
+      "same_extent_is_present": true
+    }
+  },
+  "repeated_fingerprint_burst": {
+    "reservation_key_order": [
+      [
+        0,
+        "producer",
+        "doc",
+        "master"
+      ],
+      [
+        0,
+        "consumer",
+        "doc",
+        "diff"
+      ],
+      [
+        0,
+        "consumer",
+        "own",
+        "master"
+      ]
+    ],
+    "diff_object_ids": [
+      [
+        0,
+        "consumer",
+        "burst",
+        2
+      ],
+      [
+        0,
+        "consumer",
+        "burst",
+        2
+      ]
+    ],
+    "diff_scan": [
+      [
+        1,
+        1,
+        [
+          [
+            1073741824,
+            1082130432,
+            16
+          ]
+        ]
+      ]
+    ]
+  },
+  "repeated_fingerprint_real_plan": {
+    "consumer_segments": [
+      [
+        "prefix",
+        8
+      ],
+      [
+        "doc",
+        256
+      ],
+      [
+        "middle",
+        256
+      ],
+      [
+        "doc",
+        256
+      ]
+    ],
+    "diff_positions": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      520,
+      521,
+      522,
+      523,
+      524,
+      525,
+      526,
+      527
+    ],
+    "diff_object_ids": [
+      [
+        0,
+        "b",
+        "burst",
+        3
+      ],
+      [
+        0,
+        "b",
+        "burst",
+        3
+      ]
+    ],
+    "diff_scan": [
+      [
+        2,
+        1,
+        [
+          [
+            2147483648,
+            2155872256,
+            16
+          ]
+        ]
+      ]
+    ]
+  },
+  "global_diff_cursor": {
+    "A_only_scan": [
+      [
+        15,
+        1,
+        [
+          [
+            16642998272,
+            16651386880,
+            8
+          ],
+          [
+            16642999328,
+            16651387936,
+            8
+          ]
+        ]
+      ]
+    ],
+    "all_scan": [
+      [
+        15,
+        1,
+        [
+          [
+            16642998272,
+            16651386880,
+            8
+          ],
+          [
+            16642998304,
+            16651386912,
+            256
+          ],
+          [
+            16642999328,
+            16651387936,
+            8
+          ]
+        ]
+      ]
+    ]
+  },
+  "fixed_controls": {
+    "zero_diff_subrange_actual_classes_equal": true,
+    "distinct_fingerprint_same_burst_scan": [
+      [
+        2,
+        1,
+        [
+          [
+            2147483648,
+            2155872256,
+            16
+          ]
+        ]
+      ]
+    ]
+  },
+  "request_order_vs_allocation": {
+    "a,b": {
+      "reservation_key_order": [
+        [
+          0,
+          "a",
+          "shared",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "private",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "shared",
+          "diff"
+        ],
+        [
+          0,
+          "a",
+          "a::output",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "b::output",
+          "master"
+        ]
+      ],
+      "DAG_request_order_from_code": [
+        "a",
+        "b"
+      ],
+      "shared_scan": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ]
+          ]
+        ]
+      ]
+    },
+    "b,a": {
+      "reservation_key_order": [
+        [
+          0,
+          "b",
+          "private",
+          "master"
+        ],
+        [
+          0,
+          "a",
+          "shared",
+          "master"
+        ],
+        [
+          0,
+          "b",
+          "shared",
+          "diff"
+        ],
+        [
+          0,
+          "b",
+          "b::output",
+          "master"
+        ],
+        [
+          0,
+          "a",
+          "a::output",
+          "master"
+        ]
+      ],
+      "DAG_request_order_from_code": [
+        "a",
+        "b"
+      ],
+      "shared_scan": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,692 @@
+{
+  "source_revision": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "method": "Device/Ramulator boundary stubs and pure functions; no external simulation",
+  "rung_gqa": {
+    "A1": {
+      "status": "WorkloadValidationError",
+      "message": "CacheBlend KV link byte count is invalid",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 33,
+          "link_bytes": 135168,
+          "expected_kv_bytes": 135168
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 6,
+      "store_zero": true
+    },
+    "A2": {
+      "status": "ok",
+      "kv_events": [],
+      "store_count": 0,
+      "store_zero": true
+    },
+    "A3b": {
+      "status": "WorkloadValidationError",
+      "message": "CacheBlend KV link byte count is invalid",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4c": {
+      "status": "WorkloadValidationError",
+      "message": "CacheBlend KV link byte count is invalid",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4e": {
+      "status": "WorkloadValidationError",
+      "message": "CacheBlend KV link byte count is invalid",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A5": {
+      "status": "WorkloadValidationError",
+      "message": "CacheBlend KV link byte count is invalid",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    },
+    "A6": {
+      "status": "WorkloadValidationError",
+      "message": "CacheBlend KV link byte count is invalid",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 16384,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    }
+  },
+  "rung_mha_control": {
+    "A1": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 33,
+          "link_bytes": 135168,
+          "expected_kv_bytes": 135168
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 6,
+      "store_zero": true
+    },
+    "A2": {
+      "status": "ok",
+      "kv_events": [],
+      "store_count": 0,
+      "store_zero": true
+    },
+    "A3b": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4c": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4e": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A5": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    },
+    "A6": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    }
+  },
+  "cache": {
+    "fingerprint_ignores_shared_library": true,
+    "fingerprint_tracks_bank_generator": true,
+    "invocations_after_each_extent_input": [
+      1,
+      2,
+      2
+    ],
+    "exact_contiguous_length_received_by_stub": 257,
+    "calls": [
+      {
+        "rows": 32,
+        "extents": [
+          [
+            0,
+            8388608,
+            16
+          ],
+          [
+            64,
+            8388672,
+            16
+          ]
+        ]
+      },
+      {
+        "rows": 32,
+        "extents": [
+          [
+            0,
+            8388608,
+            16
+          ],
+          [
+            1088,
+            8389696,
+            16
+          ]
+        ]
+      },
+      {
+        "rows": 257,
+        "extents": null
+      }
+    ]
+  },
+  "arithmetic": {
+    "geometry": {
+      "LLAMA-7B": {
+        "qkv_width": 12288,
+        "kv_width": 4096,
+        "prefill_qkv_n": 12288,
+        "prefill_kv_link_bytes": 65536
+      },
+      "LLAMA3-8B": {
+        "qkv_width": 6144,
+        "kv_width": 1024,
+        "prefill_qkv_n": 6144,
+        "prefill_kv_link_bytes": 16384
+      }
+    },
+    "mac_energy": [
+      {
+        "group": 1,
+        "query_groups": 1,
+        "aggregate_alu_pj": 20971.52,
+        "runs_alu_pj": 20971.52
+      },
+      {
+        "group": 4,
+        "query_groups": 4,
+        "aggregate_alu_pj": 83886.08,
+        "runs_alu_pj": 83886.08
+      }
+    ],
+    "gqa_alu_ratio": 4.0
+  },
+  "store": [
+    {
+      "device": "GPU",
+      "time_s": 10.0,
+      "energy_nj": 0.007,
+      "start_s": 0.0,
+      "end_s": 10.0
+    },
+    {
+      "device": "LINK",
+      "time_s": 1.0,
+      "energy_nj": 0.007,
+      "start_s": 0.0,
+      "end_s": 1.0
+    },
+    {
+      "device": "STORE",
+      "time_s": 0.0,
+      "energy_nj": 0.0,
+      "start_s": 10.0,
+      "end_s": 10.0
+    },
+    {
+      "device": "STORE",
+      "time_s": 0.0,
+      "energy_nj": 0.0,
+      "start_s": 1.0,
+      "end_s": 1.0
+    },
+    {
+      "device": "PIM",
+      "time_s": 2.0,
+      "energy_nj": 0.007,
+      "start_s": 1.0,
+      "end_s": 3.0
+    }
+  ],
+  "summary": {
+    "tbt_mean_max_weighted": [
+      1.5,
+      2.0,
+      1.1818181818181819
+    ],
+    "expected_weighted": 1.1818181818181819,
+    "tier_rows": [
+      {
+        "workload": "fixture.json",
+        "ablation": "A3b",
+        "tier": "0",
+        "prefill_s": "1.0",
+        "decode_s": "1.0",
+        "tier_total_s": "2.0",
+        "first_s": "1.0",
+        "last_s": "2.0",
+        "cum_end_s": "10.0",
+        "decode_batches": "1"
+      }
+    ],
+    "input_rungs": [
+      "A2",
+      "A3b"
+    ]
+  },
+  "elf_dynamic": "\nDynamic section at offset 0x7bd08 contains 31 entries:\n  Tag        Type                         Name/Value\n 0x0000000000000001 (NEEDED)             Shared library: [libramulator.so]\n 0x0000000000000001 (NEEDED)             Shared library: [libpthread.so.0]\n 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]\n 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]\n 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]\n 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]\n 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]\n 0x000000000000000f (RPATH)              Library rpath: [/data2/chenyi9/KV-PIM/attacc_drampim_822/ramulator2]\n 0x000000000000000c (INIT)               0x41cbc8\n 0x000000000000000d (FINI)               0x465b48\n 0x0000000000000019 (INIT_ARRAY)         0x679888\n 0x000000000000001b (INIT_ARRAYSZ)       16 (bytes)\n 0x000000000000001a (FINI_ARRAY)         0x679898\n 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)\n 0x000000006ffffef5 (GNU_HASH)           0x4002d0\n 0x0000000000000005 (STRTAB)             0x407eb8\n 0x0000000000000006 (SYMTAB)             0x401d08\n 0x000000000000000a (STRSZ)              75759 (bytes)\n 0x000000000000000b (SYMENT)             24 (bytes)\n 0x0000000000000015 (DEBUG)              0x0\n 0x0000000000000003 (PLTGOT)             0x67c000\n 0x0000000000000002 (PLTRELSZ)           2832 (bytes)\n 0x0000000000000014 (PLTREL)             RELA\n 0x0000000000000017 (JMPREL)             0x41c0b8\n 0x0000000000000007 (RELA)               0x41b050\n 0x0000000000000008 (RELASZ)             4200 (bytes)\n 0x0000000000000009 (RELAENT)            24 (bytes)\n 0x000000006ffffffe (VERNEED)            0x41aed0\n 0x000000006fffffff (VERNEEDNUM)         5\n 0x000000006ffffff0 (VERSYM)             0x41a6a8\n 0x0000000000000000 (NULL)               0x0\n",
+  "source_sha256": {
+    "src/ramulator_wrapper.py": "6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00",
+    "src/model.py": "97d1fb38916404ab164b576b686794cc7e636be9d3b66012f92c15e97abd0939",
+    "src/devices.py": "567bc4d4303a7e2487f9673d212bd87e7bc5431ef43134cbe4948ee51466a624",
+    "src/workload_runner.py": "c86ccec44d54f2274870f2ed158a270ca8cb78de2a9036d062723e2a4396cf04",
+    "src/cpp_eventcore.py": "ab1b3e9d2e9b29959a2ff6eaf6c4e43ecdfb82546403426d5120e338c9370bc9",
+    "experiments/summarize_ladder.py": "40e7fede4bb0514d73252a914945a174a076425e7d0fd07df7fc83c1de19228d",
+    "experiments/collect_dag_ladder.py": "ecc3ae7ecdd09ca5d4566fa510c1b551c8f449d704d18e3fb271f9df7256870d"
+  }
+}

@@ -1,0 +1,103 @@
+"""Contribution examples: planner/allocator only, no devices/Ramulator/timing."""
+from pathlib import Path
+import json
+import re
+import sys
+sys.path.insert(0, '/data2/chenyi9/KV-PIM/attacc_drampim_822')
+from src import workload_runner as wr
+from src.workload import Request, Segment, Workload, build_reuse_plan
+
+root = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+doc = (root / 'docs/README_contributions.md').read_text()
+p = json.loads(re.search(r'```json\n(.*?)\n```', doc, re.S).group(1))
+rounds, k, stripe = p['rounds'], p['repair_tokens'], p['stripe']
+chunk = wr._STRIPE_UNIT_ROWS
+heads = wr._HBM_CHANNELS // stripe
+classes = {'A3b': wr.NaiveKVLayout, 'A4c': wr.LocalDiffKVLayout,
+           'A4e': wr.TableLocalDiffKVLayout}
+
+def request(name, segments):
+    return Request(name, 0, None, 1, tuple(segments), sum(s.length for s in segments))
+
+def ledger_summary(workload, rung, selected_master=None):
+    plan = build_reuse_plan(workload, 'epic', epic_prefix_recompute_tokens=k)
+    tlb = classes[rung](p['head_dim'] * p['element_bytes'])
+    wr._prepare_cacheblend_tlb(workload, plan, 1, tlb, {})
+    ledger = tlb.physical_ledger(tlb.layout_policy, heads)
+    diffs = []
+    masters = []
+    nominal_diff_rows = set()
+    for key, rowmap in ledger.index.items():
+        layer, owner, fp, kind = key
+        object_ids = list(dict.fromkeys(rowmap.values()))
+        if kind == 'diff':
+            objs = []
+            for oid in object_ids:
+                rows, _, slot, start = ledger.objects[oid]
+                ch = ledger._channel(0, slot)
+                end = start + len(rows) * wr._GEN_BYTES_PER_TOKEN
+                nominal_diff_rows.update((ch, r) for r in range(
+                    start // wr._GEN_ROW_BYTES, (end - 1) // wr._GEN_ROW_BYTES + 1))
+                objs.append({'id': oid, 'channel': ch, 'start': start,
+                             'tokens': len(rows)})
+            diffs.append({'owner': owner, 'fingerprint': fp,
+                          'reserved_tokens': len(rowmap), 'objects': objs})
+        elif selected_master is None or fp in selected_master:
+            for oid in object_ids:
+                rows, _, slot, start = ledger.objects[oid]
+                masters.append({'fingerprint': fp, 'channel': ledger._channel(0, slot),
+                                'start': start, 'tokens': len(rows)})
+    return {'master_objects': masters, 'diff_objects': diffs,
+            'diff_reserved_tokens': sum(d['reserved_tokens'] for d in diffs),
+            'nominal_allocator_diff_row_count': len(nominal_diff_rows),
+            'nominal_row_count_is_not_ACT_measurement': True,
+            'coread_sets': [sorted(s) for s in tlb.chunk_coread]}
+
+out = {'scope': 'Same helper source as production allocator; no actual ACT counts or timing',
+       'parameters_from_README': p, 'head': 0, 'heads_per_HBM': heads,
+       'stripe': stripe, 'layout': {}, 'placement': {}}
+masters = [f'M{i}' for i in range(rounds)]
+producer = request('a', [Segment('doc', m, chunk) for m in masters])
+for own_blocks in (1, stripe):
+    segments = []
+    for i, m in enumerate(masters):
+        segments.append(Segment('doc', m, chunk, position_delta=1))
+        if i + 1 < rounds:
+            segments.append(Segment('own', f'own{i}', own_blocks * chunk))
+    consumer = request('z', segments)
+    workload = Workload('supervisor', (producer, consumer), {})
+    out['layout'][f'own_{own_blocks}_blocks_between_diffs'] = {
+        rung: ledger_summary(workload, rung, masters) for rung in ('A3b', 'A4c')}
+
+first, last = p['co_read_write_indices']
+pm = [f'M{i}' for i in range(last + 1)]
+order = [(m, 0) for m in pm]
+out['placement']['direct_slot_helper_only_pair_coread'] = {
+    mode: {fp: slot for (fp, _), slot in wr._block_slot_table(
+        order, [frozenset([pm[first], pm[last]])], stripe, mode).items()}
+    for mode in ('append', 'table')}
+consumer = request('z', [Segment('doc', pm[first], chunk), Segment('doc', pm[last], chunk)])
+for name, producers in (
+    ('separate_producers', [request(f'a{i}', [Segment('doc', m, chunk)])
+                            for i, m in enumerate(pm)]),
+    ('one_producer_reads_all_five', [request('a', [Segment('doc', m, chunk) for m in pm])]),
+):
+    workload = Workload('supervisor', tuple(producers + [consumer]), {})
+    out['placement'][name] = {rung: ledger_summary(workload, rung, pm)
+                               for rung in ('A4c', 'A4e')}
+
+target = Path('/tmp/independent_contributions_8c51672_evidence.json')
+target.write_text(json.dumps(out, indent=2) + '\n')
+brief = {'layout': {}, 'placement': {}}
+for case, rungs in out['layout'].items():
+    brief['layout'][case] = {
+        rung: {'D_channel_sequence': [d['objects'][0]['channel'] for d in data['diff_objects']],
+               'diff_tokens': data['diff_reserved_tokens'],
+               'nominal_allocator_rows_not_ACT': data['nominal_allocator_diff_row_count'],
+               'master_channel_sequence': [m['channel'] for m in data['master_objects']]}
+        for rung, data in rungs.items()}
+for case, data in out['placement'].items():
+    brief['placement'][case] = data if case.startswith('direct_') else {
+        rung: {m['fingerprint']: m['channel'] for m in rec['master_objects']}
+        for rung, rec in data.items()}
+print(json.dumps(brief, indent=2))

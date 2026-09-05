@@ -1,0 +1,45 @@
+{
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "date": "2026-09-05",
+  "scope": "Audit rulings and C4/C7 rechecks; no implementation or paper edits",
+  "independent_agents": [
+    "independent_fairness_audit",
+    "attacc_model_provenance"
+  ],
+  "artifacts_sha256": {
+    "audit/2026-09-05/CURRENT_ISSUES.md": "65aea3cdf6128e528098a9bca99d65259512d8063e87d06f54fbd675c0846cbb",
+    "audit/2026-09-05/README.md": "4530e8e74518553edaa744f1891dd9afd6505fb987e5bb44cf15b8ab7ec72714",
+    "audit/2026-09-05/archive/README.md": "f8335e2b8a758170da656f4110f65212ca1923b67ccfacf32e68398c29180091",
+    "docs/README_audit_fixes.md": "b67d6a36e71788132c3841f5b9bcc29265e8be97b221331e113de454243ee052",
+    "docs/README_design_ladder.md": "8fcd18f921eecd4926a60c815f009f3df81a4391390df3d0558cea0dae9d5250",
+    "docs/sessions/README.md": "3269a6dbf44eaf668ad96e3f3b8f61859b4213388156dc528a7a033be83d1b55",
+    "docs/sessions/2026-09-05-rulings-and-pending-reaudit.md": "db1f79ebd70a98befc8242f366dc59da0295bbe7501522784d0ef86dee1b9307",
+    "audit/2026-09-05/archive/pending_layout_reaudit_probe.txt": "645be404b75005e9e27344d9313a685751e281bca680ab71c2176d714cbb6363",
+    "audit/2026-09-05/archive/pending_layout_reaudit_evidence.json": "0ff8f25b7f04195a649f9266a24c4c7cf222604eb0109dcbe00fd6abafadada3",
+    "audit/2026-09-05/archive/independent_c7_reaudit_probe.txt": "4d5663567ceda2c8291d38ab91645a932f6eead4aa5e3365cad95b370db40cf1",
+    "audit/2026-09-05/archive/independent_c7_reaudit_evidence.json": "e9eb33e51ae7695ec9fb89fbe6d71cee8db6568427e9409ff8d5b8130bcc0a0e",
+    "audit/2026-09-05/archive/record_audit_rulings.txt": "29490a62f1f1503419faf4f38627ff1531e8b69aeb6b4390a372f070a8ef651f",
+    "audit/2026-09-05/archive/apply_round_boundary_ruling.txt": "b16f9889c989786bfe5da6fe296406b521c2236a14bf0472f3152312240cd54e",
+    "audit/2026-09-05/archive/finalize_remaining_audit_items.txt": "4a44d52b04702c55f35793b957686f889acd66f0d7c0c5c7ec36157368f6030e",
+    "audit/2026-09-05/archive/validate_audit_rulings.txt": "63f87ab120731f3091465bad3942f29239ed7f5c7b4115ff8c961be4f3937262",
+    "audit/2026-09-05/archive/independent_round_boundary_evidence.json": "f6aa34d1cc3bc113d3670c0cdcbcd793d2f07eb70388a58aa66ad11859216850",
+    "audit/2026-09-05/archive/independent_round_boundary_probe.txt": "29f15a0479b3a6d6394c129e494db3cf87b62f6b5f1442a02198ab607341bf6e",
+    "audit/2026-09-05/archive/independent_round_boundary_input.json": "30638f3da193f71b63b3404a092d5ffd788b156e86550c1930e0bac8b32d9b00",
+    "audit/2026-09-05/archive/independent_round_boundary_duplicate_id_input.json": "68face9de0a355a0c5ff7e2a73c886bd717cd7cbcb3846f361db22591069f2a1"
+  },
+  "validation": {
+    "head_unchanged": true,
+    "implementation_changes": [],
+    "paper_changes": [],
+    "existing_result_files_checked": 363,
+    "existing_result_changes": [],
+    "other_preexisting_protected_changes": [],
+    "historical_evidence_changes": [],
+    "contribution_readme_unchanged": true,
+    "broken_markdown_links": [],
+    "invalid_source_line_references": [],
+    "git_diff_check_exit_code": 0,
+    "git_diff_check_output": "",
+    "new_performance_experiments": false
+  }
+}

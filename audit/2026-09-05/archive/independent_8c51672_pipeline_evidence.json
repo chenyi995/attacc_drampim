@@ -1,0 +1,71 @@
+{
+  "kind": "arbitrary-duration structural probe, not simulated performance",
+  "python": {
+    "events": [
+      {
+        "name": "producer",
+        "device": "GPU",
+        "start": 0.0,
+        "end": 10.0
+      },
+      {
+        "name": "wait_for_producer",
+        "device": "PIM:pool0-1",
+        "start": 10.0,
+        "end": 11.0
+      },
+      {
+        "name": "independent_ready",
+        "device": "PIM:pool0-1",
+        "start": 11.0,
+        "end": 12.0
+      },
+      {
+        "name": "independent_other_channel",
+        "device": "PIM:pool1-2",
+        "start": 0.0,
+        "end": 1.0
+      }
+    ],
+    "overlap_validation": {
+      "passed": true,
+      "pipe": true,
+      "contract": "AttAcc comm_x2g busy timeline plus explicit CacheBlend resources",
+      "events_checked": 4
+    }
+  },
+  "native": {
+    "events": [
+      {
+        "name": "producer",
+        "device": "GPU",
+        "start": 0.0,
+        "end": 10.0
+      },
+      {
+        "name": "wait_for_producer",
+        "device": "PIM:pool0-1",
+        "start": 10.0,
+        "end": 11.0
+      },
+      {
+        "name": "independent_ready",
+        "device": "PIM:pool0-1",
+        "start": 11.0,
+        "end": 12.0
+      },
+      {
+        "name": "independent_other_channel",
+        "device": "PIM:pool1-2",
+        "start": 0.0,
+        "end": 1.0
+      }
+    ],
+    "overlap_validation": {
+      "passed": true,
+      "pipe": true,
+      "contract": "AttAcc comm_x2g busy timeline plus explicit CacheBlend resources",
+      "events_checked": 4
+    }
+  }
+}

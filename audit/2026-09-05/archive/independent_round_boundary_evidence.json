@@ -1,0 +1,326 @@
+{
+  "kind": "public parser + real reuse plan + allocator; no timing",
+  "request_count": 2,
+  "public_two_rounds": {
+    "A3b": {
+      "A_t0": {
+        "D_diff_positions": [
+          264,
+          265,
+          266,
+          267,
+          268,
+          269,
+          270,
+          271
+        ],
+        "D_diff_object_ids": [
+          [
+            0,
+            "A_t0",
+            "burst",
+            3
+          ]
+        ],
+        "D_diff_scan_head0": [
+          [
+            2,
+            1,
+            [
+              [
+                2147483648,
+                2155872256,
+                8
+              ]
+            ]
+          ]
+        ]
+      },
+      "A_t1": {
+        "D_diff_positions": [
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ],
+        "D_diff_object_ids": [
+          [
+            0,
+            "A_t1",
+            "burst",
+            6
+          ]
+        ],
+        "D_diff_scan_head0": [
+          [
+            1,
+            1,
+            [
+              [
+                1073742880,
+                1082131488,
+                8
+              ]
+            ]
+          ]
+        ]
+      },
+      "second_round_history": {
+        "binding_count": 528,
+        "owners": [
+          "A_t1"
+        ],
+        "fingerprints": [
+          "A_t1::history"
+        ],
+        "kinds": [
+          "master"
+        ],
+        "earlier_round_diff_in_second_round_bindings": 0
+      }
+    },
+    "A4c": {
+      "A_t0": {
+        "D_diff_positions": [
+          264,
+          265,
+          266,
+          267,
+          268,
+          269,
+          270,
+          271
+        ],
+        "D_diff_object_ids": [
+          [
+            0,
+            "A_t0",
+            "D",
+            "diff",
+            0
+          ]
+        ],
+        "D_diff_scan_head0": [
+          [
+            3,
+            1,
+            [
+              [
+                3758096384,
+                3766484992,
+                8
+              ]
+            ]
+          ]
+        ]
+      },
+      "A_t1": {
+        "D_diff_positions": [
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ],
+        "D_diff_object_ids": [
+          [
+            0,
+            "A_t1",
+            "D",
+            "diff",
+            0
+          ]
+        ],
+        "D_diff_scan_head0": [
+          [
+            3,
+            1,
+            [
+              [
+                3758096448,
+                3766485056,
+                8
+              ]
+            ]
+          ]
+        ]
+      },
+      "second_round_history": {
+        "binding_count": 528,
+        "owners": [
+          "A_t1"
+        ],
+        "fingerprints": [
+          "A_t1::history"
+        ],
+        "kinds": [
+          "master"
+        ],
+        "earlier_round_diff_in_second_round_bindings": 0
+      }
+    }
+  },
+  "duplicate_request_id": {
+    "type": "WorkloadValidationError",
+    "message": "agents[1]: duplicate agent id 'A_t0'"
+  },
+  "manual_same_owner_not_a_public_two_round_input": {
+    "reservation_keys": [
+      [
+        0,
+        "A",
+        "D",
+        "diff"
+      ],
+      [
+        0,
+        "A",
+        "out",
+        "master"
+      ]
+    ],
+    "diff_rows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      256,
+      257,
+      258,
+      259,
+      260,
+      261,
+      262,
+      263
+    ],
+    "diff_object_ids": [
+      [
+        0,
+        "A",
+        "burst",
+        1
+      ]
+    ]
+  },
+  "existing_B0_JSON_readonly_summary": {
+    "interleaved": {
+      "source": "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/sweep/B0_interleaved.json",
+      "declared_rounds": 8,
+      "all_requests": 9,
+      "worker_w00_requests": 1,
+      "worker_w00_total_decode_tokens": 256,
+      "worker_w00_records": [
+        {
+          "id": "w00",
+          "tier": 0,
+          "parent": null,
+          "history_len": 0,
+          "lout": 256,
+          "prefill_tokens": 5376,
+          "doc_segments": 16,
+          "distinct_doc_fingerprints": 16
+        }
+      ]
+    },
+    "turns": {
+      "source": "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/sweep/B0_turns.json",
+      "declared_rounds": 8,
+      "all_requests": 65,
+      "worker_w00_requests": 8,
+      "worker_w00_total_decode_tokens": 2048,
+      "worker_w00_records": [
+        {
+          "id": "w00_t00",
+          "tier": 0,
+          "parent": null,
+          "history_len": 0,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        },
+        {
+          "id": "w00_t01",
+          "tier": 1,
+          "parent": "w00_t00",
+          "history_len": 896,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        },
+        {
+          "id": "w00_t02",
+          "tier": 2,
+          "parent": "w00_t01",
+          "history_len": 1792,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        },
+        {
+          "id": "w00_t03",
+          "tier": 3,
+          "parent": "w00_t02",
+          "history_len": 2688,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        },
+        {
+          "id": "w00_t04",
+          "tier": 4,
+          "parent": "w00_t03",
+          "history_len": 3584,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        },
+        {
+          "id": "w00_t05",
+          "tier": 5,
+          "parent": "w00_t04",
+          "history_len": 4480,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        },
+        {
+          "id": "w00_t06",
+          "tier": 6,
+          "parent": "w00_t05",
+          "history_len": 5376,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        },
+        {
+          "id": "w00_t07",
+          "tier": 7,
+          "parent": "w00_t06",
+          "history_len": 6272,
+          "lout": 256,
+          "prefill_tokens": 896,
+          "doc_segments": 2,
+          "distinct_doc_fingerprints": 2
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,145 @@
+"""Read-only implementation probes; fake device prices are never performance data.
+
+Run from repository root with PYTHONDONTWRITEBYTECODE=1 python3 /tmp/contributions_alignment_probe.py.
+Only this script's /tmp output and temporary command traces are written.
+"""
+from pathlib import Path
+from types import SimpleNamespace
+from collections import Counter
+from dataclasses import asdict
+import hashlib
+import importlib.util
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+import tempfile
+
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT))
+sys.dont_write_bytecode = True
+from src.ablation import resolve_config
+from src.model import Transformer
+from src.type import DataType, DeviceType
+from src.ramulator_wrapper import mq_query_capacity
+from src.workload import Request, Segment, Workload, build_reuse_plan
+import src.workload_runner as wr
+
+def protected_hashes():
+    paths = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
+    result = {}
+    for relative in paths:
+        if not relative or relative.startswith(('audit/', 'docs/')):
+            continue
+        path = ROOT / relative
+        if path.is_file():
+            result[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for path in (ROOT / 'experiments').rglob('*'):
+        if path.is_file() and '__pycache__' not in path.parts:
+            result[str(path.relative_to(ROOT))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    path = ROOT / 'docs/README_contributions.md'
+    result[str(path.relative_to(ROOT))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return result
+
+before = protected_hashes()
+doc = (ROOT / 'docs/README_contributions.md').read_text()
+p = json.loads(re.search(r'```json\n(.*?)\n```', doc, re.S).group(1))
+history = p['chunks'] * wr._STRIPE_UNIT_ROWS
+qs = p['repair_tokens']
+head_count = wr._HBM_CHANNELS // p['stripe']
+buf = resolve_config('A5', None, None, None, policy='epic').gemv_buffer_bytes
+out = {'scope': 'Current planner/DAG and command generation only; no Ramulator binary, real latency, energy or speedup measurement.',
+       'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT).decode().strip(),
+       'readme_parameters': p, 'illustrative_arithmetic': {
+           'diff_tokens': p['rounds'] * qs,
+           'packed_diff_rows': math.ceil(p['rounds'] * qs / wr._STRIPE_UNIT_ROWS),
+           'combined_nominal_ACT_reduction_percent': 100 * (p['rounds'] - math.ceil(p['rounds'] * qs / wr._STRIPE_UNIT_ROWS)) / (2 * p['rounds']),
+           'history_tokens': history, 'history_KV_bytes_per_head': history * 2 * p['head_dim'] * p['element_bytes'],
+           'mq_capacity': mq_query_capacity(buf), 'column_read_reduction_percent': 100 * (qs - 1) / qs,
+           'hypothetical_fixed_PIM_us': sum(x['pim_us'] for x in p['prefills']),
+           'hypothetical_adaptive_us': sum(min(x['gpu_us'], x['pim_us']) for x in p['prefills']),
+           'hypothetical_adaptive_speedup': sum(x['pim_us'] for x in p['prefills']) / sum(min(x['gpu_us'], x['pim_us']) for x in p['prefills'])}}
+cfgs = {r: asdict(resolve_config(r, None, None, None, policy='epic')) for r in ('A3b', 'A4c', 'A4e', 'A5', 'A6')}
+out['resolved_adjacent_config_changes'] = {a+'->'+b: {k: [cfgs[a][k], cfgs[b][k]] for k in cfgs[a]
+    if k != 'preset' and cfgs[a][k] != cfgs[b][k]} for a, b in zip(cfgs, list(cfgs)[1:])}
+
+class Device:
+    peak_memory_bandwidth = 10**12
+    softmax_peak_bandwidth = 10**12
+    energy_table = {'mem': 1, 'sram': 1}
+    num_hbm = 1
+    def __init__(self):
+        self.ops = []
+    def capture(self, op):
+        self.ops.append({'name': op.name, 'm': op.m, 'n': op.n, 'numOp': op.numOp,
+            'shared_queries': getattr(op, 'pim_shared_queries', 1),
+            'batch_command': getattr(op, 'pim_batch_command', None),
+            'runs': getattr(op, 'pim_kv_runs', ())})
+    def get_time_and_energy(self, op):
+        self.capture(op)
+        return 1e-6, [1, 0, 0, 0, 0, 0]
+    def get_time_and_energy_runs(self, op):
+        self.capture(op)
+        return [(1e-6, [1, 0, 0, 0, 0, 0]) for _ in op.pim_kv_runs]
+
+wl = Workload('supervisor', (Request('r', 0, None, 1,
+    (Segment('user', 'fresh', qs),), qs, history_len=history),), {})
+plan = build_reuse_plan(wl, 'epic', epic_prefix_recompute_tokens=qs)
+out['real_DAG_with_fake_devices'] = {}
+for rung in ('A4e', 'A5'):
+    cfg = resolve_config(rung, None, None, None, policy='epic')
+    system = SimpleNamespace(hetero_name=DeviceType.PIM, devices={'GPU': Device(), 'Acc': Device()},
+        model=Transformer(dict(name='contribution-audit', ndec=1, num_heads=head_count,
+            hdim=head_count*p['head_dim'], dhead=p['head_dim'], ff_scale=4,
+            gqa_size=1, dtype=DataType.W16A16), 1))
+    report = wr.run_reuse_prefill(system, wl, plan, pipe=True, cacheblend_batch_size=qs,
+        include_events=True, warm=False, decode_attn=cfg.decode_attn, kv_mapping=cfg.kv_mapping,
+        channel_placement=cfg.channel_placement, pim_prefill_mode=cfg.prefill_attn,
+        pim_batch_command=cfg.pim_batch_command, pim_pe_freq_ghz=cfg.pim_pe_freq_ghz,
+        gemv_buffer_bytes=cfg.gemv_buffer_bytes)
+    events = report['events']
+    link_names = ('kv_pim_to_gpu', 'kv_gpu_to_pim', 'q_gpu_to_pim', 'ctx_pim_to_gpu')
+    out['real_DAG_with_fake_devices'][rung] = {
+        'note': 'MHA four KV heads, one layer, pipe=True, fixed device prices; byte/operation coverage only. History uses accepted history_len abstraction.',
+        'head_count': head_count,
+        'link_bytes_per_head': {name: sum(e['link_bytes'] for e in events if e['name'] == name) // head_count for name in link_names},
+        'link_events': [{k: e[k] for k in ('name', 'rows', 'link_bytes')} for e in events if e['name'] in link_names],
+        'prefill_attention_rows': report['prefill_attention_rows'],
+        'PIM_scans': system.devices['Acc'].ops}
+if wr._EC is not None:
+    wr._EC.close()
+    wr._EC = None
+
+out['real_generator_commands'] = {}
+with tempfile.TemporaryDirectory(prefix='contributions-traces-') as scratch:
+    for scheme in ('replicate', 'mq'):
+        trace = Path(scratch) / (scheme + '.trace')
+        cmd = [sys.executable, str(ROOT / 'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py'),
+            '--dhead', str(p['head_dim']), '--nhead', '1', '--seqlen', str(wr._STRIPE_UNIT_ROWS),
+            '--dbyte', str(p['element_bytes']), '--channels', '1', '--pool-base', '0',
+            '--head-hbm-stripe', '--key-addr', '0', '--value-addr', '0x800000',
+            '--shared-kv', '--shared-queries', str(qs), '--output', str(trace)]
+        if scheme == 'mq':
+            cmd.append('--mq')
+        subprocess.run(cmd, cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+        out['real_generator_commands'][scheme] = dict(Counter(line.split()[0] for line in trace.read_text().splitlines() if line))
+out['trace_scope'] = 'One 256-token row, one channel, eight queries; command-count mechanism only, not the complete 8192-token workload or simulator ACT/cycles.'
+after = protected_hashes()
+out['protected_hashes_before'] = before
+out['protected_files_changed'] = sorted(k for k in before.keys() | after.keys() if before.get(k) != after.get(k))
+assert not out['protected_files_changed']
+a4e = out['real_DAG_with_fake_devices']['A4e']['link_bytes_per_head']
+a5 = out['real_DAG_with_fake_devices']['A5']['link_bytes_per_head']
+assert a4e['kv_pim_to_gpu'] == out['illustrative_arithmetic']['history_KV_bytes_per_head']
+assert a5['kv_pim_to_gpu'] == 0
+assert a4e['kv_gpu_to_pim'] == a5['kv_gpu_to_pim'] == qs * 2 * p['head_dim'] * p['element_bytes']
+assert a5['q_gpu_to_pim'] == a5['ctx_pim_to_gpu'] == qs * p['head_dim'] * p['element_bytes']
+rep, mq = (out['real_generator_commands'][s] for s in ('replicate', 'mq'))
+assert rep['PIM_MAC_AB'] == qs * mq['PIM_MAC_AB']
+assert all(rep[k] == v for k, v in mq.items() if k != 'PIM_MAC_AB')
+path = Path('/tmp/contributions_alignment_evidence.json')
+path.write_text(json.dumps(out, indent=2, sort_keys=True)+'\n')
+print(json.dumps({k: v for k, v in out.items() if k not in ('protected_hashes_before', 'real_DAG_with_fake_devices')}, indent=2))
+print(json.dumps({r: {k:v for k,v in d.items() if k != 'PIM_scans'} for r,d in out['real_DAG_with_fake_devices'].items()}, indent=2))

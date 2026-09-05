@@ -1,0 +1,91 @@
+"""Record final audit principles; does not implement or mark any fix complete."""
+from pathlib import Path
+import hashlib
+import json
+import shutil
+import subprocess
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822'); A=R/'audit/2026-09-05'; H=A/'archive'
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+path=A/'CURRENT_ISSUES.md'; s=path.read_text()
+s=s.replace('# 这一轮需要过目的事项：具体 case、论文声明与相对公平性','# 本轮审计结论与执行交接：已定口径、证据和验收要求',1)
+s=s.replace('仍需过目的是 C8 多轮覆盖。','C8 按用户明确的 a/c 原址继续引用语义作为执行要求。本轮没有继续等待用户选择的建模原则。')
+row='| [C8](#c8) 跨轮持久引用 | 后续 request 继续引用原 master 和该 agent 已产生的 diff；输出/新内容正常追加 | 保留旧对象地址，不能仅用新 history master 占位代替；沿用 C7 的同轮/跨轮规则 |\n'
+anchor='**目前还需重点过目：C8 的多轮 workload 是否覆盖旧 diff 的持久布局。**'
+assert anchor in s
+start=s.index(anchor); end=s.index('\n\n## 先认识系统',start)
+s=s[:start]+'''**本轮口径已明确，当前没有需要用户再次裁决的事项。** C8 以 chenyi9 对 a/b/c/e/f 的说明为依据：a 是原 shared chunk，c 是该 agent 已产生的 diff，后续 f 仍 attention 原来的 a/c；后续输出或其他 KV 在后面追加。该说明已经明确目标，无需再问是否接受用新 history 占位替代它。C4 按共同计时近似记录，C7 的同轮合并指控撤回。**口径确定不等于代码修复完成；下列已定项仍需执行 agent 落实并由 audit 验收。** 记录见 [最终交接 session](../../docs/sessions/2026-09-05-audit-decisions-finalized.md)。'''+s[end:]
+anchor='| [C7](#c7) A3b 轮次边界 | 同一 round 的多组 diff 可正常追加紧排；跨轮有输出/新写入后不能重新并成同批 | 撤回单 prefill 合并的违规判断；真实跨轮存储覆盖另见 C8 |\n'
+assert anchor in s
+s=s.replace(anchor,anchor+row)
+s=s.replace('| [C8](#c8) | 当前多轮输入未沿用前一轮 diff 的物理布局 | A3b→A4c 的跨轮收益覆盖 | 新证据待过目；未测总体偏差 |','| [C8](#c8) | 当前多轮输入未沿用前一轮 diff 的物理布局 | A3b→A4c 的跨轮收益覆盖 | 原址继续引用要求已明确；待执行/验收 |')
+s=s.replace('需要单独过目，是因为这个抽象恰好不保留 A3b→A4c 所声称的一个收益来源。','C8 单独列入执行要求，是因为该抽象没有保留用户已明确要求继续引用的旧 master/diff 对象，也是 A3b→A4c 所声称的一个收益来源。')
+old='**需要判断什么。** 是否接受当前输入仅支持静态布局/历史长度的比较；还是要求用于跨轮 claim 的验证保留旧 master/diff 引用和中间输出的物理追加关系。后者属于跨轮覆盖补齐，不能通过惩罚同轮 A3b 来制造收益。本轮先记录，不实施修复。当前能确认跨轮收益来源未完整呈现，不能据此确定正式总体加速一定高估或低估。'
+new='''**已明确的执行要求。** 按 chenyi9 的 a/b/c/e/f 例子：第一次复用产生 c 后，a/c 保持各自地址；中间的 b/e 或后续输出不会使其消失；之后 f 扫描时仍引用原 a/c。用于跨轮 claim 的输入与绑定应保留这一对象关系。history_len 可以继续记录长度，但不能将已知旧 master/diff 的物理身份替换成新的普通 master 占位。执行时对齐这条语义，保持 A3b 同轮正常追加、跨轮不重新聚合，A4c 才有独立 diff 区的跨轮紧排。
+
+**验收要看什么。** 下一轮绑定和 trace 能追溯到上一轮实际 master/diff；中间输出按真实追加规则保留；扫描地址对应这些持久对象，ACT/换行成本由 Ramulator 处理。主审本轮只记录目标与证据，没有修代码，没有测出净加速变化；不要求用人为惩罚同轮 A3b 来体现收益。'''
+assert old in s
+s=s.replace(old,new)
+s=s.replace('原 V04 留待需要该边界时裁决','原 V04 按共同边界记录')
+s=s.replace('可作为共同静态预分配理解；是否作为正式定义仍待裁决。','按共同静态预分配近似记录；涉及跨轮旧对象引用时遵守已明确的 C8。')
+s=s.replace('已确定的修复与 C8 待过目项分别跟踪；','已确定的修复与 C8 持久引用要求一并交接；')
+path.write_text(s)
+for path in (A/'README.md',R/'docs/README_audit_fixes.md'):
+    s=path.read_text().replace('C8 多轮覆盖待过目','C8 按旧 master/diff 原址继续引用执行；本轮建模口径已定，实现仍待落实和验收')
+    s=s.replace('哪些结论还需要用户裁决','哪些事项已确定、哪些实现仍待验收')
+    path.write_text(s)
+path=R/'docs/sessions/2026-09-05-audit-decisions-finalized.md'
+path.write_text('''# 2026-09-05：本轮审计口径确定，交接执行与验收
+
+chenyi9 询问是否还有待其审阅的事项。主审核对后，将最新说明落实到当前审计文档：本轮已提出问题的建模原则已经明确，当前没有待用户选择的模型口径。代码 revision 仍为 `8c51672a3ef8b936340354b3211963cde8945c49`；本次不执行修复、不修改论文或已有结果。
+
+## 为什么更新 C8 状态
+
+此前 C8 写作“是否需要保留旧 diff 原址，待过目”。chenyi9 随后明确举例：a 是共享 chunk，第一次复用生成 c，后面的内容正常追加，后续 f 仍 attention 最早的 a 和原来的 c。这已经说明期望的持久引用关系，继续询问是否允许用新 history master 占位替代它会重复请求已经给出的设计判断。
+
+因此将 C8 改为执行目标已明确：保留原 master/diff 对象引用，下一轮扫描仍能追溯到旧地址；history_len 可以记录长度，不能替代已知对象的存储关系。这里记录用户明确的设计语义及主审据此整理的验收要求，不宣称用户另行批准了一种实现架构，也不宣称修复已完成。
+
+## 本轮最终状态
+
+- C1：各档共同开启 FlashAttention，pipeline 沿已定共同口径。
+- C2/C3/C6：GQA、diff 地址和报表修复要求已定，待执行。
+- C5：实际需要哪些项就估算哪些项；Q 输入传输接受忽略，真实历史回读按字节、空回读为零；论文与代码同步简单逐 request 比价。
+- C7：同轮多组 diff 可正常追加紧排；跨轮已有输出/新 KV 后不能重新聚成同批。单 prefill 反例已撤回。
+- C4：按共同 row/column 计时近似记录，ACTAB/PREA 和时序交给 Ramulator，不新增步长/跳转费用。
+- C8：按原 master/diff 地址持久引用的语义对齐实现和跨轮验证。
+
+## 文件变更与验证
+
+CURRENT_ISSUES 更新标题、顶部交接表、C8 状态与验收要求，移除重复待裁决文字；两个审计入口同步状态。旧证据和历史 session 保留。新 session 说明为何从“待裁决”转为“设计语义已明确”，并区分口径、实现完成和验证通过。
+
+执行 `python3 /tmp/finalize_audit_decisions.py`、`git diff --check`；保护文件摘要、论文摘要与文档链接检查记录在 [final_audit_decisions_manifest.json](../../audit/2026-09-05/archive/final_audit_decisions_manifest.json)。没有运行新模拟或改实现，没有 commit。执行 agent 应读取 [当前交接清单](../../audit/2026-09-05/CURRENT_ISSUES.md#decisions)，主审后续按同一口径验收。
+''')
+path=R/'docs/sessions/README.md'; s=path.read_text().replace('|---|---|---|\n','|---|---|---|\n| 2026-09-05（口径确定与交接） | [已定原则、待执行和验收](2026-09-05-audit-decisions-finalized.md) | C8 按 a/c 原址继续引用要求对齐；本轮无待重复裁决口径；明确不代表代码已修 |\n',1);path.write_text(s)
+shutil.copyfile(Path(__file__),H/'finalize_audit_decisions.txt')
+P=json.loads((H/'contributions_alignment_evidence.json').read_text())
+V=json.loads((H/'pending_layout_reaudit_evidence.json').read_text())
+changed=[p for p,h in P['protected_hashes_before'].items() if sha(R/p)!=h]
+paper=[p for p,h in V['paper_before'].items() if sha(Path(p))!=h]
+assert not changed and not paper
+check=subprocess.run(['git','diff','--check'],cwd=R,text=True,capture_output=True)
+assert check.returncode==0,check.stdout+check.stderr
+files=[A/'CURRENT_ISSUES.md',A/'README.md',R/'docs/README_audit_fixes.md',R/'docs/sessions/README.md',R/'docs/sessions/2026-09-05-audit-decisions-finalized.md',H/'finalize_audit_decisions.txt']
+# Check local document links, including source line suffixes, without editing prior manifests.
+import re
+broken=[]
+manifest=H/'final_audit_decisions_manifest.json'
+for path in files:
+    if path.suffix!='.md': continue
+    for raw in re.findall(r'\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)\)',path.read_text()):
+        link=raw.strip('<>')
+        if link.startswith(('http://','https://','#','mailto:')): continue
+        plain=re.sub(r':\d+$','',link.split('#',1)[0])
+        target=Path(plain) if plain.startswith('/') else path.parent/plain
+        if target.resolve()!=manifest.resolve() and not target.exists(): broken.append([str(path),link])
+assert not broken,broken
+record={'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip(),
+        'scope':'Audit decision status and handoff only; implementation not fixed in this turn',
+        'protected_files_changed':changed,'paper_changes':paper,'broken_links':broken,
+        'git_diff_check_exit_code':check.returncode,'new_performance_experiments':False,
+        'artifacts_sha256':{str(p.relative_to(R)):sha(p) for p in files}}
+manifest.write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({k:v for k,v in record.items() if k!='artifacts_sha256'},ensure_ascii=False))

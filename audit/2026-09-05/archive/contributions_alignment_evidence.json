@@ -1,0 +1,792 @@
+{
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "illustrative_arithmetic": {
+    "column_read_reduction_percent": 87.5,
+    "combined_nominal_ACT_reduction_percent": 43.75,
+    "diff_tokens": 64,
+    "history_KV_bytes_per_head": 4194304,
+    "history_tokens": 8192,
+    "hypothetical_adaptive_speedup": 4.181818181818182,
+    "hypothetical_adaptive_us": 220,
+    "hypothetical_fixed_PIM_us": 920,
+    "mq_capacity": 8,
+    "packed_diff_rows": 1
+  },
+  "protected_files_changed": [],
+  "protected_hashes_before": {
+    ".gitignore": "e62307f2e7137c7c9969e0fc119d810465406795950dfa31dc3b81aeecb46a88",
+    ".gitmodules": "b82d9885e84d606e7ad45afd6b33017c620488657716394a316a9cbb37d38432",
+    "LICENSE": "89e78a789b21f2fc808a6833d4dcd720366744d582f88f76765c84e6a9bb8092",
+    "README.md": "66ae76de3c817e472c2229cc868e9b45fdadd0c69c36edb7614e9800559d39a1",
+    "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "agent.md": "4e6d1c2cf09b6f8d70b235bb5820d90a3362a8e30eec0d9c1c81b331cd65c6df",
+    "docs/README_contributions.md": "105c3e1d8e755fdaa9ac6489c5103ad8e5722707faedac093c9108841e27b8d9",
+    "experiments/collect_dag_ladder.py": "ecc3ae7ecdd09ca5d4566fa510c1b551c8f449d704d18e3fb271f9df7256870d",
+    "experiments/mem_guard.sh": "8ffc238fdb843d3e419e2d1d59c87e4c450027a5d7ebd7874800bdc9a7911117",
+    "experiments/paper_ladder/results/dag_mooncake_CACHEBLEND-TINY_dynamic.log": "365cfa461498862cc934d183ee078f976db394a70e6de51d084097f604ee1257",
+    "experiments/paper_ladder/results/dag_mooncake_LLAMA-7B_dynamic.log": "807f703c0a3431e2712139372563f7d8d09056a309fb6005b9bfc4cbbbbd470a",
+    "experiments/paper_ladder/results/dag_mooncakemt_CACHEBLEND-TINY_dynamic.log": "6d928d1f17276d44ec1835127a5ecc32a3f79c0a18b622935aec89670926928f",
+    "experiments/paper_ladder/results/dag_mooncakemt_LLAMA-7B_dynamic.log": "800fde2eb1758f2e371d088eeb7e6d0a5ae2034390b0116c0cb0784818e0d88a",
+    "experiments/paper_ladder/results/dag_multihop_CACHEBLEND-TINY_dynamic.log": "728e392fa9fa4774decce7a446feb3f25386050268eaaa41b911097c9bc1e8dd",
+    "experiments/paper_ladder/results/dag_multihop_LLAMA-7B_dynamic.log": "9207ae5f15c1e5db3a4b50d1e51b12d91f887c55789573b7aee2992834983d22",
+    "experiments/paper_ladder/results/dag_relay_CACHEBLEND-TINY_dynamic.log": "5e037e410d6a4e9a179c087212bdc7ddcc0878daa87a21ca604ba3724a1667c2",
+    "experiments/paper_ladder/results/dag_relay_LLAMA-7B_dynamic.log": "35dbb572528187a9146918fc841a7704881d45755d4ed358e1d38cc57079954a",
+    "experiments/paper_ladder/results/dag_sharegpt_CACHEBLEND-TINY_dynamic.log": "fb3ccd78b31a3185adebc76e8a260262ed4ff831572b07902dae76d5204a5fe8",
+    "experiments/paper_ladder/results/dag_sharegpt_LLAMA-7B_dynamic.log": "ec4140d4bc25b583a6b3b837de74f589dd402a886a753a5cfebc6c25aa924cdd",
+    "experiments/paper_ladder/results/ladder_mooncakemt_GPT-175B_A1.log": "38f8b4cb0bbc760eec56027fa21934e630d88c1aa380999e918241c5ff5b9a9b",
+    "experiments/paper_ladder/results/ladder_mooncakemt_GPT-175B_A2.log": "6800607a09c425bd1735bba58b2425760d4e50ad716ef8cd9f774be91923f5d1",
+    "experiments/paper_ladder/results/ladder_mooncakemt_GPT-175B_A3.log": "b44c40b688e10be218c9464e36811b9fe3d6032b8b624f1240f85e2d488a00de",
+    "experiments/paper_ladder/results/ladder_mooncakemt_GPT-175B_A4.log": "bc103f88d2fcf55aca620af564484475304ed17398ce84b08c1c8a124665135a",
+    "experiments/paper_ladder/results/ladder_mooncakemt_GPT-175B_A5.log": "4c149cec48bf56746772787c5dbe0abb25e8aa7aec6e647b1740df97ab74e3b2",
+    "experiments/paper_ladder/results/ladder_mooncakemt_GPT-175B_A6.log": "a27cbf965161136c098c0aaacba06b5a572bc348b159a164521c568c4a075a04",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-65B_A1.log": "42a65f0936c4b2e4f5bcfe8a7f67a1d1cba375066f8eebf3cb8069fab5cb4ae1",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-65B_A2.log": "30228a0a3aa69895c784d939ee247ae6cb6ea842ca24decfa5287257ffea8509",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-65B_A3.log": "58a1d3eb8a26a9f9754315647e3d92fa77a73f4ecc2775f5bc5b86ad2b391318",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-65B_A4.log": "2e5697ec6e3f63e8fc554342a01de96ddab773cf86645f826b4e070dcb34b415",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-65B_A5.log": "eb584c63bb088b81366fdd1e55c8b5c42ec58a96e0975fb26ee5423ea3297884",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-65B_A6.log": "f0c9f1f30a4ed19284679b36082eb40641b46acae5ebc9d2ac15b47cc6729637",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-7B_A1.log": "92a7a23e07c5e2b67e5615f962ce086b5e42612a43a4a5a308bbb0b45537a072",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-7B_A2.log": "3fbf2c843824219b77bbfc8d58f3288e8a3bb7352460f60b70f52ac2daa017d8",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-7B_A3.log": "2ad2524b3bccba0450d00c4b0ef6d18a2fa93e7663b2cebabfed95121ec31e9e",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-7B_A4.log": "02a8b16d9ee78850eac5d06e38e07cd0c4d6e4a8a3f23b58ed82d13a99119b19",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-7B_A5.log": "a934239ed57c7792b7ed23bcb5d5e835020ed9bf184caf6551bf5e9372f09b30",
+    "experiments/paper_ladder/results/ladder_mooncakemt_LLAMA-7B_A6.log": "8333db1b9f81302a67635b98f86109341171d1e41f96b76c46993df8d4bd1b10",
+    "experiments/paper_ladder/results/ladder_multihop_GPT-175B_A1.log": "cc1679bef0e3be090ccd92be2f643341a4ee33295eba3e80b882f2c0e08ad142",
+    "experiments/paper_ladder/results/ladder_multihop_GPT-175B_A2.log": "cbea24a7ddf4652f07b3dc5c13a541915528323f89a9bc4ff782b18fe3ba63ad",
+    "experiments/paper_ladder/results/ladder_multihop_GPT-175B_A3.log": "a28d9d8a9b9dbb4236b8bcd347d89576c0a25dd28bc530495b4cf061f444ff3c",
+    "experiments/paper_ladder/results/ladder_multihop_GPT-175B_A4.log": "8951bbc52fb4eefa8b4b17db87f4683752a3f5c89bc9a1ec479de9d1171a1e39",
+    "experiments/paper_ladder/results/ladder_multihop_GPT-175B_A5.log": "ce12180ec7f22caa2579b8ea48b4656a89ccc3d0e4472664191016ed07a0ed20",
+    "experiments/paper_ladder/results/ladder_multihop_GPT-175B_A6.log": "c0eb4a7eee3e698851c31c56ca799c9ea38e5d217a538aff23f2dae1bf909fb9",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-65B_A1.log": "d831b499248497b1fedb90bea9b3f52911ff94a4d49ddaff286facac05146288",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-65B_A2.log": "7e06f3f199a4b42be728574b9e86a66cfdd8a19d9db9dc2923dcd21278211597",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-65B_A3.log": "91a8015e22b0ecc8835da1829007c555831ec75c284188b443576e361cdea0cf",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-65B_A4.log": "9e7ac29e5f83e319d0f6a1555d42b217948ef4a9390c8ad89024d4988913d873",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-65B_A5.log": "81aa50af15f5be12241038d09a1dd1d944121bd289d2422fb6c33e72d2c6c02d",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-65B_A6.log": "9ab734fe8091996ff7bd7fada06a9c3df2afd5f49c068a68382a4a00615375bf",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-7B_A1.log": "ccbd48ceec2b521f616aa0fe108c44481040f93ffe463c97c2e5ee623b7f86a9",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-7B_A2.log": "722c643e91027ede6365d24c3457eeab62fe87f3a718693698eec3562abcc719",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-7B_A3.log": "bcf8ce272ad521c998e9504f7f2ad8fbe42d88b9c76a7c2fe95e491d76705427",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-7B_A4.log": "8e3cddf0303a46139e039eedc2a98af867c829b348152d9a69aa2f23f999bc63",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-7B_A5.log": "c7e27b59e6590c03eb51d02ff23069ad4afc17605f5e62aa772fb28761422510",
+    "experiments/paper_ladder/results/ladder_multihop_LLAMA-7B_A6.log": "5e5cfc1c49978ae7972477e045ab3f044d0de4c3f94fb7caa6a7fb9c99848f7e",
+    "experiments/paper_ladder/results/ladder_relay_GPT-175B_A1.log": "e6666ee51e8db61064fc08987b45c805f96955d4e5da2dd8a2e91670ad87487f",
+    "experiments/paper_ladder/results/ladder_relay_GPT-175B_A2.log": "6220e9fdbb0d8679f08511f39e3f3610b511e4c539e1dfa7da94fc781f058d3d",
+    "experiments/paper_ladder/results/ladder_relay_GPT-175B_A3.log": "79ad1fe269a7dca9814beb6573c7ee37035ca2cf87a8e3025b5e6e7f3ce578e4",
+    "experiments/paper_ladder/results/ladder_relay_GPT-175B_A4.log": "b978a8a60c6152899c879a2f0198bc527fdf956df6e86b5c9f6de10e7e6a57b9",
+    "experiments/paper_ladder/results/ladder_relay_GPT-175B_A5.log": "d7464a106fb78b50ca6cdf47b822e99b1c5abb9d81edfb9ba20724668cec8993",
+    "experiments/paper_ladder/results/ladder_relay_GPT-175B_A6.log": "6efc33f2054b0b3da4d07a35afbf8288bceb5e874ccb5a0ca589d993bde46028",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-65B_A1.log": "75f194836fb3a5ba3010db7d7c06c2948b74833804b84e5fcdeffbc2bc564d17",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-65B_A2.log": "efc03fe8a4fdfb0a9c443e8387b9aba108a690c0680ceb7872253469cad287f7",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-65B_A3.log": "f0c81924a73a07739b0a190e989c1d4eb65facc53e027f08e2e1fad3ee099991",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-65B_A4.log": "4fe02d73d83b0020f60e6ecb836c9c9f80b9eed271f3fc682934f43bcaa492c2",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-65B_A5.log": "a58482e95aff653b02e97d7b60663de6323777c8d2a1ae35b4028c4383260397",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-65B_A6.log": "a22bab5d6c9315e8b1b96b8426d35c71cf909199d693a47b7dd0aa4f54a67519",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-7B_A1.log": "b454cb3986c4219fb48c0d7e19aa650c3912ad76ee07f96ee62802ff1633075a",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-7B_A2.log": "20de6776075f7c20310e101ece65ce0e867253be0138753373f0bad10c4a1781",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-7B_A3.log": "e8fb3bd1e71527ded437e8497c3d873ebc1e430002d9ddd8f616455bb615a4ac",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-7B_A5.log": "1f15c7d2f115105966e940db19e30d11bf03860f02814bf294179d43cefe12b8",
+    "experiments/paper_ladder/results/ladder_relay_LLAMA-7B_A6.log": "5df63e01ed633f1521df294ca3ac8e9fa4428271b63a8cd0c89c45b1cb548eb1",
+    "experiments/paper_ladder/results/ladder_sharegpt_GPT-175B_A1.log": "21296d8885f9a67eb57dc819e1e3504c02297adf53c206abb5dfa377458475e4",
+    "experiments/paper_ladder/results/ladder_sharegpt_GPT-175B_A2.log": "661eca4a9904205bb305f8e495b0701b232b17d51c4d80a51c2636879d86efc5",
+    "experiments/paper_ladder/results/ladder_sharegpt_GPT-175B_A3.log": "7d4195fba5b15c17ce490339108d475b4d4ecb807877e338419e1830777702e0",
+    "experiments/paper_ladder/results/ladder_sharegpt_GPT-175B_A4.log": "a70d3477309246efa936015d3c79897b52f643a63ec6b32c3572a17d18b48bd8",
+    "experiments/paper_ladder/results/ladder_sharegpt_GPT-175B_A5.log": "a44ffdc5904563a1ea5e5d591dfeca7e03c1cea14905b7ae8aaeaed918a3c4e1",
+    "experiments/paper_ladder/results/ladder_sharegpt_GPT-175B_A6.log": "b19e1924cdc025fe03e6e6b07aee52f0ffe792731ae306eff7ebc38fed5812d3",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-65B_A1.log": "5a8263beff184042343902a160f5271096fb19f50d9d8b4afbb7d1cd7fb578ed",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-65B_A2.log": "931aeadc6d26e0df425e95c73d1634480adb0e2a904eed01f9bd79dbc86aef88",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-65B_A3.log": "412183471eecfe52746004f029d4d976e5716448d43b4c20edf966d0f2f87c99",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-65B_A4.log": "e3968fd67c1209ffa42f7fdf9131d17fc9dcc4a674c6c8e2a990320740b83b7f",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-65B_A5.log": "4048d2d1aeb1f11ecc315c8d8081ecabdd825a8a6701266fba8041585c5c4ae0",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-65B_A6.log": "268e4d25a023753eebd1bd8bc6b45dcbff4692fd9ec37719b2572090f0afaac4",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-7B_A2.log": "5005a7bf0a6dc49cc1aecc30698ffffe417ad938bd3f27f0d5830ee9f1ebd534",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-7B_A3.log": "f7bbf902153b7b7efac0311146127709877a239b30f0f23b70bed11cdd112567",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-7B_A4.log": "24906b1aed8b76f55df2fba1ec15448fb840139bdd28a55ff21e324e3d45a018",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-7B_A5.log": "9a5680023ba6b204b76898bdef55a6642e6602ff7cbc9d25d0c1e54613ad5810",
+    "experiments/paper_ladder/results/ladder_sharegpt_LLAMA-7B_A6.log": "ffd1e58e10f70f5eddbf851e1b7056146c41d60f7a2c02ecff9ecd8518eee706",
+    "experiments/paper_ladder/results/select_mooncake_GPT-175B_A6_cacheblend.log": "8e62ec7d6cde9e69c857b5e2bed6f6d5dd4780fd6b96826db9703b1ee7c70ba1",
+    "experiments/paper_ladder/results/select_mooncake_GPT-175B_A6_cachecraft.log": "28ef950800fbe0a5dc5fd19a307ff77c09cd4e6077b2068a11d318c3f1f3fee1",
+    "experiments/paper_ladder/results/select_mooncake_GPT-175B_A6_cachetune.log": "4cb453616c8367b6d8861e7b7a9d2b2d882bab2b96e85177fc38317b349b9927",
+    "experiments/paper_ladder/results/select_mooncake_LLAMA-65B_A6_cacheblend.log": "3489fff4424d1b1412ec0e5313e5d4ffab6e2d26f4e23779235b4f8930886228",
+    "experiments/paper_ladder/results/select_mooncake_LLAMA-65B_A6_cachecraft.log": "e864cbc0bdbcbb00907e69da8d3a264db415dcf685976d30fb90e3e0e79a99e2",
+    "experiments/paper_ladder/results/select_mooncake_LLAMA-65B_A6_cachetune.log": "f0f3ec81f2307735ef72ee2119d70b71c3c91f0b94f9e0abd0e56890f85c5487",
+    "experiments/paper_ladder/results/select_mooncake_LLAMA-7B_A6_cacheblend.log": "a05326a978a43bed66632504d7df1798da280ef54d84b66b0b320130aeb1c83f",
+    "experiments/paper_ladder/results/select_mooncake_LLAMA-7B_A6_cachecraft.log": "8197fed476a587e6c2f31d0166e50342bf57b375a4c2c66ee3652f64ed03e80c",
+    "experiments/paper_ladder/results/select_mooncake_LLAMA-7B_A6_cachetune.log": "2e3c953ecc82405826e18ec9eb805b2508f872888e04a1181db5c987ec92ede0",
+    "experiments/paper_ladder/results/select_mooncakemt_GPT-175B_A6_cacheblend.log": "ba710a457cfe089515a1b0003ccccf8e7cbce7b3f53fbe6d2019d31f9bbf87b5",
+    "experiments/paper_ladder/results/select_mooncakemt_GPT-175B_A6_cachecraft.log": "8ef9db7c8b11c6a5983224f357b613f44d20ca9cb4973b10dd4961d9a2ed7a45",
+    "experiments/paper_ladder/results/select_mooncakemt_GPT-175B_A6_cachetune.log": "cb5c08cce679e6a55141beeb5f6b72024a154c07df57104251f0640987b6da19",
+    "experiments/paper_ladder/results/select_mooncakemt_LLAMA-65B_A6_cacheblend.log": "dcdcccb692e0ae3c643c53cf188f7065715597da5c8ce38e6345bf6d73e95afe",
+    "experiments/paper_ladder/results/select_mooncakemt_LLAMA-65B_A6_cachecraft.log": "9536fff68e4d9f1f5f429cf0dc1060fd93381755dc6859d460b241134432f19c",
+    "experiments/paper_ladder/results/select_mooncakemt_LLAMA-65B_A6_cachetune.log": "518a6a29cf64b94856f721e4ca79e473c54bbe33098c9ba14963ec3856a193c8",
+    "experiments/paper_ladder/results/select_mooncakemt_LLAMA-7B_A6_cacheblend.log": "18fec16404295408dfa00072027fe4d2100b8581c80a4904dc3fea9e4be35702",
+    "experiments/paper_ladder/results/select_mooncakemt_LLAMA-7B_A6_cachecraft.log": "d35a358b8bbdc88efc7fb428da6c7990fb7a3e202dbff0c931715c967d5d8a20",
+    "experiments/paper_ladder/results/select_mooncakemt_LLAMA-7B_A6_cachetune.log": "f6aa322352565461fe5b3b960a1bd7ac42ca4d5219a5cb740e1b9c6a192bed91",
+    "experiments/paper_ladder/results/select_multihop_GPT-175B_A6_cacheblend.log": "01050208694267b6973480a5a7f78ad3dd8d545a20f4085cd27e9d39ee2294f4",
+    "experiments/paper_ladder/results/select_multihop_GPT-175B_A6_cachecraft.log": "901b6086312c9a33f57270b7f1652e7ea2bc29b1f41839a18f9836ed54426fa2",
+    "experiments/paper_ladder/results/select_multihop_GPT-175B_A6_cachetune.log": "a41d3f265d7e1a540899cde5f2a6001d1642454a75a5ba7f2d5a64be6786a2b2",
+    "experiments/paper_ladder/results/select_multihop_LLAMA-65B_A6_cacheblend.log": "c40c5ce2e762de228b8d6dc46a4fc585a8dad8e672da28a0f79d580fac563761",
+    "experiments/paper_ladder/results/select_multihop_LLAMA-65B_A6_cachecraft.log": "d1391363a23f88e436c8e4e7a120d914a4c1c7db63370489849158d9bad99b3f",
+    "experiments/paper_ladder/results/select_multihop_LLAMA-65B_A6_cachetune.log": "086c5b6e42e37142186fddc08a9512bd9167df7bd0eb96db1a7f5946e0fffae3",
+    "experiments/paper_ladder/results/select_multihop_LLAMA-7B_A6_cacheblend.log": "98d6d8d5f7f05f8039be1b9620bedfad86eb6b3c2e94ec87f58825446acb2d1a",
+    "experiments/paper_ladder/results/select_multihop_LLAMA-7B_A6_cachecraft.log": "bfec177af825e56e223ac541319237431bda4936640e2a2cd1ed834cb95061ff",
+    "experiments/paper_ladder/results/select_multihop_LLAMA-7B_A6_cachetune.log": "ee8b02a6b7771c5fa131e2dcd0a817a9cee558deba4d2745030ff04cc7b4c404",
+    "experiments/paper_ladder/results/select_relay_GPT-175B_A6_cacheblend.log": "7780724240eabdb741985218fc79fc45d49c0370fe68eb214b350bfa2d1d0470",
+    "experiments/paper_ladder/results/select_relay_GPT-175B_A6_cachecraft.log": "d4641405cc6f3396cb01d7d4e509f798fd09592af8956b986f2be802dfcce620",
+    "experiments/paper_ladder/results/select_relay_GPT-175B_A6_cachetune.log": "ebb5a8c5cf8c4ac1ca5f6640cebb17a4d50de43bea06b1171684181f5da80c13",
+    "experiments/paper_ladder/results/select_relay_LLAMA-65B_A6_cacheblend.log": "39640032ef8a498c1f1dfbf9b897753cd68bd16120f2f1ef9f6fb7bbb1a3f37c",
+    "experiments/paper_ladder/results/select_relay_LLAMA-65B_A6_cachecraft.log": "5b5cad48fc4b4796be3c98443288fb91aa0a61e7a37867bde78c8cefbec01e34",
+    "experiments/paper_ladder/results/select_relay_LLAMA-65B_A6_cachetune.log": "5a0ffe63934c3b73a1e4b4ac9b4a559ebc99f92c771fa6d02f93de02091ac8f5",
+    "experiments/paper_ladder/results/select_relay_LLAMA-7B_A6_cacheblend.log": "d61f3012b3d74fa3c56f059b7beb501e3f9a5a87e3158e181b59c57f35a1cff7",
+    "experiments/paper_ladder/results/select_relay_LLAMA-7B_A6_cachecraft.log": "eb73e0a9b58b946207fe5d2fe9ecfdffe46024ba3d2d4511a9d20d3eef94a20a",
+    "experiments/paper_ladder/results/select_relay_LLAMA-7B_A6_cachetune.log": "b1932c9c29660c9a6445948baaf4049f2661da8d3858193122b487b9900aba3b",
+    "experiments/paper_ladder/results/select_sharegpt_GPT-175B_A6_cacheblend.log": "1d34b3f9638638209e37a8a0b3805da2ae03f2207b8ec5a53e68a6e8e2e262d7",
+    "experiments/paper_ladder/results/select_sharegpt_GPT-175B_A6_cachecraft.log": "95609beda0ddb9cc501d8d3b94a3679a884373592ca9bc0667a380b30cd0dadb",
+    "experiments/paper_ladder/results/select_sharegpt_GPT-175B_A6_cachetune.log": "b0238cee5be6782888d1d02e5f8551c4c505d3d65c6e552c26dd92d3c399230d",
+    "experiments/paper_ladder/results/select_sharegpt_LLAMA-65B_A6_cacheblend.log": "870ce3dabec8c4b7209b1ba0c0733aaa0bb715cf495465a83ec5f123b2af5755",
+    "experiments/paper_ladder/results/select_sharegpt_LLAMA-65B_A6_cachecraft.log": "42d3210a9472adabfc6376868be6e9f4ed5797470d04644ae53c63ce6d5f03ae",
+    "experiments/paper_ladder/results/select_sharegpt_LLAMA-65B_A6_cachetune.log": "94ffb39826ef1e203e810fadca5b60a2aecd914d7626081173cbd516c767a6eb",
+    "experiments/paper_ladder/results/select_sharegpt_LLAMA-7B_A6_cacheblend.log": "ca8d20aa743182148a2c28fa2132eaa0060dec463fe32524af6bc0234dfb3137",
+    "experiments/paper_ladder/results/select_sharegpt_LLAMA-7B_A6_cachecraft.log": "0f5e5dd47c98fc4ac5cbc85e4ef2eba2dc587d156b536af94994a2ebf78873b6",
+    "experiments/paper_ladder/results/select_sharegpt_LLAMA-7B_A6_cachetune.log": "467163bedb1d8f9b9fc6f82cf24b37725306a1d2dbce68cc1ce45d0a4b666a10",
+    "experiments/run_after_queue.sh": "f2d37816c6f86b3119dc3c30045b345236fed2c103f2ced534d05beb1304ab76",
+    "experiments/run_dag_ladder.sh": "dbf1e3722fbe5288113691ac4b00ed996cd7d5062c8f78f82070ecca0264bb57",
+    "experiments/run_layout_handcheck.sh": "52a900bc0ccedcc39a83906cc9854ac71f884de6778d02de0dc9eb1c5b64f29d",
+    "experiments/run_queue.sh": "b17ac3cfcf36652d709b823358f38d3ade8d531f3398528c17fd1122630e0d0a",
+    "experiments/run_sweep.sh": "cbb8a8bc8381ce8aea738ca7338736f859b7dcdb46d5ca70e338b761883ecbc3",
+    "experiments/summarize_ladder.py": "40e7fede4bb0514d73252a914945a174a076425e7d0fd07df7fc83c1de19228d",
+    "main.py": "3160baaf0dde24351239aa24c3b4ac92b8753f4b61e9820c2f574e58ce06b627",
+    "output/analysis/diff_gather_effect.py": "220442870d39220d5f0929406dd39c4a26fb63cec8220d90efd2a2430bf9c511",
+    "output/analysis/extract_sweep_csv.py": "232c50232e998a557fb5837b7a072d82f2a49d8a9a75298f28ba71092aebfd65",
+    "output/analysis/layout_A3b_R8.csv": "24e88bdce79dcb13bc4bc896c7891798376a5ec18d35628504c0922eb8f41b91",
+    "output/analysis/layout_A4c_R8.csv": "ff8ddef58fdcb41b4d344e7bb00d288365dbee1aa72b7308b276ed1107f6e72c",
+    "output/analysis/layout_grid_csv.py": "3917d9f10657de78f8e3575e6eb1ddd5e8bac11f18caf45ed56ae6b8ab0b9fcf",
+    "output/analysis/layout_handcheck_report.py": "88e27dfe06d05f5c78b28e0a51620633a70b3438f303e8cdd5b34603c4f06138",
+    "output/analysis/layout_handcheck_theory.py": "66ee2e91e065293e341b7af229cd35d65ccfa9d545f1c6efb860855e4adb92f6",
+    "output/analysis/layout_interleave_csv.py": "5b2ff68c037f557d17148b109f39d0e646314aca2359348c46899250a46da106",
+    "pim_ramulator_src/HBM3-PIM.cpp": "bb51f4ef25325e3ed1a538f0db46dc3b79dd0aabf603ace894a9d4a48d16dce1",
+    "pim_ramulator_src/HBM3_base.yaml": "55bf53fee37a7656243dc636c9c69983ca33ac49789c785b92431c98815c5568",
+    "pim_ramulator_src/PIM_DRAM_system.cpp": "a952b3bdba9f32dfe2b8e22f5923355bb9fefeba42811c2a291a65d9b7814276",
+    "pim_ramulator_src/all_bank_refresh_hbm3.cpp": "58c20a723e01d04b529df52b944f44c7c59ace9db9db8acd9814c8b09f364acf",
+    "pim_ramulator_src/attacc_bank.yaml": "90f47ee655e12bdc87ed27590d1b7bdbc2a3e111db318de69ee0c9bb13e69185",
+    "pim_ramulator_src/attacc_bg.yaml": "1e13d809c6a989529652995cd54d2a1d00dff8e83afa633cd68262b20eb40859",
+    "pim_ramulator_src/attacc_buffer.yaml": "f6bebc8e4dfd4eeb4ed465810cc874b750f9395901384822475aba5955939cc8",
+    "pim_ramulator_src/hbm3_controller.cpp": "e9417f5a654c17e1578928ad3961e20459d82422355c902b82d10685b1dd7924",
+    "pim_ramulator_src/hbm3_linear_mappers.cpp": "c789fd1ef8e79d4ea6bbb3cfd11a54c5f9d92bf688c5e0eb065c3e517abc5651",
+    "pim_ramulator_src/hbm3_pim_controller.cpp": "b5d993b33c061b33858724fbeefdefcbc81cdce89c6f7f41cff08e1aa37824ee",
+    "pim_ramulator_src/hbm3_pim_linear_mappers.cpp": "05a3403d4d1c11102361ec3a6a67502a1559234e1218ddd4ed148bdb873bccd1",
+    "pim_ramulator_src/hbm3_trace_recorder.cpp": "0b28b72a8a1afd33821fbe9fda8e4797dca4cfe84a8166544ed69071402f0010",
+    "pim_ramulator_src/no_refresh.cpp": "9ec3a05a3bd0f1578c9c30816b0b1081f06e9008523dc0eb4ba37fa9d3879ad1",
+    "pim_ramulator_src/patches/src_CMakeLists.patch": "ecdd28b4811b0c521ddd27ca919c527c15c95713434cbecc61eac5e7a488c475",
+    "pim_ramulator_src/patches/src_addr_mapper_CMakeLists.patch": "8ea6729734aa0ecc51884f6a1ab829d4748ef8e0ae3a7874826e0eed903b91c6",
+    "pim_ramulator_src/patches/src_addr_mapper_impl_linear_mappers.patch": "c3e9e30eabdb86f901d9f521ede63fecf1eca4b04cd1e4c393b5e608988b0a0e",
+    "pim_ramulator_src/patches/src_base_base.patch": "26fb983c8c2a0422c631cbc854c558318a41461962a0fd9078f9bd13ffdb4627",
+    "pim_ramulator_src/patches/src_base_request.patch": "1af07c66207d9a7a627e45fb5c75e9ce15fe1fb26a662d1b7ac4a38bf762d30a",
+    "pim_ramulator_src/patches/src_dram_CMakeLists.patch": "a2663015d79a143fc53278ed0b34d5bd89487e61e1bfc68caf0c65f256d653a8",
+    "pim_ramulator_src/patches/src_dram_controller_CMakeLists.patch": "b70acdabcdaae9c470e5dc507811aa47e211adbcb1fc64828a6e64540636b25f",
+    "pim_ramulator_src/patches/src_dram_controller_controller.patch": "6bf762086f98971e04b4f66bf1501fa3c4b8089352adaebf0f07fca4a748ef6b",
+    "pim_ramulator_src/patches/src_dram_controller_impl_dummy_controller.patch": "0b6332b666fc6da4136ebc6d9e5983e6917b7326af2c623ada928de5479c0b21",
+    "pim_ramulator_src/patches/src_dram_controller_impl_generic_dram_controller.patch": "17c18dfc63c86a95a2e12a5ec2b38f373d8072c884d742c6b192c52c1a1d942f",
+    "pim_ramulator_src/patches/src_dram_controller_impl_scheduler_generic_scheduler.patch": "a534bae8abbd4ab6845d01b5e5fa24856647ccb6a5ca773893d8da16e927ef1a",
+    "pim_ramulator_src/patches/src_dram_impl_HBM3.patch": "fd3a3a1c87897eea82b51d6d45e3a29eaa08acdea0749de28104224fb119f913",
+    "pim_ramulator_src/patches/src_dram_lambdas_action.patch": "85672a0f4e4f4e86c0af6d0cc71be905606516964a223602f6b8193885820234",
+    "pim_ramulator_src/patches/src_dram_lambdas_preq.patch": "17e79b5ae4f9f791b0f0cada07cec06e75f39ebc94de364256a998723044f3b9",
+    "pim_ramulator_src/patches/src_frontend_CMakeLists.patch": "715d59a7d4f6560be0a1c3f263430774383fdcd33e4b0104359e4f918a515d66",
+    "pim_ramulator_src/patches/src_frontend_impl_memory_trace_loadstore_trace.patch": "498d42c9f40351d353398906cd90402cbe11f629224a6a99b12687d44ce2472c",
+    "pim_ramulator_src/patches/src_main.patch": "ecf400fb803e9b0c57cdda1037aa65e76eb3e78cd0ded81e596158e0ddc3e622",
+    "pim_ramulator_src/patches/src_memory_system_CMakeLists.patch": "e597ea1aee29e678dd305f9d0f366e87d97cc1c3fcd7c3e16f656ca42efac980",
+    "pim_ramulator_src/patches/src_memory_system_impl_dummy_memory_system.patch": "1b9d1cd835b17cc56d44997e0fd55a9c21751474cf0e448771e437a78933ab55",
+    "pim_ramulator_src/patches/src_memory_system_impl_generic_DRAM_system.patch": "eec287e66ab96cb8a99881afc92243ec3bd128ebf06bfd79f157fdb4cc3df88c",
+    "pim_ramulator_src/patches/src_memory_system_memory_system.patch": "0dc6fd58fd44dedb47d26690f32078f28aaa2835e46e838efe3a3254d082a16c",
+    "pim_ramulator_src/pim_loadstore_trace.cpp": "847433454cf59a7ef09c0a724e523508ff4dfd002cb2bdecb500390743752a64",
+    "pim_ramulator_src/pim_scheduler.cpp": "be8cb800438931b0f7fc69818264b7967d5d41bfc7406018edad2ee6453e7ec2",
+    "pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py": "e92eed2ad4e92376ae7fa9143ebabc878e68c5d28b5546b47d536915511310c0",
+    "pim_ramulator_src/trace_gen/gen_trace_attacc_bg.py": "e2dc8e032f4e2da064c6294f3c90ef9c151cb578dbb8cf6ae32edb77866b9ff6",
+    "pim_ramulator_src/trace_gen/gen_trace_attacc_buffer.py": "e5020974cfa299c234ce4adf4dfc023b38f531768945bdba7b76f8a333736d7c",
+    "ramulator.out": "44c2e1b6daf519a49d3f391b3ac72e310ca77f239f4af73a796bc11091ca6662",
+    "set_pim_ramulator.sh": "341dce2a2cca0244e6e89e725524e034cd1e7f617e6dad0124e6315cb2065cfc",
+    "src/ablation.py": "9bae34304ebd7c831c3653cc6802ed3650d8ea65e5932f47f796e2b7338303ef",
+    "src/config.py": "28ee9b707c22b35a80d77ea38d5211cff19bb09092c8323396d6e14eef1fc571",
+    "src/cpp_eventcore.py": "ab1b3e9d2e9b29959a2ff6eaf6c4e43ecdfb82546403426d5120e338c9370bc9",
+    "src/cppcore/Makefile": "7d608923a5a58702653f01a5e161738275bed2c7dc125546dd6dc4fe4c2855da",
+    "src/cppcore/eventcore.cpp": "ca586d6f2cceff30e2654f9f0cfe2562654f681b63ed05c0516cd4b6ca3aab8e",
+    "src/devices.py": "567bc4d4303a7e2487f9673d212bd87e7bc5431ef43134cbe4948ee51466a624",
+    "src/gemm_table.py": "307319093e33c728e99f120d8e7330f4845a590e26b3f3f0b186c35cab211253",
+    "src/layout_probe.py": "6ff276f858b0dbaff03a5273fcf08f13883be606c84fcb1034e49b430722f335",
+    "src/model.py": "97d1fb38916404ab164b576b686794cc7e636be9d3b66012f92c15e97abd0939",
+    "src/ramulator_wrapper.py": "6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00",
+    "src/system.py": "4847e22e78aabea4d55c9b5bb3a18966f31553b8b9ba556d6ca1d272a6420369",
+    "src/type.py": "5045fe5d777321b531185e0f0bee489193a3aca330c3704c6ce10f62d2ba8b22",
+    "src/workload.py": "03ee783500bcdc092d7cfa23f527c869a95262e49c55926a1ebff16f8e209fca",
+    "src/workload_runner.py": "c86ccec44d54f2274870f2ed158a270ca8cb78de2a9036d062723e2a4396cf04",
+    "tests/fixtures/workload_2wikimqa_first8.json": "1c9f30abfa5ae4ec29a23f9b16c151779fb488c92efdb3e2eb2de81486096d8b",
+    "tests/fixtures/workload_relay_s400w4t1.json": "25763b4abda14e33e21183de82da0748649bd96b17fdf846e9210d550826625b",
+    "tests/test_attacc_metadata.py": "2f982235caf8c30778760e0eecfb0879ea0766724b67a985c8f83517512733d4",
+    "tests/test_placement.py": "07ded3a811d4bfd31962b48980132ea5c5409c2fb6f1700686631bdeb6b8f22a",
+    "tests/test_workload.py": "825f73a4d4cbf853e20a9996d8abb9bdab8f5599267ba6145397037e286e10c2",
+    "workload/probe/README.md": "bf0dad28e48ce888544de72fe47c6a6ec0b62267961b0cb4b787af4fab76cffb",
+    "workload/probe/gen_a6.py": "da63af04c66edb2bfc7941fa721904d82caa300be99117a93ad3d657cf5e377e",
+    "workload/probe/gen_a6_chat_mix.py": "014f807444270e00380a69a2e79816ebc55596786beecf24de2b6972b315ccf7",
+    "workload/probe/gen_multiround.py": "ca2f4d16809fb76a520be3b3b08e635a58efcdf4d6460b869e79d3c242edee4e",
+    "workload/probe/gen_sweep.py": "dbdb47c2eb59fe6bd571a0c46cdc48c14f6924220f744ee3903bf843f1d266a3",
+    "workload/probe/sweep/B0_interleaved.json": "858a5191c17da7400b4c9e46b77ac62928df5785099db24d4686816d4bcb82c4",
+    "workload/probe/sweep/B0_turns.json": "190666c87f169a54afa594f71d19f2467500f8584cd1b7c75e0e791b990e1e39",
+    "workload/probe/sweep/S1_agents_16_interleaved.json": "7d4d14ffc5098a0e13240a4d753e6683008d5305dfff57cafc34294041de938d",
+    "workload/probe/sweep/S1_agents_16_turns.json": "9a8623dd9a741f80a19408def3d60f58e72d63ad474645a9b45d295b545582cf",
+    "workload/probe/sweep/S1_agents_32_interleaved.json": "a2788b9d29690885d115007a322c91873d1460a33a1725e71ac58cc91814f2b9",
+    "workload/probe/sweep/S1_agents_32_turns.json": "12e1df24f1338f735621e151763d71daf1891d1d4469381458d3ef3b97b386f6",
+    "workload/probe/sweep/S1_agents_4_interleaved.json": "a4de8fd89df8fb5b94d14683526f44f0d2386c400f66788e98761d52b35d1125",
+    "workload/probe/sweep/S1_agents_4_turns.json": "7086ec1c6bd21f49a3b6447bbc4ed65417e7ded9d78241edddbe4e8b21836cea",
+    "workload/probe/sweep/S2_rounds_16_interleaved.json": "99dd27e830a8e2d6c9fbddb893c8ee80bdd3e96080be8e28a76b740a4ca6b4de",
+    "workload/probe/sweep/S2_rounds_16_turns.json": "f6e216b1b79d5757b033bb52eda2eb29d6a9b6bfdb2654c81edde95071a4925b",
+    "workload/probe/sweep/S2_rounds_2_interleaved.json": "14440a351920555887a0ac8b62b3dd21216d53f3660cc3ad09860e256f6d6e4d",
+    "workload/probe/sweep/S2_rounds_2_turns.json": "fe6adb62f7a349f349184d28eb783ae387bb7189004b1f44c0a99e7a18d6f8a5",
+    "workload/probe/sweep/S2_rounds_4_interleaved.json": "fd8a3b49771468b91878188deac1351dc1ada9e25927083c09f43c4fb613eb0f",
+    "workload/probe/sweep/S2_rounds_4_turns.json": "88b02bf9d7f5062d0ea89de01dce9b28625f34e6681f5067e4d7fba79a9ffbef",
+    "workload/probe/sweep/S3_lout_1024_interleaved.json": "bd2d206b2bae7b7cafb88422ca4975c4e729f2fa9b18c854fafc894d817efe80",
+    "workload/probe/sweep/S3_lout_1024_turns.json": "7de0f23c05017ced4254bda8966a3dcb83c357a655fecdaccb9ba7f3452de5c3",
+    "workload/probe/sweep/S3_lout_128_interleaved.json": "9c17e705735fea66a48598553463b1e7fb282b6f80ee344326fa60a4087c95d8",
+    "workload/probe/sweep/S3_lout_128_turns.json": "8bb339ae23b802d62495d593f8252f62e4dd344fffbc69bee578460db1322d22",
+    "workload/probe/sweep/S3_lout_2048_interleaved.json": "fc6e921b3ce8580b7dbc3c9dd577c0a95b3db4f01e07fdc52eac5885796375f2",
+    "workload/probe/sweep/S3_lout_2048_turns.json": "d9c8f12981766c7b80ccf14ffe006537b3893d2fb44463a09c37b03157e397c5",
+    "workload/probe/sweep/S3_lout_512_interleaved.json": "b7f566d9abb521cc7136870bc70c040b82d606b8551fed53365837b4ea7aa7fa",
+    "workload/probe/sweep/S3_lout_512_turns.json": "22784e56ed27927cfe6b8c00606cdf110ec0451183d0b66097e8ed388f040692",
+    "workload/probe/sweep/S4_own_1024_interleaved.json": "965d0bfa69e2e12864b8d482bdffa895cbe87a841b6f6ba5ee5936124db6277b",
+    "workload/probe/sweep/S4_own_1024_turns.json": "d4a52e5061854184bb9d7813ad4b9adc056bb5282a39f0e5ec031ba24c7a6336",
+    "workload/probe/sweep/S4_own_16_interleaved.json": "a2e7916ea208efa494d460b4f87daddb4cbd312685c4006e415388a3bbe5aa59",
+    "workload/probe/sweep/S4_own_16_turns.json": "6b2426c6b9c6474d09e7c7d35aa8add4a8d3cb89f067d05fce30f6300566e0f4",
+    "workload/probe/sweep/S4_own_256_interleaved.json": "bdefc1e4ec87820b67837905163d5c5e380abe10bfe92cf79eb451db2627e730",
+    "workload/probe/sweep/S4_own_256_turns.json": "e669dd518173c1ce77741e6421100b535f34f7b392cdf6d9b8c8e9b63e144a86",
+    "workload/probe/sweep/S4_own_64_interleaved.json": "137c61eb26170d5942190efafd168835511b98afe1b6ec3e8cdd05b85b9e3c1a",
+    "workload/probe/sweep/S4_own_64_turns.json": "540bf9e47d719e200c3a845b3121187abe6dd7c9fb8a7a6004c534a5758f95c1",
+    "workload/probe/sweep/S5_fresh_0p25_interleaved.json": "c90f72750eee0d014e83e5157fea39f668863c2a595c32fdf6e94139ea9a2e37",
+    "workload/probe/sweep/S5_fresh_0p25_turns.json": "b6e2c271756296c3cf6a7202970a851a2c5b6d622ce3cee9ea044ef6cfbdc971",
+    "workload/probe/sweep/S5_fresh_0p5_interleaved.json": "5a467568a580276c5bda67b1d70e8f38abb0c4c98f2226bb1032d79489d7ee7f",
+    "workload/probe/sweep/S5_fresh_0p5_turns.json": "125ebf3f6e5bfefafc8245b9018dfebfe285a1b1f8cda56bb9cdf7ce5aaca988",
+    "workload/probe/sweep/S5_fresh_0p75_interleaved.json": "df0285b66115671134219218faea2fd0164463e054be3f480974ae0f69562bec",
+    "workload/probe/sweep/S5_fresh_0p75_turns.json": "1b59092366b245202a774a1e9164ffd529c9a3f0b43a0092a50762df0c5a7902",
+    "workload/probe/sweep/S6_chunks_1_interleaved.json": "cbc4bbed68498aaacc6a7d3430f81fb305ed342174b1d3b08f2c31ab4333fb27",
+    "workload/probe/sweep/S6_chunks_1_turns.json": "ed0ee518cab83a22e67f46c6a007b3621adfa8f1955cf0d0327bc064f8a8a79b",
+    "workload/probe/sweep/S6_chunks_4_interleaved.json": "ac4cf1c194b4c6d43f7f9f90d56b410e900bbd39d134f0550965e48749067b2a",
+    "workload/probe/sweep/S6_chunks_4_turns.json": "88c553e11d92f348039624c96c2a703db88974108571ecfc941aa4367c5c34ea",
+    "workload/probe/sweep/S6_chunks_8_interleaved.json": "2ffd694ca40dfd2a1613d08897eff4519a8dd88d7992f02b2783da85acbdf19a",
+    "workload/probe/sweep/S6_chunks_8_turns.json": "edd14584256469a852f025069df9f9e46a9c4ffe451ad655769616a9ed568105",
+    "workload/probe/sweep/manifest.csv": "6bb806af3aa0aa09ee96ef3552036e40aa71e3d28cabf6e36597baf32e962c9c",
+    "workload/probe/wl_a6_R8C2N8_own16_256.json": "2c671cc37686ccad010c380398afc436b2004d0d9b9bf8021a981a21501a81a4",
+    "workload/probe/wl_a6_crossover.json": "2a023b61970fc0a1dc2e51aa094f05e61f7afb498f6c69e606518d62db55b44f",
+    "workload/probe/wl_a6_split.json": "e18959d64288c75b7dfae09a952aeb05a954dd907cc8e36ff27f5745a1ccd9ab",
+    "workload/probe/wl_mr_R16C2N16_L128.json": "6b3ece04f2a4fae12b0ce583d0a0fae887e2eb6814cccc539f2f59416344e6bc",
+    "workload/probe/wl_mr_R8C2N8_L1024.json": "855d8d36a09d7bac374c95bf6ad6513a2b96fc22e9e0f5ba0e40a37f8e74e30b",
+    "workload/probe/wl_mr_R8C2N8_L128.json": "cae354c059ae1413da2366fe7c5ef6718206777f133d708f2e96c0c3f6dc9b90"
+  },
+  "readme_parameters": {
+    "chunks": 32,
+    "co_read_write_indices": [
+      0,
+      4
+    ],
+    "element_bytes": 2,
+    "head_dim": 128,
+    "prefills": [
+      {
+        "gpu_us": 100,
+        "pim_us": 20,
+        "queries": 8
+      },
+      {
+        "gpu_us": 200,
+        "pim_us": 900,
+        "queries": 512
+      }
+    ],
+    "repair_tokens": 8,
+    "rounds": 8,
+    "stripe": 4
+  },
+  "real_DAG_with_fake_devices": {
+    "A4e": {
+      "PIM_scans": [
+        {
+          "batch_command": "replicate",
+          "m": 1,
+          "n": 32800,
+          "name": "score",
+          "numOp": 1,
+          "runs": [
+            [
+              0,
+              8388608,
+              2056,
+              0,
+              1
+            ],
+            [
+              1073741824,
+              1082130432,
+              2048,
+              1,
+              1
+            ],
+            [
+              2147483648,
+              2155872256,
+              2048,
+              2,
+              1
+            ],
+            [
+              3221225472,
+              3229614080,
+              2048,
+              3,
+              1
+            ],
+            [
+              4294967296,
+              4303355904,
+              2056,
+              4,
+              1
+            ],
+            [
+              5368709120,
+              5377097728,
+              2048,
+              5,
+              1
+            ],
+            [
+              6442450944,
+              6450839552,
+              2048,
+              6,
+              1
+            ],
+            [
+              7516192768,
+              7524581376,
+              2048,
+              7,
+              1
+            ],
+            [
+              8589934592,
+              8598323200,
+              2056,
+              8,
+              1
+            ],
+            [
+              9663676416,
+              9672065024,
+              2048,
+              9,
+              1
+            ],
+            [
+              10737418240,
+              10745806848,
+              2048,
+              10,
+              1
+            ],
+            [
+              11811160064,
+              11819548672,
+              2048,
+              11,
+              1
+            ],
+            [
+              12884901888,
+              12893290496,
+              2056,
+              12,
+              1
+            ],
+            [
+              13958643712,
+              13967032320,
+              2048,
+              13,
+              1
+            ],
+            [
+              15032385536,
+              15040774144,
+              2048,
+              14,
+              1
+            ],
+            [
+              16106127360,
+              16114515968,
+              2048,
+              15,
+              1
+            ]
+          ],
+          "shared_queries": 1
+        }
+      ],
+      "head_count": 4,
+      "link_bytes_per_head": {
+        "ctx_pim_to_gpu": 0,
+        "kv_gpu_to_pim": 4096,
+        "kv_pim_to_gpu": 4194304,
+        "q_gpu_to_pim": 0
+      },
+      "link_events": [
+        {
+          "link_bytes": 16384,
+          "name": "kv_gpu_to_pim",
+          "rows": 8
+        },
+        {
+          "link_bytes": 16777216,
+          "name": "kv_pim_to_gpu",
+          "rows": 8192
+        }
+      ],
+      "note": "MHA four KV heads, one layer, pipe=True, fixed device prices; byte/operation coverage only. History uses accepted history_len abstraction.",
+      "prefill_attention_rows": {
+        "gpu": 8,
+        "pim": 0
+      }
+    },
+    "A5": {
+      "PIM_scans": [
+        {
+          "batch_command": "mq",
+          "m": 8,
+          "n": 32800,
+          "name": "score",
+          "numOp": 1,
+          "runs": [
+            [
+              0,
+              8388608,
+              2056,
+              0,
+              1
+            ],
+            [
+              1073741824,
+              1082130432,
+              2048,
+              1,
+              1
+            ],
+            [
+              2147483648,
+              2155872256,
+              2048,
+              2,
+              1
+            ],
+            [
+              3221225472,
+              3229614080,
+              2048,
+              3,
+              1
+            ],
+            [
+              4294967296,
+              4303355904,
+              2056,
+              4,
+              1
+            ],
+            [
+              5368709120,
+              5377097728,
+              2048,
+              5,
+              1
+            ],
+            [
+              6442450944,
+              6450839552,
+              2048,
+              6,
+              1
+            ],
+            [
+              7516192768,
+              7524581376,
+              2048,
+              7,
+              1
+            ],
+            [
+              8589934592,
+              8598323200,
+              2056,
+              8,
+              1
+            ],
+            [
+              9663676416,
+              9672065024,
+              2048,
+              9,
+              1
+            ],
+            [
+              10737418240,
+              10745806848,
+              2048,
+              10,
+              1
+            ],
+            [
+              11811160064,
+              11819548672,
+              2048,
+              11,
+              1
+            ],
+            [
+              12884901888,
+              12893290496,
+              2056,
+              12,
+              1
+            ],
+            [
+              13958643712,
+              13967032320,
+              2048,
+              13,
+              1
+            ],
+            [
+              15032385536,
+              15040774144,
+              2048,
+              14,
+              1
+            ],
+            [
+              16106127360,
+              16114515968,
+              2048,
+              15,
+              1
+            ]
+          ],
+          "shared_queries": 8
+        },
+        {
+          "batch_command": "mq",
+          "m": 1,
+          "n": 32800,
+          "name": "score",
+          "numOp": 1,
+          "runs": [
+            [
+              0,
+              8388608,
+              2056,
+              0,
+              1
+            ],
+            [
+              1073741824,
+              1082130432,
+              2048,
+              1,
+              1
+            ],
+            [
+              2147483648,
+              2155872256,
+              2048,
+              2,
+              1
+            ],
+            [
+              3221225472,
+              3229614080,
+              2048,
+              3,
+              1
+            ],
+            [
+              4294967296,
+              4303355904,
+              2056,
+              4,
+              1
+            ],
+            [
+              5368709120,
+              5377097728,
+              2048,
+              5,
+              1
+            ],
+            [
+              6442450944,
+              6450839552,
+              2048,
+              6,
+              1
+            ],
+            [
+              7516192768,
+              7524581376,
+              2048,
+              7,
+              1
+            ],
+            [
+              8589934592,
+              8598323200,
+              2056,
+              8,
+              1
+            ],
+            [
+              9663676416,
+              9672065024,
+              2048,
+              9,
+              1
+            ],
+            [
+              10737418240,
+              10745806848,
+              2048,
+              10,
+              1
+            ],
+            [
+              11811160064,
+              11819548672,
+              2048,
+              11,
+              1
+            ],
+            [
+              12884901888,
+              12893290496,
+              2056,
+              12,
+              1
+            ],
+            [
+              13958643712,
+              13967032320,
+              2048,
+              13,
+              1
+            ],
+            [
+              15032385536,
+              15040774144,
+              2048,
+              14,
+              1
+            ],
+            [
+              16106127360,
+              16114515968,
+              2048,
+              15,
+              1
+            ]
+          ],
+          "shared_queries": 1
+        }
+      ],
+      "head_count": 4,
+      "link_bytes_per_head": {
+        "ctx_pim_to_gpu": 2048,
+        "kv_gpu_to_pim": 4096,
+        "kv_pim_to_gpu": 0,
+        "q_gpu_to_pim": 2048
+      },
+      "link_events": [
+        {
+          "link_bytes": 16384,
+          "name": "kv_gpu_to_pim",
+          "rows": 8
+        },
+        {
+          "link_bytes": 8192,
+          "name": "q_gpu_to_pim",
+          "rows": 8
+        },
+        {
+          "link_bytes": 8192,
+          "name": "ctx_pim_to_gpu",
+          "rows": 8
+        }
+      ],
+      "note": "MHA four KV heads, one layer, pipe=True, fixed device prices; byte/operation coverage only. History uses accepted history_len abstraction.",
+      "prefill_attention_rows": {
+        "gpu": 0,
+        "pim": 8
+      }
+    }
+  },
+  "real_generator_commands": {
+    "mq": {
+      "PIM_BARRIER": 5,
+      "PIM_MAC_AB": 64,
+      "PIM_MV_GB": 64,
+      "PIM_MV_SB": 192,
+      "PIM_SFM": 8,
+      "PIM_WR_GB": 64
+    },
+    "replicate": {
+      "PIM_BARRIER": 5,
+      "PIM_MAC_AB": 512,
+      "PIM_MV_GB": 64,
+      "PIM_MV_SB": 192,
+      "PIM_SFM": 8,
+      "PIM_WR_GB": 64
+    }
+  },
+  "resolved_adjacent_config_changes": {
+    "A3b->A4c": {
+      "kv_mapping": [
+        "naive",
+        "master-diff-local"
+      ]
+    },
+    "A4c->A4e": {
+      "kv_mapping": [
+        "master-diff-local",
+        "master-diff-table-local"
+      ]
+    },
+    "A4e->A5": {
+      "pim_batch_command": [
+        "replicate",
+        "mq"
+      ],
+      "pim_pe_freq_ghz": [
+        0.666,
+        1.3004
+      ],
+      "pim_prefill_query_batch": [
+        4,
+        8
+      ],
+      "prefill_attn": [
+        "gpu",
+        "pim"
+      ]
+    },
+    "A5->A6": {
+      "prefill_attn": [
+        "pim",
+        "dynamic"
+      ]
+    }
+  },
+  "scope": "Current planner/DAG and command generation only; no Ramulator binary, real latency, energy or speedup measurement.",
+  "trace_scope": "One 256-token row, one channel, eight queries; command-count mechanism only, not the complete 8192-token workload or simulator ACT/cycles."
+}

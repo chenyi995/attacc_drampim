@@ -1,0 +1,131 @@
+"""Generate the contribution crosswalk from saved audit evidence, not hand-copied results."""
+from pathlib import Path
+import json
+import shutil
+
+R = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A = R / 'audit/2026-09-05'
+H = A / 'archive'
+P = json.loads(Path('/tmp/contributions_alignment_evidence.json').read_text())
+I = json.loads(Path('/tmp/independent_contributions_8c51672_evidence.json').read_text())
+F = P['illustrative_arithmetic']
+for source, target in [
+    ('contributions_alignment_probe.py', 'contributions_alignment_probe.txt'),
+    ('contributions_alignment_evidence.json', 'contributions_alignment_evidence.json'),
+    ('independent_contributions_8c51672_probe.py', 'independent_contributions_probe.txt'),
+    ('independent_contributions_8c51672_evidence.json', 'independent_contributions_evidence.json')]:
+    shutil.copyfile(Path('/tmp') / source, H / target)
+
+def channels(case, rung, kind):
+    data = I['layout'][case][rung]
+    if kind == 'master':
+        return ','.join(str(x['channel']) for x in data['master_objects'])
+    return ','.join(str(o['channel']) for x in data['diff_objects'] for o in x['objects'])
+
+rows = []
+for pair, changes in P['resolved_adjacent_config_changes'].items():
+    rendered = '；'.join(f'`{k}`：`{a}` → `{b}`' for k, (a, b) in changes.items())
+    rows.append(f'| {pair.replace("->", " → ")} | {rendered} |')
+e4 = P['real_DAG_with_fake_devices']['A4e']['link_bytes_per_head']
+e5 = P['real_DAG_with_fake_devices']['A5']['link_bytes_per_head']
+rep, mq = (P['real_generator_commands'][k] for k in ('replicate', 'mq'))
+section = f'''<a id="contributions-check"></a>
+
+## 按 README_contributions 的四个例子核对
+
+**结论：四项机制与当前档位配置对应，例子的主要布局/操作可以构造；还不能据此确认每档的完整性能比较都正确。** [贡献 README](../../docs/README_contributions.md) 已明确这些是条件下的推导、选边时间是假设值。其内嵌脚本读取常量并生成示意表，没有调用实际 allocator、命令生成器或 Ramulator；复算通过不等于实现通过。下面另用真实 planner/构图和小规模命令生成检查，独立 agent 复核了前两个例子。
+
+先用相同 reuse policy、没有 CLI 覆盖的 `resolve_config` 比较相邻档；除档位名称外，实际变化是：
+
+| 相邻档 | 展开后的配置变化 |
+|---|---|
+{chr(10).join(rows)}
+
+这些变化在用户接受的范围内。A5 的 query 容量和频点属于 prefill + MQ 配套；当前各档缓冲默认已经同为 512 B，不能再写成 A5 独自扩大缓冲。配置差异表不能替代对映射分支和执行路径的检查。来源：[档位与配置展开](../../src/ablation.py:98)、[本次配置证据](archive/contributions_alignment_evidence.json)。
+
+| README 的例子 | 用实现核对到什么 | 本轮 audit 如何解释 |
+|---|---|---|
+| ① A3b → A4c：跨轮 diff 聚合 | 同一 consumer 内静态展开八段修正，真实 planner/ledger 中两档 master 通道相同，{F['diff_tokens']} 个 diff 的**名义占行**从 8 变为 {F['packed_diff_rows']}；A4c 都在该 head 的 ch3 | 支持高层聚合机制；未测到 ACT 从 16 降为 9。名义行到真实命令仍受 [C3](#c3)/[C4](#c4) 影响，不能用例子关闭它们 |
+| ② A4c → A4e：M0/M4 分散 | 五个 producer 分别生产一块，再由 consumer 共读 M0/M4，实际放置表能让 M0 留 ch0、M4 去 ch1 | 支持给定共读关系下的放置；其他已知共读关系可能改变选择，不保证每个 pair 都变快 |
+| ③ A4e → A5：MQ + PIM prefill | 用 README 的历史长度和新增 query 数构图，A4e 每 head 回读 {e4['kv_pim_to_gpu'] // (1024**2)} MiB 历史 KV，A5 为 {e5['kv_pim_to_gpu']}；真实命令生成也保留 MQ 读列复用 | 两部分机制都接入了。只是字节/命令验证，不是注意力加速测量；MHA 控制例不能关闭 [C2](#c2) 的 GQA 分支问题 |
+| ④ A5 → A6：逐 request 选较小估价 | 实现逐 request 比较 `t_bank` 和 `t_xpu`，相等选 PIM；README 假设值复算为 {F['hypothetical_fixed_PIM_us']} → {F['hypothetical_adaptive_us']} µs，即 {F['hypothetical_adaptive_speedup']:.2f}× | 规则符合用户定义，不要求双候选 DAG；估价是否包含实际操作仍看 [C5](#c5)，假设数没有验证这个前提 |
+
+**例子①还依赖什么输入。** A3b 的轮转计数会同时计入普通 KV 块和 diff burst。独立 probe 中，两档 master 通道均为 `[{channels('own_4_blocks_between_diffs', 'A3b', 'master')}]`；每段修正之间插四块自写 KV 时，A3b 的 diff 通道为 `[{channels('own_4_blocks_between_diffs', 'A3b', 'diff')}]`，与 README 表格一致；只插一块则为 `[{channels('own_1_blocks_between_diffs', 'A3b', 'diff')}]`。所以“轮间穿插自写 KV”本身不保证逐轮轮转。README 已显式写了轮转假设，可以作为示意；若要作为可执行验证例，应补上自写长度。此次是一个 request 的静态展开，未回放八个服务回合的生命周期。来源：[普通块/diff 计数](../../src/workload_runner.py:934)、[独立证据](archive/independent_contributions_evidence.json)。
+
+**例子②还依赖什么输入。** 如果一个 producer 自己先读取 M0–M4 全部五块，planner 会同时记录这个全体共读集合；随后即使 consumer 只读 M0/M4，真实表也可能让它们都留在 ch0。算法考虑所有已知共读伙伴，贪心选冲突较少的通道；它没有承诺每一对块都能分开。建议例子补上“没有其他共读关系改变这一选择”。放置表依据整份 workload 预先收集关系，沿用已说明的静态预分配抽象，不把本例说成在线预测验证。来源：[放置算法](../../src/workload_runner.py:823)、[共读关系收集](../../src/workload_runner.py:3212)。
+
+**例子③具体保留了哪些费用。** 在一层、四个 MHA KV heads 的构图中，按每 head 归一：两档都传新增 KV {e5['kv_gpu_to_pim']:,} B；A5 另外传 Q {e5['q_gpu_to_pim']:,} B、返回 context {e5['ctx_pim_to_gpu']:,} B。单通道、单个 256-token 行、八个 query 的真实 trace 中，`PIM_MAC_AB` 命令为 {rep['PIM_MAC_AB']} → {mq['PIM_MAC_AB']}，`PIM_SFM` 均为 {mq['PIM_SFM']}，其他 query 私有搬运命令数不变。MQ 的每 query 计算仍由命令间隔/频点计价，不能把少发命令直接理解为少做 MAC。上述构图使用固定价格设备桩且 `pipe=True`，不涉及实际 GPU kernel；正式比较仍须统一开启 FlashAttention（[C1](#c1)）。来源：[实际 prefill 分支](../../src/workload_runner.py:4827)、[MQ 命令展开](../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:586)、[间隔计价](../../src/ramulator_wrapper.py:72)。
+
+**这些例子是否高估 workload 收益。** 它们有意选中机制有用的场景：多轮稀疏修正、轮转恰好冲突的一对块、长驻留历史配少量新 query，以及分别适合两侧的请求。它们适合解释机制；若把局部 {F['combined_nominal_ACT_reduction_percent']}% ACT 推导、2× 通道并行或 {F['hypothetical_adaptive_speedup']:.2f}× 假设选边收益当成整体 workload 的预期收益，会偏乐观。反过来，只有一批 diff、原来已均匀分散的共读块、很少历史或所有请求都适合 PIM 时，对应步骤收益可能很小。本次没有统计正式 workload 的场景占比，也没有运行性能实验，因此不能判定正式结果整体高估或低估。
+
+**相对 AttAcc 怎样判。** 原始 AttAcc 没有这四项软件复用/布局/MQ/选边组合；各例是新增机制的说明，应核对新增逻辑。共同链路、能量和调度近似仍按用户口径接受。上述例子条件不自动成为新的整改项；当前重点仍是新增地址选择和候选操作覆盖是否改变档间归因。没有发现本次例子能证明“刻意削弱 A3b”。完整验证范围和未修改实现的记录见 [本次 session](../../docs/sessions/2026-09-05-contributions-alignment-audit.md)。
+
+'''
+path = A / 'CURRENT_ISSUES.md'
+text = path.read_text()
+assert 'id="contributions-check"' not in text
+text = text.replace('这里整理已有审计证据，没有新增性能实验。', '这里整理已有审计证据，并按贡献 README 增补轻量构图与命令检查，没有新增性能实验。')
+text = text.replace('## 本轮阅读地图\n', section + '## 本轮阅读地图\n')
+text = text.replace('本页数表由脚本读取已有 JSON 自动生成；', '本页数表由脚本读取审计 JSON 自动生成；贡献对照另见 [主审证据](archive/contributions_alignment_evidence.json) 和 [独立证据](archive/independent_contributions_evidence.json)。原 C1–C7 的')
+# Keep the provenance sentence grammatical after inserting the new evidence sources.
+text = text.replace('原 C1–C7 的提取结果', '原 C1–C7 的提取结果')
+path.write_text(text)
+
+session = '''# 2026-09-05：按 README_contributions 核对实现与当前 audit
+
+本次只修改 audit 文档、索引、session 和新增审计证据。实现时点 `8c51672a3ef8b936340354b3211963cde8945c49`；用户指定 `docs/README_contributions.md` 作为四项贡献及具体例子的参照。没有修改该 README、论文、实现、测试、运行脚本、workload 或已有结果，没有运行 Ramulator 性能实验。
+
+## 为什么补这一轮
+
+前一轮把问题统一到 CURRENT_ISSUES，但还没有逐个回答贡献 README 的例子能否由代码构造。README 的复算脚本主要读常量、算理想行数和假设时间，不能证明实际分配和执行。此次将“说明机制的例子”“真实代码的结构验证”“模拟性能结果”明确分开，避免把例子的成立当作关闭 C3/C4/C5 的依据，也避免把特定例子的额外条件误判成新增违规。
+
+## 如何检查、检查到了什么
+
+1. 阅读贡献 README、论文 Evaluation 的 placement ladder 段落，以及对应的配置、分配、共读关系收集、PIM prefill、MQ generator/计价和 A6 选边函数。没有执行 README 的自我生成脚本，以保留用户原文。
+2. 主审调用真实 `resolve_config` 比较 A3b 起相邻档。变化在当前允许的四项机制内；A5 配套 query 批量、频点一并列出。缓冲默认各档已经都是 512 B，未误报为新的独享容量。
+3. 独立 agent `independent_fairness_audit` 只读复核前两个例子，用真实 reuse plan + `_prepare_cacheblend_tlb` + `PhysicalLedger` 构造布局。记录自写一块/四块，以及分别生产/同一 producer 共读五块的控制。结果支持存在满足示意表的输入，同时显示表格依赖哪些输入。名义占行没有被当成实际 ACT，八段静态展开没有被当成八轮生命周期验证。
+4. 主审使用一层、四个 MHA KV heads、8192-token 驻留历史、8 个新增 token 的小输入，真实构图但用固定价格设备桩。核对 A4e/A5 回读和新 KV/Q/context 字节，确认 MQ query 数。`pipe=True`；设备桩不调用真实 GPU，因此没有“本次已测 FlashAttention”的结论。正式运行仍必须共同启用 flash。
+5. 直接运行现有 trace generator，比较单通道、256-token 行、8-query 的 replicate/MQ 命令数，检查 MQ 降低 MAC 读列命令但没有删掉 softmax 和私有搬运。没有运行 Ramulator，也没有用命令数推导延迟或 energy。
+6. 检查 A6 仍采用逐 request 两侧估价比较，符合用户定义；README 的时间只作为假设算术。原 C5 两个候选操作覆盖差异继续保留，不要求全局最优或正文旧双 DAG 算法。
+
+具体数值由探针 JSON 自动带入 [CURRENT_ISSUES 的四贡献对照](../../audit/2026-09-05/CURRENT_ISSUES.md#contributions-check)，避免手抄。正式 workload 场景分布/加速未重新测量；示例偏向有收益的条件，不能外推其平均收益。
+
+## 文档改动及理由
+
+| 文件 | 改了什么、为什么 |
+|---|---|
+| CURRENT_ISSUES.md | 在 case 地图前增加四贡献对照、配置实际差分、可复现的例子条件和 workload 解读；C1–C7 保持为同一份当前事项，未另建重复问题报告 |
+| audit 当日 README、archive README | 增加对照入口与新证据索引，维持当日根目录只有两个入口文档和 archive |
+| docs/sessions/README.md、本 session | 记录本轮授权范围、为什么调整 audit、独立 agent 分工和验证边界 |
+| archive 新 probe/JSON/manifest | 保存真实代码检查和独立复核证据；旧 JSON/日志和 cleanup_manifest 不覆盖，旧清理 manifest 仍代表上一次整理时点 |
+
+对贡献 README 只提出两项措辞建议，未擅自改原文：例子①若要作为代码复现输入，明确自写 KV 大小；例子②明确没有其他共读关系改变选择。其“条件下推导/假设耗时”声明是正确的，不将示意图判成伪造测量。
+
+## 验证与复现
+
+在仓库根目录执行的轻量命令：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 /tmp/contributions_alignment_probe.py
+PYTHONDONTWRITEBYTECODE=1 python3 /tmp/independent_contributions_8c51672_probe.py
+python3 /tmp/update_contributions_audit_docs.py
+python3 /tmp/validate_contributions_audit.py
+git diff --check
+```
+
+独立 probe 由 agent 执行。主审 probe 内部只启动 trace generator，不启动 Ramulator。当前归档是 `.txt` 源码副本；需复现时先复制至上述 `/tmp` 路径并核对输出路径，文档生成脚本不属于实现或自动测试。探针 JSON 是阅读结论的直接证据，不必为阅读审计重新运行脚本。
+
+最终验证记录在 [contributions_alignment_manifest.json](../../audit/2026-09-05/archive/contributions_alignment_manifest.json)：实现及现有结果摘要保持、贡献 README 保持、历史证据保持、论文保持、Markdown 链接/源码行号和 `git diff --check` 检查。没有 commit、没有性能结论或新增代码整改；后续候选项仍先由 chenyi9 裁决。
+'''
+(R / 'docs/sessions/2026-09-05-contributions-alignment-audit.md').write_text(session)
+path = R / 'docs/sessions/README.md'
+text = path.read_text().replace('|---|---|---|\n', '|---|---|---|\n| 2026-09-05（贡献例子对照） | [按贡献 README 核对实现与 audit](2026-09-05-contributions-alignment-audit.md) | 四项贡献配置差分、独立布局复核、真实构图字节和 MQ 命令检查；区分条件推导与性能结果 |\n', 1)
+path.write_text(text)
+path = A / 'README.md'
+text = path.read_text().replace('| 本轮需要过目的 case 与修改方向 |', '| 贡献 README 的四个例子与实现是否对应 | [四贡献核对](CURRENT_ISSUES.md#contributions-check) |\n| 本轮需要过目的 case 与修改方向 |', 1)
+path.write_text(text)
+path = H / 'README.md'
+text = path.read_text().replace('| 8c51672 主审 |', '| 贡献 README 四例对照 | [主审 JSON](contributions_alignment_evidence.json)、[probe](contributions_alignment_probe.txt)、[独立 JSON](independent_contributions_evidence.json)、[独立 probe](independent_contributions_probe.txt)、[验证记录](contributions_alignment_manifest.json) |\n| 8c51672 主审 |', 1)
+path.write_text(text)
+shutil.copyfile(Path(__file__), H / 'update_contributions_audit_docs.txt')
+print('Updated CURRENT_ISSUES contribution crosswalk, three indexes and session; preserved implementation and contribution README.')

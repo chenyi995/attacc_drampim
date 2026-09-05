@@ -1,0 +1,4331 @@
+{
+  "A1_exact_length": {
+    "1": {
+      "runs": [
+        [
+          0,
+          8388608,
+          16,
+          0,
+          1
+        ]
+      ],
+      "total_token_head_rows": 16
+    },
+    "8": {
+      "runs": [
+        [
+          0,
+          8388608,
+          16,
+          0,
+          1
+        ],
+        [
+          2147483648,
+          2155872256,
+          16,
+          2,
+          1
+        ],
+        [
+          4294967296,
+          4303355904,
+          16,
+          4,
+          1
+        ],
+        [
+          6442450944,
+          6450839552,
+          16,
+          6,
+          1
+        ],
+        [
+          8589934592,
+          8598323200,
+          16,
+          8,
+          1
+        ],
+        [
+          10737418240,
+          10745806848,
+          16,
+          10,
+          1
+        ],
+        [
+          12884901888,
+          12893290496,
+          16,
+          12,
+          1
+        ],
+        [
+          15032385536,
+          15040774144,
+          16,
+          14,
+          1
+        ]
+      ],
+      "total_token_head_rows": 128
+    }
+  },
+  "A6_estimate_vs_executed_operation_coverage": {
+    "fresh_16": {
+      "choice_log": {
+        "busiest_channel_rows": 16,
+        "compute_rows": 16,
+        "lanes": 8,
+        "readback_rows": 0,
+        "request": "r",
+        "scan_rows": 16,
+        "side": "pim",
+        "sweeps": 2,
+        "t_bank_s": 4e-06,
+        "t_xpu_s": 4e-06
+      },
+      "executed_lane_max_service_sum_s": 2e-06,
+      "executed_pim_attention_links": [
+        {
+          "link_bytes": 32768,
+          "name": "q_gpu_to_pim",
+          "rows": 16,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 32768,
+          "name": "ctx_pim_to_gpu",
+          "rows": 16,
+          "time_s": 1e-06
+        }
+      ],
+      "gpu_branch_attention_events": [
+        {
+          "link_bytes": 0,
+          "name": "gpu_prefill_score",
+          "rows": 16,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 0,
+          "name": "gpu_prefill_softmax",
+          "rows": 16,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 0,
+          "name": "gpu_prefill_context",
+          "rows": 16,
+          "time_s": 1e-06
+        }
+      ],
+      "gpu_branch_attention_operation_service_s": 3e-06,
+      "note": "A6 per-request selection is accepted; only compare coverage of the priced operations.",
+      "pim_attention_operation_service_s": 4e-06
+    },
+    "shifted_reuse": {
+      "choice_log": {
+        "busiest_channel_rows": 17,
+        "compute_rows": 5,
+        "lanes": 16,
+        "readback_rows": 15,
+        "request": "b_consumer",
+        "scan_rows": 21,
+        "side": "pim",
+        "sweeps": 1,
+        "t_bank_s": 3e-06,
+        "t_xpu_s": 4e-06
+      },
+      "executed_lane_max_service_sum_s": 1e-06,
+      "executed_pim_attention_links": [
+        {
+          "link_bytes": 10240,
+          "name": "q_gpu_to_pim",
+          "rows": 5,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "rows": 1,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "rows": 1,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "rows": 1,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "rows": 1,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "rows": 1,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 10240,
+          "name": "ctx_pim_to_gpu",
+          "rows": 5,
+          "time_s": 1e-06
+        }
+      ],
+      "gpu_branch_attention_events": [
+        {
+          "link_bytes": 61440,
+          "name": "kv_pim_to_gpu",
+          "rows": 15,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 0,
+          "name": "gpu_prefill_score",
+          "rows": 5,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 0,
+          "name": "gpu_prefill_softmax",
+          "rows": 5,
+          "time_s": 1e-06
+        },
+        {
+          "link_bytes": 0,
+          "name": "gpu_prefill_context",
+          "rows": 5,
+          "time_s": 1e-06
+        }
+      ],
+      "gpu_branch_attention_operation_service_s": 4e-06,
+      "note": "A6 per-request selection is accepted; only compare coverage of the priced operations.",
+      "pim_attention_operation_service_s": 8e-06
+    }
+  },
+  "common_plan_and_owner_dependency": {
+    "A3b": {
+      "consumer_scan_count": 24,
+      "consumer_scans_have_owner_store_ancestor": true,
+      "corrected_rows_sha": "4156e7f2042ec4ab",
+      "correction_indices": [
+        [
+          12
+        ]
+      ],
+      "owner_store_count": 2,
+      "prefill_q_links": [],
+      "rotation_events": [
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        }
+      ]
+    },
+    "A4c": {
+      "consumer_scan_count": 32,
+      "consumer_scans_have_owner_store_ancestor": true,
+      "corrected_rows_sha": "4156e7f2042ec4ab",
+      "correction_indices": [
+        [
+          12
+        ]
+      ],
+      "owner_store_count": 1,
+      "prefill_q_links": [],
+      "rotation_events": [
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        }
+      ]
+    },
+    "A4e": {
+      "consumer_scan_count": 32,
+      "consumer_scans_have_owner_store_ancestor": true,
+      "corrected_rows_sha": "4156e7f2042ec4ab",
+      "correction_indices": [
+        [
+          12
+        ]
+      ],
+      "owner_store_count": 1,
+      "prefill_q_links": [],
+      "rotation_events": [
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        }
+      ]
+    },
+    "A5": {
+      "consumer_scan_count": 48,
+      "consumer_scans_have_owner_store_ancestor": true,
+      "corrected_rows_sha": "4156e7f2042ec4ab",
+      "correction_indices": [
+        [
+          12
+        ]
+      ],
+      "owner_store_count": 1,
+      "prefill_q_links": [
+        36864,
+        10240
+      ],
+      "rotation_events": [
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        }
+      ]
+    },
+    "A6": {
+      "consumer_scan_count": 48,
+      "consumer_scans_have_owner_store_ancestor": true,
+      "corrected_rows_sha": "4156e7f2042ec4ab",
+      "correction_indices": [
+        [
+          12
+        ]
+      ],
+      "owner_store_count": 1,
+      "prefill_q_links": [
+        10240
+      ],
+      "rotation_events": [
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        },
+        {
+          "link_bytes": 2048,
+          "name": "decode_gpu_rotate_q_extra_to_pim",
+          "request": "b_consumer",
+          "rows": 1
+        }
+      ]
+    }
+  },
+  "fresh_by_gqa_and_rung": {
+    "1": {
+      "A1": {
+        "corrected_rows_sha": "4c5c37f0e8cfa572",
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 16,
+            "m": 16,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [
+          {
+            "command": "replicate",
+            "groups": [],
+            "k": 128,
+            "m": 1,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "replicate",
+            "groups": [],
+            "k": 128,
+            "m": 1,
+            "n": 136,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                17,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                17,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                17,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                17,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                17,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                17,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                17,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                17,
+                14,
+                1
+              ]
+            ]
+          }
+        ],
+        "prefill_sides": {
+          "gpu": 16,
+          "pim": 0
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 65536,
+            "name": "kv_gpu_to_pim",
+            "rows": 16
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": [
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "dram_store_master",
+            "rows": 16,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          }
+        ]
+      },
+      "A2": {
+        "corrected_rows_sha": null,
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 16,
+            "m": 16,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 17,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 18,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [],
+        "prefill_sides": {
+          "gpu": 16,
+          "pim": 0
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 65536,
+            "name": "kv_gpu_to_remote",
+            "rows": 16
+          },
+          {
+            "link_bytes": 65536,
+            "name": "kv_remote_to_gpu",
+            "rows": 16
+          },
+          {
+            "link_bytes": 4096,
+            "name": "kv_gpu_to_remote",
+            "rows": 1
+          },
+          {
+            "link_bytes": 69632,
+            "name": "kv_remote_to_gpu",
+            "rows": 17
+          },
+          {
+            "link_bytes": 4096,
+            "name": "kv_gpu_to_remote",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": []
+      },
+      "A3b": {
+        "corrected_rows_sha": "4c5c37f0e8cfa572",
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 16,
+            "m": 16,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [
+          {
+            "command": "replicate",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "replicate",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                1,
+                1,
+                [
+                  [
+                    1073741824,
+                    1082130432,
+                    1
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                3,
+                1,
+                [
+                  [
+                    3221225472,
+                    3229614080,
+                    1
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                5,
+                1,
+                [
+                  [
+                    5368709120,
+                    5377097728,
+                    1
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                7,
+                1,
+                [
+                  [
+                    7516192768,
+                    7524581376,
+                    1
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                9,
+                1,
+                [
+                  [
+                    9663676416,
+                    9672065024,
+                    1
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                11,
+                1,
+                [
+                  [
+                    11811160064,
+                    11819548672,
+                    1
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                13,
+                1,
+                [
+                  [
+                    13958643712,
+                    13967032320,
+                    1
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ],
+              [
+                15,
+                1,
+                [
+                  [
+                    16106127360,
+                    16114515968,
+                    1
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 136,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                1073741824,
+                1082130432,
+                1,
+                1,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                3221225472,
+                3229614080,
+                1,
+                3,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                5368709120,
+                5377097728,
+                1,
+                5,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                7516192768,
+                7524581376,
+                1,
+                7,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                9663676416,
+                9672065024,
+                1,
+                9,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                11811160064,
+                11819548672,
+                1,
+                11,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                13958643712,
+                13967032320,
+                1,
+                13,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ],
+              [
+                16106127360,
+                16114515968,
+                1,
+                15,
+                1
+              ]
+            ]
+          }
+        ],
+        "prefill_sides": {
+          "gpu": 16,
+          "pim": 0
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 65536,
+            "name": "kv_gpu_to_pim",
+            "rows": 16
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": [
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "dram_store_master",
+            "rows": 16,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          }
+        ]
+      },
+      "A4c": {
+        "corrected_rows_sha": "4c5c37f0e8cfa572",
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 16,
+            "m": 16,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [
+          {
+            "command": "replicate",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "replicate",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                1,
+                1,
+                [
+                  [
+                    1073741824,
+                    1082130432,
+                    1
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                3,
+                1,
+                [
+                  [
+                    3221225472,
+                    3229614080,
+                    1
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                5,
+                1,
+                [
+                  [
+                    5368709120,
+                    5377097728,
+                    1
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                7,
+                1,
+                [
+                  [
+                    7516192768,
+                    7524581376,
+                    1
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                9,
+                1,
+                [
+                  [
+                    9663676416,
+                    9672065024,
+                    1
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                11,
+                1,
+                [
+                  [
+                    11811160064,
+                    11819548672,
+                    1
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                13,
+                1,
+                [
+                  [
+                    13958643712,
+                    13967032320,
+                    1
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ],
+              [
+                15,
+                1,
+                [
+                  [
+                    16106127360,
+                    16114515968,
+                    1
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 136,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                1073741824,
+                1082130432,
+                1,
+                1,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                3221225472,
+                3229614080,
+                1,
+                3,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                5368709120,
+                5377097728,
+                1,
+                5,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                7516192768,
+                7524581376,
+                1,
+                7,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                9663676416,
+                9672065024,
+                1,
+                9,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                11811160064,
+                11819548672,
+                1,
+                11,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                13958643712,
+                13967032320,
+                1,
+                13,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ],
+              [
+                16106127360,
+                16114515968,
+                1,
+                15,
+                1
+              ]
+            ]
+          }
+        ],
+        "prefill_sides": {
+          "gpu": 16,
+          "pim": 0
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 65536,
+            "name": "kv_gpu_to_pim",
+            "rows": 16
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": [
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "dram_store_master",
+            "rows": 16,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          }
+        ]
+      },
+      "A4e": {
+        "corrected_rows_sha": "4c5c37f0e8cfa572",
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 16,
+            "m": 16,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [
+          {
+            "command": "replicate",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "replicate",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                1,
+                1,
+                [
+                  [
+                    1073741824,
+                    1082130432,
+                    1
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                3,
+                1,
+                [
+                  [
+                    3221225472,
+                    3229614080,
+                    1
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                5,
+                1,
+                [
+                  [
+                    5368709120,
+                    5377097728,
+                    1
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                7,
+                1,
+                [
+                  [
+                    7516192768,
+                    7524581376,
+                    1
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                9,
+                1,
+                [
+                  [
+                    9663676416,
+                    9672065024,
+                    1
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                11,
+                1,
+                [
+                  [
+                    11811160064,
+                    11819548672,
+                    1
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                13,
+                1,
+                [
+                  [
+                    13958643712,
+                    13967032320,
+                    1
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ],
+              [
+                15,
+                1,
+                [
+                  [
+                    16106127360,
+                    16114515968,
+                    1
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 136,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                1073741824,
+                1082130432,
+                1,
+                1,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                3221225472,
+                3229614080,
+                1,
+                3,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                5368709120,
+                5377097728,
+                1,
+                5,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                7516192768,
+                7524581376,
+                1,
+                7,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                9663676416,
+                9672065024,
+                1,
+                9,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                11811160064,
+                11819548672,
+                1,
+                11,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                13958643712,
+                13967032320,
+                1,
+                13,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ],
+              [
+                16106127360,
+                16114515968,
+                1,
+                15,
+                1
+              ]
+            ]
+          }
+        ],
+        "prefill_sides": {
+          "gpu": 16,
+          "pim": 0
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 65536,
+            "name": "kv_gpu_to_pim",
+            "rows": 16
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": [
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "dram_store_master",
+            "rows": 16,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          }
+        ]
+      },
+      "A5": {
+        "corrected_rows_sha": "4c5c37f0e8cfa572",
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 8,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 8,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 8,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 8,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                1,
+                1,
+                [
+                  [
+                    1073741824,
+                    1082130432,
+                    1
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                3,
+                1,
+                [
+                  [
+                    3221225472,
+                    3229614080,
+                    1
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                5,
+                1,
+                [
+                  [
+                    5368709120,
+                    5377097728,
+                    1
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                7,
+                1,
+                [
+                  [
+                    7516192768,
+                    7524581376,
+                    1
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                9,
+                1,
+                [
+                  [
+                    9663676416,
+                    9672065024,
+                    1
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                11,
+                1,
+                [
+                  [
+                    11811160064,
+                    11819548672,
+                    1
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                13,
+                1,
+                [
+                  [
+                    13958643712,
+                    13967032320,
+                    1
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ],
+              [
+                15,
+                1,
+                [
+                  [
+                    16106127360,
+                    16114515968,
+                    1
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 136,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                1073741824,
+                1082130432,
+                1,
+                1,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                3221225472,
+                3229614080,
+                1,
+                3,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                5368709120,
+                5377097728,
+                1,
+                5,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                7516192768,
+                7524581376,
+                1,
+                7,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                9663676416,
+                9672065024,
+                1,
+                9,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                11811160064,
+                11819548672,
+                1,
+                11,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                13958643712,
+                13967032320,
+                1,
+                13,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ],
+              [
+                16106127360,
+                16114515968,
+                1,
+                15,
+                1
+              ]
+            ]
+          }
+        ],
+        "prefill_sides": {
+          "gpu": 0,
+          "pim": 16
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 65536,
+            "name": "kv_gpu_to_pim",
+            "rows": 16
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": [
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "dram_store_diff_and_live",
+            "rows": 16,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          }
+        ]
+      },
+      "A6": {
+        "corrected_rows_sha": "4c5c37f0e8cfa572",
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 16,
+            "m": 16,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 1,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 8,
+            "n": 16,
+            "name": "score",
+            "numOp": 1,
+            "queries": 8,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 8,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 8,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 8,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 8,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 128,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ]
+            ]
+          },
+          {
+            "command": "mq",
+            "groups": [
+              [
+                0,
+                1,
+                [
+                  [
+                    0,
+                    8388608,
+                    16
+                  ]
+                ]
+              ],
+              [
+                1,
+                1,
+                [
+                  [
+                    1073741824,
+                    1082130432,
+                    1
+                  ]
+                ]
+              ],
+              [
+                2,
+                1,
+                [
+                  [
+                    2147483648,
+                    2155872256,
+                    16
+                  ]
+                ]
+              ],
+              [
+                3,
+                1,
+                [
+                  [
+                    3221225472,
+                    3229614080,
+                    1
+                  ]
+                ]
+              ],
+              [
+                4,
+                1,
+                [
+                  [
+                    4294967296,
+                    4303355904,
+                    16
+                  ]
+                ]
+              ],
+              [
+                5,
+                1,
+                [
+                  [
+                    5368709120,
+                    5377097728,
+                    1
+                  ]
+                ]
+              ],
+              [
+                6,
+                1,
+                [
+                  [
+                    6442450944,
+                    6450839552,
+                    16
+                  ]
+                ]
+              ],
+              [
+                7,
+                1,
+                [
+                  [
+                    7516192768,
+                    7524581376,
+                    1
+                  ]
+                ]
+              ],
+              [
+                8,
+                1,
+                [
+                  [
+                    8589934592,
+                    8598323200,
+                    16
+                  ]
+                ]
+              ],
+              [
+                9,
+                1,
+                [
+                  [
+                    9663676416,
+                    9672065024,
+                    1
+                  ]
+                ]
+              ],
+              [
+                10,
+                1,
+                [
+                  [
+                    10737418240,
+                    10745806848,
+                    16
+                  ]
+                ]
+              ],
+              [
+                11,
+                1,
+                [
+                  [
+                    11811160064,
+                    11819548672,
+                    1
+                  ]
+                ]
+              ],
+              [
+                12,
+                1,
+                [
+                  [
+                    12884901888,
+                    12893290496,
+                    16
+                  ]
+                ]
+              ],
+              [
+                13,
+                1,
+                [
+                  [
+                    13958643712,
+                    13967032320,
+                    1
+                  ]
+                ]
+              ],
+              [
+                14,
+                1,
+                [
+                  [
+                    15032385536,
+                    15040774144,
+                    16
+                  ]
+                ]
+              ],
+              [
+                15,
+                1,
+                [
+                  [
+                    16106127360,
+                    16114515968,
+                    1
+                  ]
+                ]
+              ]
+            ],
+            "k": 128,
+            "m": 1,
+            "n": 136,
+            "name": "score",
+            "numOp": 1,
+            "queries": 1,
+            "runs": [
+              [
+                0,
+                8388608,
+                16,
+                0,
+                1
+              ],
+              [
+                1073741824,
+                1082130432,
+                1,
+                1,
+                1
+              ],
+              [
+                2147483648,
+                2155872256,
+                16,
+                2,
+                1
+              ],
+              [
+                3221225472,
+                3229614080,
+                1,
+                3,
+                1
+              ],
+              [
+                4294967296,
+                4303355904,
+                16,
+                4,
+                1
+              ],
+              [
+                5368709120,
+                5377097728,
+                1,
+                5,
+                1
+              ],
+              [
+                6442450944,
+                6450839552,
+                16,
+                6,
+                1
+              ],
+              [
+                7516192768,
+                7524581376,
+                1,
+                7,
+                1
+              ],
+              [
+                8589934592,
+                8598323200,
+                16,
+                8,
+                1
+              ],
+              [
+                9663676416,
+                9672065024,
+                1,
+                9,
+                1
+              ],
+              [
+                10737418240,
+                10745806848,
+                16,
+                10,
+                1
+              ],
+              [
+                11811160064,
+                11819548672,
+                1,
+                11,
+                1
+              ],
+              [
+                12884901888,
+                12893290496,
+                16,
+                12,
+                1
+              ],
+              [
+                13958643712,
+                13967032320,
+                1,
+                13,
+                1
+              ],
+              [
+                15032385536,
+                15040774144,
+                16,
+                14,
+                1
+              ],
+              [
+                16106127360,
+                16114515968,
+                1,
+                15,
+                1
+              ]
+            ]
+          }
+        ],
+        "prefill_sides": {
+          "gpu": 0,
+          "pim": 16
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 65536,
+            "name": "kv_gpu_to_pim",
+            "rows": 16
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          },
+          {
+            "link_bytes": 4096,
+            "name": "decode_kv_gpu_to_pim",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": [
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "dram_store_diff_and_live",
+            "rows": 16,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          },
+          {
+            "device": "STORE",
+            "energy_nj": 0.0,
+            "name": "decode_dram_store_master",
+            "rows": 1,
+            "time_s": 0.0
+          }
+        ]
+      }
+    },
+    "4": {
+      "A1": {
+        "error": "CacheBlend KV link byte count is invalid",
+        "error_type": "WorkloadValidationError",
+        "status": "error"
+      },
+      "A2": {
+        "corrected_rows_sha": null,
+        "gpu_context_shapes": [
+          {
+            "command": null,
+            "groups": [],
+            "k": 16,
+            "m": 16,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 17,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          },
+          {
+            "command": null,
+            "groups": [],
+            "k": 18,
+            "m": 1,
+            "n": 128,
+            "name": "context",
+            "numOp": 8,
+            "queries": 1,
+            "runs": []
+          }
+        ],
+        "pim_pricing_calls": [],
+        "prefill_sides": {
+          "gpu": 16,
+          "pim": 0
+        },
+        "remote_or_kv_links": [
+          {
+            "link_bytes": 16384,
+            "name": "kv_gpu_to_remote",
+            "rows": 16
+          },
+          {
+            "link_bytes": 16384,
+            "name": "kv_remote_to_gpu",
+            "rows": 16
+          },
+          {
+            "link_bytes": 1024,
+            "name": "kv_gpu_to_remote",
+            "rows": 1
+          },
+          {
+            "link_bytes": 17408,
+            "name": "kv_remote_to_gpu",
+            "rows": 17
+          },
+          {
+            "link_bytes": 1024,
+            "name": "kv_gpu_to_remote",
+            "rows": 1
+          }
+        ],
+        "status": "ok",
+        "store_events": []
+      },
+      "A3b": {
+        "error": "CacheBlend KV link byte count is invalid",
+        "error_type": "WorkloadValidationError",
+        "status": "error"
+      },
+      "A4c": {
+        "error": "CacheBlend KV link byte count is invalid",
+        "error_type": "WorkloadValidationError",
+        "status": "error"
+      },
+      "A4e": {
+        "error": "CacheBlend KV link byte count is invalid",
+        "error_type": "WorkloadValidationError",
+        "status": "error"
+      },
+      "A5": {
+        "error": "CacheBlend KV link byte count is invalid",
+        "error_type": "WorkloadValidationError",
+        "status": "error"
+      },
+      "A6": {
+        "error": "CacheBlend KV link byte count is invalid",
+        "error_type": "WorkloadValidationError",
+        "status": "error"
+      }
+    }
+  },
+  "real_analytic_zero_byte_readback": {
+    "flash": {
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.0
+      ],
+      "time_s": 6.06e-06
+    },
+    "legacy": {
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.0
+      ],
+      "time_s": 0.0
+    }
+  },
+  "scope": "8c51672; real helper and DAG functions, fixed 1us fake device per pricing call. No real Ramulator or measured performance."
+}

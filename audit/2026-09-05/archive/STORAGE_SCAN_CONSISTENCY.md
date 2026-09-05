@@ -1,4 +1,8 @@
+> 历史记录：保留当时的技术证据和评价，当前待审事项统一看 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md)。
+
 # 存储与扫描专项：当前七档没有统一的物理读写账本
+
+> **历史快照：** 本文检查 `cdd89db`。`8c51672` 已修高层 scan row 持久性、A1 精确 L、A2 多读当前 token，并按新裁决清零 STORE。当前仍有 ledger→ALL-BANK 地址转换、写入账本与校验问题，详见 [最新复核](REAUDIT_8c51672.md)。不要将下文旧反例视作全部仍存在。
 
 日期：2026-09-05。源码对象仍为 `cdd89db04a85edae029fd3151165f1a488d6139c`，没有修改实现。本报告补充 [主审报告](REAUDIT_cdd89db.md)，并按用户最新澄清修订 A6 的判定标准。独立 agent 的交叉检查见 [S01/S02](INDEPENDENT_REAUDIT.md)。
 
@@ -24,13 +28,13 @@
 
 完整路径中至少有三个容易混淆的地址视图：
 
-1. **存储元数据：** `reserve → finalize → KVLocation → _append_channel_kv_stores`。后者也用于 `dram_read_resident`，按 `KVLocation.channel_base/channel_count` 分组，按每组 bytes/BW 与 bytes×AttAcc 单价计费。见 [allocator](../../src/workload_runner.py:1396)、[store/read helper](../../src/workload_runner.py:2192)。
-2. **给计时器的 scan 地址：** `_placement_channel_runs → _striped_append_channel_extents → _channel_extent_addresses`。前两步虽使用 `tlb.scan_runs` 的连续段**长度**，却通过 slot 重选通道，并从每通道 cursor=0 开始重新安排地址。见 [extent 构造](../../src/workload_runner.py:793)、[slot 放置](../../src/workload_runner.py:870)、[scan 定价入口](../../src/workload_runner.py:2138)。
-3. **事件报告中的地址：** `_append_placement_pim_scan` 把旧 `KVLocation` 的地址轮流分给活跃 channel，用作 `event.dram_addresses`；源码自己称其为 report approximation。其后更新 per-channel 行数，并没有将这些地址替换为实际计时 extent。见 [report 地址分派](../../src/workload_runner.py:2075)、[数量修补](../../src/workload_runner.py:2091)。
+1. **存储元数据：** `reserve → finalize → KVLocation → _append_channel_kv_stores`。后者也用于 `dram_read_resident`，按 `KVLocation.channel_base/channel_count` 分组，按每组 bytes/BW 与 bytes×AttAcc 单价计费。见 [allocator](../../../src/workload_runner.py:1396)、[store/read helper](../../../src/workload_runner.py:2192)。
+2. **给计时器的 scan 地址：** `_placement_channel_runs → _striped_append_channel_extents → _channel_extent_addresses`。前两步虽使用 `tlb.scan_runs` 的连续段**长度**，却通过 slot 重选通道，并从每通道 cursor=0 开始重新安排地址。见 [extent 构造](../../../src/workload_runner.py:793)、[slot 放置](../../../src/workload_runner.py:870)、[scan 定价入口](../../../src/workload_runner.py:2138)。
+3. **事件报告中的地址：** `_append_placement_pim_scan` 把旧 `KVLocation` 的地址轮流分给活跃 channel，用作 `event.dram_addresses`；源码自己称其为 report approximation。其后更新 per-channel 行数，并没有将这些地址替换为实际计时 extent。见 [report 地址分派](../../../src/workload_runner.py:2075)、[数量修补](../../../src/workload_runner.py:2091)。
 
-因此，检查报告里“有 K/V 地址”“scan 依赖 TLB plan”或统计 scan 行数，还不能证明真正的计时输入和 store 相同。现有 [validator](../../src/workload_runner.py:2482) 检查图拓扑、地址存在、link bytes 等，没有逐对象/版本/head 对照 store 地址与送给 wrapper 的 extent。
+因此，检查报告里“有 K/V 地址”“scan 依赖 TLB plan”或统计 scan 行数，还不能证明真正的计时输入和 store 相同。现有 [validator](../../../src/workload_runner.py:2482) 检查图拓扑、地址存在、link bytes 等，没有逐对象/版本/head 对照 store 地址与送给 wrapper 的 extent。
 
-wrapper 优先消费 `op.pim_kv_extent_groups`，不是报告里的 `dram_addresses`。见 [wrapper](../../src/ramulator_wrapper.py:524)。generator 再沿各 extent 的 K/V base 产生 MAC 地址，见 [score](../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:162) 与 [context](../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:216)。`PIM_WR_GB` 在这里是 query 写入 GEMV buffer，不是把此前所有 KV store 纳入同一条 DRAM 写入流的证据。
+wrapper 优先消费 `op.pim_kv_extent_groups`，不是报告里的 `dram_addresses`。见 [wrapper](../../../src/ramulator_wrapper.py:524)。generator 再沿各 extent 的 K/V base 产生 MAC 地址，见 [score](../../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:162) 与 [context](../../../pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:216)。`PIM_WR_GB` 在这里是 query 写入 GEMV buffer，不是把此前所有 KV store 纳入同一条 DRAM 写入流的证据。
 
 ## 3. SS02：不是地址单位差，而是通道和对象身份对不上
 
@@ -67,9 +71,9 @@ A3b 的单 head 例子最直接：store 轮转计入 diff，c1 是第三个对�
 
 ## 5. SS04：A1/A2 的存储抽象与数量边界
 
-**A1。** 两个各 16-token 的 private block，allocator K base 分别为 0、8192，`tlb.scan_runs` 分别保留这个 base 和 16 tokens。默认 decode 使用的 `slice` placement 却为二者都返回 `(K=0,V=8388608,rows=256,ch0,count1)`（1 head 控制组）。说明计时按 count/dense chunk 构造，不消费原 private block base。见 [private allocator](../../src/workload_runner.py:1653)、[slice 分支](../../src/workload_runner.py:2014)。
+**A1。** 两个各 16-token 的 private block，allocator K base 分别为 0、8192，`tlb.scan_runs` 分别保留这个 base 和 16 tokens。默认 decode 使用的 `slice` placement 却为二者都返回 `(K=0,V=8388608,rows=256,ch0,count1)`（1 head 控制组）。说明计时按 count/dense chunk 构造，不消费原 private block base。见 [private allocator](../../../src/workload_runner.py:1653)、[slice 分支](../../../src/workload_runner.py:2014)。
 
-256 是被计入 scan 的 token 数，不是“16 个实际 KV 被写了 256 次”，也不是性能差率。按完整 DRAM row 扫描可以是合理 baseline，但需要说明 padding 的 MAC、mask、分配容量如何对应；不能拿这一路证明逐地址存取。另一个可手动开启的 private PIM-prefill helper 会直接使用 `tlb.scan_runs`（[3810 行](../../src/workload_runner.py:3810)）；它不是 A1 preset 的 GPU-prefill 路径，不能用它替默认 decode 背书。
+256 是被计入 scan 的 token 数，不是“16 个实际 KV 被写了 256 次”，也不是性能差率。按完整 DRAM row 扫描可以是合理 baseline，但需要说明 padding 的 MAC、mask、分配容量如何对应；不能拿这一路证明逐地址存取。另一个可手动开启的 private PIM-prefill helper 会直接使用 `tlb.scan_runs`（[3810 行](../../../src/workload_runner.py:3810)）；它不是 A1 preset 的 GPU-prefill 路径，不能用它替默认 decode 背书。
 
 **A2。** 用真实 DAG 构造器、16-token prompt、2 个 decode step、单层 MHA 小模型，事件依次为：
 
@@ -81,13 +85,13 @@ A3b 的单 head 例子最直接：store 轮转计入 diff，c1 是第三个对�
 | decode step 1 从远端读回 | **18** | 73728 |
 | step 1 计算之后写远端 | 1 | 4096 |
 
-GPU attention 包含当前 token，所以 attention width 可以是 `L+step+1`；但当前 token 的 KV 在 GPU 本步产生，远端读回应该针对此前驻留的 `L+step`。代码 [4143 行](../../src/workload_runner.py:4143) 把同一个 `+1` 也用在计算之前的 remote read 上；本例每步多计一个 token 的回读流量。此问题倾向弱化 A2，但本轮没有测量 E2E 影响。A2 不具备物理 bank/row 地址模型本身是允许的 baseline 简化；这个额外 token 是可以独立修正的数量问题。
+GPU attention 包含当前 token，所以 attention width 可以是 `L+step+1`；但当前 token 的 KV 在 GPU 本步产生，远端读回应该针对此前驻留的 `L+step`。代码 [4143 行](../../../src/workload_runner.py:4143) 把同一个 `+1` 也用在计算之前的 remote read 上；本例每步多计一个 token 的回读流量。此问题倾向弱化 A2，但本轮没有测量 E2E 影响。A2 不具备物理 bank/row 地址模型本身是允许的 baseline 简化；这个额外 token 是可以独立修正的数量问题。
 
 ## 6. SS05：地址以外，还缺哪些生命周期证据
 
 主要 fresh/PIM-prefill 路径已经把本请求的 KV store 与 scan 通过依赖连起来，decode 也有新增 KV 的 link/store 事件。这些是有效进展，不能笼统说“没有任何写入”。但它们不能解决 SS01–SS03 的地址来源分离。
 
-复用别的请求的 master 时，same-tier consumer 的 scan 还缺 owner store 依赖；主报告 R05 已在真实 DAG+设备桩中复现先读后写。`history_len` 则在 [2866 行](../../src/workload_runner.py:2866) 为每个新 request 创建独立预置 history extent，没有从 parent 的真实地址继承或迁移。允许声明“历史已预置”的抽象，但它不能验证真实多轮写入后继续扫描同一存储的行为。
+复用别的请求的 master 时，same-tier consumer 的 scan 还缺 owner store 依赖；主报告 R05 已在真实 DAG+设备桩中复现先读后写。`history_len` 则在 [2866 行](../../../src/workload_runner.py:2866) 为每个新 request 创建独立预置 history extent，没有从 parent 的真实地址继承或迁移。允许声明“历史已预置”的抽象，但它不能验证真实多轮写入后继续扫描同一存储的行为。
 
 容量也需要跟最终 scan 布局一致：不能仅用旧 allocator 的 block 大小解释 scan 新建的 per-head row padding、diff packing 与地址占用。当前没有这份完整守恒证明。
 
@@ -97,7 +101,7 @@ GPU attention 包含当前 token，所以 attention width 可以是 `L+step+1`�
 
 **撤回前一轮“没有构建两套候选 DAG 就违反 claim”的裁定。** 不要求排队试排、事件队列预测或全局最优。`_resolve_prefill_side` 逐 request 比较 `t_xpu/t_bank`、相等选 PIM、跨层沿用结果，符合这项机制定义。正文的旧 DAG/completion wording 应按该定义同步，本次不修改论文。
 
-仍需要核对估价的工作量和执行器一致，不能把近似估计理解为任意省略成本：当前 [3694 行](../../src/workload_runner.py:3694) 先选 **token 数最多**的 lane，只给该 lane 定价；提交扫描则会对全部 lane 定价再取其完成时间。extent 更碎的少 token lane 可能更慢。尾批使用满批价格、GPU readback 的 DRAM 部分、GPU 分支多余 Q 传输、Q variants 的覆盖也仍需清理。第一层估计跨层复用可以是简化，不再单独判 claim 违规；需说明它适用的层结构和逻辑工作量。
+仍需要核对估价的工作量和执行器一致，不能把近似估计理解为任意省略成本：当前 [3694 行](../../../src/workload_runner.py:3694) 先选 **token 数最多**的 lane，只给该 lane 定价；提交扫描则会对全部 lane 定价再取其完成时间。extent 更碎的少 token lane 可能更慢。尾批使用满批价格、GPU readback 的 DRAM 部分、GPU 分支多余 Q 传输、Q variants 的覆盖也仍需清理。第一层估计跨层复用可以是简化，不再单独判 claim 违规；需说明它适用的层结构和逻辑工作量。
 
 轻量设备桩反例只用于验证估价覆盖：ch0=256 tokens/1 extent，ch1=16 tokens/2 extents；设 GPU 三算子各 50 µs、链路每次 20 µs，PIM 每 extent 100 µs + 每 token 1 ns。现有 chooser 只询价 ch0，得到 PIM 140.256 µs、GPU 170 µs，选择 PIM；同一估价器覆盖本反例构造的全部 scan lanes 会得到 PIM 240.016 µs。**这些是人为可检查的价格，不是 Ramulator 测量，也不证明真实 workload 的具体误判率。** 它只说明当前“估计器与提交路径价格完全相同”的说法过强。
 
@@ -121,4 +125,4 @@ cp audit/2026-09-05/storage_scan_probe.txt /tmp/fugue_storage_scan_audit.py
 PYTHONDONTWRITEBYTECODE=1 KVPIM_CPPCORE=0 KVPIM_PREFILL_SIDE_LOG= python3 /tmp/fugue_storage_scan_audit.py
 ```
 
-独立 agent 分别复现五档 channel 与 row 反例并自行修订 A6 结论，未依赖主审 JSON。主审还执行 A1/A2 的真实 DAG 构造和 A6 选择函数探针。设备全为桩；未运行性能矩阵、真实 Ramulator、GPU benchmark、RTL、完整测试套件，也未修改代码、测试、workload 或旧性能结果。文档修改原因和核验记录见 [session](../../docs/sessions/2026-09-05-storage-scan-and-request-choice.md)，文件指纹见 [manifest](storage_scan_manifest.json)。
+独立 agent 分别复现五档 channel 与 row 反例并自行修订 A6 结论，未依赖主审 JSON。主审还执行 A1/A2 的真实 DAG 构造和 A6 选择函数探针。设备全为桩；未运行性能矩阵、真实 Ramulator、GPU benchmark、RTL、完整测试套件，也未修改代码、测试、workload 或旧性能结果。文档修改原因和核验记录见 [session](../../../docs/sessions/2026-09-05-storage-scan-and-request-choice.md)，文件指纹见 [manifest](storage_scan_manifest.json)。

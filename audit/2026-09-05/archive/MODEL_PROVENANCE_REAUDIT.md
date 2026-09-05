@@ -1,3 +1,5 @@
+> 历史记录：保留当时的技术证据和评价，当前待审事项统一看 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md)。
+
 # AttAcc 计量来源专项复审（当前树 cdd89db）
 
 本报告由独立 agent `/root/attacc_model_provenance` 撰写。审查基点为 `cdd89db04a85edae029fd3151165f1a488d6139c`，比较原始 AttAcc 基点 `c600051`。范围是设备计量、配置、GPU 模型、Ramulator 包装、命令生成与 PIM 读写计费；主审另查执行 DAG 与 workload。读取了两份当前 session，特别是 `docs/sessions/2026-09-05-ladder-fixes-f01-f02-f04.md` §11 的 MQ 能量裁决。

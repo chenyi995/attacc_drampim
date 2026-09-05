@@ -1,0 +1,102 @@
+"""Read-only runtime audit. Synthetic unit-duration scheduler probe, no GPU/Ramulator run."""
+from pathlib import Path
+import ast
+import hashlib
+import inspect
+import json
+import re
+import subprocess
+import sys
+
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT))
+import src.workload_runner as w
+from src.cpp_eventcore import new_core
+
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
+initial = {p: sha(ROOT/p) for p in tracked if p and (ROOT/p).is_file()}
+head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+out = {'head': head, 'scope': 'Static configuration and synthetic scheduling only; no measured GPU/FlashAttention/Ramulator performance.', 'initial_tracked_sha256': initial}
+tree = ast.parse((ROOT/'main.py').read_text())
+args = {}
+for node in ast.walk(tree):
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'add_argument':
+        flags = [v.value for v in node.args if isinstance(v, ast.Constant) and isinstance(v.value, str)]
+        for flag in ('--gpu-model', '--pipeopt', '--attn-splitk', '--powerlimit'):
+            if flag in flags:
+                args[flag] = {'line': node.lineno, 'keywords': {kw.arg: ast.unparse(kw.value) for kw in node.keywords}}
+out['cli_arguments'] = args
+out['python_api_pipe_default'] = inspect.signature(w.run_reuse_prefill).parameters['pipe'].default
+out['entrypoint_snippets'] = {}
+for rel, pattern in {
+    'experiments/run_dag_ladder.sh': r'GPU_MODEL|--pipeopt|SKIP_A1|cp .*A1',
+    'experiments/run_sweep.sh': r'GPU_MODEL|run_dag_ladder',
+    'src/gemm_table.py': r'approximate|not a|measurement made|interpolates them',
+}.items():
+    out['entrypoint_snippets'][rel] = [{'line': i, 'text': line} for i, line in enumerate((ROOT/rel).read_text().splitlines(), 1) if re.search(pattern, line)]
+
+events = [
+    w.SplitEvent('cb-0', 0, 0, 'r0', 'synthetic_pim', 'PIM:pool0-1', 1, 10., 0.),
+    w.SplitEvent('cb-1', 0, 0, 'r0', 'synthetic_gpu_waiting_for_pim', 'GPU', 1, 1., 0., depends_on=('cb-0',)),
+    w.SplitEvent('cb-2', 0, 0, 'r1', 'synthetic_gpu_ready', 'GPU', 1, 1., 0.),
+    w.SplitEvent('cb-3', 0, 0, 'r2', 'synthetic_link_ready', 'LINK', 1, 1., 0.),
+]
+w._EC = None
+def view(es):
+    return {'makespan_units': max(e.end_s for e in es), 'events': [{'id':e.event_id, 'device':e.device, 'deps':list(e.depends_on), 'start_units':e.start_s, 'end_units':e.end_s} for e in es]}
+out['scheduler_probe'] = {}
+for pipe in (False, True):
+    scheduled = w._schedule_cacheblend(events, pipe=pipe)
+    item = view(scheduled)
+    item['overlap_validator'] = w.validate_cacheblend_attacc_overlap_contract(scheduled, pipe=pipe)
+    item['incremental_finish'], _ = w._schedule_cacheblend_incremental(events, pipe=pipe, start_index=0, finish={}, availability={})
+    core = new_core(pipe)
+    item['native_library_available'] = core is not None
+    if core is not None:
+        for e in events:
+            core.add(e.device, e.time_s, e.depends_on, name=e.name)
+        core.advance()
+        starts, ends = core.bulk_times(len(events))
+        item['native_starts'] = list(starts)
+        item['native_ends'] = list(ends)
+        assert list(starts) == [e.start_s for e in scheduled]
+        assert list(ends) == [e.end_s for e in scheduled]
+        core.close()
+    out['scheduler_probe'][str(pipe)] = item
+    assert item['incremental_finish'] == {e.event_id:e.end_s for e in scheduled}
+# A legal topological order of the SAME DAG: ready independent GPU work first.
+legal = w._schedule_cacheblend([events[i] for i in (0, 2, 1, 3)], pipe=True)
+out['scheduler_probe']['same_dag_ready_first'] = view(legal)
+assert out['scheduler_probe']['True']['events'][2]['start_units'] == 11.
+assert out['scheduler_probe']['True']['overlap_validator']['passed']
+assert out['scheduler_probe']['same_dag_ready_first']['makespan_units'] == 11.
+assert out['scheduler_probe']['True']['makespan_units'] == 12.
+
+marker = re.compile(r'gpu_model|gpu-model|pipeopt|no-pipeopt|"pipe"|"GPU_MODEL"', re.I)
+inventory = []
+for base in (ROOT/'experiments/paper_ladder/results', ROOT/'output'):
+    for p in sorted(base.rglob('*')):
+        if not p.is_file() or p.suffix not in ('.json', '.log'):
+            continue
+        content = p.read_text(errors='replace')
+        hits = [{'line':i, 'text':line[:600]} for i,line in enumerate(content.splitlines(), 1) if marker.search(line)]
+        record = {'path':str(p.relative_to(ROOT)), 'size':p.stat().st_size, 'sha256':sha(p), 'config_markers':hits}
+        if p.suffix == '.json':
+            try:
+                data = json.loads(content)
+                record['reported_pipe'] = data.get('overlap_validation', {}).get('pipe', 'unknown')
+                record['reported_ablation'] = data.get('ablation', {}).get('preset', 'unknown')
+                record['reported_gpu_model'] = data.get('gpu_model', data.get('GPU_MODEL', 'unknown'))
+            except (ValueError, AttributeError) as exc:
+                record['json_error'] = str(exc)
+        inventory.append(record)
+out['existing_result_inventory'] = inventory
+out['existing_result_summary'] = {'files':len(inventory), 'json_files':sum(x['path'].endswith('.json') for x in inventory), 'files_with_markers':sum(bool(x['config_markers']) for x in inventory), 'json_pipe_false':sum(x.get('reported_pipe') is False for x in inventory), 'json_pipe_true':sum(x.get('reported_pipe') is True for x in inventory), 'json_pipe_unknown':sum(x.get('reported_pipe') == 'unknown' for x in inventory), 'json_gpu_model_unknown':sum(x.get('reported_gpu_model') == 'unknown' for x in inventory), 'scope_roots':['experiments/paper_ladder/results','output'], 'limitation':'No inference about external scratch results or historical invocation defaults.'}
+out['source_files_unchanged_after_probe'] = all((ROOT/p).is_file() and sha(ROOT/p)==h for p,h in initial.items())
+assert out['source_files_unchanged_after_probe']
+path = Path('/tmp/runtime_configuration_8c51672_evidence.json')
+path.write_text(json.dumps(out, ensure_ascii=False, indent=2)+'\n')
+print(json.dumps({k:out[k] for k in ('head','cli_arguments','python_api_pipe_default','scheduler_probe','existing_result_summary','source_files_unchanged_after_probe')}, ensure_ascii=False, indent=2))

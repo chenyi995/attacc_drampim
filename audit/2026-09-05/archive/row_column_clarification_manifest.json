@@ -1,0 +1,16 @@
+{
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "scope": "C4 explanation and actual-path helper evidence only",
+  "protected_files_changed": [],
+  "git_diff_check_exit_code": 0,
+  "new_performance_experiments": false,
+  "artifacts_sha256": {
+    "audit/2026-09-05/CURRENT_ISSUES.md": "6ae1ddaf1dcebf01bdd30a103e4b6c5d346e7fd149df52c7aba6206c3e443b61",
+    "audit/2026-09-05/archive/README.md": "c9e8021e0bd7af0fbfab14a2208bb4977f2e6c77c706fa67951f9efe7a8f5e60",
+    "audit/2026-09-05/archive/row_column_reachability_evidence.json": "71e1ecfe19f2362b4c3e8bdf46b4d1f702971b2ee35675d82e4ad557e897d983",
+    "audit/2026-09-05/archive/row_column_reachability_probe.txt": "e7e2e7be3d38894f170ebea5f03478d4b3502324f850edb761304ec99e963923",
+    "audit/2026-09-05/archive/clarify_row_column_audit.txt": "3586c9a9731447549ccf887b1416196fbc15000af8b55fdbab5d84d449cd5aba",
+    "docs/sessions/README.md": "61080215efa284ec63e99ad6c407544047c2221952c1b84155de1608b900e553",
+    "docs/sessions/2026-09-05-row-column-audit-clarification.md": "7f5eeeea38b3edba34619104c79eba8f9f9e57fd1ee9436349e413226fe40615"
+  }
+}

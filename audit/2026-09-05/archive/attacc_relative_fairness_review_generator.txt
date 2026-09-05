@@ -1,0 +1,43 @@
+"""Read-only upstream provenance capture and documentation generation; no experiments."""
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+R = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A = R/'audit/2026-09-05'
+BASE = 'c600051'
+def git(*args):
+    return subprocess.check_output(['git',*args],cwd=R).decode()
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+files = git('ls-files','-z').split('\0')
+initial = {p:sha((R/p).read_bytes()) for p in files if p and (R/p).is_file()}
+spec = {
+    'src/system.py': [(110,167),(220,234),(275,286)],
+    'src/devices.py': [(225,260),(326,352)],
+    'src/ramulator_wrapper.py': [(157,173),(202,218),(220,241),(263,269)],
+    'src/model.py': [(85,127)],
+    'src/config.py': [(1,30),(79,97)],
+    'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py': [(332,354)],
+}
+parts = ['# 原始 AttAcc 来源摘录\n\n由脚本直接读取 git 对象 `c600051`；行号属于原始文件，不属于当前 HEAD。只作来源对照，未执行这些历史代码。\n']
+snap = {}
+for p,ranges in spec.items():
+    content = git('show',BASE+':'+p)
+    lines = content.splitlines()
+    snap[p] = {'sha256':sha(content.encode()),'ranges':ranges,'line_count':len(lines)}
+    parts.append(f'\n## {p}\n')
+    for start,end in ranges:
+        excerpt = '\n'.join(f'{i}: {lines[i-1]}' for i in range(start,min(end,len(lines))+1))
+        parts.append(f'\n原文件 L{start}–L{end}：\n\n```text\n{excerpt}\n```\n')
+unchanged = {}
+for p in ('pim_ramulator_src/hbm3_pim_linear_mappers.cpp','pim_ramulator_src/patches/src_dram_lambdas_action.patch','pim_ramulator_src/patches/src_dram_lambdas_preq.patch'):
+    data=git('show',BASE+':'+p).encode()
+    unchanged[p]={'upstream_sha256':sha(data),'current_sha256':sha((R/p).read_bytes()),'identical':data==(R/p).read_bytes()}
+parts.append('\n## ALL-BANK 地址语义来源\n\n'+('\n'.join(f"- `{p}`：当前文件与原始 git 对象逐字节相同：`{v['identical']}`。" for p,v in unchanged.items()))+'\n')
+(A/'ATTACC_UPSTREAM_REVIEW_EXCERPTS.md').write_text(''.join(parts))
+evidence = {'head':git('rev-parse','HEAD').strip(),'upstream':git('rev-parse',BASE).strip(),'scope':'Static upstream comparison only; historical helper evidence reused, no simulation or new timing.', 'initial_tracked_sha256':initial,'upstream_files':snap,'unchanged_all_bank_semantics':unchanged,'new_files_absent_upstream':{p:bool(subprocess.run(['git','cat-file','-e',BASE+':'+p],cwd=R,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode) for p in ('src/workload_runner.py','src/gemm_table.py','src/cppcore/eventcore.cpp','experiments/collect_dag_ladder.py')}}
+(A/'attacc_relative_fairness_review_evidence.json').write_text(json.dumps(evidence,ensure_ascii=False,indent=2)+'\n')
+(A/'attacc_relative_fairness_review_generator.txt').write_bytes(Path(__file__).read_bytes())
+print(json.dumps({'head':evidence['head'],'unchanged_all_bank_semantics':unchanged,'new_files_absent_upstream':evidence['new_files_absent_upstream']},ensure_ascii=False,indent=2))

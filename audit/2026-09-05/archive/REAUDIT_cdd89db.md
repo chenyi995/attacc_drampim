@@ -1,4 +1,8 @@
+> 历史记录：保留当时的技术证据和评价，当前待审事项统一看 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md)。
+
 # 当前版本复审：尚不能确认七档差异全部公平
+
+> **历史快照：** 本文检查 `cdd89db`。大量修复后的当前状态见 [8c51672 复核](REAUDIT_8c51672.md)：高层持久 row、STORE 零成本、共同计划、owner 依赖等已修，不能继续照搬本页未修状态；仍有新的 GQA 校验及命令地址问题。原反例与原始证据保留。
 
 审查日期：2026-09-05。对象：`cdd89db04a85edae029fd3151165f1a488d6139c`，AttAcc 基点：`c600051`。本报告取代旧报告对**当前代码状态**的判断；旧反例和旧测试日志保留原样，不能视作本版本测试结果。
 
@@ -20,7 +24,7 @@
 | A4e → A5 | fresh/reused prefill 均服从 PIM；MQ 与频点差异属于接受的机制包 | GPU 分支多发无用途的 Q；query 旋转流量、GQA、PIM/普通读写计量不完整；部分 decode 漏用 MQ | 主要机制已接入，收益尚不能全部归因 |
 | A5 → A6 | preset 只把 `pim` 改为 `dynamic`，逐 request 选较小估价，符合用户澄清；未发现 A6 专用 scan 缩时系数 | 估计与实际分支的 lane、尾批、操作成本覆盖不一致 | **机制符合接受口径**；估价对应性仍需校正，不要求两候选 DAG |
 
-依据：[preset](../../src/ablation.py)、[论文方法](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/06-methodology.tex:68>)、[论文选边](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/05-execution.tex:39>)。本报告中的 P0 表示阻断当前公平性结论，P1 表示影响执行/归因的实质问题，P2 表示来源、范围或报告需要收紧；不是线上系统事故等级。
+依据：[preset](../../../src/ablation.py)、[论文方法](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/06-methodology.tex:68>)、[论文选边](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/05-execution.tex:39>)。本报告中的 P0 表示阻断当前公平性结论，P1 表示影响执行/归因的实质问题，P2 表示来源、范围或报告需要收紧；不是线上系统事故等级。
 
 ## 2. 哪些旧问题已经修好
 

@@ -1,0 +1,101 @@
+"""Validate audit organization without executing any simulation or implementation tests."""
+from pathlib import Path
+import hashlib
+import json
+import re
+import subprocess
+
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A=R/'audit/2026-09-05'
+H=A/'archive'
+S=json.loads(Path('/tmp/audit_cleanup_start.json').read_text())
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def load(name): return json.loads((H/name).read_text())
+head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+implementation_changes=[p for p,h in S['initial_tracked_sha256'].items()
+    if not p.startswith(('audit/','docs/')) and p!='README.md'
+    and (not (R/p).is_file() or sha(R/p)!=h)]
+move_errors=[]
+unchanged_evidence=[]
+for entry in S['moved_files']:
+    old,new=R/entry['old'],R/entry['new']
+    if old.exists() or not new.is_file(): move_errors.append(entry['old'])
+    if new.suffix!='.md':
+        if sha(new)!=entry['sha256_before']: move_errors.append(entry['new']+' byte mismatch')
+        else: unchanged_evidence.append(entry['new'])
+    entry['sha256_after']=sha(new)
+
+manifest_path=H/'cleanup_manifest.json'
+(H/'validate_audit_cleanup.txt').write_bytes(Path(__file__).read_bytes())
+docs=[R/'README.md']+list((R/'docs').rglob('*.md'))+list(A.rglob('*.md'))
+broken=[]
+bad_lines=[]
+for p in docs:
+    content=p.read_text()
+    for raw in re.findall(r'\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)\)',content):
+        link=raw.strip('<>')
+        if link.startswith(('http://','https://','app://','mailto:')): continue
+        if link.startswith('#'):
+            if p==A/'CURRENT_ISSUES.md' and re.fullmatch(r'#c\d+',link):
+                if f'id="{link[1:]}"' not in content: broken.append([str(p),link])
+            continue
+        pathpart=link.split('#',1)[0]
+        ln=re.search(r':(\d+)(?:-\d+)?$',pathpart)
+        plain=re.sub(r':\d+(?:-\d+)?$','',pathpart)
+        target=Path(plain) if plain.startswith('/') else p.parent/plain
+        if target.resolve()==manifest_path.resolve():continue
+        if not target.exists():broken.append([str(p.relative_to(R)),link])
+        elif ln and int(ln.group(1))>len(target.read_text(errors='replace').splitlines()):
+            bad_lines.append([str(p.relative_to(R)),link])
+
+facts=load('current_case_facts.json')
+M=load('model_provenance_8c51672_probe.json')
+L=load('ledger_trace_boundary_8c51672_evidence.json')
+E=load('reaudit_8c51672_evidence.json')
+assert facts['gqa_status']=={r:{'mha':M['rung_mha_control'][r]['status'],'gqa':v['status']} for r,v in M['rung_gqa'].items()}
+assert all(v.get('message')=='CacheBlend KV link byte count is invalid' for r,v in M['rung_gqa'].items() if v['status']!='ok')
+kv=next(e for e in M['rung_gqa']['A3b']['kv_events'] if e['name']=='decode_kv_gpu_to_pim')
+assert facts['gqa_batched_kv']['actual_bytes']==kv['link_bytes']
+assert facts['gqa_batched_kv']['expected_bytes']==kv['expected_kv_bytes']
+assert facts['diff_master_commands']==L['diff_master_region']['first_command_decoded']
+for tag,outkey in [('full','full_second_group_offset'),('first16','subset_second_group_offset')]:
+    q=L['subsets'][tag]
+    assert facts['v_subsets'][outkey]==q['context'][1][0]-q['extents'][0][1]
+assert facts['tier_input_rungs']==M['summary']['input_rungs']
+assert facts['tier_output_rungs']==sorted({x['ablation'] for x in M['summary']['tier_rows']})
+assert facts['a6_fresh_readback_rows']==E['A6_estimate_vs_executed_operation_coverage']['fresh_16']['choice_log']['readback_rows']
+current=(A/'CURRENT_ISSUES.md').read_text()
+assert len(re.findall(r'^## C\d+：',current,re.M))==7
+for key in ('actual_bytes','expected_bytes'):
+    assert f"{facts['gqa_batched_kv'][key]:,} B" in current
+for key in ('full_second_group_offset','subset_second_group_offset'):
+    assert f"+{facts['v_subsets'][key]} B" in current
+assert '06-methodology.tex:172' in current
+assert '两者模型尺寸也不同' in current and '事件在最终校验前被捕获' in current
+for p,archive in [('/tmp/organize_audit_20260905.py','organize_audit_20260905.txt'),('/tmp/polish_audit_current.py','polish_audit_current.txt')]:
+    assert sha(Path(p))==sha(H/archive)
+result_changes=[x['path'] for x in S['existing_result_inventory'] if sha(R/x['path'])!=x['sha256']]
+paper_changes=[p for p,h in S['paper_sha256'].items() if sha(Path(p))!=h]
+check=subprocess.run(['git','diff','--check'],cwd=R,text=True,capture_output=True)
+root_entries=sorted(p.name for p in A.iterdir())
+validation={'head_unchanged':head==S['head'],'implementation_changes':implementation_changes,
+ 'root_entries':root_entries,'moved_file_count':len(S['moved_files']),
+ 'move_errors':move_errors,'unchanged_non_markdown_evidence_count':len(unchanged_evidence),
+ 'existing_result_files_checked':len(S['existing_result_inventory']),'changed_existing_results':result_changes,
+ 'paper_changes':paper_changes,'broken_markdown_links':broken,'invalid_source_line_references':bad_lines,
+ 'case_facts_match_original_json':True,'independent_readability_corrections_applied':True,
+ 'git_diff_check_exit_code':check.returncode,'git_diff_check_output':check.stdout+check.stderr,
+ 'new_performance_experiments':False}
+assert head==S['head'] and not implementation_changes and not move_errors and not result_changes and not paper_changes and not broken and not bad_lines and check.returncode==0,validation
+assert root_entries==['CURRENT_ISSUES.md','README.md','archive'],validation
+external_changed={p:sha(R/p) for p,h in S['external_markdown_before_sha256'].items() if (R/p).is_file() and sha(R/p)!=h}
+record={'date':'2026-09-05','head':head,'purpose':'One current audit document with readable paper-aligned cases; history and evidence archived.',
+ 'moved_files':S['moved_files'],'removed_generated_cache':S['removed_generated_cache'],
+ 'initial_tracked_sha256':S['initial_tracked_sha256'],'old_fixes_sha256':S['old_fixes_sha256'],
+ 'updated_external_markdown_sha256':external_changed,'paper_sha256':S['paper_sha256'],
+ 'new_artifacts_sha256':{str(p.relative_to(R)):sha(p) for p in [A/'README.md',A/'CURRENT_ISSUES.md',H/'README.md',H/'README_audit_fixes_history.md',H/'current_case_facts.json',H/'organize_audit_20260905.txt',H/'polish_audit_current.txt',H/'validate_audit_cleanup.txt',R/'docs/sessions/2026-09-05-audit-docs-cleanup.md']},
+ 'independent_agent':'independent_fairness_audit',
+ 'commands':['python3 /tmp/organize_audit_20260905.py','python3 /tmp/polish_audit_current.py','python3 /tmp/validate_audit_cleanup.py'],
+ 'validation':validation}
+manifest_path.write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps(validation,ensure_ascii=False,indent=2))

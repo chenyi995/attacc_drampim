@@ -1,0 +1,145 @@
+{
+  "source_revision": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "scope": "Reformatted prior evidence only; no new performance run. Addresses and costs below are helper/analytic results, not hardware speedups.",
+  "gqa_status": {
+    "A1": {
+      "mha": "ok",
+      "gqa": "WorkloadValidationError"
+    },
+    "A2": {
+      "mha": "ok",
+      "gqa": "ok"
+    },
+    "A3b": {
+      "mha": "ok",
+      "gqa": "WorkloadValidationError"
+    },
+    "A4c": {
+      "mha": "ok",
+      "gqa": "WorkloadValidationError"
+    },
+    "A4e": {
+      "mha": "ok",
+      "gqa": "WorkloadValidationError"
+    },
+    "A5": {
+      "mha": "ok",
+      "gqa": "WorkloadValidationError"
+    },
+    "A6": {
+      "mha": "ok",
+      "gqa": "WorkloadValidationError"
+    }
+  },
+  "gqa_batched_kv": {
+    "actual_bytes": 16384,
+    "expected_bytes": 4096,
+    "ratio": 4.0
+  },
+  "diff_master_commands": [
+    {
+      "column": 0,
+      "row": 0,
+      "bank": 0,
+      "bankgroup": 0,
+      "rank": 0,
+      "pseudochannel": 0,
+      "channel": 15
+    },
+    {
+      "column": 0,
+      "row": 0,
+      "bank": 0,
+      "bankgroup": 0,
+      "rank": 0,
+      "pseudochannel": 1,
+      "channel": 15
+    }
+  ],
+  "v_subsets": {
+    "stored_tokens": 256,
+    "subset_tokens": 16,
+    "full_second_group_offset": 512,
+    "subset_second_group_offset": 32
+  },
+  "a6_fresh_readback_rows": 0,
+  "a6_extra_q_events": 5,
+  "tier_input_rungs": [
+    "A2",
+    "A3b"
+  ],
+  "tier_output_rungs": [
+    "A3b"
+  ],
+  "repeated_diff": {
+    "consumer_segments": [
+      [
+        "prefix",
+        8
+      ],
+      [
+        "doc",
+        256
+      ],
+      [
+        "middle",
+        256
+      ],
+      [
+        "doc",
+        256
+      ]
+    ],
+    "diff_positions": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      520,
+      521,
+      522,
+      523,
+      524,
+      525,
+      526,
+      527
+    ],
+    "diff_object_ids": [
+      [
+        0,
+        "b",
+        "burst",
+        3
+      ],
+      [
+        0,
+        "b",
+        "burst",
+        3
+      ]
+    ],
+    "diff_scan": [
+      [
+        2,
+        1,
+        [
+          [
+            2147483648,
+            2155872256,
+            16
+          ]
+        ]
+      ]
+    ]
+  },
+  "source_json_files": [
+    "ledger_trace_boundary_8c51672_evidence.json",
+    "model_provenance_8c51672_probe.json",
+    "reaudit_8c51672_evidence.json",
+    "independent_8c51672_storage_evidence.json"
+  ]
+}

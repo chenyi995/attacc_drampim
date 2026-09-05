@@ -1,0 +1,49 @@
+{
+  "date": "2026-09-05",
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "scope": "Pipeline and FlashAttention audit supplement; documentation and audit evidence only.",
+  "previous_manifest_sha256": "91b1c920562ce6d9d0456b6729d6857e069d0ca5765e6092c9a897706b6011d2",
+  "native_scheduler_library_sha256": "37a9821357eab80e3aa50fa992c5492685fe5ef79377df7e24449f8402fbacf1",
+  "independent_agent": "independent_fairness_audit",
+  "commands": [
+    "PYTHONDONTWRITEBYTECODE=1 python3 /tmp/audit_runtime_config_8c51672.py",
+    "python3 /tmp/independent_8c51672_pipeline_probe.py",
+    "python3 /tmp/write_runtime_configuration_audit.py",
+    "python3 /tmp/validate_runtime_configuration_audit.py"
+  ],
+  "artifacts_sha256": {
+    "audit/2026-09-05/REAUDIT_8c51672.md": "81995aece428776bcb4bd34480e6f92eb4d076a57501dc7a9da2e4f1bdf1a199",
+    "audit/2026-09-05/RUNTIME_CONFIGURATION_AUDIT.md": "dcca73ad756c50b398e18dff0e43f83afef9b7ea67e7845655498288a7528d97",
+    "audit/2026-09-05/independent_8c51672_pipeline_evidence.json": "772a901e4ec48a0cd1d6232d8cc07a167f123d72b9bf525a7ebb527c9b41fa50",
+    "audit/2026-09-05/independent_8c51672_pipeline_probe.txt": "4c35e3078b0021980d032ac8ad7012b1cac3fe9830f764974a27347a86dbdf49",
+    "audit/2026-09-05/runtime_configuration_8c51672_document_generator.txt": "bc859c0f82cec0ce530963c23bdd5b60f02f6ea86c4bc4f132383bc1e5ad1f82",
+    "audit/2026-09-05/runtime_configuration_8c51672_evidence.json": "b3af068e671b8600714033b98d92c447e48c919ff9d342be234863616f7de41e",
+    "audit/2026-09-05/runtime_configuration_8c51672_probe.log": "f2c34f6733fc94dc25d02174da9e2ee2eed7a9a8d1a975b92b4a283be57e0c4f",
+    "audit/2026-09-05/runtime_configuration_8c51672_probe.txt": "c911455fe9482cb36477accfd36ea39efef66dc61b6946ebca5e7244be2efe10",
+    "audit/2026-09-05/runtime_configuration_8c51672_validation.txt": "f68e0350ed047149bb692fbe057fd2f14817a9e7b40c5c96221491fa6ce3dece",
+    "docs/README.md": "83277ca17f48127b4563696eb25c93fe1937e0d668bee4e720c8796aeedce2d0",
+    "docs/README_audit_fixes.md": "8f1bef470dcb9d090dccbd4cfbf42b4236c08de2a44454db12762a7c8d58c1d7",
+    "docs/README_run_guide.md": "3afc47c5d4775fd1d0a6d811c1c3a07e98b4325e66bfebdd1bcc7d229ee91eaf",
+    "docs/sessions/2026-09-05-runtime-configuration-audit.md": "d88060ab77aed33402cb4e9feea70516bbb49a56f77c5480fa22f35edca578ba",
+    "docs/sessions/README.md": "e206c19ca974d24b7e7d679d4b2d3f16a7fe0cfb6a56adf8067e05953dc8b07c"
+  },
+  "validation": {
+    "head_unchanged": true,
+    "tracked_files_checked": 166,
+    "changed_tracked_files_this_supplement": [
+      "docs/README.md",
+      "docs/README_audit_fixes.md",
+      "docs/README_run_guide.md",
+      "docs/sessions/README.md"
+    ],
+    "unexpected_tracked_changes": [],
+    "implementation_changes_since_previous_audit_start": [],
+    "historical_result_files_checked": 363,
+    "historical_results_unchanged": true,
+    "invalid_markdown_links": [],
+    "evidence_assertions_passed": true,
+    "git_diff_check_exit_code": 0,
+    "git_diff_check_output": "",
+    "hardware_or_ramulator_performance_run": false
+  }
+}

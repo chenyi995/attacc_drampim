@@ -1,3 +1,5 @@
+> 历史记录：保留当时的技术证据和评价，当前待审事项统一看 [CURRENT_ISSUES.md](../CURRENT_ISSUES.md)。
+
 # PIM 计量来源、公平性与本轮修正
 
 > **版本更新：** 下文为 `8750b5b` 及当时工作区的来源核查，保留历史证据。当前 `cdd89db` 的 A1/fresh prefill 路由已修，最新判断见 [复审主报告](REAUDIT_cdd89db.md) 和 [计量专项报告](MODEL_PROVENANCE_REAUDIT.md)。bank scan 来自 Ramulator、普通 KV 读写另用公式的区别仍成立；15 倍读写差率、缓存、GQA 与能量维度问题尚未解决。

@@ -1,0 +1,460 @@
+{
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "scope": "Actual layout classes and Attention generator; no latency, numerical KV values, or simulator performance.",
+  "protected_implementation": {
+    ".gitignore": "e62307f2e7137c7c9969e0fc119d810465406795950dfa31dc3b81aeecb46a88",
+    ".gitmodules": "b82d9885e84d606e7ad45afd6b33017c620488657716394a316a9cbb37d38432",
+    "LICENSE": "89e78a789b21f2fc808a6833d4dcd720366744d582f88f76765c84e6a9bb8092",
+    "README.md": "66ae76de3c817e472c2229cc868e9b45fdadd0c69c36edb7614e9800559d39a1",
+    "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "agent.md": "4e6d1c2cf09b6f8d70b235bb5820d90a3362a8e30eec0d9c1c81b331cd65c6df",
+    "experiments/collect_dag_ladder.py": "ecc3ae7ecdd09ca5d4566fa510c1b551c8f449d704d18e3fb271f9df7256870d",
+    "experiments/mem_guard.sh": "8ffc238fdb843d3e419e2d1d59c87e4c450027a5d7ebd7874800bdc9a7911117",
+    "experiments/run_after_queue.sh": "f2d37816c6f86b3119dc3c30045b345236fed2c103f2ced534d05beb1304ab76",
+    "experiments/run_dag_ladder.sh": "dbf1e3722fbe5288113691ac4b00ed996cd7d5062c8f78f82070ecca0264bb57",
+    "experiments/run_layout_handcheck.sh": "52a900bc0ccedcc39a83906cc9854ac71f884de6778d02de0dc9eb1c5b64f29d",
+    "experiments/run_queue.sh": "b17ac3cfcf36652d709b823358f38d3ade8d531f3398528c17fd1122630e0d0a",
+    "experiments/run_sweep.sh": "cbb8a8bc8381ce8aea738ca7338736f859b7dcdb46d5ca70e338b761883ecbc3",
+    "experiments/summarize_ladder.py": "40e7fede4bb0514d73252a914945a174a076425e7d0fd07df7fc83c1de19228d",
+    "main.py": "3160baaf0dde24351239aa24c3b4ac92b8753f4b61e9820c2f574e58ce06b627",
+    "output/analysis/diff_gather_effect.py": "220442870d39220d5f0929406dd39c4a26fb63cec8220d90efd2a2430bf9c511",
+    "output/analysis/extract_sweep_csv.py": "232c50232e998a557fb5837b7a072d82f2a49d8a9a75298f28ba71092aebfd65",
+    "output/analysis/layout_A3b_R8.csv": "24e88bdce79dcb13bc4bc896c7891798376a5ec18d35628504c0922eb8f41b91",
+    "output/analysis/layout_A4c_R8.csv": "ff8ddef58fdcb41b4d344e7bb00d288365dbee1aa72b7308b276ed1107f6e72c",
+    "output/analysis/layout_grid_csv.py": "3917d9f10657de78f8e3575e6eb1ddd5e8bac11f18caf45ed56ae6b8ab0b9fcf",
+    "output/analysis/layout_handcheck_report.py": "88e27dfe06d05f5c78b28e0a51620633a70b3438f303e8cdd5b34603c4f06138",
+    "output/analysis/layout_handcheck_theory.py": "66ee2e91e065293e341b7af229cd35d65ccfa9d545f1c6efb860855e4adb92f6",
+    "output/analysis/layout_interleave_csv.py": "5b2ff68c037f557d17148b109f39d0e646314aca2359348c46899250a46da106",
+    "pim_ramulator_src/HBM3-PIM.cpp": "bb51f4ef25325e3ed1a538f0db46dc3b79dd0aabf603ace894a9d4a48d16dce1",
+    "pim_ramulator_src/HBM3_base.yaml": "55bf53fee37a7656243dc636c9c69983ca33ac49789c785b92431c98815c5568",
+    "pim_ramulator_src/PIM_DRAM_system.cpp": "a952b3bdba9f32dfe2b8e22f5923355bb9fefeba42811c2a291a65d9b7814276",
+    "pim_ramulator_src/all_bank_refresh_hbm3.cpp": "58c20a723e01d04b529df52b944f44c7c59ace9db9db8acd9814c8b09f364acf",
+    "pim_ramulator_src/attacc_bank.yaml": "90f47ee655e12bdc87ed27590d1b7bdbc2a3e111db318de69ee0c9bb13e69185",
+    "pim_ramulator_src/attacc_bg.yaml": "1e13d809c6a989529652995cd54d2a1d00dff8e83afa633cd68262b20eb40859",
+    "pim_ramulator_src/attacc_buffer.yaml": "f6bebc8e4dfd4eeb4ed465810cc874b750f9395901384822475aba5955939cc8",
+    "pim_ramulator_src/hbm3_controller.cpp": "e9417f5a654c17e1578928ad3961e20459d82422355c902b82d10685b1dd7924",
+    "pim_ramulator_src/hbm3_linear_mappers.cpp": "c789fd1ef8e79d4ea6bbb3cfd11a54c5f9d92bf688c5e0eb065c3e517abc5651",
+    "pim_ramulator_src/hbm3_pim_controller.cpp": "b5d993b33c061b33858724fbeefdefcbc81cdce89c6f7f41cff08e1aa37824ee",
+    "pim_ramulator_src/hbm3_pim_linear_mappers.cpp": "05a3403d4d1c11102361ec3a6a67502a1559234e1218ddd4ed148bdb873bccd1",
+    "pim_ramulator_src/hbm3_trace_recorder.cpp": "0b28b72a8a1afd33821fbe9fda8e4797dca4cfe84a8166544ed69071402f0010",
+    "pim_ramulator_src/no_refresh.cpp": "9ec3a05a3bd0f1578c9c30816b0b1081f06e9008523dc0eb4ba37fa9d3879ad1",
+    "pim_ramulator_src/patches/src_CMakeLists.patch": "ecdd28b4811b0c521ddd27ca919c527c15c95713434cbecc61eac5e7a488c475",
+    "pim_ramulator_src/patches/src_addr_mapper_CMakeLists.patch": "8ea6729734aa0ecc51884f6a1ab829d4748ef8e0ae3a7874826e0eed903b91c6",
+    "pim_ramulator_src/patches/src_addr_mapper_impl_linear_mappers.patch": "c3e9e30eabdb86f901d9f521ede63fecf1eca4b04cd1e4c393b5e608988b0a0e",
+    "pim_ramulator_src/patches/src_base_base.patch": "26fb983c8c2a0422c631cbc854c558318a41461962a0fd9078f9bd13ffdb4627",
+    "pim_ramulator_src/patches/src_base_request.patch": "1af07c66207d9a7a627e45fb5c75e9ce15fe1fb26a662d1b7ac4a38bf762d30a",
+    "pim_ramulator_src/patches/src_dram_CMakeLists.patch": "a2663015d79a143fc53278ed0b34d5bd89487e61e1bfc68caf0c65f256d653a8",
+    "pim_ramulator_src/patches/src_dram_controller_CMakeLists.patch": "b70acdabcdaae9c470e5dc507811aa47e211adbcb1fc64828a6e64540636b25f",
+    "pim_ramulator_src/patches/src_dram_controller_controller.patch": "6bf762086f98971e04b4f66bf1501fa3c4b8089352adaebf0f07fca4a748ef6b",
+    "pim_ramulator_src/patches/src_dram_controller_impl_dummy_controller.patch": "0b6332b666fc6da4136ebc6d9e5983e6917b7326af2c623ada928de5479c0b21",
+    "pim_ramulator_src/patches/src_dram_controller_impl_generic_dram_controller.patch": "17c18dfc63c86a95a2e12a5ec2b38f373d8072c884d742c6b192c52c1a1d942f",
+    "pim_ramulator_src/patches/src_dram_controller_impl_scheduler_generic_scheduler.patch": "a534bae8abbd4ab6845d01b5e5fa24856647ccb6a5ca773893d8da16e927ef1a",
+    "pim_ramulator_src/patches/src_dram_impl_HBM3.patch": "fd3a3a1c87897eea82b51d6d45e3a29eaa08acdea0749de28104224fb119f913",
+    "pim_ramulator_src/patches/src_dram_lambdas_action.patch": "85672a0f4e4f4e86c0af6d0cc71be905606516964a223602f6b8193885820234",
+    "pim_ramulator_src/patches/src_dram_lambdas_preq.patch": "17e79b5ae4f9f791b0f0cada07cec06e75f39ebc94de364256a998723044f3b9",
+    "pim_ramulator_src/patches/src_frontend_CMakeLists.patch": "715d59a7d4f6560be0a1c3f263430774383fdcd33e4b0104359e4f918a515d66",
+    "pim_ramulator_src/patches/src_frontend_impl_memory_trace_loadstore_trace.patch": "498d42c9f40351d353398906cd90402cbe11f629224a6a99b12687d44ce2472c",
+    "pim_ramulator_src/patches/src_main.patch": "ecf400fb803e9b0c57cdda1037aa65e76eb3e78cd0ded81e596158e0ddc3e622",
+    "pim_ramulator_src/patches/src_memory_system_CMakeLists.patch": "e597ea1aee29e678dd305f9d0f366e87d97cc1c3fcd7c3e16f656ca42efac980",
+    "pim_ramulator_src/patches/src_memory_system_impl_dummy_memory_system.patch": "1b9d1cd835b17cc56d44997e0fd55a9c21751474cf0e448771e437a78933ab55",
+    "pim_ramulator_src/patches/src_memory_system_impl_generic_DRAM_system.patch": "eec287e66ab96cb8a99881afc92243ec3bd128ebf06bfd79f157fdb4cc3df88c",
+    "pim_ramulator_src/patches/src_memory_system_memory_system.patch": "0dc6fd58fd44dedb47d26690f32078f28aaa2835e46e838efe3a3254d082a16c",
+    "pim_ramulator_src/pim_loadstore_trace.cpp": "847433454cf59a7ef09c0a724e523508ff4dfd002cb2bdecb500390743752a64",
+    "pim_ramulator_src/pim_scheduler.cpp": "be8cb800438931b0f7fc69818264b7967d5d41bfc7406018edad2ee6453e7ec2",
+    "pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py": "e92eed2ad4e92376ae7fa9143ebabc878e68c5d28b5546b47d536915511310c0",
+    "pim_ramulator_src/trace_gen/gen_trace_attacc_bg.py": "e2dc8e032f4e2da064c6294f3c90ef9c151cb578dbb8cf6ae32edb77866b9ff6",
+    "pim_ramulator_src/trace_gen/gen_trace_attacc_buffer.py": "e5020974cfa299c234ce4adf4dfc023b38f531768945bdba7b76f8a333736d7c",
+    "ramulator.out": "44c2e1b6daf519a49d3f391b3ac72e310ca77f239f4af73a796bc11091ca6662",
+    "set_pim_ramulator.sh": "341dce2a2cca0244e6e89e725524e034cd1e7f617e6dad0124e6315cb2065cfc",
+    "src/ablation.py": "9bae34304ebd7c831c3653cc6802ed3650d8ea65e5932f47f796e2b7338303ef",
+    "src/config.py": "28ee9b707c22b35a80d77ea38d5211cff19bb09092c8323396d6e14eef1fc571",
+    "src/cpp_eventcore.py": "ab1b3e9d2e9b29959a2ff6eaf6c4e43ecdfb82546403426d5120e338c9370bc9",
+    "src/cppcore/Makefile": "7d608923a5a58702653f01a5e161738275bed2c7dc125546dd6dc4fe4c2855da",
+    "src/cppcore/eventcore.cpp": "ca586d6f2cceff30e2654f9f0cfe2562654f681b63ed05c0516cd4b6ca3aab8e",
+    "src/devices.py": "567bc4d4303a7e2487f9673d212bd87e7bc5431ef43134cbe4948ee51466a624",
+    "src/gemm_table.py": "307319093e33c728e99f120d8e7330f4845a590e26b3f3f0b186c35cab211253",
+    "src/layout_probe.py": "6ff276f858b0dbaff03a5273fcf08f13883be606c84fcb1034e49b430722f335",
+    "src/model.py": "97d1fb38916404ab164b576b686794cc7e636be9d3b66012f92c15e97abd0939",
+    "src/ramulator_wrapper.py": "6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00",
+    "src/system.py": "4847e22e78aabea4d55c9b5bb3a18966f31553b8b9ba556d6ca1d272a6420369",
+    "src/type.py": "5045fe5d777321b531185e0f0bee489193a3aca330c3704c6ce10f62d2ba8b22",
+    "src/workload.py": "03ee783500bcdc092d7cfa23f527c869a95262e49c55926a1ebff16f8e209fca",
+    "src/workload_runner.py": "c86ccec44d54f2274870f2ed158a270ca8cb78de2a9036d062723e2a4396cf04",
+    "tests/fixtures/workload_2wikimqa_first8.json": "1c9f30abfa5ae4ec29a23f9b16c151779fb488c92efdb3e2eb2de81486096d8b",
+    "tests/fixtures/workload_relay_s400w4t1.json": "25763b4abda14e33e21183de82da0748649bd96b17fdf846e9210d550826625b",
+    "tests/test_attacc_metadata.py": "2f982235caf8c30778760e0eecfb0879ea0766724b67a985c8f83517512733d4",
+    "tests/test_placement.py": "07ded3a811d4bfd31962b48980132ea5c5409c2fb6f1700686631bdeb6b8f22a",
+    "tests/test_workload.py": "825f73a4d4cbf853e20a9996d8abb9bdab8f5599267ba6145397037e286e10c2",
+    "workload/probe/README.md": "bf0dad28e48ce888544de72fe47c6a6ec0b62267961b0cb4b787af4fab76cffb",
+    "workload/probe/gen_a6.py": "da63af04c66edb2bfc7941fa721904d82caa300be99117a93ad3d657cf5e377e",
+    "workload/probe/gen_a6_chat_mix.py": "014f807444270e00380a69a2e79816ebc55596786beecf24de2b6972b315ccf7",
+    "workload/probe/gen_multiround.py": "ca2f4d16809fb76a520be3b3b08e635a58efcdf4d6460b869e79d3c242edee4e",
+    "workload/probe/gen_sweep.py": "dbdb47c2eb59fe6bd571a0c46cdc48c14f6924220f744ee3903bf843f1d266a3",
+    "workload/probe/sweep/B0_interleaved.json": "858a5191c17da7400b4c9e46b77ac62928df5785099db24d4686816d4bcb82c4",
+    "workload/probe/sweep/B0_turns.json": "190666c87f169a54afa594f71d19f2467500f8584cd1b7c75e0e791b990e1e39",
+    "workload/probe/sweep/S1_agents_16_interleaved.json": "7d4d14ffc5098a0e13240a4d753e6683008d5305dfff57cafc34294041de938d",
+    "workload/probe/sweep/S1_agents_16_turns.json": "9a8623dd9a741f80a19408def3d60f58e72d63ad474645a9b45d295b545582cf",
+    "workload/probe/sweep/S1_agents_32_interleaved.json": "a2788b9d29690885d115007a322c91873d1460a33a1725e71ac58cc91814f2b9",
+    "workload/probe/sweep/S1_agents_32_turns.json": "12e1df24f1338f735621e151763d71daf1891d1d4469381458d3ef3b97b386f6",
+    "workload/probe/sweep/S1_agents_4_interleaved.json": "a4de8fd89df8fb5b94d14683526f44f0d2386c400f66788e98761d52b35d1125",
+    "workload/probe/sweep/S1_agents_4_turns.json": "7086ec1c6bd21f49a3b6447bbc4ed65417e7ded9d78241edddbe4e8b21836cea",
+    "workload/probe/sweep/S2_rounds_16_interleaved.json": "99dd27e830a8e2d6c9fbddb893c8ee80bdd3e96080be8e28a76b740a4ca6b4de",
+    "workload/probe/sweep/S2_rounds_16_turns.json": "f6e216b1b79d5757b033bb52eda2eb29d6a9b6bfdb2654c81edde95071a4925b",
+    "workload/probe/sweep/S2_rounds_2_interleaved.json": "14440a351920555887a0ac8b62b3dd21216d53f3660cc3ad09860e256f6d6e4d",
+    "workload/probe/sweep/S2_rounds_2_turns.json": "fe6adb62f7a349f349184d28eb783ae387bb7189004b1f44c0a99e7a18d6f8a5",
+    "workload/probe/sweep/S2_rounds_4_interleaved.json": "fd8a3b49771468b91878188deac1351dc1ada9e25927083c09f43c4fb613eb0f",
+    "workload/probe/sweep/S2_rounds_4_turns.json": "88b02bf9d7f5062d0ea89de01dce9b28625f34e6681f5067e4d7fba79a9ffbef",
+    "workload/probe/sweep/S3_lout_1024_interleaved.json": "bd2d206b2bae7b7cafb88422ca4975c4e729f2fa9b18c854fafc894d817efe80",
+    "workload/probe/sweep/S3_lout_1024_turns.json": "7de0f23c05017ced4254bda8966a3dcb83c357a655fecdaccb9ba7f3452de5c3",
+    "workload/probe/sweep/S3_lout_128_interleaved.json": "9c17e705735fea66a48598553463b1e7fb282b6f80ee344326fa60a4087c95d8",
+    "workload/probe/sweep/S3_lout_128_turns.json": "8bb339ae23b802d62495d593f8252f62e4dd344fffbc69bee578460db1322d22",
+    "workload/probe/sweep/S3_lout_2048_interleaved.json": "fc6e921b3ce8580b7dbc3c9dd577c0a95b3db4f01e07fdc52eac5885796375f2",
+    "workload/probe/sweep/S3_lout_2048_turns.json": "d9c8f12981766c7b80ccf14ffe006537b3893d2fb44463a09c37b03157e397c5",
+    "workload/probe/sweep/S3_lout_512_interleaved.json": "b7f566d9abb521cc7136870bc70c040b82d606b8551fed53365837b4ea7aa7fa",
+    "workload/probe/sweep/S3_lout_512_turns.json": "22784e56ed27927cfe6b8c00606cdf110ec0451183d0b66097e8ed388f040692",
+    "workload/probe/sweep/S4_own_1024_interleaved.json": "965d0bfa69e2e12864b8d482bdffa895cbe87a841b6f6ba5ee5936124db6277b",
+    "workload/probe/sweep/S4_own_1024_turns.json": "d4a52e5061854184bb9d7813ad4b9adc056bb5282a39f0e5ec031ba24c7a6336",
+    "workload/probe/sweep/S4_own_16_interleaved.json": "a2e7916ea208efa494d460b4f87daddb4cbd312685c4006e415388a3bbe5aa59",
+    "workload/probe/sweep/S4_own_16_turns.json": "6b2426c6b9c6474d09e7c7d35aa8add4a8d3cb89f067d05fce30f6300566e0f4",
+    "workload/probe/sweep/S4_own_256_interleaved.json": "bdefc1e4ec87820b67837905163d5c5e380abe10bfe92cf79eb451db2627e730",
+    "workload/probe/sweep/S4_own_256_turns.json": "e669dd518173c1ce77741e6421100b535f34f7b392cdf6d9b8c8e9b63e144a86",
+    "workload/probe/sweep/S4_own_64_interleaved.json": "137c61eb26170d5942190efafd168835511b98afe1b6ec3e8cdd05b85b9e3c1a",
+    "workload/probe/sweep/S4_own_64_turns.json": "540bf9e47d719e200c3a845b3121187abe6dd7c9fb8a7a6004c534a5758f95c1",
+    "workload/probe/sweep/S5_fresh_0p25_interleaved.json": "c90f72750eee0d014e83e5157fea39f668863c2a595c32fdf6e94139ea9a2e37",
+    "workload/probe/sweep/S5_fresh_0p25_turns.json": "b6e2c271756296c3cf6a7202970a851a2c5b6d622ce3cee9ea044ef6cfbdc971",
+    "workload/probe/sweep/S5_fresh_0p5_interleaved.json": "5a467568a580276c5bda67b1d70e8f38abb0c4c98f2226bb1032d79489d7ee7f",
+    "workload/probe/sweep/S5_fresh_0p5_turns.json": "125ebf3f6e5bfefafc8245b9018dfebfe285a1b1f8cda56bb9cdf7ce5aaca988",
+    "workload/probe/sweep/S5_fresh_0p75_interleaved.json": "df0285b66115671134219218faea2fd0164463e054be3f480974ae0f69562bec",
+    "workload/probe/sweep/S5_fresh_0p75_turns.json": "1b59092366b245202a774a1e9164ffd529c9a3f0b43a0092a50762df0c5a7902",
+    "workload/probe/sweep/S6_chunks_1_interleaved.json": "cbc4bbed68498aaacc6a7d3430f81fb305ed342174b1d3b08f2c31ab4333fb27",
+    "workload/probe/sweep/S6_chunks_1_turns.json": "ed0ee518cab83a22e67f46c6a007b3621adfa8f1955cf0d0327bc064f8a8a79b",
+    "workload/probe/sweep/S6_chunks_4_interleaved.json": "ac4cf1c194b4c6d43f7f9f90d56b410e900bbd39d134f0550965e48749067b2a",
+    "workload/probe/sweep/S6_chunks_4_turns.json": "88c553e11d92f348039624c96c2a703db88974108571ecfc941aa4367c5c34ea",
+    "workload/probe/sweep/S6_chunks_8_interleaved.json": "2ffd694ca40dfd2a1613d08897eff4519a8dd88d7992f02b2783da85acbdf19a",
+    "workload/probe/sweep/S6_chunks_8_turns.json": "edd14584256469a852f025069df9f9e46a9c4ffe451ad655769616a9ed568105",
+    "workload/probe/sweep/manifest.csv": "6bb806af3aa0aa09ee96ef3552036e40aa71e3d28cabf6e36597baf32e962c9c",
+    "workload/probe/wl_a6_R8C2N8_own16_256.json": "2c671cc37686ccad010c380398afc436b2004d0d9b9bf8021a981a21501a81a4",
+    "workload/probe/wl_a6_crossover.json": "2a023b61970fc0a1dc2e51aa094f05e61f7afb498f6c69e606518d62db55b44f",
+    "workload/probe/wl_a6_split.json": "e18959d64288c75b7dfae09a952aeb05a954dd907cc8e36ff27f5745a1ccd9ab",
+    "workload/probe/wl_mr_R16C2N16_L128.json": "6b3ece04f2a4fae12b0ce583d0a0fae887e2eb6814cccc539f2f59416344e6bc",
+    "workload/probe/wl_mr_R8C2N8_L1024.json": "855d8d36a09d7bac374c95bf6ad6513a2b96fc22e9e0f5ba0e40a37f8e74e30b",
+    "workload/probe/wl_mr_R8C2N8_L128.json": "cae354c059ae1413da2366fe7c5ef6718206777f133d708f2e96c0c3f6dc9b90"
+  },
+  "paper_before": {
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/main.tex": "3f2cf301cfba7d9f99f372da08c3eaedd20a9570d9b1a7a2986a239432da5c36",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/02-background.tex": "a2f3628ec4bc60501339b38565840f36689e6a399564244800862af83c0acd9a",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/08-related.tex": "1c9f9d3056ed686b01918e63027a37f11286d961420cb3d36a7bd933b78455cc",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/09-conclusion.tex": "6c7f068144bb36570f9ece62be53df7e210345a887ac7218bebb771441d311b4",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/01-intro.tex": "228e37f543bab1d1166a40ab4bd750823e228140010c2da2d37a19262a3758e0",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/03-motivation.tex": "93fceb5accc7f2acae1620bb8cf9ce9cfdcca7d2986a027ffebaefbfcc1afb99",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/05-execution.tex": "9e437b2d463ed505fdf8d98ad4e776c58eb5d0aff478e145dc6be379287b0d6d",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/06-methodology.tex": "f7ec3b43ebe27baf2d9b515d0a613209ead606816a033363fbda94e08120cf1d",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/07-evaluation.tex": "23cc466d03be9f7a3afb4777258087b3ce7197d7dbf073fc37645daa85959cf8",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/04-design.tex": "da0560bf8a089cde455c6f2a408592753ec3d7e448a1eac1795a027cdc7f65ea"
+  },
+  "contribution_README_before": "105c3e1d8e755fdaa9ac6489c5103ad8e5722707faedac093c9108841e27b8d9",
+  "V_subset_by_rung": {
+    "A3b": {
+      "full": {
+        "extent": [
+          0,
+          8388608,
+          256
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8389120
+        ],
+        "second_group_offset_from_this_extent_V": 512,
+        "command_count": 32
+      },
+      "first16": {
+        "extent": [
+          0,
+          8388608,
+          16
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8388640
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      },
+      "second16": {
+        "extent": [
+          64,
+          8388672,
+          16
+        ],
+        "dimension_group_starts": [
+          8388672,
+          8388704
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      }
+    },
+    "A4c": {
+      "full": {
+        "extent": [
+          0,
+          8388608,
+          256
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8389120
+        ],
+        "second_group_offset_from_this_extent_V": 512,
+        "command_count": 32
+      },
+      "first16": {
+        "extent": [
+          0,
+          8388608,
+          16
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8388640
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      },
+      "second16": {
+        "extent": [
+          64,
+          8388672,
+          16
+        ],
+        "dimension_group_starts": [
+          8388672,
+          8388704
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      }
+    },
+    "A4e": {
+      "full": {
+        "extent": [
+          0,
+          8388608,
+          256
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8389120
+        ],
+        "second_group_offset_from_this_extent_V": 512,
+        "command_count": 32
+      },
+      "first16": {
+        "extent": [
+          0,
+          8388608,
+          16
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8388640
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      },
+      "second16": {
+        "extent": [
+          64,
+          8388672,
+          16
+        ],
+        "dimension_group_starts": [
+          8388672,
+          8388704
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      }
+    },
+    "A5": {
+      "full": {
+        "extent": [
+          0,
+          8388608,
+          256
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8389120
+        ],
+        "second_group_offset_from_this_extent_V": 512,
+        "command_count": 32
+      },
+      "first16": {
+        "extent": [
+          0,
+          8388608,
+          16
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8388640
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      },
+      "second16": {
+        "extent": [
+          64,
+          8388672,
+          16
+        ],
+        "dimension_group_starts": [
+          8388672,
+          8388704
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      }
+    },
+    "A6": {
+      "full": {
+        "extent": [
+          0,
+          8388608,
+          256
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8389120
+        ],
+        "second_group_offset_from_this_extent_V": 512,
+        "command_count": 32
+      },
+      "first16": {
+        "extent": [
+          0,
+          8388608,
+          16
+        ],
+        "dimension_group_starts": [
+          8388608,
+          8388640
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      },
+      "second16": {
+        "extent": [
+          64,
+          8388672,
+          16
+        ],
+        "dimension_group_starts": [
+          8388672,
+          8388704
+        ],
+        "second_group_offset_from_this_extent_V": 32,
+        "command_count": 2
+      }
+    }
+  },
+  "AttAcc_original_context_mac": [
+    {
+      "line": 142,
+      "text": "  def context_mac(addr_offset, L):"
+    },
+    {
+      "line": 143,
+      "text": "    # MAC and move output vector to softmax buffer"
+    },
+    {
+      "line": 144,
+      "text": "    ## Vector (1xk) x Matrix (k x n ) multiplication"
+    },
+    {
+      "line": 145,
+      "text": "    ## GEMV unit = mac mode"
+    },
+    {
+      "line": 146,
+      "text": "    for n_idx in range(math.ceil(dhead / (n_bank * n_mac))):"
+    },
+    {
+      "line": 147,
+      "text": "      cmd_context_mac[itr].append([])"
+    },
+    {
+      "line": 148,
+      "text": "      for k_idx in range(math.ceil(L / (n_pch * n_rank * n_bg))):"
+    },
+    {
+      "line": 149,
+      "text": "        idx = k_idx + n_idx * math.ceil(L / (n_pch * n_rank * n_bg))"
+    },
+    {
+      "line": 150,
+      "text": "        for lch in range(math.ceil(valid_channel)):"
+    },
+    {
+      "line": 151,
+      "text": "          addr = addr_offset + lch * HBM_GS['ch'] + idx * HBM_GS['col'] "
+    },
+    {
+      "line": 152,
+      "text": "          hex_addr = hex(addr)[2:]"
+    },
+    {
+      "line": 153,
+      "text": "          cmd_context_mac[itr][-1].append(\"PIM_MAC_AB 0x{0:0>8}\".format(hex_addr))"
+    },
+    {
+      "line": 154,
+      "text": ""
+    },
+    {
+      "line": 155,
+      "text": "      ## parallelization. Generate 16 elements per n_idx"
+    },
+    {
+      "line": 156,
+      "text": "      cmd_context_mvsb[itr].append([])"
+    },
+    {
+      "line": 157,
+      "text": "      for ba_idx in range(n_bank):"
+    },
+    {
+      "line": 158,
+      "text": "        for rank in range(n_rank):"
+    },
+    {
+      "line": 159,
+      "text": "          for lch in range(math.ceil(valid_channel)):"
+    },
+    {
+      "line": 160,
+      "text": "            bank_addr = addr_offset + lch * HBM_GS['ch'] + rank * HBM_GS['rank'] + \\"
+    },
+    {
+      "line": 161,
+      "text": "                        ba_idx * HBM_GS['ba'] "
+    },
+    {
+      "line": 162,
+      "text": "            hex_addr = hex(bank_addr)[2:]"
+    },
+    {
+      "line": 163,
+      "text": "            cmd_context_mvsb[itr][-1].append(\"PIM_MV_SB 0x{0:0>8}\".format(hex_addr))"
+    },
+    {
+      "line": 164,
+      "text": ""
+    }
+  ],
+  "AttAcc_original_has_extent_interface": false,
+  "same_subset_command_pattern_all_rungs": true,
+  "implementation_changes": []
+}

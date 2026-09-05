@@ -1,0 +1,25 @@
+"""Apply the user's standing common-model rule after the C4 recheck."""
+from pathlib import Path
+import shutil
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822'); A=R/'audit/2026-09-05'; H=A/'archive'
+path=A/'CURRENT_ISSUES.md'; s=path.read_text()
+s=s.replace('仍待过目的是 C4 和新整理的 C8 多轮覆盖。','C4 经复审按既有共同近似规则记录；仍需过目的是 C8 多轮覆盖。')
+s=s.replace('**还需过目：C4 的共同子段地址近似、C8 的多轮 workload 是否覆盖旧 diff 的持久布局。** C7 定义已由用户明确，不再问是否允许同轮合并。','**目前还需重点过目：C8 的多轮 workload 是否覆盖旧 diff 的持久布局。** C7 定义已由用户明确；C4 复审确认共同接口沿用 AttAcc dense 公式、同输入各档行为一致，按用户既有共同近似规则不单独要求整改。这里是主审应用既有规则，不冒称用户另作了 C4 专项裁决。')
+s=s.replace('| 已重审；同输入各档一致，是否接受近似待定 |','| 已重审；按既有共同近似规则记录，无现有整改要求 |')
+s=s.replace('请用户决定是否需要进一步约束“每次扫描对应已存布局”，或接受当前共同子段近似；不直接列必修，也不宣称 A4e 的软件表已经不公平。','经过下述重审，按用户既有共同近似规则继续记录；当前不单独提出整改，也不宣称 A4e 的软件表已经不公平。')
+s=s.replace('按用户的共同近似口径，仍保留为待定边界，不列入已授权整改。','**主审按用户既有共同近似口径归类：保留这一边界说明，不单独要求整改或重复裁决。** 这不等于证明物理地址绝对正确；当前没有新增档间独享优惠的证据。')
+s=s.replace('已确定的修复与 C4/C8 待过目项分别跟踪，C7 同轮合并不再算问题。','已确定的修复与 C8 待过目项分别跟踪；C4 按共同近似记录，C7 同轮合并不再算问题。')
+path.write_text(s)
+for path in (A/'README.md',R/'docs/README_audit_fixes.md'):
+    s=path.read_text().replace('C7 同轮/跨轮边界已定；C4 与 C8 多轮覆盖待过目','C7 同轮/跨轮边界已定；C4 按共同近似记录，C8 多轮覆盖待过目')
+    path.write_text(s)
+path=R/'docs/sessions/2026-09-05-rulings-and-pending-reaudit.md';s=path.read_text()
+s=s.replace('C4 仍待过目。','C4 重新审计后，主审按用户既有共同近似规则归类，不再提出重复裁决；不是记录一条用户未作出的专项批准。')
+s=s.replace('C4/C8 写入仍待过目的证据边界','C4 按共同近似记录，C8 写入仍需过目的跨轮覆盖证据')
+s=s.replace('C7 定义已定，C4/C8 的取舍仍待用户决定','C7 定义已定，C4 按既有共同近似规则记录；目前需用户重点审阅 C8 的跨轮 claim 覆盖')
+s=s.replace('python3 /tmp/validate_audit_rulings.py','python3 /tmp/finalize_remaining_audit_items.py\npython3 /tmp/validate_audit_rulings.py')
+path.write_text(s)
+for source,target in [('independent_c7_two_rounds_input.json','independent_round_boundary_input.json'),
+                      ('independent_c7_duplicate_id_input.json','independent_round_boundary_duplicate_id_input.json')]:
+    shutil.copyfile(Path('/tmp')/source,H/target)
+shutil.copyfile(Path(__file__),H/'finalize_remaining_audit_items.txt')

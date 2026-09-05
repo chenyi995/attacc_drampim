@@ -1,0 +1,35 @@
+path,review_scope,reviewer,sha256
+agent.md,document/history/rulings; not current numerical evidence,root,4e6d1c2cf09b6f8d70b235bb5820d90a3362a8e30eec0d9c1c81b331cd65c6df
+audit/2026-09-05/INDEPENDENT_REAUDIT.md,document/history/rulings; not current numerical evidence,root,959c24ef74e5568856778d34a874a9a73b1d6cecd06548845ebbfcf46522d41c
+audit/2026-09-05/MODEL_PROVENANCE_REAUDIT.md,document/history/rulings; not current numerical evidence,root,33f4415eb395ee0289f509cdfb4226411b2970efc60a8f2fad1037843c9ea8af
+audit/2026-09-05/PIM_TIMING_PROVENANCE.md,document/history/rulings; not current numerical evidence,root,45ee3ca10aea7072f1240f87b989baa4a469631535935befc12b0099273e5d87
+audit/2026-09-05/REAUDIT_cdd89db.md,document/history/rulings; not current numerical evidence,root,3c024b503451d3f9fcca606effd6c5816b4488221bb4d789db7a80fafb0c22f1
+audit/2026-09-05/REPORT.md,document/history/rulings; not current numerical evidence,root,be26a5c9d9e7dd576c4f4e69d36937d946f98336ca6cbffe85545d7f8fe16eba
+audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md,document/history/rulings; not current numerical evidence,root,31af8d491830bb59aaf1a41b804e917dcf1198962ea5860c264835fff28c568a
+audit/2026-09-05/reaudit_cdd89db_evidence.json,document/history/rulings; not current numerical evidence,root,6af55165cdbd7fc919428494509fbdc790e8a3a636d7314af214b6ad9f68e00a
+audit/2026-09-05/reaudit_cdd89db_file_coverage.csv,document/history/rulings; not current numerical evidence,root,78a6278b29b6eef97679307b996a87bd7425af627a61cae33c1f490a78efcc6a
+audit/2026-09-05/reaudit_cdd89db_manifest.json,document/history/rulings; not current numerical evidence,root,a7011eda6fa8eb816c3730d12d2caa25f19d2206f21f61e95caa8c1830e96924
+audit/2026-09-05/reaudit_cdd89db_probe.txt,document/history/rulings; not current numerical evidence,root,8399924543ab390ee294ae5d35c59d720210018b482275b30126d0b3421d4ba0
+audit/2026-09-05/storage_scan_evidence.json,document/history/rulings; not current numerical evidence,root,be754d7798a9010e2979dcbaab536fd54676ec24c31ce09408d6e6e0e6b5b0ab
+audit/2026-09-05/storage_scan_manifest.json,document/history/rulings; not current numerical evidence,root,63f2ac9adb6ec9e3a4de7e45e8b6d3335616c36b96e3d1004d44f415fbfbf99b
+audit/2026-09-05/storage_scan_probe.txt,document/history/rulings; not current numerical evidence,root,6408040477a7303a752f32c8f2e1e470ba4e2b92a2d473e38b2dea74a62b21d0
+docs/README.md,document/history/rulings; not current numerical evidence,root,22fe2d8e1db1866f174db80c021745da1f3de9896b42cbfc63cb1182e0e604cd
+docs/README_audit_fixes.md,document/history/rulings; not current numerical evidence,root,e088e0fae4b33fd604c8b2a3354f38b98e00ed9e7aa818d489a080782b7e11d9
+docs/README_design_ladder.md,document/history/rulings; not current numerical evidence,root,bf42e53134b2d48f37c9f349d8e9beb2f0d6953862e6a36566b5cf84d0b55b36
+docs/README_run_guide.md,document/history/rulings; not current numerical evidence,root,ee36be71a056cc3050433295a0e928ad72b0f51ef2de84317bf89ae285a1c77e
+docs/sessions/2026-09-05-cdd89db-fairness-reaudit.md,document/history/rulings; not current numerical evidence,root,402f733e75c5bc13a167f78bbd46ae32168fda2f3bf00c3fa24bdd048c0818d6
+docs/sessions/2026-09-05-ladder-fixes-f01-f02-f04.md,document/history/rulings; not current numerical evidence,root,3bfc009fd29fa5cf62f9c4ffe69a9a922abcc3200d68fbfab5b3abae0c5482ff
+docs/sessions/2026-09-05-storage-scan-and-request-choice.md,document/history/rulings; not current numerical evidence,root,7ec50495ad3cf15eaddda7f92a9b481eea16286c257b6b080fb9dd011c29a6f2
+docs/sessions/README.md,document/history/rulings; not current numerical evidence,root,08f78843378a215413fae7fa269922be62550b504222377b5fe348f5ab7a58f1
+experiments/collect_dag_ladder.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,ecc3ae7ecdd09ca5d4566fa510c1b551c8f449d704d18e3fb271f9df7256870d
+experiments/summarize_ladder.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,40e7fede4bb0514d73252a914945a174a076425e7d0fd07df7fc83c1de19228d
+main.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,3160baaf0dde24351239aa24c3b4ac92b8753f4b61e9820c2f574e58ce06b627
+output/analysis/extract_sweep_csv.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,232c50232e998a557fb5837b7a072d82f2a49d8a9a75298f28ba71092aebfd65
+output/analysis/layout_handcheck_theory.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,66ee2e91e065293e341b7af229cd35d65ccfa9d545f1c6efb860855e4adb92f6
+src/cpp_eventcore.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,ab1b3e9d2e9b29959a2ff6eaf6c4e43ecdfb82546403426d5120e338c9370bc9
+src/devices.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,567bc4d4303a7e2487f9673d212bd87e7bc5431ef43134cbe4948ee51466a624
+src/model.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,97d1fb38916404ab164b576b686794cc7e636be9d3b66012f92c15e97abd0939
+src/ramulator_wrapper.py,"changed code, pricing, accounting, entrypoints, report semantics",root + attacc_model_provenance,6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00
+src/workload_runner.py,"allocator, execution, estimates, dependencies, reports",root + independent_fairness_audit + ledger_trace_boundary_audit,c86ccec44d54f2274870f2ed158a270ca8cb78de2a9036d062723e2a4396cf04
+tests/test_placement.py,new assertions and their coverage boundaries,root + independent_fairness_audit,07ded3a811d4bfd31962b48980132ea5c5409c2fb6f1700686631bdeb6b8f22a
+tests/test_workload.py,new assertions and their coverage boundaries,root + independent_fairness_audit,825f73a4d4cbf853e20a9996d8abb9bdab8f5599267ba6145397037e286e10c2

@@ -1,0 +1,1342 @@
+{
+  "scope": "Same helper source as production allocator; no actual ACT counts or timing",
+  "parameters_from_README": {
+    "chunks": 32,
+    "repair_tokens": 8,
+    "head_dim": 128,
+    "element_bytes": 2,
+    "rounds": 8,
+    "stripe": 4,
+    "co_read_write_indices": [
+      0,
+      4
+    ],
+    "prefills": [
+      {
+        "queries": 8,
+        "gpu_us": 100,
+        "pim_us": 20
+      },
+      {
+        "queries": 512,
+        "gpu_us": 200,
+        "pim_us": 900
+      }
+    ]
+  },
+  "head": 0,
+  "heads_per_HBM": 4,
+  "stripe": 4,
+  "layout": {
+    "own_1_blocks_between_diffs": {
+      "A3b": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 2,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 3,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M5",
+            "channel": 1,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M6",
+            "channel": 2,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M7",
+            "channel": 3,
+            "start": 1024,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M0",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  9
+                ],
+                "channel": 0,
+                "start": 2048,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M1",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  11
+                ],
+                "channel": 2,
+                "start": 2048,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M2",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  13
+                ],
+                "channel": 0,
+                "start": 4096,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M3",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  15
+                ],
+                "channel": 2,
+                "start": 4096,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  17
+                ],
+                "channel": 0,
+                "start": 5120,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M5",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  19
+                ],
+                "channel": 2,
+                "start": 5120,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M6",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  21
+                ],
+                "channel": 0,
+                "start": 7168,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M7",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  23
+                ],
+                "channel": 2,
+                "start": 7168,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 64,
+        "nominal_allocator_diff_row_count": 8,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "a::history",
+            "a::output"
+          ],
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "own0",
+            "own1",
+            "own2",
+            "own3",
+            "own4",
+            "own5",
+            "own6",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      },
+      "A4c": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 2,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 3,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M5",
+            "channel": 1,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M6",
+            "channel": 2,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M7",
+            "channel": 3,
+            "start": 1024,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M0",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M0",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870912,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M1",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M1",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870944,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M2",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M2",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870976,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M3",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M3",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871008,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M4",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871040,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M5",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M5",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871072,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M6",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M6",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871104,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M7",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M7",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871136,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 64,
+        "nominal_allocator_diff_row_count": 1,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "a::history",
+            "a::output"
+          ],
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "own0",
+            "own1",
+            "own2",
+            "own3",
+            "own4",
+            "own5",
+            "own6",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      }
+    },
+    "own_4_blocks_between_diffs": {
+      "A3b": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 2,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 3,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M5",
+            "channel": 1,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M6",
+            "channel": 2,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M7",
+            "channel": 3,
+            "start": 1024,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M0",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  9
+                ],
+                "channel": 0,
+                "start": 2048,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M1",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  14
+                ],
+                "channel": 1,
+                "start": 3072,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M2",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  19
+                ],
+                "channel": 2,
+                "start": 4096,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M3",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  24
+                ],
+                "channel": 3,
+                "start": 5120,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  29
+                ],
+                "channel": 0,
+                "start": 7168,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M5",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  34
+                ],
+                "channel": 1,
+                "start": 8192,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M6",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  39
+                ],
+                "channel": 2,
+                "start": 9216,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M7",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "burst",
+                  44
+                ],
+                "channel": 3,
+                "start": 10240,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 64,
+        "nominal_allocator_diff_row_count": 8,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "a::history",
+            "a::output"
+          ],
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "own0",
+            "own1",
+            "own2",
+            "own3",
+            "own4",
+            "own5",
+            "own6",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      },
+      "A4c": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 2,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 3,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M5",
+            "channel": 1,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M6",
+            "channel": 2,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M7",
+            "channel": 3,
+            "start": 1024,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M0",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M0",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870912,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M1",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M1",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870944,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M2",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M2",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870976,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M3",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M3",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871008,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M4",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871040,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M5",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M5",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871072,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M6",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M6",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871104,
+                "tokens": 8
+              }
+            ]
+          },
+          {
+            "owner": "z",
+            "fingerprint": "M7",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M7",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536871136,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 64,
+        "nominal_allocator_diff_row_count": 1,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "a::history",
+            "a::output"
+          ],
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M6",
+            "M7",
+            "own0",
+            "own1",
+            "own2",
+            "own3",
+            "own4",
+            "own5",
+            "own6",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      }
+    }
+  },
+  "placement": {
+    "direct_slot_helper_only_pair_coread": {
+      "append": {
+        "M0": 0,
+        "M1": 1,
+        "M2": 2,
+        "M3": 3,
+        "M4": 0
+      },
+      "table": {
+        "M0": 0,
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "M4": 1
+      }
+    },
+    "separate_producers": {
+      "A4c": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 2,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 3,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M4",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870912,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 8,
+        "nominal_allocator_diff_row_count": 1,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "a0::history",
+            "a0::output"
+          ],
+          [
+            "M1",
+            "a1::history",
+            "a1::output"
+          ],
+          [
+            "M2",
+            "a2::history",
+            "a2::output"
+          ],
+          [
+            "M3",
+            "a3::history",
+            "a3::output"
+          ],
+          [
+            "M4",
+            "a4::history",
+            "a4::output"
+          ],
+          [
+            "M0",
+            "M4",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      },
+      "A4e": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 0,
+            "start": 2048,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 0,
+            "start": 3072,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M4",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870912,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 8,
+        "nominal_allocator_diff_row_count": 1,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "a0::history",
+            "a0::output"
+          ],
+          [
+            "M1",
+            "a1::history",
+            "a1::output"
+          ],
+          [
+            "M2",
+            "a2::history",
+            "a2::output"
+          ],
+          [
+            "M3",
+            "a3::history",
+            "a3::output"
+          ],
+          [
+            "M4",
+            "a4::history",
+            "a4::output"
+          ],
+          [
+            "M0",
+            "M4",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      }
+    },
+    "one_producer_reads_all_five": {
+      "A4c": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 2,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 3,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M4",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870912,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 8,
+        "nominal_allocator_diff_row_count": 1,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "a::history",
+            "a::output"
+          ],
+          [
+            "M0",
+            "M4",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      },
+      "A4e": {
+        "master_objects": [
+          {
+            "fingerprint": "M0",
+            "channel": 0,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M1",
+            "channel": 1,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M2",
+            "channel": 2,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M3",
+            "channel": 3,
+            "start": 0,
+            "tokens": 256
+          },
+          {
+            "fingerprint": "M4",
+            "channel": 0,
+            "start": 1024,
+            "tokens": 256
+          }
+        ],
+        "diff_objects": [
+          {
+            "owner": "z",
+            "fingerprint": "M4",
+            "reserved_tokens": 8,
+            "objects": [
+              {
+                "id": [
+                  0,
+                  "z",
+                  "M4",
+                  "diff",
+                  0
+                ],
+                "channel": 3,
+                "start": 536870912,
+                "tokens": 8
+              }
+            ]
+          }
+        ],
+        "diff_reserved_tokens": 8,
+        "nominal_allocator_diff_row_count": 1,
+        "nominal_row_count_is_not_ACT_measurement": true,
+        "coread_sets": [
+          [
+            "M0",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "a::history",
+            "a::output"
+          ],
+          [
+            "M0",
+            "M4",
+            "z::history",
+            "z::output"
+          ]
+        ]
+      }
+    }
+  }
+}

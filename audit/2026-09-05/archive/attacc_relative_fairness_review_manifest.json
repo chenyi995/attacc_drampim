@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-05",
+  "head": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "upstream": "c60005143a6b492d7ef83231723386478b59a506",
+  "scope": "User ruling: accept shared AttAcc limitations; show provenance and relative differences for user adjudication; FlashAttention remains required.",
+  "independent_agent": "attacc_model_provenance",
+  "previous_manifests_sha256": {
+    "reaudit_8c51672_manifest.json": "91b1c920562ce6d9d0456b6729d6857e069d0ca5765e6092c9a897706b6011d2",
+    "runtime_configuration_8c51672_manifest.json": "2ebbfa53ea9653f6687d7cd53e4c4a7dd12210afb7a7a9af1a2d4c5904150eb3"
+  },
+  "artifact_sha256": {
+    "audit/2026-09-05/ATTACC_RELATIVE_FAIRNESS_REVIEW.md": "864ebeeb04c384d4065245ba5468d796aca644c13c2a33f21651d5d31bc3273e",
+    "audit/2026-09-05/ATTACC_UPSTREAM_REVIEW_EXCERPTS.md": "1d4cbeb18e03538a207049691aef54cc88de71c7f3aef0c075506d9a81b3e973",
+    "audit/2026-09-05/INDEPENDENT_REAUDIT_8c51672.md": "4a2730a1634bb12a47626c0aaae62643cb30308c1ac554d53dd0ad783f943a24",
+    "audit/2026-09-05/MODEL_PROVENANCE_REAUDIT_8c51672.md": "004ef236403176fb3126941897e01b18e8147d5394e9d106be628090cbe9ed85",
+    "audit/2026-09-05/REAUDIT_8c51672.md": "f4e37e2bde487a113108ba63eb3b301de076629c11a251a6c23b51442bcd622d",
+    "audit/2026-09-05/RUNTIME_CONFIGURATION_AUDIT.md": "e0d16cb9b8223edbeb79d43693aa23f64ff36872974fa705e8ae127a2318c480",
+    "audit/2026-09-05/attacc_relative_fairness_review_evidence.json": "e27f7d5094263c1ee98e1892a3b8d09222618d27527172301dafe19344cf3b2d",
+    "audit/2026-09-05/attacc_relative_fairness_review_generator.txt": "b2b2a4323b6e7714055f06c7adb108520719e516b1e5f3fec4d3c0c8d013ba7f",
+    "audit/2026-09-05/attacc_relative_fairness_review_validation.txt": "9b8656ff291bc5fa6e0ad8b15c1b1174ddb9bb8dc29c5848a23d37ebe3272487",
+    "docs/README.md": "3224bd77e765bfe830d595af855a5562725bc10963a82d2d3a9f2f4ed90d3c30",
+    "docs/README_audit_fixes.md": "b83658b7121841fd0900ef4af871f252c16f9df7599d9cfec949e44fee813d3b",
+    "docs/README_run_guide.md": "964454bbc4d562f5c11ed18237df97e3d95e63e4ff7ed9d64dbe6067f7034017",
+    "docs/sessions/2026-09-05-attacc-relative-fairness-ruling.md": "0399421ee8076dc5e024467c6a7f3a6224b36a69f84dff72975da2c01fa76316",
+    "docs/sessions/README.md": "1a496274f808fca044f866b0a3556a54de694d5061275b2fe3353e71e0f2b085"
+  },
+  "commands": [
+    "python3 /tmp/attacc_relative_fairness_review.py",
+    "python3 /tmp/validate_attacc_relative_fairness_review.py"
+  ],
+  "validation": {
+    "head_unchanged": true,
+    "tracked_files_checked": 166,
+    "changed_tracked_documents_this_turn": [
+      "docs/README.md",
+      "docs/README_audit_fixes.md",
+      "docs/README_run_guide.md",
+      "docs/sessions/README.md"
+    ],
+    "unexpected_tracked_changes": [],
+    "implementation_changes_since_original_audit_start": [],
+    "historical_result_files_checked": 363,
+    "historical_results_unchanged": true,
+    "broken_links": [],
+    "git_diff_check_exit_code": 0,
+    "git_diff_check_output": "",
+    "upstream_hash_assertions_passed": true,
+    "experiments_run": false
+  }
+}

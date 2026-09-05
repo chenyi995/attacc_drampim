@@ -1,0 +1,152 @@
+"""Audit helper/DAG probes, no implementation changes or hardware measurement."""
+from pathlib import Path
+from collections import Counter
+from copy import deepcopy
+import importlib.util
+import json
+import os
+import sys
+
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT))
+spec = importlib.util.spec_from_file_location('audit_helper', ROOT/'audit/2026-09-05/reproduce.py')
+old = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(old)
+import src.workload_runner as w
+from src.ablation import PRESETS, resolve_config
+from src.workload import Request, Segment, Workload, build_reuse_plan
+from src.config import make_xpu_config
+from src.devices import xPU
+from src.type import DeviceType, GPUType
+
+class Capture(old.Device):
+    def __init__(self):
+        super().__init__()
+        self.ops = []
+    def record(self, op):
+        self.ops.append({'name':op.name,'m':op.m,'n':op.n,'k':op.k,'numOp':op.numOp,
+            'queries':getattr(op,'pim_shared_queries',1),
+            'command':getattr(op,'pim_batch_command',None),
+            'runs':deepcopy(getattr(op,'pim_kv_runs',())),
+            'groups':deepcopy(getattr(op,'pim_kv_extent_groups',()))})
+    def get_time_and_energy(self, op):
+        self.record(op)
+        return super().get_time_and_energy(op)
+    def get_time_and_energy_runs(self, op):
+        self.record(op)
+        return super().get_time_and_energy_runs(op)
+
+def run(wl, rung, gqa=1, batch=8):
+    policy='no-reuse' if rung=='A1' else 'recompute'
+    plan=build_reuse_plan(wl,policy,epic_prefix_recompute_tokens=1,recompute_canonical=False)
+    cfg=resolve_config(rung,None,None,None,policy=policy)
+    system=old.system(gqa=gqa)
+    system.devices={'GPU':Capture(),'Acc':Capture()}
+    rep=w.run_reuse_prefill(system,wl,plan,pipe=True,cacheblend_batch_size=batch,
+        include_events=True,warm=False,decode_attn=cfg.decode_attn,
+        kv_mapping=cfg.kv_mapping,channel_placement=cfg.channel_placement,
+        pim_prefill_mode=cfg.prefill_attn,pim_batch_command=cfg.pim_batch_command,
+        pim_pe_freq_ghz=cfg.pim_pe_freq_ghz,gemv_buffer_bytes=cfg.gemv_buffer_bytes)
+    return rep,system,plan
+
+def req(rid,segments,lout=2):
+    return Request(rid,0,None,lout,tuple(segments),sum(s.length for s in segments))
+
+out={'scope':'8c51672; real helper and DAG functions, fixed 1us fake device per pricing call. No real Ramulator or measured performance.'}
+solo=Workload('supervisor',(req('r',[Segment('doc','doc',16)]),),{})
+out['fresh_by_gqa_and_rung']={}
+for gqa in (1,4):
+    out['fresh_by_gqa_and_rung'][gqa]={}
+    for rung in PRESETS:
+        try:
+            report,system,plan=run(solo,rung,gqa=gqa)
+            es=report['events']
+            out['fresh_by_gqa_and_rung'][gqa][rung]={
+                'status':'ok', 'prefill_sides':report.get('prefill_attention_rows'),
+                'corrected_rows_sha':report.get('corrected_rows_sha'),
+                'store_events':[{k:e[k] for k in ('name','device','rows','time_s','energy_nj')} for e in es if 'dram_store' in e['name'] or e['name']=='dram_read_resident'],
+                'remote_or_kv_links':[{k:e[k] for k in ('name','rows','link_bytes')} for e in es if e['device']=='LINK' and ('remote' in e['name'] or 'kv_' in e['name'])],
+                'pim_pricing_calls':system.devices['Acc'].ops,
+                'gpu_context_shapes':[c for c in system.devices['GPU'].ops if c['name']=='context']}
+        except Exception as exc:
+            out['fresh_by_gqa_and_rung'][gqa][rung]={'status':'error','error_type':type(exc).__name__,'error':str(exc)}
+
+owner=req('a_owner',[Segment('sys','owner-prefix',2),Segment('doc','shared',16)])
+consumer=req('b_consumer',[Segment('sys','consumer-prefix',4),Segment('doc','shared',16)])
+shared=Workload('supervisor',(consumer,owner),{})
+out['common_plan_and_owner_dependency']={}
+for rung in ('A3b','A4c','A4e','A5','A6'):
+    report,system,plan=run(shared,rung)
+    es=report['events']
+    anc={}
+    for e in es:
+        anc[e['id']]=set(e['depends_on'])
+        for d in e['depends_on']: anc[e['id']].update(anc[d])
+    stores={e['id'] for e in es if e['request']=='a_owner' and e['name'].startswith('dram_store')}
+    scans=[e for e in es if e['request']=='b_consumer' and 'pim_kv_scan' in e['name']]
+    out['common_plan_and_owner_dependency'][rung]={
+        'corrected_rows_sha':report.get('corrected_rows_sha'),
+        'correction_indices':[list(d.epic_prefix_rows) for d in plan.reusable],
+        'owner_store_count':len(stores),'consumer_scan_count':len(scans),
+        'consumer_scans_have_owner_store_ancestor':all(bool(stores & anc[e['id']]) for e in scans),
+        'prefill_q_links':[e['link_bytes'] for e in es if e['name']=='q_gpu_to_pim'],
+        'rotation_events':[{k:e[k] for k in ('name','request','rows','link_bytes')} for e in es if 'rotate_q_extra' in e['name']]}
+
+# Compare the chooser's calls to the real committed request's attention work.
+# All totals below are isolated operation-service sums under the same fake
+# prices, NOT queued DAG completion predictions or hardware speedups.
+out['A6_estimate_vs_executed_operation_coverage']={}
+for case,wl,target in (('shifted_reuse',shared,'b_consumer'),('fresh_16',solo,'r')):
+    log=Path('/tmp/reaudit_8c51672_sides_'+case+'.jsonl')
+    log.write_text('')
+    os.environ['KVPIM_PREFILL_SIDE_LOG']=str(log)
+    report,system,_=run(wl,'A6')
+    os.environ.pop('KVPIM_PREFILL_SIDE_LOG')
+    choices=[json.loads(line) for line in log.read_text().splitlines()]
+    choice=next(c for c in choices if c['request']==target)
+    relevant=[e for e in report['events'] if e['request']==target and e['name'] in
+        ('q_gpu_to_pim','ctx_pim_to_gpu','gpu_rotate_q_extra_to_pim','pim_kv_scan_score_softmax_pv')]
+    lanes={}
+    for e in relevant:
+        if e['name']=='pim_kv_scan_score_softmax_pv':
+            # Each sweep has a shared immediate plan dependency.
+            key=tuple(e['depends_on'])
+            lanes[key]=max(lanes.get(key,0),e['time_s'])
+    links=[e for e in relevant if e['device']=='LINK']
+    gpu_report,_,_=run(wl,'A4e')
+    gpu_attention=[e for e in gpu_report['events'] if e['request']==target and e['name'] in
+        ('kv_pim_to_gpu','gpu_prefill_score','gpu_prefill_softmax','gpu_prefill_context')]
+    out['A6_estimate_vs_executed_operation_coverage'][case]={
+        'choice_log':choice,
+        'executed_pim_attention_links':[{k:e[k] for k in ('name','rows','link_bytes','time_s')} for e in links],
+        'executed_lane_max_service_sum_s':sum(lanes.values()),
+        'pim_attention_operation_service_s':sum(e['time_s'] for e in links)+sum(lanes.values()),
+        'gpu_branch_attention_operation_service_s':sum(e['time_s'] for e in gpu_attention),
+        'gpu_branch_attention_events':[{k:e[k] for k in ('name','rows','link_bytes','time_s')} for e in gpu_attention],
+        'note':'A6 per-request selection is accepted; only compare coverage of the priced operations.'}
+
+out['A1_exact_length']={}
+tlb=w.NoReuseKVLayout(256)
+for row in range(16): tlb.reserve(0,'r','r',row,'private')
+tlb.finalize()
+locs=[tlb.locate(0,'r','r',row,'private') for row in range(16)]
+for heads in (1,8):
+    runs=w._placement_channel_runs(locs,policy='slice',heads_per_hbm=heads,tlb=tlb)[2]
+    out['A1_exact_length'][heads]={'runs':runs,'total_token_head_rows':sum(r[2] for r in runs)}
+
+# Real analytic communication model, without any device execution.
+model=old.system().model
+model.build(1,1,2,True)
+transfer=next(op for op in model.sum_decoder if op.name=='comm_x2g')
+out['real_analytic_zero_byte_readback']={}
+for gpu_model in ('legacy','flash'):
+    cfg=make_xpu_config(GPUType.A100a,num_gpu=1,gpu_model=gpu_model)['GPU']
+    gpu=xPU(DeviceType.GPU,cfg,{'MAX_COMPUTE_UTIL':1.0,'MAX_OFF_MEM_BW_UTIL':1.0})
+    zero=w._link_layer(transfer,'kv_pim_to_gpu',0)
+    time_s,energy=gpu.get_time_and_energy(zero)
+    out['real_analytic_zero_byte_readback'][gpu_model]={'time_s':time_s,'energy':energy}
+
+if w._EC is not None:
+    w._EC.close()
+    w._EC=None
+print(json.dumps(out,indent=2,sort_keys=True))

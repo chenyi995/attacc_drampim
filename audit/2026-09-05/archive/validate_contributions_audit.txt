@@ -1,0 +1,81 @@
+"""Read-only validation, apart from this session's own new audit manifest/script copy."""
+from pathlib import Path
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+
+R = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+A = R / 'audit/2026-09-05'
+H = A / 'archive'
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+def changed(entries):
+    return [p for p, h in entries.items() if not (R/p).is_file() or sha(R/p) != h]
+P = json.loads((H/'contributions_alignment_evidence.json').read_text())
+S = json.loads(Path('/tmp/audit_cleanup_start.json').read_text())
+C = json.loads((H/'cleanup_manifest.json').read_text())
+protected = changed(P['protected_hashes_before'])
+since_cleanup = changed({p:h for p,h in S['initial_tracked_sha256'].items() if not p.startswith(('docs/','audit/'))})
+old_evidence = [e['new'] for e in C['moved_files'] if not e['new'].endswith('.md') and sha(R/e['new']) != e['sha256_before']]
+paper = [p for p,h in S['paper_sha256'].items() if sha(Path(p)) != h]
+broken, bad_lines = [], []
+manifest = H / 'contributions_alignment_manifest.json'
+for path in [R/'README.md', *list((R/'docs').rglob('*.md')), *list(A.rglob('*.md'))]:
+    content = path.read_text()
+    for raw in re.findall(r'\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)\)', content):
+        link = raw.strip('<>')
+        if link.startswith(('http://','https://','app://','mailto:')):
+            continue
+        pathname, _, anchor = link.partition('#')
+        m = re.search(r':(\d+)(?:-\d+)?$', pathname)
+        plain = re.sub(r':\d+(?:-\d+)?$', '', pathname)
+        target = (Path(plain) if plain.startswith('/') else path.parent/plain) if plain else path
+        if target.resolve() == manifest.resolve():
+            continue
+        if not target.exists():
+            broken.append([str(path.relative_to(R)), link])
+        elif m and int(m[1]) > len(target.read_text(errors='replace').splitlines()):
+            bad_lines.append([str(path.relative_to(R)), link])
+        if anchor and target.resolve() == (A/'CURRENT_ISSUES.md').resolve():
+            if f'id="{anchor}"' not in target.read_text():
+                broken.append([str(path.relative_to(R)), link])
+check = subprocess.run(['git','diff','--check'], cwd=R, text=True, capture_output=True)
+head = subprocess.check_output(['git','rev-parse','HEAD'], cwd=R, text=True).strip()
+current = (A/'CURRENT_ISSUES.md').read_text()
+assert current.count('id="contributions-check"') == 1
+assert len(re.findall(r'^## C\d+：', current, re.M)) == 7
+assert len(re.findall(r'^\| [①②③④]', current, re.M)) == 4
+I = json.loads((H/'independent_contributions_evidence.json').read_text())
+assert I['parameters_from_README'] == P['readme_parameters']
+for case, rungs in I['layout'].items():
+    assert rungs['A3b']['diff_reserved_tokens'] == rungs['A4c']['diff_reserved_tokens'] == P['illustrative_arithmetic']['diff_tokens']
+    assert rungs['A3b']['master_objects'] == rungs['A4c']['master_objects']
+assert '存在偏乐观风险' in current
+assert 'PIM 时间是否由示例比例拟合' in current
+validation = {'head_unchanged': head == P['head'] == S['head'],
+    'protected_implementation_results_and_readme_files_checked': len(P['protected_hashes_before']),
+    'protected_files_changed': protected, 'implementation_changes_since_cleanup_start': since_cleanup,
+    'old_non_markdown_evidence_changes': old_evidence, 'paper_changes': paper,
+    'broken_markdown_links': broken, 'invalid_source_line_references': bad_lines,
+    'original_case_count': 7, 'contribution_crosswalk_count': 4,
+    'independent_review_correction_applied': True, 'git_diff_check_exit_code': check.returncode,
+    'git_diff_check_output': check.stdout+check.stderr,
+    'new_performance_experiments': False, 'implementation_modified': False}
+assert validation['head_unchanged'] and not any((protected, since_cleanup, old_evidence, paper, broken, bad_lines)) and check.returncode == 0, validation
+assert sorted(p.name for p in A.iterdir()) == ['CURRENT_ISSUES.md','README.md','archive']
+shutil.copyfile(Path(__file__), H/'validate_contributions_audit.txt')
+artifacts = [A/'CURRENT_ISSUES.md', A/'README.md', H/'README.md', R/'docs/sessions/README.md',
+    R/'docs/sessions/2026-09-05-contributions-alignment-audit.md', *[H/name for name in (
+    'contributions_alignment_probe.txt','contributions_alignment_evidence.json',
+    'independent_contributions_probe.txt','independent_contributions_evidence.json',
+    'update_contributions_audit_docs.txt','finalize_contributions_audit.txt','validate_contributions_audit.txt')]]
+manifest.write_text(json.dumps({'date':'2026-09-05','head':head,
+    'scope':'README contributions crosswalk, helper/command evidence and documentation only',
+    'independent_agent':'independent_fairness_audit',
+    'contributions_readme_sha256':sha(R/'docs/README_contributions.md'),
+    'prior_cleanup_manifest_sha256':sha(H/'cleanup_manifest.json'),
+    'artifacts_sha256':{str(p.relative_to(R)):sha(p) for p in artifacts},
+    'validation':validation}, ensure_ascii=False, indent=2)+'\n')
+print(json.dumps(validation, ensure_ascii=False, indent=2))
