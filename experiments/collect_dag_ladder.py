@@ -144,6 +144,19 @@ def main():
         #                only prefill after their parents decode);
         #   decode_s  = span of the tier's own decode batches;
         #   e2e: tier_total_s = prefill_s + decode_s, cum_end_s = step curve.
+        # Every rung gets a row per tier from the request summary, whether or
+        # not it ran PIM decode batches (re-audit C6: A2 has none and used to
+        # be dropped).  Batch stamps refine the decode span where they exist.
+        tier_summary = {}
+        for record in (report.get("summary", {}).get("requests", {}) or {}).values():
+            tier = record.get("tier")
+            slot = tier_summary.setdefault(tier, [float("inf"), 0.0, 0.0])
+            slot[0] = min(slot[0], float(record.get("first_token_s", 0.0)))
+            slot[1] = max(slot[1], float(record.get("prefill_end_s", 0.0)))
+            slot[2] = max(slot[2], float(record.get("end_s", 0.0)))
+        for tier, (first_token, prefill_end, end) in tier_summary.items():
+            if tier not in by_tier:
+                by_tier[tier] = [first_token, end, 0]
         prev_last = 0.0
         for tier in sorted(by_tier):
             first, last, count = by_tier[tier]
