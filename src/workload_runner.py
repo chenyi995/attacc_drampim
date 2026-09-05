@@ -4008,10 +4008,15 @@ def _resolve_prefill_side(system, tlb, x2g, templates: Mapping[str, Layer], *,
     score, softmax, context = (templates[name] for name in
                                ("score", "softmax", "context"))
     # xPU path: resident-row readback + full-context GPU attention block.
+    # GPU side (re-audit C5 / chenyi9 ruling): the resident-row readback at
+    # its real KV-head-wide bytes -- and NO link op at all when there is
+    # nothing resident, because the flash link model charges a latency per
+    # transfer -- plus the FlashAttention block over q x (R + q).
     t_xpu = 0.0
-    op = _link_layer(x2g, "kv_pim_to_gpu",
-                     len(readback_rows) * 2 * _kv_hidden(system, local_hidden) * dbyte)
-    t_xpu += system.devices["GPU"].get_time_and_energy(op)[0]
+    readback_bytes = len(readback_rows) * 2 * _kv_hidden(system, local_hidden) * dbyte
+    if readback_bytes:
+        op = _link_layer(x2g, "kv_pim_to_gpu", readback_bytes)
+        t_xpu += system.devices["GPU"].get_time_and_energy(op)[0]
     full_rows = len(readback_rows) + len(compute_positions)
     for template, wide in ((score, "n"), (softmax, "n"), (context, "k")):
         op = deepcopy(template)
@@ -4072,9 +4077,10 @@ def _resolve_prefill_side(system, tlb, x2g, templates: Mapping[str, Layer], *,
     if tail_queries:
         t_bank += _sweep_price(tail_queries)
     t_bank += _tlb_plan_cost(tlb_runs)[0] * sweeps
-    for name in ("q_gpu_to_pim", "ctx_pim_to_gpu"):
-        op = _link_layer(x2g, name, len(compute_positions) * local_hidden * dbyte)
-        t_bank += system.devices["GPU"].get_time_and_energy(op)[0]
+    # PIM side: the sweeps above plus the context returned to the GPU.  The
+    # Q input transfer is ignored in the estimate (chenyi9 ruling, C5).
+    op = _link_layer(x2g, "ctx_pim_to_gpu", len(compute_positions) * local_hidden * dbyte)
+    t_bank += system.devices["GPU"].get_time_and_energy(op)[0]
     prefill_side = "pim" if t_bank <= t_xpu else "gpu"
     decided[request_id] = prefill_side
     log_path = os.environ.get("KVPIM_PREFILL_SIDE_LOG")
