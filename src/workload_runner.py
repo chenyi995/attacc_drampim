@@ -3065,7 +3065,11 @@ def _cacheblend_tlb_rows(workload: Workload, plan: ReusePlan, layer: int,
             reused = decision is not None and not force_fresh
             if reused:
                 kind = "diff" if position in corrected else "master"
-                if kind == "diff":
+                if kind == "diff" and decision.inherits_from is not None:
+                    # C8: the agent corrected this row in an earlier turn at
+                    # the same absolute position -- attend THAT diff object.
+                    owner, owner_row = decision.inherits_from, position
+                elif kind == "diff":
                     # A correction is consumer-private: two workers may
                     # correct the same source row differently.
                     owner, owner_row = request.request_id, position
@@ -3123,6 +3127,13 @@ def _reserve_cacheblend_tlb_rows(workload: Workload, plan: ReusePlan, layer: int
             reused = decision is not None and not force_fresh
             if reused:
                 kind = "diff" if position in corrected else "master"
+                if kind == "diff" and decision.inherits_from is not None:
+                    # C8: the ancestor turn reserved (and stores) this diff
+                    # object; nothing new is written for it.
+                    tlb.reserve(layer, decision.owner_request_id,
+                                segment.fingerprint, row, "master")
+                    position += 1
+                    continue
                 if kind == "diff":
                     owner, owner_row = request.request_id, position
                     # The shadowed master row is still streamed (masked).
@@ -3183,7 +3194,8 @@ def _prepare_cacheblend_tlb(workload: Workload, plan: ReusePlan, ndec: int,
         # cursor, so its repairs pack whatever the master stream does between
         # them.  Interleaving the agents here adds a second mechanism without
         # changing that one.
-        for request in workload.requests:
+        for request in sorted(workload.requests,
+                              key=lambda item: (item.tier, item.request_id)):
             if contiguous_no_reuse:
                 fingerprint = "{}::no-reuse-input".format(request.request_id)
                 for position in range(request.total_length):
@@ -4835,8 +4847,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         request_ready = (post_last,)
                         continue
 
-                compute_positions = [position for position, reused, corrected, _ in bindings
-                                     if not reused or corrected]
+                compute_positions = [position for position, reused, corrected, loc in bindings
+                                     if not reused or (corrected and
+                                                       loc.owner == request.request_id)]
                 if not compute_positions:
                     # Fully reused layer with zero corrections (e.g. the same
                     # instance re-run under a second model): no fresh rows to
