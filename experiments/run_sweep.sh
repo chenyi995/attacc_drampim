@@ -5,8 +5,7 @@
 # Rungs per point (chenyi9 ruling 2026-09-05): the baseline (B0_*) runs all
 # seven, every sweep point runs only A3b and A6.  Core budget <= 64:
 #   B0    2 ladders x (6 PIM rungs x W + 7) = 62 at W=4
-#   sweep 4 ladders x (1 PIM rung  x W + 2) = 56 at W=12   (A3b, A6; A6 alone
-#         pays Ramulator, A3b mostly hits the cache)
+#   sweep 4 ladders x (2 PIM rungs x W + 2) = 64 at W=7    (A3b, A6)
 #
 #   usage: run_sweep.sh <outroot> [filter-regex] [MODEL]
 #     filter-regex  selects manifest rows by file name, e.g. '^B0_' or 'S5_.*_turns'
@@ -37,7 +36,7 @@ rungs_for() {   # baseline: all seven; sweep point: A3b and A6
 run_one() {
     local file=$1 tag=${1%.json} rungs workers
     rungs=$(rungs_for "$file")
-    if [[ $rungs == *A1* ]]; then workers=${RAMU_WORKERS:-4}; else workers=${RAMU_WORKERS:-12}; fi
+    if [[ $rungs == *A1* ]]; then workers=${RAMU_WORKERS:-4}; else workers=${RAMU_WORKERS:-7}; fi
     RUNGS="$rungs" RAMU_WORKERS=$workers KVPIM_PREFILL_SIDE_LOG=$OUTROOT/$tag.sides.jsonl \
     bash "$SCRIPT_DIR/run_dag_ladder.sh" "$SWEEP/$file" "$MODEL" "$OUTROOT/$tag" \
         > "$OUTROOT/$tag.log" 2>&1
