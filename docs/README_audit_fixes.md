@@ -1,5 +1,7 @@
 # Fugue 七档实验：修改建议与验收标准
 
+**最新只读复审（`cdd89db`）：** 见 [主报告](../audit/2026-09-05/REAUDIT_cdd89db.md)、[独立 agent 报告](../audit/2026-09-05/INDEPENDENT_REAUDIT.md)、[计量专项](../audit/2026-09-05/MODEL_PROVENANCE_REAUDIT.md)。后续 [存储与扫描专项](../audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md) 进一步确认 store 与 scan 两套通道/地址模型，补查 A1/A2。A1/fresh prefill、fresh GPU context、A3b master channel slot、CLI `num_attacc` 已修；完整物理账本、零 diff master 的 15 倍读写差率和资源冲突、分档修正集合、A6 两侧估价对应性等仍未修。用户已明确接受简单逐 request 选边，**不再要求构造两套候选 DAG**。本次没有实施代码修复。
+
 本文按照 2026-09-05 用户确认的口径，说明仓库应当怎样修改。除下列已落地项外，正文仍是**待实施建议**，不能视为全部修复完成。
 
 **已落地的计量修正：** 按 Fugue 正文删除 DIE query 旋转/position-transform，默认旋转归 GPU；TLB 是 A3b 起共同需要的寻址机制，各档统一不额外计 latency/energy。其余新增 DIE bookkeeping 也不另收取原始 AttAcc 没有的开销，只保留依赖且不占用调度资源。原始 AttAcc 的 PIM 命令、传输与 energy table 保留。详见 [PIM 计量来源核查](../audit/2026-09-05/PIM_TIMING_PROVENANCE.md)。
@@ -20,7 +22,7 @@
 | A4c | A3b + 每个 agent、每个 KV head 的 diff 集中存放 | diff 分配、相关地址/描述符/读写流量及由此产生的布局变化；不增加 co-read placement table。 |
 | A4e | A4c + 软件表，把可能共同读取的 chunks 分散放置 | master chunk 的 channel/row 选择及 table 的合理维护成本；diff 机制、重算集合保持不变。 |
 | A5 | A4e + PIM prefill，配套 MQ | 接受作为一组机制。配套的 PE 频点可以保留，需在配置中明示；MQ 若也改善 decode，归入这一档的整体收益。 |
-| A6 | A5 + 自动选择 GPU/PIM prefill | 只增加选边逻辑；GPU/PIM 候选执行器、布局、MQ、频点和输入与 A5 使用相同实现。 |
+| A6 | A5 + 逐 request 估计哪边快就选哪边 | 只增加选边逻辑；GPU/PIM 分支、布局、MQ、频点和输入共用实现；不要求排队试排两套 DAG。 |
 
 因此，不再将“A1/A2 同时改变多个因素”“A5 同时引入 prefill offload 与 MQ”“workload 是人为构造”本身列为问题。A5 无需强制拆成更多正式档位；需要解释细节时，再做可选 microbenchmark。
 
@@ -34,7 +36,7 @@
 | P0-2 | 修正算子形状与 baseline 路由 | `src/model.py`, `src/workload_runner.py`, `src/config.py`, `src/devices.py` | 设备归属、GQA 维度和传输量符合各档定义 |
 | P0-3 | 统一持久地址与读写依赖 | `src/workload_runner.py`, `src/cpp_eventcore.py`, `src/cppcore/eventcore.cpp` | 每次读都能追溯到有效写入，物理资源冲突不能重叠 |
 | P1-1 | 做实 A3b / A4c / A4e 布局 | `src/workload_runner.py`, `src/layout_probe.py` | naive append、per-agent/head diff、co-read table 三者可独立解释 |
-| P1-2 | 做实 A5 / A6 执行与选边 | `src/workload_runner.py`, `src/ramulator_wrapper.py` | fresh/reuse prefill 都按模式执行；A6 记录可核查的候选完成时间 |
+| P1-2 | 做实 A5 / A6 执行与选边 | `src/workload_runner.py`, `src/ramulator_wrapper.py` | fresh/reuse prefill 都按模式执行；A6 两侧逐 request 估价对应实际操作、lane 和尾批 |
 | P1-3 | 构造能展示每级机制的 workload | 建议新增 `workload/gen_claim_suite.py` 及生成的 JSON | 真正产生跨轮 diff、共同读取冲突、MQ 批次和 GPU/PIM 两类优势场景 |
 | P1-4 | 锁定构建、输出指标、重跑 | `set_pim_ramulator.sh`, `experiments/collect_dag_ladder.py`, `output/analysis/extract_sweep_csv.py` | 同版本、同配置、同输入，缺档或混版本时报错 |
 | P2 | 扩大 policy / 模型 / workload 覆盖 | `src/workload.py`, `src/workload_runner.py` 及实验脚本 | 基本 ladder 正确后再扩大矩阵，不用旧路径混出新标签 |
@@ -133,24 +135,22 @@ master 继续按 append-order 放置，A4c 不使用 co-read table。**零 diff 
 
 ### 3.8 A6：在相同候选执行器之上自动选边
 
-按论文现有 event-based 描述，建议比较候选 prefill 的预计**完成时间**：
+按用户后续澄清，保持简单的**逐 request 估计哪边快选哪边**，不要求构建或试排两套候选 DAG。论文公式和相关文字建议同步这个定义：
 
 ```text
-state = 当前已提交事件的资源可用时间与依赖状态
-gpu_candidate = build_gpu_prefill(同一逻辑计划, state 的副本)
-pim_candidate = build_pim_prefill(同一逻辑计划, state 的副本)
-gpu_finish = 试排 gpu_candidate 后该 prefill 的完成时间
-pim_finish = 试排 pim_candidate 后该 prefill 的完成时间
-提交完成更早的候选；相同时按固定规则选 PIM
+t_gpu = price_gpu_prefill(request 的逻辑工作量与所需回读)
+t_pim = price_pim_prefill(同一 request、实际布局、MQ 与批次)
+side = PIM if t_pim <= t_gpu else GPU
+由现有对应分支执行该 request 的 prefill attention
 ```
 
-不必每次重新模拟整个系统：复用已缓存的算子/trace 时长，复制调度 frontier，对当前候选子图试排即可。试排不能真的提交 KV 分配、推进真实时钟或污染另一候选。
+复用设备模型和已缓存的 trace 时长即可。PIM 一次并行 scan 应给所有 active lane 定价后取最慢者，不能先按 token 数选一条 lane；尾批按真实 query 数估价。估价不应迁移 KV、提交实际事件或更改另一侧的输入。
 
-若决策单位是一整个 prefill，就估计其所有层，包含层间修正量变化；不能只看第一层后缓存结果，却声称比较完整 prefill。把 readback、DRAM store/read、Q variants 的实际传输、尾批、链路和硬件资源等待纳入相同成本模型。DIE/TLB 只保留依赖，各档均不额外计价。
+GPU readback、实际 Q variants 与链路应与对应执行分支一致，GPU 分支中的无用途 Q-to-PIM 应先移除。两侧相同的公共成本可消去；不同的成本不能只在估价或执行的一边出现。第一层估计跨层使用可以保留为已披露的简化，若层间逻辑量不同需检查代表性。DIE/TLB 各档均不额外计价。
 
-输出每个决策的 `gpu_finish_estimate`、`pim_finish_estimate`、chosen side、资源等待项及实际完成时间。这里的“更早”是给定当前已提交状态下的候选比较，不保证 greedy 选择使整个 workload 全局最优。
+保留每 request 的 `t_xpu_s`、`t_bank_s`、`side` 以及 shape/extent/批次，方便复核选择与两侧成本。排队状态不是这个机制的强制输入，也不要求整个 workload 全局最优。
 
-如果暂时保留静态成本选边，它仍可称自动选择，但论文和结果必须明确为静态 cost model，不能继续写已实现事件完成时间选择。推荐实现前者，以保持现有论文 claim。
+当前选择规则本身通过这个口径；应修的是成本覆盖和说明，不能因旧正文措辞更复杂就将简单选择判为缺失机制。逐 request 选择不推出 `A6 ≤ min(A4e,A5)` 的全局 makespan 保证。
 
 ## 4. 怎样构造合理、能够体现收益的 workload
 

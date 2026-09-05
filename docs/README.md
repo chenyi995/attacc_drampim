@@ -3,7 +3,9 @@
 本分支只放论文 `KVPIM-1Fugue-ASPLOS2027` 用到的东西：根基是 **AttAcc 原版**（上游 `c600051`），
 之上是 Fugue 的引擎与七档设计阶梯。消融用的其余档、sweep 编排与旧 session 记录在
 `chenyi-0904-test` 分支。当前分支的新会话从 [session 文档索引](sessions/README.md) 归档。
-workload 另行迁移，本分支不含。
+当前分支已包含 `workload/probe/` 及其 42 个 sweep 输入。
+
+最新审计：[存储与扫描专项](../audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md)，补充 [cdd89db 七档公平性复审](../audit/2026-09-05/REAUDIT_cdd89db.md)。A3b–A6 的写入与扫描仍使用两套映射；A1/A2 的抽象和数量边界已分别检查。A6 按用户澄清接受简单逐 request 选边，不要求两套候选 DAG。主审与独立 agent 均已复核；仅修改文档，见 [最新 session](sessions/2026-09-05-storage-scan-and-request-choice.md) 与 [前轮 session](sessions/2026-09-05-cdd89db-fairness-reaudit.md)。
 
 最近修改：[2026-09-05（晚）：审阅计量改动并修复 F01 / F02 / F04](sessions/2026-09-05-ladder-fixes-f01-f02-f04.md)
 （A1 prefill 回到 GPU、A3b 持久写入序放置、fresh prefill 按档选边）；之前是

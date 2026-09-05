@@ -1,5 +1,7 @@
 # 运行指南：七档阶梯的 baseline + sweep（chenyi9 裁决 2026-09-05）
 
+> **审计状态（`cdd89db`）：** “同一份复用计划”是验收要求，当前默认脚本实际还会按档改变 corrected rows；本页也不能作为 store/scan 物理公平性或 A6 全局最优的证明。[最新存储专项](../audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md) 已确认通道/地址模型分离；A6 按用户澄清接受简单逐 request 选较小估价，不要求候选 DAG。42 个输入均已做结构审查，未重跑性能矩阵。关于 delta=0、history 抽象、输出 fingerprint 已进入 table 等发现，见 [复审 R01–R14](../audit/2026-09-05/REAUDIT_cdd89db.md)。
+
 这一页定死跑论文数据时**必须开的选项**、公平规则、baseline 与 sweep 矩阵、跑法与汇总。
 所有档同一份 workload、同一份复用计划，只换 `--ablation`。
 
@@ -72,7 +74,7 @@ A3b 持久写入序放置；fresh prefill 按档选边。
 | S2 | 轮数 | 2 / 4 / **8** / 16 | A3b→A4c：修正跨轮分散 | R > stripe 后出现 |
 | S3 | lout | 128 / **256** / 512 / 1024 / 2048 | TBT 收益换成 E2E 收益；A4e 对 decode 行的短板 | lout 1024：A4c E2E 1% → 3.6%，A4e 反输 A4c |
 | S4 | 每轮新写 token | 16 / 64 / **128** / 256 / 1024 | A4e↔A5：m/n 小 PIM 赢、大 GPU 赢；A6 贴下界 | flash 交叉点在数百 |
-| S5 | 新 prompt 占比 | **0** / 25 / 50 / 75%（2k/4k/8k 独立 prompt） | A5↔A6：A5 全进 PIM 在这些请求上输给 A4e，A6 分流应同时胜过两者 | 分裂探针 A6 选 GPU 32 / PIM 5 |
+| S5 | 新 prompt 占比 | **0** / 25 / 50 / 75%（2k/4k/8k 独立 prompt） | A5↔A6：观察 A6 将不同请求送往估价较快的一侧；不预设全局同时胜过两种固定策略 | 分裂探针 A6 选 GPU 32 / PIM 5 |
 | S6 | 每轮检索 chunk 数 | 1 / **2** / 4 / 8 | 上下文长度 n：sweep、回读随 n，算力随 m·n | |
 | S7 | k | 2 / **8** / 32 | 复用策略：A3b 每修正多占行，A5 的 m 含修正行 | 运行时 `EPIC_K`，无需新 JSON |
 | S8 | 模型 | **TINY**（8 头，stripe 2）→ LLAMA3-8B（8 KV 头 GQA 4）→ LLAMA-7B（32 头，每通道 2 头） | stripe 与通道拥挤度 | 运行时 MODEL，无需新 JSON |

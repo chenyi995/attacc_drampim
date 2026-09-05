@@ -4,6 +4,8 @@
 
 | 日期 | Session | 内容 |
 |---|---|---|
+| 2026-09-05（存储专项） | [存储与扫描对应性、A6 逐 request 口径](2026-09-05-storage-scan-and-request-choice.md) | 主审与独立 agent 复现五档 store/scan 通道错位与非持久 row；补查 A1/A2；撤回候选 DAG 强制要求；仅修改文档与审计证据 |
+| 2026-09-05（cdd89db 复审） | [七档公平性只读复审与独立 agent audit](2026-09-05-cdd89db-fairness-reaudit.md) | 覆盖相对 AttAcc 的 110 个变更文件；小 workload/42 输入结构检查；两名 agent 复核；更新已修状态和剩余问题；未修改实现 |
 | 2026-09-05 | [AttAcc 计量口径与 GPU query 旋转](2026-09-05-attacc-accounting-and-rotation.md) | 仓库/论文审计；确认七档设计口径；核查 PIM 时间来源；排除新增 DIE/TLB 成本与排队；删除 DIE 旋转；验证和剩余问题 |
 | 2026-09-05（晚） | [审阅计量改动并修复 F01 / F02 / F04](2026-09-05-ladder-fixes-f01-f02-f04.md) | 判定上一会话改动对错并按小 commit 提交；A1 prefill 回到 GPU；A3b 按持久写入序 slot 放置；fresh prefill 按档选边；回归测试；未重跑阶梯 |
 
