@@ -144,36 +144,34 @@ def main():
         #                only prefill after their parents decode);
         #   decode_s  = span of the tier's own decode batches;
         #   e2e: tier_total_s = prefill_s + decode_s, cum_end_s = step curve.
-        # Every rung gets a row per tier from the request summary, whether or
-        # not it ran PIM decode batches (re-audit C6: A2 has none and used to
-        # be dropped).  Batch stamps refine the decode span where they exist.
+        # ONE definition for every rung, from the request summary (re-audit
+        # C6, 2026-09-05): ttft_s = first token completed, decode_s = from the
+        # first token to the request end, tier_total_s = request end.  The PIM
+        # batch stamps (attention starts) are kept as separate diagnostics;
+        # they do not define any metric column.
         tier_summary = {}
         for record in (report.get("summary", {}).get("requests", {}) or {}).values():
             tier = record.get("tier")
-            slot = tier_summary.setdefault(tier, [float("inf"), 0.0, 0.0])
-            slot[0] = min(slot[0], float(record.get("first_token_s", 0.0)))
+            slot = tier_summary.setdefault(tier, [0.0, 0.0, 0.0])
+            slot[0] = max(slot[0], float(record.get("first_token_s", 0.0)))
             slot[1] = max(slot[1], float(record.get("prefill_end_s", 0.0)))
             slot[2] = max(slot[2], float(record.get("end_s", 0.0)))
-        for tier, (first_token, prefill_end, end) in tier_summary.items():
-            if tier not in by_tier:
-                by_tier[tier] = [first_token, end, 0]
-        prev_last = 0.0
-        for tier in sorted(by_tier):
-            first, last, count = by_tier[tier]
-            prefill_s = max(0.0, first - prev_last)
+        for tier in sorted(set(tier_summary) | set(by_tier)):
+            first_token, prefill_end, end = tier_summary.get(tier, (0.0, 0.0, 0.0))
+            batch_first, batch_last, count = by_tier.get(tier, (None, None, 0))
             tier_rows.append({
                 "workload": os.path.basename(workload_path),
                 "ablation": rung,
                 "tier": tier,
-                "prefill_s": prefill_s,
-                "decode_s": last - first,
-                "tier_total_s": prefill_s + (last - first),
-                "first_s": first,
-                "last_s": last,                      # last attention START
-                "cum_end_s": tier_end.get(tier, last),   # last request END
+                "ttft_s": first_token,
+                "prefill_end_s": prefill_end,
+                "decode_s": max(0.0, end - first_token),
+                "tier_total_s": end,
+                "cum_end_s": end,
+                "batch_first_attention_s": batch_first,
+                "batch_last_attention_s": batch_last,
                 "decode_batches": count,
             })
-            prev_last = last
     if tier_rows:
         tier_csv = os.path.join(outdir, "dag_ladder_tiers.csv")
         with open(tier_csv, "w", newline="") as handle:
