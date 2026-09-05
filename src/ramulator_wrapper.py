@@ -598,15 +598,10 @@ class Ramulator:
                      channel_count, extents) = run
                 else:
                     key_addr, value_addr, run_length, channel_base, channel_count = run
-                if channel_base is None:
-                    # Ruling (chenyi9 2026-08-28): legacy contiguous runs
-                    # quantize UP to the natural 256-token chunk so the
-                    # per-step unique-length explosion of no-reuse decode
-                    # (one signature per context length) collapses to
-                    # ~L/256 buckets.  Slightly overprices the baseline
-                    # (<=255 extra tokens per scan) -- conservative
-                    # direction; chunk-mapped pool runs are untouched.
-                    run_length = ((run_length + 255) // 256) * 256
+                # Legacy contiguous runs used to be quantized UP to 256-token
+                # chunks (2026-08-28, to collapse no-reuse decode's one
+                # signature per step).  Ruling chenyi9 2026-09-05: A1 prices
+                # the exact length, as original AttAcc's table lookup does.
                 signature = self._run_signature(
                     pim_type, run_length, num_ops_per_hbm, layer.dbyte,
                     power_constraint, key_addr, value_addr, channel_count,

@@ -2251,10 +2251,18 @@ def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
                       sum(rows for _, _, rows in placed), channel, 1)
                      for channel, _count, placed in groups)
         return loads, active, runs, tuple(groups)
+    elif policy == "slice":
+        # A1's private contiguous extent: striped over the head's channels
+        # in 256-token units with the EXACT tail (ruling chenyi9 2026-09-05:
+        # original AttAcc prices the exact length; the 256-token rounding of
+        # the chunk-count model over-charged A1 by up to 255 tokens a scan).
+        loads = _striped_append_channel_rows(master_rows, diff_rows,
+                                             policy="slice-append",
+                                             heads_per_hbm=heads_per_hbm,
+                                             master_channels=master_channels)
     else:
-        # A1/A3/A3a: the legacy chunk-count model, every reservation rounded
-        # up to a whole 256-token chunk.  Converted to rows here so both
-        # branches return the same unit.
+        # A3/A3a (not in the paper ladder): the legacy chunk-count model,
+        # every reservation rounded up to a whole 256-token chunk.
         c_master = -(-master_rows // _NAIVE_PAGE_ROWS)
         c_diff = -(-diff_rows // _NAIVE_PAGE_ROWS)
         loads = [load * _NAIVE_PAGE_ROWS for load in
