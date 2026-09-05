@@ -45,13 +45,25 @@ POINTS="N-lo:wl_N4.json:8 C-lo:wl_C8.json:8 C-hi:wl_C40.json:8
         private:wl_private.json:8"
 # Heaviest first again: the big models, and A5/A6 (prefill on the PIM, the
 # largest graphs of the four) ahead of A3b/A4.
+# Also split by model size.  A slot's --mem has to cover the worst line its
+# queue can hand it, so one queue forces every slot to be sized for GPT-175B.
+# Measured live 2026-09-04: a points rung is 12-30 GB resident and 0.8 of a
+# core, so a four-model queue can run on a much smaller slot than a queue that
+# might hand out a 175B private/D-hi.
+QPB=$ROOT/tasks_points_big_rungs.txt      # GPT-175B / LLAMA-65B
+QPS=$ROOT/tasks_points_small_rungs.txt    # the other four
+: > "$QPB"; : > "$QPS"
 for r in A5 A6 A4b A3b; do
   for m in $BIG $SMALL; do
     for p in $POINTS; do
       cfg=${p%%:*}; rest=${p#*:}; wl=${rest%%:*}; k=${rest#*:}
       [ -f "$REPO/workload/sweep/$wl" ] || { echo "MISSING $wl" >&2; exit 1; }
       echo "$m $cfg $wl $k $r" >> "$QP"
+      case " $BIG " in *" $m "*) echo "$m $cfg $wl $k $r" >> "$QPB" ;;
+                    *) echo "$m $cfg $wl $k $r" >> "$QPS" ;; esac
     done
   done
 done
 echo "wrote $QP: $(wc -l < "$QP") rung-tasks (6 models x 12 points x 4 rungs)"
+echo "  $QPB  $(wc -l < "$QPB") (GPT-175B / LLAMA-65B)"
+echo "  $QPS  $(wc -l < "$QPS") (the other four models)"
