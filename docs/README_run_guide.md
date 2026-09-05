@@ -15,7 +15,7 @@
 | `--powerlimit` | 开（默认 ON） | Ramulator 功率受限预设：nCCDAB 6 tCK，MQ 命令按能量钳位（n=8 时 8 tCK）。`--no-powerlimit` 是 NPC 4 tCK |
 | `--pim-link nvlink3` | 默认 | 600 GB/s，AttAcc 原版假设；决定 GPU 侧回读驻留 KV 的代价 |
 | `--word 2` | 默认 | FP16 |
-| `--reuse recompute --epic-prefix-recompute-tokens 8` | A2–A6 | 每个位移段重算 k=8 行；A1 用 `--reuse no-reuse` 且不带 k |
+| `--reuse recompute --epic-prefix-recompute-tokens 8` | A2–A6 | 每个位移段重算 k=8 行，**七档同一份随机计划**（seed 0；报表 `corrected_rows_sha` 必须相同）；A1 用 `--reuse no-reuse` 且不带 k |
 | `--cacheblend-batch-size 8` | 固定 | decode batch；也是 MQ sweep 的驻留 Q 上限（min(batch, 512 B / 64 B)） |
 | `--num-hbm 1 --ngpu 1` | TINY / LLAMA3-8B | 8 头落一个 HBM，stripe = 2 通道；GPT-13B / LLAMA-33B 用 2/10，65B / 175B 用 8/40 |
 | `--ramulator-workers` | 按核数预算 | 每档一个进程 + W 个 Ramulator worker；不改变模拟结果 |
@@ -24,15 +24,16 @@
 `--cacheblend-rotate-mode gpu`、`--pe-freq-ghz` / `--gemv-buffer-bytes`（跟 preset：A5/A6 1.3004 GHz / 512 B）、
 `--pim-batch-command`（跟 preset：A1–A4e replicate，A5/A6 mq）。
 
-已修的记账口径（都在本分支）：`num_attacc = --ngpu`（`fc0216d`）；DIE/TLB 零成本只保依赖；A1 prefill 在 GPU；
-A3b 持久写入序放置；fresh prefill 按档选边。
+已修的记账口径（都在本分支）：`num_attacc = --ngpu`；DIE/TLB 与 KV 落地/回读（`STORE`）零成本只保依赖（AttAcc 只有链路项）；
+A1 prefill 在 GPU、decode 扫描精确 L；A3b–A6 的 channel **和 row** 由写入时的持久账本决定（`PhysicalLedger`）；
+fresh prefill 按档选边；consumer 的扫描等 owner 落地；位移从复用计划推导；GQA 按 KV 头计字节与能量。
 
 ## 2. 公平规则
 
 1. 一个 workload JSON → 一份复用计划（`build_reuse_plan`，`recompute`，k=8，seed 0）→ 七档共用。
 2. 修正是 per-agent 的、只由位移决定；共享 chunk 由 `(tier, id)` 排序最先的请求声明，其余按写入序复用；没有人为的"每个修正独占一行"之类惩罚。
-3. 每档只换 preset（`src/ablation.py`）：A1 硬件 baseline、A2 软件 baseline、A3b 朴素 PIM 存储、A4c per-head diff 行、A4e placement table、A5 prefill 进 PIM + MQ、A6 动态选边。
-4. 报三个数：**E2E = 整个 workload 的总时间**（`makespan_s`）、**TBT** = 每请求 `(end_s − first_token_s)/(lout−1)` 的均值、**能量与平均功率**（`energy_nj`，按类拆 GPU / LINK / PIM）。
+3. 每档只换 preset（`src/ablation.py`）：A1 硬件 baseline（AttAcc 原样）、A2 软件 baseline（AttAcc 纯 GPU 计算，KV 在远端 AttAcc HBM 当纯存储，每步经链路回读）、A3b 朴素 PIM 存储、A4c per-head diff 行、A4e placement table、A5 prefill 进 PIM + MQ、A6 逐 request 选边。
+4. 报三个数：**E2E = 整个 workload 的总时间**（`makespan_s`）、**TBT**（两种口径都出：每请求 `(end_s − first_token_s)/(lout−1)` 的均值，和论文用的按 step 加权 `Σ(end−first)/Σ(lout−1)`）、**能量与平均功率**（`energy_nj`，按类拆 GPU / LINK / PIM）。
 
 ## 3. flash 下两侧的已知交叉点（选边器的价格，CACHEBLEND-TINY）
 

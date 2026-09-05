@@ -68,10 +68,10 @@
 ```
 stripe = 16 // heads_per_hbm
 for head h:  base = h × stripe
-    master 与 diff 在同一条流里；每个对象的 slot 由写入序表决定并持久：
-        chunk  -> _chunk_slot_table(mode="append")，与 A4c 同一张表（第 i 个写入的 chunk 落 slot i % stripe）
-        修正   -> 首次被扫描到时追加到同一轮转的下一个 slot
-    落 (base + slot) % 16；同一 chunk 在任何 scan 里都在同一条通道（2026-09-05 晚修复 F02；此前按本次 scan 的 unit 序号重新轮转）
+    master 与 diff 在同一条流里；每个对象的 channel 和 row 在写入时由持久账本（PhysicalLedger）定死：
+        256-token block -> _block_slot_table(mode="append")，与 A4c 同一张表；每通道 row 游标顺序追加
+        修正 -> 同一 consumer 一次 prefill 产生的修正是一个连续 burst，占单流轮转的下一个 slot、自己的行
+    扫描只从账本取 extent（含空隙）；同一对象在任何 scan 里地址相同（2026-09-05：先修 channel，再修 row）
     一轮里一次产生的修正是一段连续 append（共享行）；不同轮的修正被这一轮自己写的 KV 隔开 → 各占一行
 ```
 
@@ -84,7 +84,7 @@ for head h:  base = h × stripe
 `kv_mapping = master-diff-local`，分配器 `LocalDiffKVLayout`（修正有独立的分配游标）。
 
 ```
-master：同 A3b（写入序轮转，持久，_chunk_slot_table(mode="append")）
+master：同 A3b（写入序轮转，持久账本，_block_slot_table(mode="append")）；diff：该 head 末通道的 diff 区，紧凑追加、跨轮共享行
 diff  ：该 head 全部修正合成一段，落在 (base + stripe − 1)   # 自己通道中的一条，多几行
 ```
 
