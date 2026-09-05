@@ -170,9 +170,19 @@ def main():
     parser.add_argument("--ffopt",
                         action='store_true',
                         help="apply feedforward parallel optimization")
+    # DEFAULT ON (ruling chenyi9 2026-09-04).  Without it the DAG scheduler
+    # puts every event on one serial timeline and gates the next event on a
+    # scan's slowest channel lane, so an idle channel can never pick up
+    # independent work -- AttAcc's conservative "no overlap credited"
+    # convention.  That erases precisely what a KV layout buys: total PIM
+    # work falls while makespan does not move.  Every run before 2026-09-04
+    # evening was serial-mode; compare against them only with that said.
     parser.add_argument("--pipeopt",
-                        action='store_true',
-                        help="apply pipeline optimization ")
+                        action=argparse.BooleanOptionalAction,
+                        default=True,
+                        help="per-device resource timelines with overlap "
+                             "(default ON); --no-pipeopt for the serial "
+                             "AttAcc convention")
 
     ## set model and service environment
     parser.add_argument(

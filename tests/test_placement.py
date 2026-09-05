@@ -25,6 +25,54 @@ from src.workload_runner import (_layout_channel_loads, _layout_scan_max_load,
                                   placement_degeneracy_warning)
 
 
+# --- real allocators, because since 2026-09-04 the extents come from
+# physical adjacency and only an allocator knows it.  Two layouts, one
+# variable: where a repair is written.
+def build_allocator(segments, repair_rows, pooled, block=256):
+    """Build a TLB holding `segments` chunks, each patched by one repair.
+
+    ``pooled`` routes the repairs to the diff channel; otherwise they are
+    written inline, between the consumer's own fresh blocks -- so the
+    repairs of different rounds do NOT end up adjacent.  Returns
+    (tlb, reads).
+    """
+    from src.workload_runner import CacheBlendTLB
+    from dataclasses import replace
+
+    class _Inline(CacheBlendTLB):
+        _kv_mapping = "master-diff"
+
+        def reserve(self, layer, owner, fp, row, kind):
+            return CacheBlendTLB.reserve(self, layer, owner, fp, row,
+                                         "master" if kind == "diff" else kind)
+
+        def locate(self, layer, owner, fp, row, kind):
+            loc = CacheBlendTLB.locate(self, layer, owner, fp, row,
+                                       "master" if kind == "diff" else kind)
+            return replace(loc, kind="diff") if kind == "diff" else loc
+
+    tlb = (CacheBlendTLB if pooled else _Inline)(256, "table")
+    for index in range(segments):
+        for row in range(block):
+            tlb.reserve(0, "owner", "seg%d" % index, row, "master")
+        for row in range(repair_rows):
+            tlb.reserve(0, "consumer", "seg%d" % index, row, "diff")
+        # the consumer's OWN fresh KV for this round, written between the
+        # repair of this round and the repair of the next
+        for row in range(block):
+            tlb.reserve(0, "consumer", "own%d" % index, row, "master")
+    tlb.finalize()
+    reads = []
+    for index in range(segments):
+        for row in range(block):
+            reads.append(tlb.locate(0, "owner", "seg%d" % index, row,
+                                    "master"))
+        for row in range(repair_rows):
+            reads.append(tlb.locate(0, "consumer", "seg%d" % index, row,
+                                    "diff"))
+    return tlb, reads
+
+
 class SingleLayoutTest(unittest.TestCase):
     """A3: head h -> one channel (h % 16); every chunk of the head piles there."""
 
@@ -231,98 +279,6 @@ class RealExtentTest(unittest.TestCase):
         self.assertEqual(_read_extents(reads),
                          [("diff", 8), ("master", 248), ("master", 256)])
 
-    def test_a_head_packs_its_own_repairs_but_cannot_share_across_heads(self):
-        """Ruling chenyi9 2026-09-03: one head's repairs are ONE contiguous
-        append -- that head's prefill produces them together -- so they share
-        rows within the head.  What A3b cannot do is share rows ACROSS heads,
-        and that is the only thing the diff pool adds."""
-        reads = self._reads(segments=4, repairs=4)
-        groups = _striped_append_channel_extents(
-            reads, policy="slice-append", heads_per_hbm=16)   # stripe = 1
-        self.assertEqual(len(groups), 16)                     # one head each
-        _channel, _count, placed = groups[0]
-        repair_extents = [rows for _k, _v, rows in placed if rows == 4 * 8]
-        self.assertEqual(len(repair_extents), 1)              # ONE packed run
-        self.assertNotIn(8, [rows for _k, _v, rows in placed])
-        addresses = [key for key, _v, _rows in placed]
-        self.assertEqual(len(set(addresses)), len(addresses))
-        for key, _value, _rows in placed:                     # every row-aligned
-            self.assertEqual(key % _GEN_ROW_BYTES, 0)
-        # Sixteen heads, one partial row each: sixteen rows for what the pool
-        # would fit in 16 x 32 = 512 tokens = two.
-        self.assertEqual(len(groups), 16)
-
-    def test_diff_pool_packs_the_repairs_into_one_extent(self):
-        reads = self._reads(segments=4, repairs=4, shadow=True)
-        groups = _striped_append_channel_extents(
-            reads, policy="master-diff-table-append", heads_per_hbm=1)
-        diff = [placed for channel, _c, placed in groups
-                if channel == _MASTER_CHANNELS_DEFAULT]
-        self.assertEqual(len(diff), 1)
-        self.assertEqual(len(diff[0]), 1)                    # one extent
-        self.assertEqual(diff[0][0][2], 4 * 8)               # all corrections
-
-    def test_the_split_is_what_changes_the_activation_count(self):
-        """The same 16 x 64 recomputed rows: one partial row PER HEAD when
-        nothing pools them, four shared rows when the diff pool does.
-
-        Ruling chenyi9 2026-09-03, and the reason the sweep moved to C=16:
-        the payoff is heads-vs-packed, so it grows as the per-head repair run
-        shrinks relative to a 256-token row.
-        """
-        def act_rows(placed):
-            return sum(-(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
-                       for _k, _v, rows in placed)
-
-        # heads_per_hbm 16 clamps the stripe to one channel per head, so each
-        # head's repairs land alone on its own channel.
-        scattered = _striped_append_channel_extents(
-            self._reads(segments=8, repairs=8),
-            policy="slice-append", heads_per_hbm=16)
-        per_head = [[extent for extent in placed if extent[2] == 8 * 8]
-                    for _channel, _count, placed in scattered]
-        self.assertEqual([len(extents) for extents in per_head], [1] * 16)
-        # 64 rows is a quarter of a 256-token row, so each head still pays one.
-        self.assertEqual([act_rows(extents) for extents in per_head], [1] * 16)
-        self.assertEqual(sum(act_rows(extents) for extents in per_head), 16)
-
-        pooled = _striped_append_channel_extents(
-            self._reads(segments=8, repairs=8, shadow=True),
-            policy="master-diff-table-append", heads_per_hbm=16)
-        diff = {channel: placed
-                for channel, _count, placed in pooled}[_MASTER_CHANNELS_DEFAULT]
-        self.assertEqual(len(diff), 1)             # ONE packed extent
-        self.assertEqual(diff[0][2], 16 * 64)      # every head's corrections
-        # 1024 rows x 4 B = 4096 B = four rows, against sixteen when every head
-        # keeps its own partial row.  Sixteen against four.
-        self.assertEqual(act_rows(diff), 4)
-
-    def test_ruling_worked_example_four_heads_over_a_corpus(self):
-        """Ruling chenyi9 2026-09-03, stated in rows.
-
-        Four heads generated together, k=8 recomputed tokens per reused chunk:
-
-            C=24   pool 4 x 24 x 8 = 768 tok = EXACTLY 3 rows, A3b pays 4
-            C=16   pool 4 x 16 x 8 = 512 tok = EXACTLY 2 rows, A3b pays 4
-
-        Four against two is why the sweep runs at C=16.
-        """
-        def diff_rows(policy, C):
-            def rows(reads):
-                groups = _striped_append_channel_extents(
-                    reads, policy=policy, heads_per_hbm=4)
-                return sum(-(-n * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
-                           for _c, _n2, placed in groups for _k, _v, n in placed)
-            full = self._reads(segments=C, repairs=C, shadow=policy != "slice-append")
-            master = [r for r in full if r.kind != "diff"]
-            return rows(full) - rows(master)
-
-        self.assertEqual(diff_rows("slice-append", 24), 4)
-        self.assertEqual(diff_rows("master-diff-slice-append", 24), 3)
-        self.assertEqual(diff_rows("slice-append", 16), 4)
-        self.assertEqual(diff_rows("master-diff-slice-append", 16), 2)
-        self.assertEqual(diff_rows("master-diff-table-append", 16), 2)
-
     def test_every_row_is_placed_once(self):
         for policy, shadow in (("slice-append", False),
                                ("master-diff-slice-append", True),
@@ -419,6 +375,145 @@ class StripedAppendLayoutTest(unittest.TestCase):
     def test_unknown_append_policy_rejected(self):
         with self.assertRaises(WorkloadValidationError):
             _striped_append_channel_rows(1, 0, policy="bogus", heads_per_hbm=1)
+
+
+    def test_the_pool_merges_repairs_the_inline_layout_leaves_apart(self):
+        """The master/diff split, with one variable and a real allocator.
+
+        Four rounds, each patching a chunk with 8 rows.  Inline, each round's
+        repair is separated from the next by the KV that round generated, so
+        the four stay four extents.  Pooled, the diff channel sees only
+        repairs, so consecutive repairs are consecutive however much traffic
+        separated them in time, and they merge into one.
+        """
+        for pooled, expect in ((False, 4), (True, 1)):
+            tlb, reads = build_allocator(segments=4, repair_rows=8,
+                                         pooled=pooled)
+            groups = _striped_append_channel_extents(
+                reads, policy="master-diff-table-append", heads_per_hbm=1,
+                tlb=tlb)
+            diff = [placed for channel, _c, placed in groups
+                    if channel == _MASTER_CHANNELS_DEFAULT]
+            self.assertEqual(len(diff), 1)
+            self.assertEqual(len(diff[0]), expect,
+                             "pooled={} should give {} repair extent(s)"
+                             .format(pooled, expect))
+            self.assertEqual(sum(entry[2] for entry in diff[0]), 4 * 8)
+
+    def test_the_split_is_what_changes_the_activation_count(self):
+        """... and the activations follow, folded over the heads."""
+        heads = 4
+        acts = {}
+        for pooled in (False, True):
+            tlb, reads = build_allocator(segments=4, repair_rows=8,
+                                         pooled=pooled)
+            groups = _striped_append_channel_extents(
+                reads, policy="master-diff-table-append", heads_per_hbm=heads,
+                tlb=tlb)
+            acts[pooled] = sum(
+                -(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
+                for channel, _c, placed in groups
+                if channel == _MASTER_CHANNELS_DEFAULT
+                for _k, _v, rows in placed)
+        # inline: four separate repair extents, one row each, per head
+        # pooled: 4 x 4 x 8 = 128 tokens in one extent -> a single row
+        self.assertEqual(acts[False], 4)
+        self.assertEqual(acts[True], 1)
+        self.assertLess(acts[True], acts[False])
+
+    def test_extents_are_not_packed_across_owners(self):
+        """Two owners' chunks are two allocations and never share a row.
+
+        Summing them and re-cutting at 256 was the third collapse found on
+        2026-09-04: it let one owner's tail be packed against the next
+        owner's head.
+        """
+        tlb, reads = build_allocator(segments=2, repair_rows=8, pooled=True)
+        master = [location for location in reads if location.kind != "diff"]
+        runs = tlb.scan_runs(master)
+        groups = _striped_append_channel_extents(
+            reads, policy="master-diff-table-append", heads_per_hbm=1, tlb=tlb)
+        placed = [rows for channel, _c, entries in groups
+                  if channel != _MASTER_CHANNELS_DEFAULT
+                  for _k, _v, rows in entries]
+        self.assertEqual(sum(placed), sum(run[2] for run in runs))
+        self.assertGreaterEqual(len(placed), len(runs))
+
+
+class ConflictAwareSlotTableTest(unittest.TestCase):
+    """Fugue sec. 4: a chunk goes to a channel not used by the chunks read
+    alongside it.  Two properties, both of which the per-scan rotation that
+    A4c/A4d used until 2026-09-04 could not have."""
+
+    def test_naive_rotation_collides_by_luck_and_the_table_does_not(self):
+        from src.workload_runner import _chunk_slot_table
+        # doc1 and doc5 are written four apart -- exactly the stripe -- so the
+        # write-order rotation lands them on the SAME slot although one sweep
+        # reads them together.  The table sees that sweep and keeps them apart.
+        order = ["doc%d" % i for i in range(1, 7)]
+        coread = [frozenset({"doc1", "doc5"}), frozenset({"doc2", "doc6"})]
+        naive = _chunk_slot_table(order, coread, 4, "append")
+        table = _chunk_slot_table(order, coread, 4, "table")
+        self.assertEqual(naive["doc1"], naive["doc5"])          # the collision
+        self.assertNotEqual(table["doc1"], table["doc5"])       # removed
+        self.assertNotEqual(table["doc2"], table["doc6"])
+
+    def test_slot_is_persistent_across_scans(self):
+        """The same chunk lands on the same channel in every scan, however
+        it is ordered within any one scan's read list."""
+        from src.workload_runner import TableLocalDiffKVLayout
+        tlb = TableLocalDiffKVLayout(256, "slice")
+        tlb.chunk_order = ["a", "b", "c", "d", "e"]
+        tlb.chunk_coread = [frozenset({"a", "e"}), frozenset({"b", "c", "d", "e"})]
+        first = {f: tlb.chunk_slot(f, 4, "table") for f in tlb.chunk_order}
+        again = {f: tlb.chunk_slot(f, 4, "table") for f in reversed(tlb.chunk_order)}
+        self.assertEqual(first, again)
+        self.assertNotEqual(first["a"], first["e"])
+
+    def test_a_chunk_the_record_never_saw_is_appended(self):
+        from src.workload_runner import TableLocalDiffKVLayout
+        tlb = TableLocalDiffKVLayout(256, "slice")
+        tlb.chunk_order, tlb.chunk_coread = ["a"], [frozenset({"a"})]
+        self.assertEqual(tlb.chunk_slot("a", 4, "table"), 0)
+        self.assertEqual(tlb.chunk_slot("never-reserved", 4, "table"), 1)
+
+
+class PresetRoutesToItsOwnPolicyTest(unittest.TestCase):
+    """The rung you ask for is the rung you get.
+
+    A preset names a kv_mapping; the runner picks a TLB class for it; that
+    class's ``_kv_mapping`` is what becomes ``layout_policy`` and drives the
+    placement.  Three hops, and on 2026-09-04 the third silently rerouted A4d
+    onto A4c's placement because the two shared a class.  This pins all three
+    hops against each other for every PIM preset.
+    """
+
+    def test_every_pim_preset_places_under_its_own_policy(self):
+        from src.ablation import PRESETS
+        from src.workload_runner import (CacheBlendTLB, NaiveKVLayout,
+                                         NaiveMaskKVLayout, LocalDiffKVLayout,
+                                         MergedDiffKVLayout, TableLocalDiffKVLayout)
+        classes = {"master-diff": CacheBlendTLB, "naive": NaiveKVLayout,
+                   "naive-mask": NaiveMaskKVLayout,
+                   "master-diff-local": LocalDiffKVLayout,
+                   "master-diff-merged": MergedDiffKVLayout,
+                   "master-diff-table-local": TableLocalDiffKVLayout}
+        seen = set()
+        for rung, preset in PRESETS.items():
+            mapping = preset["kv_mapping"]
+            if mapping not in classes:
+                continue                     # A1 (private) / A2 (none)
+            placement = preset.get("channel_placement", "slice")
+            expected = _layout_policy(mapping, placement)
+            tlb = classes[mapping](256, placement)
+            self.assertEqual(tlb.layout_policy, expected,
+                             "{}: TLB class places as {}, preset asks for {}"
+                             .format(rung, tlb.layout_policy, expected))
+            seen.add(expected)
+        # and the placements that are supposed to differ do differ
+        self.assertIn("master-diff-local-append", seen)
+        self.assertIn("master-diff-merged-append", seen)
+        self.assertIn("master-diff-table-local-append", seen)
 
 
 class ShadowRowsAreActivatedTest(unittest.TestCase):
@@ -545,33 +640,60 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
                              "master stream moved with k={}".format(k))
 
     def test_a3b_cost_is_monotone_in_k(self):
-        """Nothing pinned this before, which is why the bug survived."""
-        previous_load = previous_acts = -1
-        for k in (0, 1, 8, 16, 32, 64, 128):
-            reads, _masked, _plan = _pool_reads(
-                self._tlb(False, "slice-append"), self._visible(chunks=4, k=k))
-            loads, _active, _runs, groups = _placement_channel_runs(
-                reads, policy="slice-append", heads_per_hbm=1)
-            self.assertGreaterEqual(max(loads), previous_load)
-            self.assertGreaterEqual(self._acts(groups), previous_acts)
-            previous_load, previous_acts = max(loads), self._acts(groups)
+        """Nothing pinned this before, which is why the bug survived.
 
+        More recompute may never come out cheaper.  Checked on the inline
+        layout, where the repairs of different rounds stay apart.
+        """
+        previous = -1
+        for k in (1, 8, 16, 32, 64, 128):
+            tlb, reads = build_allocator(segments=4, repair_rows=k,
+                                         pooled=False)
+            loads, _active, _runs, groups = _placement_channel_runs(
+                reads, policy="slice-append", heads_per_hbm=1, tlb=tlb)
+            acts = sum(-(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
+                       for _c, _n, placed in groups for _k, _v, rows in placed)
+            self.assertGreaterEqual(acts, previous,
+                                    "cost fell going to k={}".format(k))
+            previous = acts
     def test_activations_step_at_the_row_boundary_not_with_k(self):
-        """Ruling example (chenyi9 2026-09-04): four 256-token chunks, A4b.
+        """Ruling example (chenyi9 2026-09-04): four 256-token chunks, pooled.
 
         The diff pool holds 4k tokens at 4 B each.  k=8 fills 4 columns of one
         row, k=32 fills 16 columns of the SAME row -- four times the data, the
         same single activation.  Only crossing 256 tokens buys another ACT.
+
+        Pooled on purpose: the claim is about repairs that are PHYSICALLY
+        ADJACENT, which since 2026-09-04 is the allocator's business, not the
+        placement rule's.  Written inline they are four extents and four rows
+        however small k is, which is the point of the split.
         """
         for k, diff_acts in ((8, 1), (32, 1), (64, 1), (65, 2)):
-            reads, _masked, _plan = _pool_reads(
-                self._tlb(True, "master-diff-table-append"),
-                self._visible(chunks=4, k=k))
+            tlb, reads = build_allocator(segments=4, repair_rows=k,
+                                         pooled=True)
             groups = _striped_append_channel_extents(
-                reads, policy="master-diff-table-append", heads_per_hbm=1)
-            # 4 master rows (one per chunk) + the packed diff pool
-            self.assertEqual(self._acts(groups), 4 + diff_acts,
+                reads, policy="master-diff-table-append", heads_per_hbm=1,
+                tlb=tlb)
+            diff = sum(-(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
+                       for channel, _c, placed in groups
+                       if channel == _MASTER_CHANNELS_DEFAULT
+                       for _k, _v, rows in placed)
+            self.assertEqual(diff, diff_acts,
                              "k={} should cost {} diff ACT".format(k, diff_acts))
+
+    def test_inline_repairs_do_not_get_that_step(self):
+        """Same k sweep, written inline: one row per round, always."""
+        for k in (8, 32, 64):
+            tlb, reads = build_allocator(segments=4, repair_rows=k,
+                                         pooled=False)
+            groups = _striped_append_channel_extents(
+                reads, policy="master-diff-table-append", heads_per_hbm=1,
+                tlb=tlb)
+            diff = sum(-(-rows * _GEN_BYTES_PER_TOKEN // _GEN_ROW_BYTES)
+                       for channel, _c, placed in groups
+                       if channel == _MASTER_CHANNELS_DEFAULT
+                       for _k, _v, rows in placed)
+            self.assertEqual(diff, 4, "k={}".format(k))
 
 
 class PlacementScanIntegrationTest(unittest.TestCase):

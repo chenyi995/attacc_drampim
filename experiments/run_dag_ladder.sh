@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-click DAG ladder (chenyi9 order 2026-08-26): point this script at ONE
 # workload JSON and it runs all six A-rungs on the physical event-DAG engine
-# (--engine dag) and emits a CSV with per-part energy and the share of
+# (--engine dag --pipeopt) and emits a CSV with per-part energy and the share of
 # prefill attention placed on the PIM.
 #
 #   usage: run_dag_ladder.sh <workload.json> [MODEL] [OUTDIR]
@@ -63,7 +63,7 @@ for A in $RUNGS; do
     (cd "$REPO" && python3 main.py \
         --system dgx-attacc --model "$MODEL" \
         --workload "$WL" --reuse "$REUSE" ${EXTRA[@]+"${EXTRA[@]}"} \
-        --ablation "$A" --engine dag \
+        --ablation "$A" --engine dag --pipeopt \
         --workload-report "$OUT/dag_${A}.json" \
         --workload-report-events none \
         --cacheblend-batch-size 8 \

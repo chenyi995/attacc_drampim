@@ -667,7 +667,8 @@ def _layout_scan_max_load(policy: str, master_chunks: int, diff_chunks: int,
 # spelled out because that constant is defined further down the file.
 _STRIPE_UNIT_ROWS = 256
 _APPEND_POLICIES = ("slice-append", "master-diff-slice-append",
-                    "master-diff-table-append")
+                    "master-diff-table-append", "master-diff-local-append",
+                    "master-diff-merged-append", "master-diff-table-local-append")
 
 
 def _stream_unit_rows(rows: int) -> List[int]:
@@ -705,6 +706,31 @@ def _striped_append_channel_rows(master_rows: int, diff_rows: int, *,
     heads = max(1, int(heads_per_hbm))
     loads = [0.0] * _HBM_CHANNELS
     m_rows, d_rows = max(0, int(master_rows)), max(0, int(diff_rows))
+
+    if policy == "master-diff-merged-append":
+        # A4d: master as A3b; every head's corrections merged onto ch15 (and
+        # neighbours if they outgrow a row).  See the extents function.
+        stripe = max(1, _HBM_CHANNELS // heads)
+        units = _stream_unit_rows(m_rows)
+        for head in range(heads):
+            base = (head * stripe) % _HBM_CHANNELS
+            for unit, rows in enumerate(units):
+                loads[(base + (unit % stripe)) % _HBM_CHANNELS] += rows
+        for index, rows in enumerate(_stream_unit_rows(heads * d_rows)):
+            loads[(_HBM_CHANNELS - 1 - index) % _HBM_CHANNELS] += rows
+        return loads
+
+    if policy in ("master-diff-local-append", "master-diff-table-local-append"):
+        # A4c / A4e: master as A3b; the head's corrections gathered on one of its
+        # own channels (see _striped_append_channel_extents).
+        stripe = max(1, _HBM_CHANNELS // heads)
+        units = _stream_unit_rows(m_rows)
+        for head in range(heads):
+            base = (head * stripe) % _HBM_CHANNELS
+            for unit, rows in enumerate(units):
+                loads[(base + (unit % stripe)) % _HBM_CHANNELS] += rows
+            loads[(base + stripe - 1) % _HBM_CHANNELS] += d_rows
+        return loads
 
     if policy == "slice-append":
         # No master/diff split: a correction is appended INLINE, right where
@@ -797,7 +823,8 @@ def _channel_extent_addresses(channel: int, slots: Sequence[int]
 
 def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
                                     heads_per_hbm: int,
-                                    master_channels: int = _MASTER_CHANNELS_DEFAULT):
+                                    master_channels: int = _MASTER_CHANNELS_DEFAULT,
+                                    tlb=None):
     """Per-channel physical extents of one scan on one HBM.
 
     Returns ``[(channel, 1, [(key_addr, value_addr, rows), ...])]`` -- one
@@ -819,17 +846,96 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
         raise WorkloadValidationError(
             "unknown striped-append policy '{}'".format(policy))
     heads = max(1, int(heads_per_hbm))
-    extents = _read_extents(reads)
-    master_rows = sum(rows for kind, rows in extents if kind != "diff")
-    repairs = [rows for kind, rows in extents if kind == "diff"]
+    if tlb is not None:
+        # PHYSICAL ADJACENCY DECIDES THE EXTENTS (fix chenyi9 2026-09-04).
+        # ``_read_extents`` splits on cached-object identity, which is not the
+        # same question: two of a consumer's repairs are separate objects but
+        # land side by side in the diff pool, and merge.  Only the allocator
+        # knows.  ``scan_runs`` returns the maximal physically-contiguous
+        # groups, so gathering shows up as runs merging and inline placement
+        # shows up as runs staying apart -- which IS the effect the master/diff
+        # split exists to buy, and which summing the extents erased.
+        master_runs = [count for _k, _v, count, _cb, _cc
+                       in tlb.scan_runs([r for r in reads if r.kind != "diff"])]
+        repairs = [count for _k, _v, count, _cb, _cc
+                   in tlb.scan_runs([r for r in reads if r.kind == "diff"])]
+    else:
+        # No allocator in hand (probe / unit test): fall back to identity.
+        extents = _read_extents(reads)
+        master_runs = [rows for kind, rows in extents if kind != "diff"]
+        repairs = [rows for kind, rows in extents if kind == "diff"]
+    master_rows = sum(master_runs)
     per_channel: Dict[int, List[int]] = {}
 
     def add(channel: int, rows: int) -> None:
         per_channel.setdefault(channel, []).append(rows)
 
-    if policy == "slice-append":
+    # One run is one allocation.  Cutting each separately, instead of summing
+    # them and re-cutting, is what stops an owner's chunk from being packed
+    # against an unrelated owner's (chenyi9 2026-09-04).
+    def _units(runs):
+        return [unit for run in runs for unit in _stream_unit_rows(run)]
+
+    def _place_master_by_slot(mode):
+        # Persistent per-chunk placement (2026-09-04): group this scan's
+        # master reads by chunk, take each chunk's physically contiguous runs
+        # from the allocator, and put every unit of the chunk on the slot the
+        # write-time table gave it.  Every head applies the same slot inside
+        # its own stripe.  ``mode`` is "append" (naive rotation) or "table"
+        # (conflict-aware); without an allocator fall back to the old
+        # per-scan rotation so the probe and unit tests keep working.
         stripe = max(1, _HBM_CHANNELS // heads)
-        units = _stream_unit_rows(master_rows)
+        if tlb is None or not hasattr(tlb, "chunk_slot"):
+            units = _units(master_runs)
+            for head in range(heads):
+                base = (head * stripe) % _HBM_CHANNELS
+                for index, rows in enumerate(units):
+                    add((base + (index % stripe)) % _HBM_CHANNELS, rows)
+            return stripe
+        by_chunk: Dict[str, List[KVLocation]] = {}
+        for location in reads:
+            if location.kind != "diff":
+                by_chunk.setdefault(location.fingerprint, []).append(location)
+        for fingerprint, locations in by_chunk.items():
+            slot = tlb.chunk_slot(fingerprint, stripe, mode)
+            chunk_units = [unit for _k, _v, count, _cb, _cc
+                           in tlb.scan_runs(locations)
+                           for unit in _stream_unit_rows(count)]
+            for head in range(heads):
+                base = (head * stripe) % _HBM_CHANNELS
+                for rows in chunk_units:
+                    add((base + slot) % _HBM_CHANNELS, rows)
+        return stripe
+
+    if policy == "master-diff-table-local-append":
+        # A4e: master by the conflict-aware table, diff as A4c
+        stripe = _place_master_by_slot("table")
+        if repairs:
+            for head in range(heads):
+                base = (head * stripe) % _HBM_CHANNELS
+                add((base + stripe - 1) % _HBM_CHANNELS, sum(repairs))
+    elif policy == "master-diff-merged-append":
+        # A4d: master by the naive write-order rotation (persistent), then
+        # the HEADS ARE MERGED: every head's corrections go into one extent on
+        # one channel, spilling one unit at a time onto ch14, ch13, ... if the
+        # merged extent outgrows a row.
+        _place_master_by_slot("append")
+        if repairs:
+            merged = heads * sum(repairs)
+            for index, rows in enumerate(_stream_unit_rows(merged)):
+                add((_HBM_CHANNELS - 1 - index) % _HBM_CHANNELS, rows)
+    elif policy == "master-diff-local-append":
+        # A4c: master by the naive write-order rotation (persistent, the same
+        # slot in every scan), the head's corrections gathered into dedicated
+        # rows of one of its own channels as a single contiguous extent.
+        stripe = _place_master_by_slot("append")
+        if repairs:
+            for head in range(heads):
+                base = (head * stripe) % _HBM_CHANNELS
+                add((base + stripe - 1) % _HBM_CHANNELS, sum(repairs))
+    elif policy == "slice-append":
+        stripe = max(1, _HBM_CHANNELS // heads)
+        units = _units(master_runs)
         for head in range(heads):
             base = (head * stripe) % _HBM_CHANNELS
             for unit, rows in enumerate(units):
@@ -845,11 +951,14 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
             # 4 x 24 x 8 = 768 = exactly THREE.  At the swept C=16 it is four
             # rows against 4 x 16 x 8 = 512 = exactly TWO -- which is why the
             # sweep moved to C=16: the payoff doubles.
-            if repairs:
-                add((base + (len(units) % stripe)) % _HBM_CHANNELS,
-                    sum(repairs))
+            for index, repair in enumerate(repairs):
+                # each contiguous repair run is its own row-aligned extent;
+                # repairs the allocator placed side by side already arrived
+                # here as ONE run and cost one row between them
+                add((base + ((len(units) + index) % stripe)) % _HBM_CHANNELS,
+                    repair)
     else:
-        master_units = _stream_unit_rows(master_rows)
+        master_units = _units(master_runs)
         if policy == "master-diff-slice-append":
             stripe_m = max(1, master_channels // heads)
             for head in range(heads):
@@ -867,8 +976,9 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
         # into the dedicated pool, so they share rows instead of each taking
         # one -- that is precisely what the pool buys, and row-aligning them
         # per head would have thrown it away.
-        if repairs:
-            add(master_channels, heads * sum(repairs))
+        for repair in repairs:
+            # every head's copy of this run shares the pool's rows
+            add(master_channels, heads * repair)
 
     groups = []
     for channel in sorted(per_channel):
@@ -887,6 +997,15 @@ def _layout_policy(kv_mapping: str, channel_placement: str) -> str:
     striped-append model of ``_striped_append_channel_rows`` -- real row
     counts, no 256-token padding (ruling chenyi9 2026-09-03).
     """
+    if kv_mapping == "master-diff-local":
+        # A4c: master exactly as A3b, corrections gathered per head
+        return "master-diff-local-append"
+    if kv_mapping == "master-diff-merged":
+        # A4d: A4c, then every head's corrections merged into one extent
+        return "master-diff-merged-append"
+    if kv_mapping == "master-diff-table-local":
+        # A4e: A4c's diff rule + a persistent conflict-aware slot table
+        return "master-diff-table-local-append"
     if kv_mapping in ("naive", "naive-mask"):
         return "single" if channel_placement == "single" else "slice-append"
     if kv_mapping == "master-diff":
@@ -1251,6 +1370,12 @@ class CacheBlendTLB:
         # over channels.  The physical byte layout below is unchanged.
         self.channel_placement = channel_placement
         self.layout_policy = _layout_policy(self._kv_mapping, channel_placement)
+        # Filled by _prepare_cacheblend_tlb: the chunks in the order they are
+        # written, and which chunks each sweep reads together.  Consumed by
+        # chunk_slot() for the persistent per-chunk placement (2026-09-04).
+        self.chunk_order: List[str] = []
+        self.chunk_coread: List[frozenset] = []
+        self._slot_cache: Dict[Tuple[int, str], Dict[str, int]] = {}
         self._locations: Dict[Tuple[int, str, str, int, str], KVLocation] = {}
         self._reserved_rows: Dict[Tuple[int, str, str, str], set] = {}
         self._blocks: Dict[Tuple[int, str, str, str], KVBlock] = {}
@@ -1261,6 +1386,20 @@ class CacheBlendTLB:
         if self._blocks:
             raise WorkloadValidationError("TLB reservations must finish before allocation")
         self._reserved_rows.setdefault((layer, owner, fingerprint, kind), set()).add(owner_row)
+
+    def chunk_slot(self, fingerprint: str, stripe: int, mode: str) -> int:
+        """Persistent slot of a chunk inside a head's stripe (see
+        _chunk_slot_table).  A chunk the record never saw (a decode output
+        row, say) is appended at the end of the write order."""
+        key = (int(stripe), mode)
+        table = self._slot_cache.get(key)
+        if table is None:
+            table = _chunk_slot_table(self.chunk_order, self.chunk_coread,
+                                      stripe, mode)
+            self._slot_cache[key] = table
+        if fingerprint not in table:
+            table[fingerprint] = len(table) % max(1, int(stripe))
+        return table[fingerprint]
 
     def finalize(self) -> None:
         """Materialize blocks in disjoint original-AttAcc-style channels.
@@ -1284,7 +1423,18 @@ class CacheBlendTLB:
             kind: {"tile": 0, "cursor": 0, "offset": 0, "channels": channels}
             for kind, channels in _KV_CHANNELS.items()
         }
-        for index, key in enumerate(sorted(self._reserved_rows)):
+        # APPEND ORDER, not sorted (ruling chenyi9 2026-09-04).  This used to
+        # walk ``sorted(...)``, i.e. by (layer, owner, fingerprint, kind).
+        # Sorting is clairvoyance: it groups every owner's blocks together and
+        # removes all cross-agent interleaving, so the diff pool came out
+        # perfectly packed -- a layout no append-ordered store could produce,
+        # because it cannot pre-place a repair for a consumer that has not run
+        # yet.  ``NaiveKVLayout`` already walked insertion order (its
+        # "software append order"), so A3/A3b paid an interleaving cost that
+        # A4-A6 did not, and the A3b->A4 step measured that difference as if
+        # it were the master/diff split.  Python dicts preserve insertion
+        # order, which _prepare_cacheblend_tlb lays down as the write order.
+        for index, key in enumerate(self._reserved_rows):
             layer, owner, fingerprint, kind = key
             if kind not in _KV_CHANNELS:
                 raise WorkloadValidationError("unknown CacheBlend KV kind '{}'".format(kind))
@@ -1406,6 +1556,103 @@ class CacheBlendTLB:
                 "entries": self.entries}
 
 
+def _chunk_slot_table(order: Sequence[str], coread: Sequence[frozenset],
+                      stripe: int, mode: str) -> Dict[str, int]:
+    """Where each chunk lives inside a head's stripe, decided at WRITE time.
+
+    Persistent: one slot per chunk, the same in every later scan.  A per-scan
+    rotation (what A4c/A4d did until 2026-09-04) can put the same chunk on a
+    different channel in different scans, which no store can do, and it is
+    always perfectly balanced, which no store is either.
+
+    ``append``  the naive store: the i-th chunk written to this stripe lands
+                on slot i % stripe.  Two chunks a later sweep reads together
+                end up apart by luck or together by luck.
+    ``table``   Fugue sec. 4, Conflict-Aware Channel Placement: when a chunk
+                is written the driver already knows which chunks will be
+                read alongside it (every prefill and decode names its
+                chunks), so it picks a slot none of those already-placed
+                chunks occupies; if every slot is taken it picks the slot
+                fewest of them occupy.  Chunk = placement unit; the choice
+                is recorded and every sweep consults it.
+    """
+    stripe = max(1, int(stripe))
+    slot: Dict[str, int] = {}
+    if mode == "append":
+        for index, fingerprint in enumerate(order):
+            slot[fingerprint] = index % stripe
+        return slot
+    if mode != "table":
+        raise WorkloadValidationError("unknown slot-table mode '{}'".format(mode))
+    # which sweeps read each chunk, so a chunk's co-read set is one lookup
+    readers: Dict[str, List[int]] = {}
+    for index, members in enumerate(coread):
+        for fingerprint in members:
+            readers.setdefault(fingerprint, []).append(index)
+    for fingerprint in order:
+        used = [0] * stripe
+        for reader in readers.get(fingerprint, ()):
+            for other in coread[reader]:
+                if other != fingerprint and other in slot:
+                    used[slot[other]] += 1
+        slot[fingerprint] = min(range(stripe), key=lambda k: (used[k], k))
+    return slot
+
+
+class LocalDiffKVLayout(CacheBlendTLB):
+    """A4c: the master/diff store, but the diff region belongs to the head.
+
+    Allocation is CacheBlendTLB's -- corrections keep their own cursor, so a
+    head's repairs are physically contiguous no matter how much master traffic
+    was written between the rounds that produced them.  What changes is only
+    where the SCAN places them: ``master-diff-local-append`` puts them on one
+    of that head's own channels instead of the global diff channel, so no
+    channel is taken away from scans that read no correction at all.
+    """
+
+    _kv_mapping = "master-diff-local"
+
+    def report(self) -> Dict[str, Any]:
+        report = super().report()
+        report["layout"] = ("A4c: master striped over the head's own channels "
+                            "(as A3b); the head's corrections gathered into "
+                            "dedicated rows of one of those same channels")
+        return report
+
+
+class TableLocalDiffKVLayout(LocalDiffKVLayout):
+    """A4e: A4c's store, master chunks placed by the conflict-aware table."""
+
+    _kv_mapping = "master-diff-table-local"
+
+    def report(self) -> Dict[str, Any]:
+        report = super().report()
+        report["layout"] = ("A4e: per-head diff row as A4c; master chunks on "
+                            "a persistent conflict-aware slot table (Fugue "
+                            "sec. 4), decided at write time")
+        return report
+
+
+class MergedDiffKVLayout(LocalDiffKVLayout):
+    """A4d: A4c's allocation, A4d's placement.
+
+    Same store as LocalDiffKVLayout -- corrections keep their own cursor and
+    stay contiguous across rounds.  Only ``_kv_mapping`` differs, and that is
+    what ``CacheBlendTLB.__init__`` turns into ``layout_policy``: without this
+    subclass an A4d run silently placed as A4c (caught 2026-09-04 when the
+    two came out byte-identical).
+    """
+
+    _kv_mapping = "master-diff-merged"
+
+    def report(self) -> Dict[str, Any]:
+        report = super().report()
+        report["layout"] = ("A4d: master as A3b over all sixteen channels; "
+                            "every head's corrections merged into one extent "
+                            "on ch15, spilling to neighbours past a row")
+        return report
+
+
 class NoReuseKVLayout:
     """Private, affine KV placement for the physical no-reuse baseline.
 
@@ -1437,7 +1684,10 @@ class NoReuseKVLayout:
         stride = ((self.bytes_per_vector + _HBM_TX_BYTES - 1) //
                   _HBM_TX_BYTES) * _HBM_TX_BYTES
         tile, cursor = 0, 0
-        for index, key in enumerate(sorted(self._reserved)):
+        # Append order, matching CacheBlendTLB and NaiveKVLayout (ruling
+        # chenyi9 2026-09-04): every layout must be allocated under the same
+        # discipline or the ladder measures the discipline, not the rung.
+        for index, key in enumerate(self._reserved):
             layer, owner, fingerprint = key
             rows = tuple(sorted(self._reserved[key]))
             span = ((len(rows) * stride + _ORIGINAL_HEAD_PARTITION_BYTES - 1) //
@@ -1754,7 +2004,8 @@ def _append_physical_pim_scan(system, events: List[SplitEvent], *, op: Layer,
 
 def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
                             heads_per_hbm: int,
-                            master_channels: int = _MASTER_CHANNELS_DEFAULT):
+                            master_channels: int = _MASTER_CHANNELS_DEFAULT,
+                            tlb=None):
     """Return the head-folded physical channel runs for one placement scan.
 
     A PIM pool run covers one channel, so head multiplicity must be folded
@@ -1776,7 +2027,7 @@ def _placement_channel_runs(reads: Sequence[KVLocation], *, policy: str,
         # pays its own ACT, and a packed diff pool does not.
         groups = _striped_append_channel_extents(
             reads, policy=policy, heads_per_hbm=heads_per_hbm,
-            master_channels=master_channels)
+            master_channels=master_channels, tlb=tlb)
         loads = [0.0] * _HBM_CHANNELS
         for channel, _count, placed in groups:
             loads[channel] = float(sum(rows for _, _, rows in placed))
@@ -1810,7 +2061,8 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
                                heads_per_hbm: int,
                                master_channels: int = _MASTER_CHANNELS_DEFAULT,
                                masked: Optional[set] = None,
-                               batch_members: Sequence[str] = ()) -> Tuple[str, ...]:
+                               batch_members: Sequence[str] = (),
+                               tlb=None) -> Tuple[str, ...]:
     """Schedule a PIM scan under the head-aware channel-placement model.
 
     One chunk of one head is ONE row on ONE channel; the scan time is the
@@ -1828,7 +2080,7 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
     masked = masked or set()
     loads, active, runs, extent_groups = _placement_channel_runs(
         reads, policy=policy, heads_per_hbm=heads_per_hbm,
-        master_channels=master_channels)
+        master_channels=master_channels, tlb=tlb)
     kv_heads = max(1, int(getattr(op, "numOp", 1)))
     # Heads parallelise across HBMs: each HBM runs ``heads_per_hbm`` heads, so
     # ``num_hbm_used`` HBMs hold the KV.  The busiest channel sets the (per-HBM)
@@ -1873,10 +2125,30 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
         # masked count is folded the same way and capped, since a channel
         # cannot mask more rows than it reads.
         heads = max(1, int(heads_per_hbm))
+        # The masked total is a property of the scan, not of the round-robin:
+        # it is every shadowed row, folded over the heads.  Spread it across
+        # the channels IN PROPORTION to the rows each really holds, instead of
+        # scaling the round-robin guess and capping it -- capping silently lost
+        # rows once the extents stopped being evenly distributed (2026-09-04).
+        want = sum(per_channel_masked.values()) * heads
         for channel, _count, placed in extent_groups:
             per_channel_rows[channel] = sum(rows for _k, _v, rows in placed)
-            per_channel_masked[channel] = min(
-                per_channel_masked[channel] * heads, per_channel_rows[channel])
+            per_channel_masked[channel] = 0
+        # A masked row is a shadowed MASTER row, so the diff channel never
+        # carries one.
+        maskable = [channel for channel, _c, _p in extent_groups
+                    if channel != diff_channel]
+        capacity = sum(per_channel_rows.get(channel, 0) for channel in maskable)
+        remaining = min(want, capacity)
+        # Greedy fill, roomiest channel first: conserves the total whenever
+        # the master channels can hold it, which is the invariant that matters
+        # (a channel may never mask more rows than it reads).
+        for channel in sorted(maskable, key=lambda c: -per_channel_rows.get(c, 0)):
+            if remaining <= 0:
+                break
+            share = min(per_channel_rows.get(channel, 0), remaining)
+            per_channel_masked[channel] = share
+            remaining -= share
     if not active:
         # Empty context (first token, no reused KV): keep the dependency chain.
         return (_cacheblend_event(
@@ -2530,14 +2802,25 @@ def _cacheblend_tlb_rows(workload: Workload, plan: ReusePlan, layer: int,
 
 def _reserve_cacheblend_tlb_rows(workload: Workload, plan: ReusePlan, layer: int,
                                  request, tlb: CacheBlendTLB,
-                                 force_fresh: bool = False) -> None:
-    """Reserve exactly the entries that ``_cacheblend_tlb_rows`` will bind."""
+                                 force_fresh: bool = False,
+                                 only_segment: Optional[int] = None) -> None:
+    """Reserve exactly the entries that ``_cacheblend_tlb_rows`` will bind.
+
+    ``only_segment`` reserves ONE segment of this request and skips the rest,
+    so a caller can walk the agents round by round instead of finishing one
+    agent before starting the next (see _prepare_cacheblend_tlb).  The walk
+    still costs O(segments) because ``position`` has to be counted from the
+    front; the reservations themselves are unchanged.
+    """
     decisions = {d.segment_index: d for d in plan.reusable
                  if d.request_id == request.request_id}
     corrected = _policy_corrected_rows(plan, layer, request)
     position = 0
     for index, segment in enumerate(request.segments):
         decision = decisions.get(index)
+        if only_segment is not None and index != only_segment:
+            position += segment.length
+            continue
         for row in range(segment.length):
             reused = decision is not None and not force_fresh
             if reused:
@@ -2562,10 +2845,46 @@ def _prepare_cacheblend_tlb(workload: Workload, plan: ReusePlan, ndec: int,
                             tlb: CacheBlendTLB,
                             output_fingerprints: Mapping[str, str],
                             *, contiguous_no_reuse: bool = False) -> None:
-    """Reserve all prefill and decode blocks before assigning physical bytes."""
+    """Reserve all prefill and decode blocks in WRITE ORDER (ruling 2026-09-04).
+
+    The reservation order IS the append order: every layout now allocates by
+    insertion (see CacheBlendTLB.finalize), so this loop decides what sits
+    next to what, and therefore how many rows a later scan has to open.
+
+    Prefill and decode are ordered differently, on purpose.
+
+    * PREFILL is one batched phase.  Every agent's system prompt is known at
+      the same time and the whole corpus is prefilled together, so an agent's
+      prefill blocks -- its master chunks, its repairs, its resident history
+      -- land contiguously.  Nothing here is a source of divergence.
+    * DECODE is where the agents come apart, and it is the ONLY source of the
+      interleaving.  Agents generate different numbers of tokens (one ends a
+      chunk early, another runs two chunks longer) and their prompts differ in
+      length, so they reach any given shared chunk at different times.  Their
+      generated rows therefore interleave in the append stream.  Reserving one
+      agent's whole ``lout`` before starting the next -- which is what this
+      loop used to do -- writes a stream no concurrent decode could produce.
+
+    So decode is reserved STEP BY STEP across requests: step 0 of every agent,
+    then step 1, and so on.  An agent with a shorter ``lout`` simply drops out
+    of the later steps, which is exactly "A generated one chunk fewer".
+
+    APPROXIMATION, stated rather than hidden: within a step the order is the
+    request order, not the order the agents actually finish.  Prompts of
+    different lengths enter decode at different times, so a faithful order
+    would sort by predicted completion -- but the layout is fixed before the
+    simulation that would predict it.  This is a first-order stand-in for that.
+    """
     for layer in range(ndec):
         force_fresh = (plan.config.policy in CACHEBLEND_FAMILY and
                        layer in plan.config.cacheblend_full_recompute_layers)
+        # --- prefill: one batched phase, so an agent's own blocks stay
+        # together.  A round-major walk across agents was tried and reverted
+        # (2026-09-04): the benefit the diff pool buys comes from CROSS-ROUND
+        # separation inside one agent, and the pool has its own allocation
+        # cursor, so its repairs pack whatever the master stream does between
+        # them.  Interleaving the agents here adds a second mechanism without
+        # changing that one.
         for request in workload.requests:
             if contiguous_no_reuse:
                 fingerprint = "{}::no-reuse-input".format(request.request_id)
@@ -2575,6 +2894,7 @@ def _prepare_cacheblend_tlb(workload: Workload, plan: ReusePlan, ndec: int,
             else:
                 _reserve_cacheblend_tlb_rows(workload, plan, layer, request, tlb,
                                              force_fresh=force_fresh)
+        for request in workload.requests:
             # The agent's own earlier-turn KV: one private resident extent
             # per request, in the master pool (private under the affine
             # no-reuse layout).  It is never written during the run.
@@ -2582,11 +2902,35 @@ def _prepare_cacheblend_tlb(workload: Workload, plan: ReusePlan, ndec: int,
             for row in range(request.history_len):
                 tlb.reserve(layer, request.request_id, history_fingerprint,
                             row, "private" if contiguous_no_reuse else "master")
-            output_fingerprint = output_fingerprints.get(
-                request.request_id, "{}::output".format(request.request_id))
-            for output_row in range(request.lout):
-                tlb.reserve(layer, request.request_id, output_fingerprint,
-                            output_row, "master")
+        # --- decode phase: generated rows interleave across agents by step
+        decoding = [(request,
+                     output_fingerprints.get(
+                         request.request_id,
+                         "{}::output".format(request.request_id)))
+                    for request in workload.requests]
+        for output_row in range(max((r.lout for r in workload.requests),
+                                    default=0)):
+            for request, output_fingerprint in decoding:
+                if output_row < request.lout:
+                    tlb.reserve(layer, request.request_id, output_fingerprint,
+                                output_row, "master")
+    # The placement record (2026-09-04): chunks in write order, and the set of
+    # chunks each sweep reads together.  A chunk is a fingerprint; reused and
+    # owner copies share it, so a request's co-read set is just the
+    # fingerprints of its segments (+ its history and output rows).
+    if hasattr(tlb, "chunk_order"):
+        seen: Dict[str, None] = {}
+        for (_layer, _owner, fingerprint, kind) in tlb._reserved_rows:
+            if kind != "diff" and fingerprint not in seen:
+                seen[fingerprint] = None
+        tlb.chunk_order = list(seen)
+        tlb.chunk_coread = [
+            frozenset([segment.fingerprint for segment in request.segments]
+                      + [_history_fingerprint(request.request_id),
+                         output_fingerprints.get(
+                             request.request_id,
+                             "{}::output".format(request.request_id))])
+            for request in workload.requests]
     tlb.finalize()
 
 
@@ -2777,7 +3121,8 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     heads_per_hbm=_heads_per_hbm(
                         _gqa_kv_heads_local(system, heads),
                         getattr(system.devices["Acc"], "num_hbm", 1),
-                                getattr(system.model, "tp", 1)))
+                                getattr(system.model, "tp", 1)),
+                    tlb=tlb)
                 # Every active channel yields one local softmax tuple; the DIE
                 # merges those with the GPU tuple.
                 merge_width = len(scan) + 1
@@ -3147,7 +3492,8 @@ def _append_cacheblend_decode_batched(
                                 _gqa_kv_heads_local(system, heads),
                                 getattr(system.devices["Acc"], "num_hbm", 1),
                                 getattr(system.model, "tp", 1)),
-                            batch_members=sweep_members)
+                            batch_members=sweep_members,
+                            tlb=tlb)
                         for request in sweep:
                             scan_deps[request.request_id].extend(shared_scan)
 
@@ -3196,7 +3542,8 @@ def _append_cacheblend_decode_batched(
                             heads_per_hbm=_heads_per_hbm(
                                 _gqa_kv_heads_local(system, heads),
                                 getattr(system.devices["Acc"], "num_hbm", 1),
-                                getattr(system.model, "tp", 1))))
+                                getattr(system.model, "tp", 1)),
+                            tlb=tlb))
 
                 context_links: Dict[str, str] = {}
                 for request in group:
@@ -3801,7 +4148,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     # Using the concatenated local-hidden vector here would consume one K/V
     # address interval per *all-head* token and incorrectly overflow the
     # fixed 8-MiB K-to-V window for long contexts.
-    if kv_mapping not in ("master-diff", "naive", "naive-mask", "private"):
+    if kv_mapping not in ("master-diff", "master-diff-local",
+                          "master-diff-merged", "master-diff-table-local",
+                          "naive", "naive-mask", "private"):
         raise WorkloadValidationError(
             "physical decode-on-PIM needs --kv-mapping master-diff, naive, "
             "naive-mask or private, got '{}'".format(kv_mapping))
@@ -3814,6 +4163,16 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         tlb = NaiveKVLayout(system.model.dhead * dbyte, channel_placement)
     elif kv_mapping == "naive-mask":
         tlb = NaiveMaskKVLayout(system.model.dhead * dbyte, channel_placement)
+    elif kv_mapping == "master-diff-local":
+        # A4c allocates like the master/diff store -- corrections get their own
+        # cursor, so a head's repairs are contiguous however much master
+        # traffic separated them in time.  Only the CHANNEL they are placed on
+        # differs, and that is the placement model's business.
+        tlb = LocalDiffKVLayout(system.model.dhead * dbyte, channel_placement)
+    elif kv_mapping == "master-diff-merged":
+        tlb = MergedDiffKVLayout(system.model.dhead * dbyte, channel_placement)
+    elif kv_mapping == "master-diff-table-local":
+        tlb = TableLocalDiffKVLayout(system.model.dhead * dbyte, channel_placement)
     else:
         tlb = CacheBlendTLB(system.model.dhead * dbyte, channel_placement)
     events: List[SplitEvent] = []
@@ -4075,7 +4434,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         probe_loads, probe_active, probe_runs, probe_groups = (
                             _placement_channel_runs(
                                 scan_locations, policy=tlb.layout_policy,
-                                heads_per_hbm=probe_heads_per_hbm))
+                                heads_per_hbm=probe_heads_per_hbm, tlb=tlb))
                         busiest_run = (max(probe_runs, key=lambda run: run[2])
                                        if probe_runs else None)
                         est = deepcopy(score)
@@ -4192,7 +4551,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             heads_per_hbm=_heads_per_hbm(
                                 _gqa_kv_heads_local(system, heads),
                                 getattr(system.devices["Acc"], "num_hbm", 1),
-                                getattr(system.model, "tp", 1)))
+                                getattr(system.model, "tp", 1)),
+                            tlb=tlb)
                         assembly_bytes = heads * (system.model.dhead + 2) * dbyte
                         for position in grouped_positions:
                             pim_results.append(_cacheblend_event(

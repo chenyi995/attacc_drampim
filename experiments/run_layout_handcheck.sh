@@ -62,7 +62,7 @@ for A in $RUNGS; do
       export KVPIM_LAYOUT_DUMP="$OUT/layout_$A.jsonl" KVPIM_LAYOUT_DUMP_TAG="$A"
       python3 main.py --system dgx-attacc --model "$MODEL" \
         --workload "$WL" --reuse "$REUSE" ${EXTRA[@]+"${EXTRA[@]}"} \
-        --ablation "$A" --engine dag \
+        --ablation "$A" --engine dag --pipeopt \
         --workload-report "$OUT/dag_$A.json" \
         --workload-report-events none \
         --cacheblend-batch-size 8 \

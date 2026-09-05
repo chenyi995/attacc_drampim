@@ -67,7 +67,7 @@ _TOTAL_CHANNELS = 16
 
 PREFILL_ATTN_MODES = ("gpu", "pim", "dynamic")
 DECODE_ATTN_MODES = ("gpu", "pim")
-KV_MAPPINGS = ("none", "private", "naive", "naive-mask", "master-diff")
+KV_MAPPINGS = ("none", "private", "naive", "naive-mask", "master-diff", "master-diff-local", "master-diff-merged", "master-diff-table-local")
 MASTER_SHADOW_MODES = ("read-mask", "skip")
 # How a head's chunks map to channels (2026-08-29): ``single`` = head -> one
 # channel (A3); ``slice`` = head -> a slice of channels, round-robin (A3b/A4);
@@ -127,6 +127,30 @@ PRESETS: Dict[str, Dict[str, str]] = {
     # land on different channels.  A5/A6 build on this best layout.
     "A4b": {"prefill_attn": "gpu", "decode_attn": "pim", "kv_mapping": "master-diff",
             "channel_placement": "table", "pim_batch_command": "replicate"},
+    # A4c (chenyi9 2026-09-04): the diff pool made LOCAL.  A4/A4b hand the
+    # whole diff channel (ch15) to corrections GLOBALLY, so every scan pays a
+    # fifteenth of the master bandwidth even when it reads no corrected row at
+    # all -- and the shared-corpus scans, which are the bulk of the traffic,
+    # never do.  A4c keeps A3b's master placement exactly (a head's chunks
+    # stripe over its own 16//heads channels, all of them) and only gathers
+    # that head's corrections into a few dedicated rows of ONE of those same
+    # channels.  So the gather still absorbs the cross-round separation that
+    # costs A3b a row per round, and no channel is taken away from anybody.
+    "A4c": {"prefill_attn": "gpu", "decode_attn": "pim",
+            "kv_mapping": "master-diff-local", "channel_placement": "slice",
+            "pim_batch_command": "replicate"},
+    # A4d (chenyi9 2026-09-04): A4c, then MERGE THE HEADS.  A4c gathers each
+    # head's corrections on that head's own channel, so heads_per_hbm heads
+    # cost heads_per_hbm separate extents -- one row each however small.  A4d
+    # gathers every head's corrections into ONE extent on one channel (spilling
+    # to a neighbour only when it outgrows a row), so four heads' 8-token
+    # repairs share a single activation.  Master stays exactly A3b's, striped
+    # over ALL sixteen channels: the diff rows sit on a channel that master
+    # also uses, and no channel is given up -- which is the cost that sinks
+    # A4/A4b, whose ch15 is taken out of the master pool for every scan.
+    "A4d": {"prefill_attn": "gpu", "decode_attn": "pim",
+            "kv_mapping": "master-diff-merged", "channel_placement": "slice",
+            "pim_batch_command": "replicate"},
     # A5/A6 carry the C3 microarchitecture point they are defined with
     # (ruling 2026-08-25): prefill-on-PIM, attention batching and the
     # bank-PE design point are ONE package.  Capacity re-ruled (chenyi9
@@ -139,11 +163,33 @@ PRESETS: Dict[str, Dict[str, str]] = {
     # The MQ command belongs ONLY to the rungs that add prefill attention
     # on the PIM (A5/A6); every earlier rung stays replicate even where
     # prefill could have batched.  An explicit CLI value still overrides.
-    "A5": {"prefill_attn": "pim", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "channel_placement": "table", "pim_batch_command": "mq",
+    # A4e (chenyi9 2026-09-04, late): the paper's Conflict-Aware Channel
+    # Placement (Fugue sec. 4, "the driver appends the new row to a channel
+    # that is not already used by the rows read alongside the new chunk"),
+    # with two of the paper's other pieces deliberately REMOVED: no cross-head
+    # gather (each head keeps its own diff row, as A4c), and no dedicated diff
+    # channel (the diff row sits on one of the head's own channels).  The
+    # placement unit is the shared chunk; the table is decided when the chunk
+    # is WRITTEN and persists across every later scan.  The naive store it is
+    # measured against places by write-order rotation, which can land two
+    # co-read chunks apart by luck or together by luck -- the table removes
+    # the luck.
+    "A4e": {"prefill_attn": "gpu", "decode_attn": "pim",
+            "kv_mapping": "master-diff-table-local", "channel_placement": "slice",
+            "pim_batch_command": "replicate"},
+    # A5/A6 build on A4e (ruling chenyi9 2026-09-04: the design ladder is
+    # A1, A2, A4c, A4d, A5, A6, each differing from the previous by ONE thing).
+    # Until today they carried A4b's layout (master-diff / table); that layout
+    # gives ch15 to corrections globally and lost to A3b on every workload
+    # measured, so keeping it under A5/A6 would have made the prefill step
+    # inherit a layout regression.  Layout is now A4d's; nothing else moved.
+    "A5": {"prefill_attn": "pim", "decode_attn": "pim",
+           "kv_mapping": "master-diff-table-local", "channel_placement": "slice",
+           "pim_batch_command": "mq",
            "pim_pe_freq_ghz": 1.3004, "gemv_buffer_bytes": 512},
-    "A6": {"prefill_attn": "dynamic", "decode_attn": "pim", "kv_mapping": "master-diff",
-           "channel_placement": "table", "pim_batch_command": "mq",
+    "A6": {"prefill_attn": "dynamic", "decode_attn": "pim",
+           "kv_mapping": "master-diff-table-local", "channel_placement": "slice",
+           "pim_batch_command": "mq",
            "pim_pe_freq_ghz": 1.3004, "gemv_buffer_bytes": 512},
 }
 
@@ -155,8 +201,11 @@ PRESET_LABELS = {
     "A3b": "A3 + head slicing (a head's chunks spread across its channels)",
     "A4": "A3b + master/diff channel split (corrections on the diff channel)",
     "A4b": "A4 + global co-read placement table (spread co-read chunks over channels)",
-    "A5": "A4b + all prefill attention on the PIM + MQ attention batching",
-    "A6": "Fugue: A5 + dynamic per-class GPU/PIM prefill placement",
+    "A4c": "A3b master placement + a PER-HEAD diff region (no global channel given up)",
+    "A4d": "A4c + head merge: every head's corrections in one extent on one channel; master as A3b",
+    "A4e": "A4c + conflict-aware placement table for master chunks (persistent, decided at write time)",
+    "A5": "A4e + all prefill attention on the PIM + MQ attention batching",
+    "A6": "Fugue: A5 + dynamic per-request GPU/PIM prefill placement",
 }
 
 
