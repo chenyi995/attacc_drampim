@@ -109,6 +109,11 @@ class ReuseDecision:
     owner_request_id: str
     owner_tier: int
     epic_prefix_rows: Tuple[int, ...]
+    # C8 (chenyi9 2026-09-05): a later turn of the SAME agent that reads the
+    # same chunk at the same absolute offset attends the correction its
+    # earlier turn already wrote -- it inherits that turn's rows and its diff
+    # object instead of recomputing and re-storing them.
+    inherits_from: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -452,27 +457,52 @@ def build_reuse_plan(workload: Workload,
     total = sum(request.total_length for request in workload.requests)
     if policy == "no-reuse":
         return ReusePlan(config, (), total, 0)
+    # (request id, fingerprint, absolute offset) -> its decision, for C8
+    decided: Dict[Tuple[str, str, int], ReuseDecision] = {}
 
     for request in sorted(workload.requests, key=lambda item: (item.tier, item.request_id)):
         for index, segment in enumerate(request.segments):
             # A relay segment names a concrete data dependency.  Its producer
             # must remain the declared parent even if a same-tier request has
-            # the same output fingerprint.
+            # the same output fingerprint.  The output is then owned by that
+            # parent for anyone who lists it later (a later turn re-listing
+            # an earlier turn's output, C8).
             if segment.role == "parent_out" and request.parent_id is not None:
                 owner = (by_request_id[request.parent_id], -1)
+                owners.setdefault(segment.fingerprint, owner)
             else:
                 owner = owners.get(segment.fingerprint)
             if owner is None:
                 owners[segment.fingerprint] = (request, index)
                 continue
             owner_request, owner_index = owner
+            # C8: the nearest ancestor turn that read this chunk at this offset
+            inherited = None
+            ancestor_id = request.parent_id
+            while ancestor_id is not None and inherited is None:
+                inherited = decided.get((ancestor_id, segment.fingerprint,
+                                         segment_offsets[(request.request_id, index)]))
+                ancestor_id = by_request_id[ancestor_id].parent_id
+            if inherited is not None:
+                decision = ReuseDecision(request.request_id, index, segment.fingerprint,
+                                         segment.length, inherited.owner_request_id,
+                                         inherited.owner_tier, inherited.epic_prefix_rows,
+                                         inherits_from=inherited.request_id)
+                decisions.append(decision)
+                decided[(request.request_id, segment.fingerprint,
+                         segment_offsets[(request.request_id, index)])] = decision
+                continue
             # EPIC's static AttnLink correction is needed at a context boundary
             # (or after a position shift), not for an unchanged prefix segment.
-            shifted = (segment.role == "parent_out" or
-                       segment.position_delta != 0 or
-                       (owner_index >= 0 and
-                        segment_offsets[(request.request_id, index)] !=
-                        segment_offsets[(owner_request.request_id, owner_index)]))
+            # A segment is shifted when it sits at a different absolute offset
+            # than in its owner's context; an owner's decoded output sits at
+            # the end of the owner's prompt.  (Until 2026-09-05 every
+            # parent_out counted as shifted even when a later turn re-listed
+            # the parent's whole context first, C8.)
+            owner_offset = (owner_request.total_length if owner_index < 0 else
+                            segment_offsets[(owner_request.request_id, owner_index)])
+            shifted = (segment.position_delta != 0 or
+                       segment_offsets[(request.request_id, index)] != owner_offset)
             if policy == "epic" and shifted:
                 correction = tuple(range(min(segment.length,
                                              epic_prefix_recompute_tokens)))
@@ -516,10 +546,13 @@ def build_reuse_plan(workload: Workload,
                 # promptcache reuses the chunk verbatim (zero recompute);
                 # unshifted segments need no boundary fix in any policy.
                 correction = ()
-            decisions.append(ReuseDecision(request.request_id, index,
-                                           segment.fingerprint, segment.length,
-                                           owner_request.request_id,
-                                           owner_request.tier, correction))
+            decision = ReuseDecision(request.request_id, index,
+                                     segment.fingerprint, segment.length,
+                                     owner_request.request_id,
+                                     owner_request.tier, correction)
+            decisions.append(decision)
+            decided[(request.request_id, segment.fingerprint,
+                     segment_offsets[(request.request_id, index)])] = decision
 
     reused = sum(decision.length for decision in decisions)
     partial_rows: Dict[int, Dict[str, Dict[int, Tuple[int, ...]]]] = {}
