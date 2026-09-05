@@ -3726,6 +3726,9 @@ def _append_cacheblend_decode_batched(
                         if _gqa_group(system) > 1:
                             op.pim_shared_kv = True
                             op.pim_shared_queries = _gqa_group(system)
+                        # the rung's MQ / replicate command applies to the
+                        # private scan too (re-audit R08 / I07)
+                        _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
                         op.pim_kv_runs = tlb.scan_runs(private)
                         plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                         address_plan = _cacheblend_event(
