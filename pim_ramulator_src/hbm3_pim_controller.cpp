@@ -25,6 +25,7 @@ class HBM3PIMController final : public IDRAMController, public Implementation {
     size_t s_num_row_hits = 0;
     size_t s_num_row_misses = 0;
     size_t s_num_row_conflicts = 0;
+    size_t s_num_pim_activations = 0;
 
     bool is_pim = false;
 
@@ -35,6 +36,10 @@ class HBM3PIMController final : public IDRAMController, public Implementation {
 
       m_scheduler = create_child_ifce<IScheduler>();
       m_refresh = create_child_ifce<IRefreshManager>();    
+      // Count commands actually issued to the HBM3-PIM DRAM, rather than
+      // estimating ACTs from the source trace.  This includes all activation
+      // forms used by the PIM command mapping.
+      register_stat(s_num_pim_activations).name("pim_activations");
 
       if (m_config["plugins"]) {
         YAML::Node plugin_configs = m_config["plugins"];
@@ -123,6 +128,7 @@ class HBM3PIMController final : public IDRAMController, public Implementation {
       // 4. Finally, issue the commands to serve the request
       if (request_found) {
         // If we find a real request to serve
+        account_activation(req_it->command);
         m_dram->issue_command(req_it->command, req_it->addr_vec);
 
         // If we are issuing the last command, set depart clock cycle and move the request to the pending queue
@@ -153,6 +159,7 @@ class HBM3PIMController final : public IDRAMController, public Implementation {
         plugin->update(sec_request_found, sec_req_it);
       }
       if (sec_request_found) {
+        account_activation(sec_req_it->command);
         m_dram->issue_command(sec_req_it->command, sec_req_it->addr_vec);
 
         if (sec_req_it->command == sec_req_it->final_command) {
@@ -418,6 +425,15 @@ class HBM3PIMController final : public IDRAMController, public Implementation {
       }
       else {
         return true;
+      }
+    }
+
+    void account_activation(int command) {
+      if (command == m_dram->m_commands("ACT") ||
+          command == m_dram->m_commands("ACTAB") ||
+          command == m_dram->m_commands("ACTSB") ||
+          command == m_dram->m_commands("ACTPB")) {
+        s_num_pim_activations++;
       }
     }
 };

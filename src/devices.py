@@ -2,6 +2,7 @@ from src.type import *
 from src.model import *
 import math
 from src.ramulator_wrapper import *
+from src.gemm_table import gemm_efficiency, attention_efficiency
 
 
 class xPU:
@@ -20,6 +21,8 @@ class xPU:
         self.l1_cache_size = config['L1_CAP_PER_CORE']
         self.l2_cache_size = config['L2_CAP_PER_DEVICE']
         self.max_interface_bandwidth = config['INTERFACE_BW']
+        self.pim_link_bandwidth = (config.get('PIM_LINK_BW') or
+                                   self.max_interface_bandwidth)
         self.aggregate_memory_capacity = config[
             'MEM_CAPACITY_PER_DEVICE'] * self.num_xpu
 
@@ -27,7 +30,120 @@ class xPU:
         self.max_memory_util = scaling_factor['MAX_OFF_MEM_BW_UTIL']
         self.energy_table = config['ENERGY_TABLE']
 
+        # Refined GPU model (see config.make_xpu_config): only the GPU has
+        # one; the CPU xPU keeps the legacy formulas.
+        self.gpu_model = config.get('GPU_MODEL', 'legacy')
+        self.hbm_stream_eff = config.get('HBM_STREAM_EFF', self.max_memory_util)
+        self.nvlink_latency = config.get('NVLINK_LATENCY_S', 0.0)
+        self.attn_q_block = config.get('ATTN_Q_BLOCK', 128)
+        self.attn_mma_rows = config.get('ATTN_MMA_ROWS', 16)
+        self.attn_decode_split = config.get('ATTN_DECODE_SPLIT', 256)
+        self.attn_splitk = config.get('ATTN_SPLITK', False)
+        hbm_spec = config.get('HBM_SPEC')
+        # Streaming rate of the far (AttAcc) HBM when the GPU pulls K/V over
+        # the link: same stack count and device as the near memory.
+        self.far_hbm_bandwidth = (
+            config.get('NUM_HBM_STACKS', 5) * hbm_spec['BYTES_PER_S'] *
+            self.hbm_stream_eff if hbm_spec else float('inf'))
+
         self.table_tiles = {}
+
+    @property
+    def refined(self):
+        """cuBLAS-table GEMMs + NVLink-latency transfers (refined and flash)."""
+        return self.name == DeviceType.GPU and self.gpu_model in ('refined', 'flash')
+
+    @property
+    def flash(self):
+        """Attention priced as a fused FlashAttention-2 kernel."""
+        return self.name == DeviceType.GPU and self.gpu_model == 'flash'
+
+    # ------------------------------------------------------------------
+    # FlashAttention (``flash``) helpers
+    # ------------------------------------------------------------------
+    def _wave_util(self, blocks):
+        """SM occupancy of ``blocks`` thread blocks with wave quantisation."""
+        blocks = max(int(blocks), 1)
+        return blocks / (math.ceil(blocks / self.num_core) * self.num_core)
+
+    def _attn_key_length(self, layer: Layer):
+        m, n, k, numOp, dbyte = layer.get_infos()
+        if 'score' in layer.name:
+            return n  # S = Q K^T: n keys, k = head dim
+        if 'context' in layer.name:
+            return k  # O = P V: k keys, n = head dim
+        return max(n, k)
+
+    def _attn_shape(self, layer: Layer):
+        """(thread blocks, padded query rows, key length) of a fused attention.
+
+        Prefill: one CTA per (head, request, ``ATTN_Q_BLOCK`` query rows) --
+        the FlashAttention-2 decomposition.  Decode (m == 1): flash-decoding
+        splits the key dimension into ``ATTN_DECODE_SPLIT``-key CTAs instead.
+        The MMA pads a short Q block to ``ATTN_MMA_ROWS`` rows.
+        """
+        m, n, k, numOp, dbyte = layer.get_infos()
+        keys = self._attn_key_length(layer)
+        if m <= 1:
+            blocks = numOp * math.ceil(keys / self.attn_decode_split)
+        else:
+            blocks = numOp * math.ceil(m / self.attn_q_block)
+            if self.attn_splitk and blocks < self.num_core:
+                # choose the key split that maximises efficiency x occupancy
+                best = (attention_efficiency(keys) * self._wave_util(blocks), 1)
+                for split in (2, 4, 8, 16, 32, 64):
+                    if keys / split < self.attn_decode_split:
+                        break
+                    score = (attention_efficiency(keys / split) *
+                             self._wave_util(blocks * split))
+                    if score > best[0]:
+                        best = (score, split)
+                blocks *= best[1]
+                keys = keys / best[1]
+        padded_m = math.ceil(m / self.attn_mma_rows) * self.attn_mma_rows
+        return blocks, padded_m, keys
+
+    def _flash_traffic(self, layer: Layer):
+        """(off-chip, L2, L1, reg) bytes of a fused attention MATMUL / softmax.
+
+        Q, K, V and O cross HBM once; the S = QK^T tile stays on the SM, so
+        the softmax has no off-chip traffic.  K/V are re-read from L2 once
+        per Q block.
+        """
+        m, n, k, numOp, dbyte = layer.get_infos()
+        if layer.type == LayerType.SOFTMAX:
+            on_chip = sum(layer.get_size())
+            return [0, 0, 0], [0], [on_chip], [on_chip]
+        q_blocks = math.ceil(max(m, 1) / self.attn_q_block)
+        if 'score' in layer.name:
+            off = [m * k, n * k, 0]
+            l2 = [m * k, q_blocks * n * k, 0]
+        else:
+            off = [0, n * k, m * n]
+            l2 = [0, q_blocks * n * k, m * n]
+        off = [i * dbyte * numOp for i in off]
+        l2 = [i * dbyte * numOp for i in l2]
+        reg = [m * n * k, m * n * k, m * n * k]
+        return off, l2, list(l2), reg
+
+    def _flash_compute_time(self, layer: Layer):
+        m, n, k, numOp, dbyte = layer.get_infos()
+        if layer.type == LayerType.SOFTMAX:
+            return 0.0  # fused; its cost is inside the attention efficiency
+        peak = self.peak_flops * int(2 / dbyte)
+        blocks, padded_m, keys = self._attn_shape(layer)
+        eff = attention_efficiency(keys) * self._wave_util(blocks)
+        return 2 * padded_m * n * k * numOp / (peak * eff)
+
+    def _flash_mem_time(self, layer: Layer):
+        off_data, l2_data, l1_data, reg_data = self._get_traffic(layer)
+        layer.off_traffic = sum(off_data)
+        if layer.type == LayerType.SOFTMAX:
+            return 0, 0, 0, 0
+        blocks, _, _ = self._attn_shape(layer)
+        mem_bw = (self.peak_memory_bandwidth * self.max_memory_util *
+                  self._wave_util(blocks))
+        return sum(off_data) / mem_bw, sum(l2_data) / self.peak_l2_bandwidth, 0, 0
 
     def _get_traffic_for_tile(self, tm, tn, layer: Layer):
         m, n, k, numOp, dbyte = layer.get_infos()
@@ -106,6 +222,8 @@ class xPU:
     def _get_traffic(self, layer: Layer):
         # return tuple of 4 elements (off-mem, L2, L1, reg)
         m, n, k, numOp, dbyte = layer.get_infos()
+        if self.flash and layer.type in (LayerType.MATMUL, LayerType.SOFTMAX):
+            return self._flash_traffic(layer)
         if layer.type in [
                 LayerType.SOFTMAX, LayerType.ACT, LayerType.NORM, LayerType.G2G,
                 LayerType.X2G
@@ -129,9 +247,20 @@ class xPU:
             assert 0, "Invalid layer type"
 
     def _compute_time(self, layer: Layer):
+        if self.flash and layer.type in (LayerType.MATMUL, LayerType.SOFTMAX):
+            return self._flash_compute_time(layer)
         l1_tm, l1_tn, l1_tk, l2_tm, l2_tn, l2_tk = self._get_optimal_tile(layer)
         m, n, k, numOp, dbyte = layer.get_infos()
         flops = self.peak_flops * self.max_compute_util
+        if self.refined and layer.type in (LayerType.FC, LayerType.MATMUL):
+            # Refined model: the flat MAX_COMPUTE_UTIL (0.8) is replaced by
+            # the cuBLAS efficiency measured for this GEMM size (projections
+            # and the attention score/context matmuls alike).  Everything
+            # else -- tiling, the per-layer SM occupancy below, the memory
+            # model -- is the legacy AttAcc formulation, so the only effect
+            # is how much slower the same matrix computation runs at the
+            # size-dependent intensity.
+            flops = self.peak_flops * gemm_efficiency(m, n, k)
         if self.name == DeviceType.GPU:
             num_threadblock = numOp
             if layer.type == LayerType.FC:
@@ -153,6 +282,8 @@ class xPU:
         return layer.get_flops() / flops
 
     def _mem_time(self, layer: Layer):
+        if self.flash and layer.type in (LayerType.MATMUL, LayerType.SOFTMAX):
+            return self._flash_mem_time(layer)
         l1_tm, l1_tn, l1_tk, l2_tm, l2_tn, l2_tk = self._get_optimal_tile(layer)
         m, n, k, numOp, dbyte = layer.get_infos()
 
@@ -249,7 +380,13 @@ class xPU:
             traffic = m * n * numOp * dbyte
             interface_bw = self.max_interface_bandwidth / 2
             if layer.type == LayerType.X2G:
-                exec_time = traffic / interface_bw
+                exec_time = traffic / (self.pim_link_bandwidth / 2)
+                if self.refined:
+                    # K/V (or Q / context) moving between the GPU and the
+                    # AttAcc: one NVLink latency per transfer, and the far
+                    # HBM3 has to stream the bytes as well as the link.
+                    exec_time = self.nvlink_latency + max(
+                        exec_time, traffic / self.far_hbm_bandwidth)
             else:
                 ## allreduce
                 exec_time = get_nvlink_time(
@@ -367,3 +504,31 @@ class PIM:
 
         else:
             assert 0, "PIM does not support this layer."
+
+    def get_time_and_energy_runs(self, layer: Layer):
+        """Return one timing result per address-resolved CacheBlend extent."""
+        if layer.type != LayerType.MATMUL or "score" not in layer.name:
+            return [self.get_time_and_energy(layer)]
+        measured = self.ramulator.output_runs(self.pim_type, layer,
+                                              self.power_constraint)
+        # One result per CHANNEL when the layer carries extent groups; the
+        # energy split follows each channel's real row count.
+        extent_groups = getattr(layer, "pim_kv_extent_groups", None)
+        if extent_groups:
+            run_lengths = [sum(rows for _, _, rows in extents)
+                           for _, _, extents in extent_groups]
+        else:
+            run_lengths = [run[2] for run in getattr(layer, "pim_kv_runs", ())]
+        total_rows = sum(run_lengths)
+        results = []
+        for index, (time, traffic) in enumerate(measured):
+            io_energy = sum(traffic[index] * self.io_energy_table[index]
+                            for index in range(len(self.io_energy_table)))
+            dram_energy = traffic[-1] * self.energy_table['mem'] + io_energy
+            fraction = (run_lengths[index] / total_rows
+                        if total_rows else 1 / len(measured))
+            cal_energy = (layer.get_flops() * fraction / 2 *
+                          self.energy_table['alu'])
+            energy = [dram_energy, 0, 0, 0, cal_energy, 0]
+            results.append((time, [value * self.num_attacc for value in energy]))
+        return results

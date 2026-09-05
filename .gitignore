@@ -1,0 +1,35 @@
+__pycache__/
+*.py[cod]
+output.csv
+ramulator.out
+ramulator2/build/
+ramulator2/log/
+
+# one-off local backup (2.6 GB), never track
+ramulator2.local_backup_0821/
+
+# --- raw sim output is local-only (dag_*.json event traces + logs, incl. the
+#     archived pre-unify results and the new sweep runs); see
+#     docs/RAW_DATA_MANIFEST.md. Track only output/analysis/. ---
+/output/*
+!/output/analysis/
+/output/analysis/.digest_cache/
+# The orchestration and the verification harness are SCRIPTS, not run data
+# (author's ruling 2026-08-31): the governor carries a measured memory/time
+# model and the verify harness is the reusable bit-identity method.  Their
+# outputs stay local, same as every other raw run.
+!/output/_orch2/
+/output/_orch2/__pycache__/
+/output/_orch2/CURRENT_ROOT
+/output/_orch2/*.bak
+!/output/_verify/
+/output/_verify/before/
+/output/_verify/after/
+/output/_verify/after2/
+/output/_verify/pristine/
+/output/_verify/*.json
+/output/_verify/*.bak
+
+# cppcore build artifact (see docs/sessions/2026-08-30.md §4)
+src/cppcore/*.so
+/output/analysis/.extract_cache.pkl

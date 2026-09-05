@@ -1,3 +1,17 @@
+# Fugue on AttAcc（branch `chenyi-0905`）
+
+This branch is the **original AttAcc simulator** (upstream `c600051`, below) plus the
+Fugue design: a physical event-DAG engine, the shared-KV store with per-agent diff
+rows and a conflict-aware placement table, MQ batching, and the dynamic prefill
+placement rule -- exposed as the seven-rung ladder **A1 A2 A3b A4c A4e A5 A6**.
+Each rung differs from the previous one by exactly one paper claim.
+
+Start at **`docs/README.md`** (what changed, how to build and run) and
+**`docs/README_design_ladder.md`** (every rung, down to the function and the
+reduction term, with measured evidence).  Workloads are kept out of this branch.
+
+---
+
 # Simulator for AttAcc
 This repository includes Python-based simulator designed to analyze the transformer-based generation model (TbGM) inference in a heterogeneous system consisting of an xPU and an Attention Accelerator (AttAcc). 
 AttAcc is an accelerator for the attention layer of TbGM, which consists of an HBM-based processing-in-memory (PIM) structure.

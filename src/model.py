@@ -91,6 +91,8 @@ class Transformer:
         self.num_heads = modelinfos['num_heads']
         self.hdim = modelinfos['hdim']
         self.ff_scale = modelinfos['ff_scale']
+        # Q heads per shared KV head (1 = MHA); wired 2026-08-27.
+        self.gqa_size = max(1, int(modelinfos.get('gqa_size', 1) or 1))
         self.dtype = modelinfos['dtype']
         self.dhead = int(self.hdim / self.num_heads)
         self.tp = tensor_parallel
