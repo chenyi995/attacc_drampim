@@ -659,26 +659,125 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
 
         The old branch re-rotated by the unit index of the CURRENT scan, so
         a scan that read only seg2 and seg3 put them on ch0 and ch1 -- the
-        same chunks sat on ch2 and ch3 in the full scan.  No store can move
-        a chunk between scans; and A3b must share A4c's master placement so
+        same chunks sat elsewhere in the full scan.  No store can move a
+        chunk between scans; and A3b must share A4c's master placement so
         that the A3b -> A4c step is the diff gather alone.
         """
         tlb, reads = build_allocator(segments=4, repair_rows=8, pooled=False)
-        full_loads, _a, _r, _g = _placement_channel_runs(
-            reads, policy="slice-append", heads_per_hbm=1, tlb=tlb)
         partial = [r for r in reads if r.fingerprint in ("seg2", "seg3")]
-        loads, _a, _r, _g = _placement_channel_runs(
-            partial, policy="slice-append", heads_per_hbm=1, tlb=tlb)
-        self.assertGreater(full_loads[2], 0)
-        self.assertGreater(full_loads[3], 0)
-        self.assertGreater(loads[2], 0)
-        self.assertGreater(loads[3], 0)
-        self.assertEqual((loads[0], loads[1]), (0.0, 0.0))
-        # ... and the same table A4c consults gives the same master slots
-        a4c, _a, _r, _g = _placement_channel_runs(
-            partial, policy="master-diff-local-append", heads_per_hbm=1, tlb=tlb)
-        self.assertGreater(a4c[2], 0)
-        self.assertGreater(a4c[3], 0)
+
+        def channels(subset, policy):
+            _l, _a, _r, groups = _placement_channel_runs(
+                subset, policy=policy, heads_per_hbm=1, tlb=tlb)
+            return {channel for channel, _c, placed in groups}
+
+        full = channels(reads, "slice-append")
+        part = channels(partial, "slice-append")
+        self.assertTrue(part <= full)
+        self.assertEqual(len(part), 2)                  # seg2 and seg3 on their own channels
+        # ... and A4c consults the same table for the masters
+        self.assertEqual(part, channels(partial, "master-diff-local-append"))
+
+
+class PhysicalLedgerTest(unittest.TestCase):
+    """The write-time physical ledger (ruling chenyi9 2026-09-05, re-audit
+    R04 / SS03 / R03): channel AND row of an object are fixed when it is
+    written and never depend on the read set of a later scan."""
+
+    @staticmethod
+    def _store(reservations, placement="slice"):
+        from src.workload_runner import CacheBlendTLB
+        tlb = CacheBlendTLB(256, placement)
+        for owner, fingerprint, rows, kind in reservations:
+            for row in rows:
+                tlb.reserve(0, owner, fingerprint, row, kind)
+        tlb.finalize()
+        return tlb
+
+    @staticmethod
+    def _reads(tlb, wanted):
+        return [tlb.locate(0, owner, fingerprint, row, kind)
+                for owner, fingerprint, rows, kind in wanted for row in rows]
+
+    @staticmethod
+    def _groups(tlb, reads, policy, heads=1):
+        return _striped_append_channel_extents(reads, policy=policy,
+                                               heads_per_hbm=heads, tlb=tlb)
+
+    def test_row_is_persistent_across_scans(self):
+        # SS03's counter-example: c16 alone, then c0 + c16 -- same address
+        corpus = [("owner", "c%d" % i, range(256), "master") for i in range(17)]
+        tlb = self._store(corpus)
+        alone = self._groups(tlb, self._reads(tlb, [corpus[16]]), "slice-append")
+        both = self._groups(tlb, self._reads(tlb, [corpus[0], corpus[16]]), "slice-append")
+        addr_alone = {placed[0][0] for _c, _n, placed in alone}
+        addr_both = {key for _c, _n, placed in both for key, _v, _r in placed}
+        self.assertTrue(addr_alone <= addr_both)
+        self.assertEqual(len(addr_alone), 1)
+
+    def test_zero_diff_master_geometry_is_identical_for_a3b_and_a4c(self):
+        # R01's control group: nothing to gather, so the two rungs must hand
+        # Ramulator byte-identical extents
+        corpus = [("owner", "c%d" % i, range(256), "master") for i in range(6)]
+        corpus.append(("owner", "long", range(1024), "master"))      # four blocks
+        tlb = self._store(corpus)
+        reads = self._reads(tlb, corpus)
+        for heads in (1, 4, 8):
+            self.assertEqual(self._groups(tlb, reads, "slice-append", heads),
+                             self._groups(tlb, reads, "master-diff-local-append", heads))
+
+    def test_same_burst_repairs_are_contiguous_in_a3b(self):
+        # ruling 2026-09-03: repairs one prefill produces land back to back
+        reservations = [("owner", "c0", range(256), "master"),
+                        ("owner", "c1", range(256), "master"),
+                        ("consumer", "c0", range(8), "diff"),
+                        ("consumer", "c1", range(8), "diff")]
+        tlb = self._store(reservations)
+        reads = self._reads(tlb, reservations[2:])
+        groups = self._groups(tlb, reads, "slice-append")
+        extents = [e for _c, _n, placed in groups for e in placed]
+        self.assertEqual(len(extents), 1)
+        self.assertEqual(extents[0][2], 16)
+
+    def test_a4c_packs_repairs_across_rounds_and_a3b_keeps_them_apart(self):
+        # round r: read chunk r (repair) then write own block r
+        reservations = []
+        for r in range(4):
+            reservations.append(("owner", "c%d" % r, range(256), "master"))
+        for r in range(4):
+            reservations.append(("consumer", "c%d" % r, range(8), "diff"))
+            reservations.append(("consumer", "own%d" % r, range(256), "master"))
+        tlb = self._store(reservations)
+        repairs = [x for x in reservations if x[3] == "diff"]
+        reads = self._reads(tlb, repairs)
+        a4c = [e for _c, _n, p in self._groups(tlb, reads, "master-diff-local-append") for e in p]
+        a3b = [e for _c, _n, p in self._groups(tlb, reads, "slice-append") for e in p]
+        # one extent per object either way; what differs is the DRAM rows
+        # they occupy -- packed into ONE row in the diff region, a row EACH
+        # in the naive stream (the own block of the round sits between them)
+        self.assertEqual(sum(r for _k, _v, r in a4c), 32)
+        self.assertEqual(len({key // _GEN_ROW_BYTES for key, _v, _r in a4c}), 1)
+        self.assertEqual(sum(r for _k, _v, r in a3b), 32)
+        self.assertEqual(len({key // _GEN_ROW_BYTES for key, _v, _r in a3b}), 4)
+
+    def test_sub_range_read_geometry_matches_across_rungs(self):
+        # R03's second counter-example: reading [128, 384) of a 512-token master
+        corpus = [("owner", "big", range(512), "master")]
+        tlb = self._store(corpus)
+        reads = self._reads(tlb, [("owner", "big", range(128, 384), "master")])
+        a3b = sorted(e[2] for _c, _n, p in self._groups(tlb, reads, "slice-append") for e in p)
+        a4c = sorted(e[2] for _c, _n, p in self._groups(tlb, reads, "master-diff-local-append") for e in p)
+        self.assertEqual(a3b, a4c)
+        self.assertEqual(sum(a3b), 256)
+
+    def test_every_head_sees_the_same_pattern_in_its_own_stripe(self):
+        corpus = [("owner", "c%d" % i, range(256), "master") for i in range(4)]
+        tlb = self._store(corpus)
+        groups = self._groups(tlb, self._reads(tlb, corpus), "slice-append", heads=4)
+        channels = sorted(channel for channel, _n, _p in groups)
+        self.assertEqual(channels, list(range(16)))     # 4 heads x stripe 4
+        per_channel = {channel: sum(r for _k, _v, r in placed) for channel, _n, placed in groups}
+        self.assertEqual(set(per_channel.values()), {256})
 
     def test_activations_step_at_the_row_boundary_not_with_k(self):
         """Ruling example (chenyi9 2026-09-04): four 256-token chunks, pooled.

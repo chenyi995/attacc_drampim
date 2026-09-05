@@ -812,6 +812,230 @@ def _channel_extent_addresses(channel: int, slots: Sequence[int]
     return placed
 
 
+_LEDGER_POLICIES = ("slice-append", "master-diff-local-append",
+                    "master-diff-table-local-append")
+# The per-head diff region of A4c/A4e starts half-way up the channel, well
+# clear of the master rows (which grow from row 0), so the two never alias.
+_DIFF_REGION_BYTES = 1 << 29
+
+
+def _block_slot_table(order: Sequence[Tuple[str, int]], coread: Sequence[frozenset],
+                      stripe: int, mode: str) -> Dict[Tuple[str, int], int]:
+    """``_chunk_slot_table`` at the 256-token BLOCK granularity.
+
+    ``order`` lists ``(fingerprint, block)`` in write order.  ``append`` is
+    the naive rotation over blocks; ``table`` (Fugue sec. 4) puts a block on
+    the slot holding the fewest already-placed blocks that some sweep reads
+    together with it -- co-reading is a property of fingerprints, so every
+    block of a co-read fingerprint counts.
+    """
+    stripe = max(1, int(stripe))
+    slot: Dict[Tuple[str, int], int] = {}
+    if mode == "append":
+        for index, key in enumerate(order):
+            slot[key] = index % stripe
+        return slot
+    if mode != "table":
+        raise WorkloadValidationError("unknown slot-table mode '{}'".format(mode))
+    readers: Dict[str, List[int]] = {}
+    for index, members in enumerate(coread):
+        for fingerprint in members:
+            readers.setdefault(fingerprint, []).append(index)
+    placed_by_fingerprint: Dict[str, List[int]] = {}
+    for key in order:
+        fingerprint, _block = key
+        used = [0] * stripe
+        seen_partners: set = set()
+        for reader in readers.get(fingerprint, ()):
+            for other in coread[reader]:
+                if other == fingerprint or other in seen_partners:
+                    continue
+                seen_partners.add(other)
+                for other_slot in placed_by_fingerprint.get(other, ()):
+                    used[other_slot] += 1
+        # sibling blocks of the same fingerprint are read together too
+        for other_slot in placed_by_fingerprint.get(fingerprint, ()):
+            used[other_slot] += 1
+        chosen = min(range(stripe), key=lambda k: (used[k], k))
+        slot[key] = chosen
+        placed_by_fingerprint.setdefault(fingerprint, []).append(chosen)
+    return slot
+
+
+class PhysicalLedger:
+    """Where every KV object of a store physically lives, decided at WRITE time.
+
+    Ruling chenyi9 2026-09-05 (re-audit R04 / SS03): the channel AND the row
+    of an object are fixed when it is written and never depend on which scan
+    later reads it.  One ledger per (policy, heads-per-HBM); every head lays
+    the same pattern down inside its own stripe of channels.
+
+    Objects
+      * master / private / live block: the 256-token block of a fingerprint
+        (``owner_row // 256``), the paper's placement unit; row-aligned, one
+        DRAM row per full block.
+      * repair burst: the consecutive ``diff`` reservations of one consumer
+        in one prefill (nothing of that consumer written in between) -- they
+        are produced together and land back to back (ruling 2026-09-03), so
+        they form ONE packed object.
+
+    Placement
+      * masters: slot from the block table (``append`` for A3b/A4c, ``table``
+        for A4e) inside the head's stripe; rows appended per channel.
+      * A3b repairs: the naive store has no diff region -- a burst is just
+        the next object of the single append stream, so it takes the slot of
+        the rotation over ALL objects written so far and its own row(s).
+      * A4c/A4e repairs: the head's last stripe channel, packed contiguously
+        in the diff region, so repairs of different rounds share rows.
+
+    ``extent_groups(reads)`` turns a scan's read list into per-channel
+    ``(key, value, rows)`` extents at the ledger's addresses -- gaps and all.
+    """
+
+    def __init__(self, policy: str, heads: int):
+        self.policy = policy
+        self.heads = max(1, int(heads))
+        self.stripe = max(1, _HBM_CHANNELS // self.heads)
+        # object key -> (rows tuple, {owner_row: ordinal}, channel slot or None
+        #                (diff region), byte offset inside the channel)
+        self.objects: Dict[Tuple, Tuple[Tuple[int, ...], Dict[int, int], Optional[int], int]] = {}
+        # (layer, owner, fingerprint, kind) -> {owner_row: object key}
+        self.index: Dict[Tuple[int, str, str, str], Dict[int, Tuple]] = {}
+
+    # -- build -----------------------------------------------------------
+    @classmethod
+    def build(cls, tlb, policy: str, heads: int) -> "PhysicalLedger":
+        self = cls(policy, heads)
+        stripe = self.stripe
+        reserved = tlb._reserved_rows
+        coread = list(getattr(tlb, "chunk_coread", ()) or ())
+        mode = "table" if policy == "master-diff-table-local-append" else "append"
+        # write order of master blocks, then the slot table over them
+        block_order: List[Tuple[str, int]] = []
+        seen_blocks: set = set()
+        for (layer, owner, fingerprint, kind) in reserved:
+            if kind == "diff":
+                continue
+            for row in sorted(reserved[(layer, owner, fingerprint, kind)]):
+                key = (fingerprint, row // _STRIPE_UNIT_ROWS)
+                if key not in seen_blocks:
+                    seen_blocks.add(key)
+                    block_order.append(key)
+        slots = _block_slot_table(block_order, coread, stripe, mode)
+        cursor: Dict[int, int] = {}          # channel slot -> next free byte (master rows)
+        diff_cursor = _DIFF_REGION_BYTES      # A4c/A4e diff region, shared by the heads' diff channels
+        naive_index = 0                       # A3b: rotation over ALL objects
+        previous_diff_owner = None            # burst detection
+        burst_key = None
+        for key in reserved:
+            layer, owner, fingerprint, kind = key
+            rows = tuple(sorted(reserved[key]))
+            if kind != "diff":
+                previous_diff_owner = None
+                by_block: Dict[int, List[int]] = {}
+                for row in rows:
+                    by_block.setdefault(row // _STRIPE_UNIT_ROWS, []).append(row)
+                for block, block_rows in sorted(by_block.items()):
+                    slot = slots[(fingerprint, block)]
+                    start = cursor.get(slot, 0)
+                    span = len(block_rows) * _GEN_BYTES_PER_TOKEN
+                    cursor[slot] = start + -(-span // _GEN_ROW_BYTES) * _GEN_ROW_BYTES
+                    naive_index += 1
+                    object_key = (layer, owner, fingerprint, kind, block)
+                    self.objects[object_key] = (tuple(block_rows),
+                                                {row: i for i, row in enumerate(block_rows)},
+                                                slot, start)
+                    self.index.setdefault(key, {}).update(
+                        {row: object_key for row in block_rows})
+                continue
+            # a repair: extend the consumer's current burst or open a new one
+            if policy == "slice-append":
+                if previous_diff_owner == (layer, owner) and burst_key is not None:
+                    b_rows, b_index, b_slot, b_start = self.objects[burst_key]
+                    ordinal = len(b_rows)
+                    new_rows = b_rows + rows
+                    b_index = dict(b_index)
+                    b_index.update({(key, row): ordinal + i for i, row in enumerate(rows)})
+                    self.objects[burst_key] = (new_rows, b_index, b_slot, b_start)
+                    # the burst grows in place; its channel cursor moves with it
+                    span = len(new_rows) * _GEN_BYTES_PER_TOKEN
+                    cursor[b_slot] = b_start + -(-span // _GEN_ROW_BYTES) * _GEN_ROW_BYTES
+                else:
+                    slot = naive_index % stripe
+                    naive_index += 1
+                    start = cursor.get(slot, 0)
+                    span = len(rows) * _GEN_BYTES_PER_TOKEN
+                    cursor[slot] = start + -(-span // _GEN_ROW_BYTES) * _GEN_ROW_BYTES
+                    burst_key = (layer, owner, "burst", naive_index)
+                    self.objects[burst_key] = (rows, {(key, row): i for i, row in enumerate(rows)},
+                                               slot, start)
+                previous_diff_owner = (layer, owner)
+                self.index.setdefault(key, {}).update({row: burst_key for row in rows})
+            else:
+                # A4c / A4e: packed into the head's diff region, no alignment
+                object_key = (layer, owner, fingerprint, kind, 0)
+                self.objects[object_key] = (rows, {row: i for i, row in enumerate(rows)},
+                                            None, diff_cursor)
+                diff_cursor += len(rows) * _GEN_BYTES_PER_TOKEN
+                self.index.setdefault(key, {}).update({row: object_key for row in rows})
+                previous_diff_owner = None
+        return self
+
+    # -- lookup ----------------------------------------------------------
+    def _channel(self, head: int, slot: Optional[int]) -> int:
+        base = (head * self.stripe) % _HBM_CHANNELS
+        if slot is None:                       # the head's diff channel
+            return (base + self.stripe - 1) % _HBM_CHANNELS
+        return (base + slot) % _HBM_CHANNELS
+
+    def extent_groups(self, reads: Sequence[KVLocation]):
+        """Per-channel ``(channel, 1, [(key, value, rows), ...])`` for one scan."""
+        # object -> sorted ordinals read
+        touched: Dict[Tuple, List[int]] = {}
+        for location in reads:
+            key = (location.layer, location.owner, location.fingerprint, location.kind)
+            table = self.index.get(key)
+            if table is None and location.kind == "diff":
+                # a store that keeps repairs inline reserves them as master
+                # rows (the inline test allocator does); the read still
+                # carries its logical kind
+                key = (location.layer, location.owner, location.fingerprint, "master")
+                table = self.index.get(key)
+            if table is None:
+                raise WorkloadValidationError(
+                    "scan reads a KV row the ledger never stored: {}".format(key))
+            object_key = table[location.owner_row]
+            _rows, ordinals, _slot, _start = self.objects[object_key]
+            ordinal = ordinals.get((key, location.owner_row), ordinals.get(location.owner_row))
+            touched.setdefault(object_key, []).append(ordinal)
+        per_channel: Dict[int, List[Tuple[int, int, int]]] = {}
+        for object_key, ordinals in touched.items():
+            _rows, _index, slot, start = self.objects[object_key]
+            ordinals = sorted(set(ordinals))
+            # maximal runs of consecutive ordinals -> one extent each
+            runs: List[Tuple[int, int]] = []
+            first = previous = ordinals[0]
+            for ordinal in ordinals[1:]:
+                if ordinal == previous + 1:
+                    previous = ordinal
+                    continue
+                runs.append((first, previous - first + 1))
+                first = previous = ordinal
+            runs.append((first, previous - first + 1))
+            for head in range(self.heads):
+                channel = self._channel(head, slot)
+                base = channel * _HBM_CHANNEL_BYTES
+                for first, count in runs:
+                    key_address = base + start + first * _GEN_BYTES_PER_TOKEN
+                    per_channel.setdefault(channel, []).append(
+                        (key_address, key_address + _ORIGINAL_KV_GAP_BYTES, count))
+        # One extent per object run, in address order.  Adjacent extents are
+        # NOT merged here: Ramulator's row buffer merges what really shares a
+        # row, and keeping object identity is what makes the trace auditable.
+        return [(channel, 1, sorted(per_channel[channel]))
+                for channel in sorted(per_channel)]
+
+
 def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
                                     heads_per_hbm: int,
                                     master_channels: int = _MASTER_CHANNELS_DEFAULT,
@@ -837,6 +1061,12 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
         raise WorkloadValidationError(
             "unknown striped-append policy '{}'".format(policy))
     heads = max(1, int(heads_per_hbm))
+    if tlb is not None and policy in _LEDGER_POLICIES and hasattr(tlb, "physical_ledger"):
+        # Persistent physical ledger (ruling chenyi9 2026-09-05): channel and
+        # row were fixed when the object was written; the scan only looks
+        # them up.  The synthetic re-packing below survives for the probe /
+        # unit-test path without an allocator and for the global-pool rungs.
+        return tlb.physical_ledger(policy, heads).extent_groups(reads)
     if tlb is not None:
         # PHYSICAL ADJACENCY DECIDES THE EXTENTS (fix chenyi9 2026-09-04).
         # ``_read_extents`` splits on cached-object identity, which is not the
@@ -1357,6 +1587,7 @@ class CacheBlendTLB:
 
     def __init__(self, bytes_per_vector: int, channel_placement: str = "slice"):
         self.bytes_per_vector = bytes_per_vector
+        self._ledgers: Dict[Tuple[str, int], PhysicalLedger] = {}
         # Head-aware channel placement (chenyi9 2026-08-29): the scan timing
         # (``_append_placement_pim_scan``) reads this to spread a head's chunks
         # over channels.  The physical byte layout below is unchanged.
@@ -1378,6 +1609,16 @@ class CacheBlendTLB:
         if self._blocks:
             raise WorkloadValidationError("TLB reservations must finish before allocation")
         self._reserved_rows.setdefault((layer, owner, fingerprint, kind), set()).add(owner_row)
+
+    def physical_ledger(self, policy: str, heads_per_hbm: int) -> PhysicalLedger:
+        """The write-time physical placement of every object (built once per
+        (policy, heads); see PhysicalLedger)."""
+        key = (policy, max(1, int(heads_per_hbm)))
+        ledger = self._ledgers.get(key)
+        if ledger is None:
+            ledger = PhysicalLedger.build(self, policy, key[1])
+            self._ledgers[key] = ledger
+        return ledger
 
     def chunk_slot(self, fingerprint: str, stripe: int, mode: str) -> int:
         """Persistent slot of a chunk inside a head's stripe (see
