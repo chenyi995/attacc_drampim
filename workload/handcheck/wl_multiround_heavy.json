@@ -1,0 +1,394 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "kind": "multi-round diff placement probe -- NOT evidence-grade",
+  "block_tokens": 256,
+  "rounds": 4,
+  "chunks_per_round": 5,
+  "note": "A consumer's context ALTERNATES reused block and own fresh block, one pair per round, so its k repaired rows are separated by the KV it wrote in between.  That is the only difference from the swept workload, whose consumers emit all their repairs in one burst.  Repairs stay consumer-private."
+ },
+ "agents": [
+  {
+   "id": "a0_owner",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 256,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "9ffeda3a9fbb5769",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8cfc665142d0d96e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0dcc9e1b61ccebdb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "02e570a8d1648602",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "1d8cab17af1ad632",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "b0_reuser",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 256,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "b68e23dc1c3244ca",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "521e57667772b99c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "748829f964dc300c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "863e19348641b199",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8cfc665142d0d96e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0dcc9e1b61ccebdb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "02e570a8d1648602",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "1d8cab17af1ad632",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "20e32f16499d47e1",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "b1_reuser",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 256,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "c13bd7ecda5914c4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "10ca1c73bba786ce",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "1ace1302bab1a254",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a4ebf1dfd9d8fa37",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8cfc665142d0d96e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0dcc9e1b61ccebdb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "02e570a8d1648602",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "1d8cab17af1ad632",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7e84656eab512007",
+     "len": 256
+    }
+   ]
+  }
+ ]
+}

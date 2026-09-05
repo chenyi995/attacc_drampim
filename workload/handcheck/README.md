@@ -240,3 +240,13 @@ for tag,pol,sh in (('A3b','slice-append',False),
 **已知未建模**（见 `docs/sessions/2026-09-03.md` §10.7）：一条 channel 上多个
 head 的 extent 顺次排布、不建 append 时间上的交错；同一请求的 cached chunk 仍
 假定彼此打包连续。
+
+
+---
+
+## 2026-09-04 补充：多轮 workload 生成器
+
+`gen_multiround.py`：消费者上下文交替 `sys | shared | own | shared | own | …`，每轮取一个（或 `CHUNKS` 个）
+shared chunk 修一次、再写一块自己的 KV，于是各轮的修正被自己的新 KV 隔开 —— 这是 baseline sweep 的
+workload 里没有的结构（它的消费者一次 prefill 把修正连着写完）。环境变量 `ROUNDS` / `CHUNKS` / `CONSUMERS` / `LOUT`。
+修正保持 per-agent，不跨 agent 共享。用途与结果见 `../../docs/README_design_ladder.md` §8。

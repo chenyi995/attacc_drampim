@@ -1,0 +1,3 @@
+dram_row,ch0,ch1,ch2,ch3,agent2_must_activate
+0,"chunk1[shared,256tok]","chunk2[shared,256tok]","diff1+diff2[agent1,16tok]","diff1b+diff2b[agent2,16tok]",ch0 ch1 ch3
+1,"chunk3[agent1,256tok]","chunk4[agent2,256tok]","diff3[agent2,8tok]",,ch1 ch2
