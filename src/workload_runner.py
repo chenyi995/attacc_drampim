@@ -3212,7 +3212,9 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                               prefill_bindings: Mapping[int, Sequence[Tuple[int, bool, bool, KVLocation]]],
                               output_fingerprint: str, initial_deps: Sequence[str],
                               rotate_mode: str,
-                              contiguous_no_reuse: bool = False) -> Tuple[str, ...]:
+                              contiguous_no_reuse: bool = False,
+                              pim_batch_command: str = "replicate",
+                              pim_pe_freq_ghz: float = MQ_DEFAULT_PE_FREQ_GHZ) -> Tuple[str, ...]:
     """Materialize an agent's generated tokens and their per-layer KV cache.
 
     The parent output is no longer a logical-only reuse decision.  Every decode
@@ -3315,6 +3317,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     # the ONE shared KV head.
                     op.pim_shared_kv = True
                     op.pim_shared_queries = _gqa_group(system)
+                _apply_pim_batch(op, pim_batch_command, pim_pe_freq_ghz)
                 op.pim_kv_runs = tlb.scan_runs(plan_reads)
                 plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                 address_plan = _cacheblend_event(
@@ -4973,7 +4976,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     prefill_bindings=prefill_bindings,
                     output_fingerprint=output_fingerprint, initial_deps=request_ready,
                     rotate_mode=rotate_mode,
-                    contiguous_no_reuse=physical_no_reuse)
+                    contiguous_no_reuse=physical_no_reuse,
+                    pim_batch_command=pim_batch_command,
+                    pim_pe_freq_ghz=pim_pe_freq_ghz)
                 tier_done.extend(request_ready)
             else:
                 decode_inputs.append((request, prefill_bindings, output_fingerprint, request_ready))
