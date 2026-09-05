@@ -477,7 +477,8 @@ class PIM:
                 energy_per_access = self.energy_table['mem']
                 cell_energy = traffic[-1] * energy_per_access
                 dram_energy = cell_energy + io_energy
-                cal_energy = layer.get_flops() / 2 * self.energy_table['alu']
+                cal_energy = (layer.get_flops() / 2 * self.energy_table['alu'] *
+                              self._query_groups(layer))
 
                 energies = [dram_energy, 0, 0, 0, cal_energy, 0]
                 energies = [i * self.num_attacc for i in energies]
@@ -505,6 +506,15 @@ class PIM:
         else:
             assert 0, "PIM does not support this layer."
 
+    @staticmethod
+    def _query_groups(layer: Layer) -> int:
+        """Q heads served per KV column read: under GQA a shared-KV sweep
+        holds m x gqa resident queries for m query rows, and every one of
+        them is a MAC (re-audit R08 / MP-06, 2026-09-05)."""
+        shared = int(getattr(layer, "pim_shared_queries", 0) or 0)
+        rows = max(1, int(getattr(layer, "m", 1) or 1))
+        return max(1, shared // rows) if shared else 1
+
     def get_time_and_energy_runs(self, layer: Layer):
         """Return one timing result per address-resolved CacheBlend extent."""
         if layer.type != LayerType.MATMUL or "score" not in layer.name:
@@ -528,7 +538,7 @@ class PIM:
             fraction = (run_lengths[index] / total_rows
                         if total_rows else 1 / len(measured))
             cal_energy = (layer.get_flops() * fraction / 2 *
-                          self.energy_table['alu'])
+                          self.energy_table['alu'] * self._query_groups(layer))
             energy = [dram_energy, 0, 0, 0, cal_energy, 0]
             results.append((time, [value * self.num_attacc for value in energy]))
         return results
