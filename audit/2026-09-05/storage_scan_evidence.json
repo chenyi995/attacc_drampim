@@ -1,0 +1,1549 @@
+{
+  "A1_device_priced_operator_shapes": {
+    "Acc": [
+      [
+        "score",
+        1,
+        2048,
+        128,
+        1
+      ],
+      [
+        "score",
+        1,
+        2048,
+        128,
+        1
+      ]
+    ],
+    "GPU": [
+      [
+        "qkv",
+        16,
+        3072,
+        1024,
+        1
+      ],
+      [
+        "kv_gpu_to_pim",
+        1,
+        32768,
+        1,
+        1
+      ],
+      [
+        "score",
+        16,
+        16,
+        128,
+        8
+      ],
+      [
+        "softmax",
+        16,
+        16,
+        1,
+        8
+      ],
+      [
+        "context",
+        16,
+        128,
+        16,
+        8
+      ],
+      [
+        "proj",
+        16,
+        1024,
+        1024,
+        1
+      ],
+      [
+        "comm_g2g",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm1",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "ff1",
+        16,
+        4096,
+        1024,
+        1
+      ],
+      [
+        "gelu",
+        16,
+        4096,
+        1,
+        1
+      ],
+      [
+        "ff2",
+        16,
+        1024,
+        4096,
+        1
+      ],
+      [
+        "comm_g2g",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm2",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "qkv",
+        1,
+        3072,
+        1024,
+        1
+      ],
+      [
+        "decode_q_gpu_to_pim",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "decode_kv_gpu_to_pim",
+        1,
+        2048,
+        1,
+        1
+      ],
+      [
+        "score",
+        1,
+        1,
+        128,
+        8
+      ],
+      [
+        "softmax",
+        1,
+        1,
+        1,
+        8
+      ],
+      [
+        "context",
+        1,
+        1,
+        1,
+        8
+      ],
+      [
+        "decode_gpu_partial_lse_to_pim",
+        1,
+        1040,
+        1,
+        1
+      ],
+      [
+        "decode_ctx_pim_to_gpu",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "proj",
+        1,
+        1024,
+        1024,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm1",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "ff1",
+        1,
+        4096,
+        1024,
+        1
+      ],
+      [
+        "gelu",
+        1,
+        4096,
+        1,
+        1
+      ],
+      [
+        "ff2",
+        1,
+        1024,
+        4096,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm2",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "qkv",
+        1,
+        3072,
+        1024,
+        1
+      ],
+      [
+        "decode_q_gpu_to_pim",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "decode_kv_gpu_to_pim",
+        1,
+        2048,
+        1,
+        1
+      ],
+      [
+        "score",
+        1,
+        1,
+        128,
+        8
+      ],
+      [
+        "softmax",
+        1,
+        1,
+        1,
+        8
+      ],
+      [
+        "context",
+        1,
+        1,
+        1,
+        8
+      ],
+      [
+        "decode_gpu_partial_lse_to_pim",
+        1,
+        1040,
+        1,
+        1
+      ],
+      [
+        "decode_ctx_pim_to_gpu",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "proj",
+        1,
+        1024,
+        1024,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm1",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "ff1",
+        1,
+        4096,
+        1024,
+        1
+      ],
+      [
+        "gelu",
+        1,
+        4096,
+        1,
+        1
+      ],
+      [
+        "ff2",
+        1,
+        1024,
+        4096,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm2",
+        1,
+        1024,
+        1,
+        1
+      ]
+    ]
+  },
+  "A1_private_addresses_vs_count_scan": {
+    "a": {
+      "allocator_scan_runs": [
+        [
+          0,
+          8388608,
+          16,
+          0,
+          16
+        ]
+      ],
+      "charged_scan_runs": [
+        [
+          0,
+          8388608,
+          256,
+          0,
+          1
+        ]
+      ],
+      "charged_scan_token_rows": 256,
+      "logical_tokens": 16,
+      "stored_first_key": 0,
+      "stored_last_key": 3840
+    },
+    "b": {
+      "allocator_scan_runs": [
+        [
+          8192,
+          8396800,
+          16,
+          0,
+          16
+        ]
+      ],
+      "charged_scan_runs": [
+        [
+          0,
+          8388608,
+          256,
+          0,
+          1
+        ]
+      ],
+      "charged_scan_token_rows": 256,
+      "logical_tokens": 16,
+      "stored_first_key": 8192,
+      "stored_last_key": 12032
+    }
+  },
+  "A1_real_DAG_16_prompt_2_decode": [
+    {
+      "depends_on": [
+        "cb-1"
+      ],
+      "device": "PIM:pool0-15",
+      "end_s": 2.008192e-06,
+      "id": "cb-13",
+      "link_bytes": 0,
+      "name": "dram_store_master",
+      "rows": 16,
+      "start_s": 2e-06
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool0-0",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-23",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool2-2",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-24",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool4-4",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-25",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool6-6",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-26",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool8-8",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-27",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool10-10",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-28",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool12-12",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-29",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-22"
+      ],
+      "device": "PIM:pool14-14",
+      "end_s": 1.5000000000000004e-05,
+      "id": "cb-30",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 1.4000000000000003e-05
+    },
+    {
+      "depends_on": [
+        "cb-17"
+      ],
+      "device": "PIM",
+      "end_s": 1.5004096000000003e-05,
+      "id": "cb-41",
+      "link_bytes": 0,
+      "name": "decode_dram_store_master",
+      "rows": 1,
+      "start_s": 1.5000000000000004e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool0-0",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-51",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 3,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool2-2",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-52",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool4-4",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-53",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool6-6",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-54",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool8-8",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-55",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool10-10",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-56",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool12-12",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-57",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-50"
+      ],
+      "device": "PIM:pool14-14",
+      "end_s": 2.900000000000001e-05,
+      "id": "cb-58",
+      "link_bytes": 0,
+      "name": "decode_pim_kv_scan_score_softmax_pv",
+      "rows": 2,
+      "start_s": 2.800000000000001e-05
+    },
+    {
+      "depends_on": [
+        "cb-45"
+      ],
+      "device": "PIM",
+      "end_s": 2.900409600000001e-05,
+      "id": "cb-69",
+      "link_bytes": 0,
+      "name": "decode_dram_store_master",
+      "rows": 1,
+      "start_s": 2.900000000000001e-05
+    }
+  ],
+  "A2_device_priced_operator_shapes": {
+    "Acc": [],
+    "GPU": [
+      [
+        "qkv",
+        16,
+        3072,
+        1024,
+        1
+      ],
+      [
+        "score",
+        16,
+        16,
+        128,
+        8
+      ],
+      [
+        "softmax",
+        16,
+        16,
+        1,
+        8
+      ],
+      [
+        "context",
+        16,
+        128,
+        16,
+        8
+      ],
+      [
+        "kv_gpu_to_remote",
+        1,
+        32768,
+        1,
+        1
+      ],
+      [
+        "proj",
+        16,
+        1024,
+        1024,
+        1
+      ],
+      [
+        "comm_g2g",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm1",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "ff1",
+        16,
+        4096,
+        1024,
+        1
+      ],
+      [
+        "gelu",
+        16,
+        4096,
+        1,
+        1
+      ],
+      [
+        "ff2",
+        16,
+        1024,
+        4096,
+        1
+      ],
+      [
+        "comm_g2g",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm2",
+        16,
+        1024,
+        1,
+        1
+      ],
+      [
+        "kv_remote_to_gpu",
+        1,
+        34816,
+        1,
+        1
+      ],
+      [
+        "qkv",
+        1,
+        3072,
+        1024,
+        1
+      ],
+      [
+        "score",
+        1,
+        17,
+        128,
+        8
+      ],
+      [
+        "softmax",
+        1,
+        17,
+        1,
+        8
+      ],
+      [
+        "context",
+        1,
+        128,
+        17,
+        8
+      ],
+      [
+        "proj",
+        1,
+        1024,
+        1024,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm1",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "ff1",
+        1,
+        4096,
+        1024,
+        1
+      ],
+      [
+        "gelu",
+        1,
+        4096,
+        1,
+        1
+      ],
+      [
+        "ff2",
+        1,
+        1024,
+        4096,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm2",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "kv_gpu_to_remote",
+        1,
+        2048,
+        1,
+        1
+      ],
+      [
+        "kv_remote_to_gpu",
+        1,
+        36864,
+        1,
+        1
+      ],
+      [
+        "qkv",
+        1,
+        3072,
+        1024,
+        1
+      ],
+      [
+        "score",
+        1,
+        18,
+        128,
+        8
+      ],
+      [
+        "softmax",
+        1,
+        18,
+        1,
+        8
+      ],
+      [
+        "context",
+        1,
+        128,
+        18,
+        8
+      ],
+      [
+        "proj",
+        1,
+        1024,
+        1024,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm1",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "ff1",
+        1,
+        4096,
+        1024,
+        1
+      ],
+      [
+        "gelu",
+        1,
+        4096,
+        1,
+        1
+      ],
+      [
+        "ff2",
+        1,
+        1024,
+        4096,
+        1
+      ],
+      [
+        "comm_g2g",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "norm2",
+        1,
+        1024,
+        1,
+        1
+      ],
+      [
+        "kv_gpu_to_remote",
+        1,
+        2048,
+        1,
+        1
+      ]
+    ]
+  },
+  "A2_real_DAG_16_prompt_2_decode": [
+    {
+      "depends_on": [
+        "cb-0"
+      ],
+      "device": "LINK",
+      "end_s": 2e-06,
+      "id": "cb-4",
+      "link_bytes": 65536,
+      "name": "kv_gpu_to_remote",
+      "rows": 16,
+      "start_s": 1e-06
+    },
+    {
+      "depends_on": [
+        "cb-12",
+        "cb-4"
+      ],
+      "device": "LINK",
+      "end_s": 1.3000000000000003e-05,
+      "id": "cb-13",
+      "link_bytes": 69632,
+      "name": "kv_remote_to_gpu",
+      "rows": 17,
+      "start_s": 1.2000000000000002e-05
+    },
+    {
+      "depends_on": [
+        "cb-14"
+      ],
+      "device": "LINK",
+      "end_s": 2.6000000000000005e-05,
+      "id": "cb-15",
+      "link_bytes": 4096,
+      "name": "kv_gpu_to_remote",
+      "rows": 1,
+      "start_s": 2.5000000000000005e-05
+    },
+    {
+      "depends_on": [
+        "cb-14"
+      ],
+      "device": "LINK",
+      "end_s": 2.7000000000000006e-05,
+      "id": "cb-16",
+      "link_bytes": 73728,
+      "name": "kv_remote_to_gpu",
+      "rows": 18,
+      "start_s": 2.6000000000000005e-05
+    },
+    {
+      "depends_on": [
+        "cb-17"
+      ],
+      "device": "LINK",
+      "end_s": 4e-05,
+      "id": "cb-18",
+      "link_bytes": 4096,
+      "name": "kv_gpu_to_remote",
+      "rows": 1,
+      "start_s": 3.9000000000000006e-05
+    }
+  ],
+  "A6_per_request_lane_estimate": {
+    "accepted_rule": "Choose the cheaper per-request estimate; no queued candidate DAG required",
+    "all_lane_prices_s": {
+      "0": 0.00010025600000000001,
+      "1": 0.00020001600000000002
+    },
+    "all_scan_groups": [
+      [
+        0,
+        1,
+        [
+          [
+            0,
+            8388608,
+            256
+          ]
+        ]
+      ],
+      [
+        1,
+        1,
+        [
+          [
+            1073741824,
+            1082130432,
+            8
+          ],
+          [
+            1073742848,
+            1082131456,
+            8
+          ]
+        ]
+      ]
+    ],
+    "chosen_side": "pim",
+    "gpu_estimate_s": 0.00017,
+    "interpretation": "The selection rule is accepted; this counterexample isolates mismatched estimator lane coverage. Not a measured hardware misprediction.",
+    "pim_calls_by_chooser": [
+      {
+        "groups": [
+          [
+            0,
+            1,
+            [
+              [
+                0,
+                8388608,
+                256
+              ]
+            ]
+          ]
+        ],
+        "m": 8,
+        "n": 256,
+        "numOp": 1
+      }
+    ],
+    "pim_estimate_using_all_lanes_s": 0.00024001600000000001,
+    "pim_estimate_using_max_rows_lane_s": 0.000140256,
+    "synthetic_pricing": "GPU links 20us, each of 3 GPU attention ops 50us; PIM 100us/extent + 1ns/token-row"
+  },
+  "same_object_trace_row": {
+    "A3b": {
+      "c0_then_c16_scan": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_scan_alone": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_store_first_key": 65536
+    },
+    "A4c": {
+      "c0_then_c16_scan": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_scan_alone": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_store_first_key": 1048576
+    },
+    "A4e": {
+      "c0_then_c16_scan": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_scan_alone": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_store_first_key": 1048576
+    },
+    "A5": {
+      "c0_then_c16_scan": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_scan_alone": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_store_first_key": 1048576
+    },
+    "A6": {
+      "c0_then_c16_scan": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ],
+            [
+              1024,
+              8389632,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_scan_alone": [
+        [
+          0,
+          1,
+          [
+            [
+              0,
+              8388608,
+              256
+            ]
+          ]
+        ]
+      ],
+      "c16_store_first_key": 1048576
+    }
+  },
+  "scope": "cdd89db: real allocator/planner/DAG helpers, fake devices; no Ramulator execution or measured speedup",
+  "store_vs_scan_channels": {
+    "A3b": {
+      "diff_scan_1_head": [
+        [
+          2,
+          1,
+          [
+            [
+              2147483648,
+              2155872256,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_scan_2_heads": [
+        [
+          2,
+          1,
+          [
+            [
+              2147483648,
+              2155872256,
+              8
+            ]
+          ]
+        ],
+        [
+          10,
+          1,
+          [
+            [
+              10737418240,
+              10745806848,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_store": [
+        {
+          "device": "PIM:pool1-1",
+          "first_key_address": 1073741824,
+          "rows": 8,
+          "time_s": 6.5536e-08
+        }
+      ],
+      "master_scan_1_head": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "master_store": [
+        {
+          "device": "PIM:pool2-2",
+          "first_key_address": 2147483648,
+          "rows": 256,
+          "time_s": 2.097152e-06
+        }
+      ]
+    },
+    "A4c": {
+      "diff_scan_1_head": [
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_scan_2_heads": [
+        [
+          7,
+          1,
+          [
+            [
+              7516192768,
+              7524581376,
+              8
+            ]
+          ]
+        ],
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_store": [
+        {
+          "device": "PIM:pool15-15",
+          "first_key_address": 16106127360,
+          "rows": 8,
+          "time_s": 6.5536e-08
+        }
+      ],
+      "master_scan_1_head": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "master_store": [
+        {
+          "device": "PIM:pool0-14",
+          "first_key_address": 65536,
+          "rows": 256,
+          "time_s": 1.3981013333333334e-07
+        }
+      ]
+    },
+    "A4e": {
+      "diff_scan_1_head": [
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_scan_2_heads": [
+        [
+          7,
+          1,
+          [
+            [
+              7516192768,
+              7524581376,
+              8
+            ]
+          ]
+        ],
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_store": [
+        {
+          "device": "PIM:pool15-15",
+          "first_key_address": 16106127360,
+          "rows": 8,
+          "time_s": 6.5536e-08
+        }
+      ],
+      "master_scan_1_head": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "master_store": [
+        {
+          "device": "PIM:pool0-14",
+          "first_key_address": 65536,
+          "rows": 256,
+          "time_s": 1.3981013333333334e-07
+        }
+      ]
+    },
+    "A5": {
+      "diff_scan_1_head": [
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_scan_2_heads": [
+        [
+          7,
+          1,
+          [
+            [
+              7516192768,
+              7524581376,
+              8
+            ]
+          ]
+        ],
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_store": [
+        {
+          "device": "PIM:pool15-15",
+          "first_key_address": 16106127360,
+          "rows": 8,
+          "time_s": 6.5536e-08
+        }
+      ],
+      "master_scan_1_head": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "master_store": [
+        {
+          "device": "PIM:pool0-14",
+          "first_key_address": 65536,
+          "rows": 256,
+          "time_s": 1.3981013333333334e-07
+        }
+      ]
+    },
+    "A6": {
+      "diff_scan_1_head": [
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_scan_2_heads": [
+        [
+          7,
+          1,
+          [
+            [
+              7516192768,
+              7524581376,
+              8
+            ]
+          ]
+        ],
+        [
+          15,
+          1,
+          [
+            [
+              16106127360,
+              16114515968,
+              8
+            ]
+          ]
+        ]
+      ],
+      "diff_store": [
+        {
+          "device": "PIM:pool15-15",
+          "first_key_address": 16106127360,
+          "rows": 8,
+          "time_s": 6.5536e-08
+        }
+      ],
+      "master_scan_1_head": [
+        [
+          1,
+          1,
+          [
+            [
+              1073741824,
+              1082130432,
+              256
+            ]
+          ]
+        ]
+      ],
+      "master_store": [
+        {
+          "device": "PIM:pool0-14",
+          "first_key_address": 65536,
+          "rows": 256,
+          "time_s": 1.3981013333333334e-07
+        }
+      ]
+    }
+  }
+}

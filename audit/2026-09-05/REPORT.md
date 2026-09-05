@@ -1,5 +1,7 @@
 # Fugue / AttAcc 独立审计：实现、消融公平性与 workload 偏差
 
+> **当前状态请看 [cdd89db 复审](REAUDIT_cdd89db.md) 和 [存储扫描专项](STORAGE_SCAN_CONSISTENCY.md)。** 本文是 `8750b5b` 的历史快照。A1 GPU prefill、fresh prefill 路由、fresh GPU context、A3b master channel slot、CLI `num_attacc` 已有修复，不应再按旧条目判未修。当前仍有零 diff master 15 倍读写差率、分档修正集合、store/scan 映射分离等问题。用户后续明确 A6 只需简单逐 request 选边，旧 F05 的候选 DAG 强制要求已撤回，仅保留估价对应性审查。旧 JSON/日志没有覆盖。
+
 审计日期：2026-09-05。对象：`attacc_drampim_822`，HEAD `8750b5b`；以 `c600051` 为代码变更参照。论文：`/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027` 当前工作区文本。
 
 后续代码修正：按用户确认的 AttAcc 计量口径，已删除 DIE 旋转/position-transform，并排除各档新增 DIE/TLB latency、energy 与资源排队。105 个测试通过。具体来源核查与仍未修复的 PIM 读写计价差异见 [补充报告](PIM_TIMING_PROVENANCE.md)。下文其余反例与 `evidence.json` 为初始审计快照。

@@ -1,0 +1,147 @@
+"""Read-only model probes. Uses repository helpers and fake devices, not Ramulator.
+
+No implementation, test, workload, or performance output is modified.
+"""
+from pathlib import Path
+from types import SimpleNamespace
+from copy import deepcopy
+import importlib.util
+import json
+import sys
+
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT))
+spec = importlib.util.spec_from_file_location('audit_helper', ROOT / 'audit/2026-09-05/reproduce.py')
+old = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(old)
+import src.workload_runner as wr
+from src.workload import Request, Segment, Workload
+from src.model import Transformer
+from src.type import DataType
+
+out = {'scope': 'cdd89db: real allocator/planner/DAG helpers, fake devices; no Ramulator execution or measured speedup'}
+classes = {'A3b': wr.NaiveKVLayout, 'A4c': wr.LocalDiffKVLayout,
+           'A4e': wr.TableLocalDiffKVLayout, 'A5': wr.TableLocalDiffKVLayout,
+           'A6': wr.TableLocalDiffKVLayout}
+
+def reserve(tlb, owner, fp, count, kind='master'):
+    for i in range(count):
+        tlb.reserve(0, owner, fp, i, kind)
+
+def locations(tlb, owner, fp, count, kind='master'):
+    return [tlb.locate(0, owner, fp, i, kind) for i in range(count)]
+
+def store_events(locs):
+    es = []
+    wr._append_channel_kv_stores(old.system(), es, layer=0, tier=0,
+        request='audit', name='store', locations=locs, dbyte=2, deps=(), positions=())
+    return [{'device': e.device, 'rows': e.rows, 'time_s': e.time_s,
+             'first_key_address': e.dram_addresses[0]} for e in es]
+
+out['store_vs_scan_channels'] = {}
+out['same_object_trace_row'] = {}
+for rung, cls in classes.items():
+    tlb = cls(256)
+    reserve(tlb, 'producer', 'c0', 256)
+    reserve(tlb, 'consumer', 'c0', 8, 'diff')
+    reserve(tlb, 'consumer', 'c1', 256)
+    tlb.chunk_order = ['c0', 'c1']
+    tlb.chunk_coread = [frozenset(['c0', 'c1'])]
+    tlb.finalize()
+    master = locations(tlb, 'consumer', 'c1', 256)
+    diff = locations(tlb, 'consumer', 'c0', 8, 'diff')
+    def groups(locs, heads):
+        return wr._striped_append_channel_extents(locs, policy=tlb.layout_policy,
+            heads_per_hbm=heads, tlb=tlb)
+    out['store_vs_scan_channels'][rung] = {
+        'master_store': store_events(master), 'master_scan_1_head': groups(master, 1),
+        'diff_store': store_events(diff), 'diff_scan_1_head': groups(diff, 1),
+        'diff_scan_2_heads': groups(diff, 2)}
+    tlb = cls(256)
+    for i in range(17):
+        reserve(tlb, 'producer', 'c' + str(i), 256)
+    tlb.chunk_order = ['c' + str(i) for i in range(17)]
+    tlb.finalize()
+    c0 = locations(tlb, 'producer', 'c0', 256)
+    c16 = locations(tlb, 'producer', 'c16', 256)
+    out['same_object_trace_row'][rung] = {
+        'c16_store_first_key': c16[0].key_address,
+        'c16_scan_alone': groups(c16, 1), 'c0_then_c16_scan': groups(c0+c16, 1)}
+
+tlb = wr.NoReuseKVLayout(256)
+reserve(tlb, 'a', 'a', 16, 'private')
+reserve(tlb, 'b', 'b', 16, 'private')
+tlb.finalize()
+out['A1_private_addresses_vs_count_scan'] = {}
+for rid in ('a', 'b'):
+    locs = locations(tlb, rid, rid, 16, 'private')
+    loads, active, runs, extent_groups = wr._placement_channel_runs(locs,
+        policy=tlb.layout_policy, heads_per_hbm=1, tlb=tlb)
+    out['A1_private_addresses_vs_count_scan'][rid] = {
+        'logical_tokens': len(locs), 'stored_first_key': locs[0].key_address,
+        'stored_last_key': locs[-1].key_address, 'allocator_scan_runs': tlb.scan_runs(locs),
+        'charged_scan_runs': runs, 'charged_scan_token_rows': sum(r[2] for r in runs)}
+
+wl = Workload('supervisor', (Request('r', 0, None, 2,
+    (Segment('doc', 'doc', 16),), 16),), {})
+for rung in ('A1', 'A2'):
+    report, system = old.run(wl, rung)
+    chosen = [e for e in report['events'] if
+        'store' in e['name'] or 'remote' in e['name'] or 'pim_kv_scan' in e['name']]
+    out[rung + '_real_DAG_16_prompt_2_decode'] = [
+        {k: e[k] for k in ('id', 'name', 'device', 'rows', 'link_bytes',
+                           'depends_on', 'start_s', 'end_s')} for e in chosen]
+    out[rung + '_device_priced_operator_shapes'] = {
+        name: dev.calls for name, dev in system.devices.items()}
+
+# Exercise the existing A6 chooser with a deliberately inspectable device
+# pricing function. It proves which lane is queried, not real hardware cost.
+class PriceGPU(old.Device):
+    def get_time_and_energy(self, op):
+        self.calls.append((op.name, op.m, op.n, op.k, op.numOp))
+        return (50e-6 if op.name in ('score', 'softmax', 'context') else 20e-6), [0]
+
+class PricePIM(old.Device):
+    def get_time_and_energy_runs(self, op):
+        groups = getattr(op, 'pim_kv_extent_groups', ())
+        self.calls.append({'m': op.m, 'n': op.n, 'numOp': op.numOp,
+                           'groups': deepcopy(groups)})
+        return [(len(extents) * 100e-6 + sum(r[2] for r in extents)*1e-9, [0])
+                for ch, count, extents in groups]
+
+s = old.system()
+s.model = Transformer(dict(name='audit-1-head', ndec=1, num_heads=1,
+    hdim=128, dhead=128, ff_scale=4, gqa_size=1, dtype=DataType.W16A16), 1)
+s.model.build(1, 1, 2, True)
+s.devices = {'GPU': PriceGPU(), 'Acc': PricePIM()}
+templates = {op.name: op for op in s.model.sum_decoder}
+tlb = wr.TableLocalDiffKVLayout(256)
+for i in range(18):
+    reserve(tlb, 'p', 'c'+str(i), 256 if i==0 else 8)
+tlb.chunk_order = ['c'+str(i) for i in range(18)]
+tlb.chunk_coread = [frozenset(['c0', 'c1']), frozenset(['c0', 'c17'])]
+tlb.finalize()
+reads = locations(tlb, 'p', 'c0', 256) + locations(tlb, 'p', 'c1', 8) + locations(tlb, 'p', 'c17', 8)
+all_groups = wr._placement_channel_runs(reads, policy=tlb.layout_policy,
+    heads_per_hbm=1, tlb=tlb)[3]
+decided = {}
+side = wr._resolve_prefill_side(s, tlb, templates['comm_x2g'], templates,
+    pim_prefill_mode='dynamic', request_id='r', decided=decided,
+    readback_rows=reads, compute_positions=list(range(8)), scan_locations=reads,
+    heads=1, local_hidden=128, dbyte=2, batch_size=8, gemv_buffer_bytes=512,
+    pim_batch_command='mq', pim_pe_freq_ghz=1.3004)
+all_prices = {ch: len(extents)*100e-6 + sum(e[2] for e in extents)*1e-9
+              for ch, count, extents in all_groups}
+out['A6_per_request_lane_estimate'] = {
+    'accepted_rule': 'Choose the cheaper per-request estimate; no queued candidate DAG required',
+    'synthetic_pricing': 'GPU links 20us, each of 3 GPU attention ops 50us; PIM 100us/extent + 1ns/token-row',
+    'all_scan_groups': all_groups, 'pim_calls_by_chooser': s.devices['Acc'].calls,
+    'all_lane_prices_s': all_prices, 'gpu_estimate_s': 170e-6,
+    'pim_estimate_using_max_rows_lane_s': all_prices[0] + 40e-6,
+    'pim_estimate_using_all_lanes_s': max(all_prices.values()) + 40e-6,
+    'chosen_side': side,
+    'interpretation': 'The selection rule is accepted; this counterexample isolates mismatched estimator lane coverage. Not a measured hardware misprediction.'}
+if wr._EC is not None:
+    wr._EC.close()
+    wr._EC = None
+print(json.dumps(out, indent=2, sort_keys=True))

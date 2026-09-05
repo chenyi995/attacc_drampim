@@ -1,0 +1,171 @@
+"""Read-only audit probes: real planner/DAG, fake devices, NO Ramulator runs."""
+from collections import Counter
+from pathlib import Path
+from types import SimpleNamespace
+import hashlib
+import importlib.util
+import json
+import sys
+
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT))
+spec = importlib.util.spec_from_file_location('old_audit', ROOT / 'audit/2026-09-05/reproduce.py')
+old = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(old)
+from src.ablation import PRESETS, resolve_config
+from src.workload import Request, Segment, Workload, build_reuse_plan, load_workload
+import src.workload_runner as wr
+
+def req(rid, segments, tier=0, parent=None, history=0):
+    return Request(rid, tier, parent, 2, tuple(segments), sum(s.length for s in segments), history)
+
+def run(wl, rung, policy='epic'):
+    if rung == 'A1':
+        policy = 'no-reuse'
+    p = build_reuse_plan(wl, policy, epic_prefix_recompute_tokens=8,
+                         recompute_canonical=PRESETS[rung]['kv_mapping'] != 'naive')
+    c = resolve_config(rung, None, None, None, policy=policy)
+    s = old.system()
+    r = wr.run_reuse_prefill(s, wl, p, pipe=True, cacheblend_batch_size=8,
+                            include_events=True, warm=False, decode_attn=c.decode_attn,
+                            kv_mapping=c.kv_mapping, channel_placement=c.channel_placement,
+                            pim_prefill_mode=c.prefill_attn, pim_batch_command=c.pim_batch_command,
+                            pim_pe_freq_ghz=c.pim_pe_freq_ghz, gemv_buffer_bytes=c.gemv_buffer_bytes)
+    return r, s, p
+
+def digest(obj):
+    return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()
+
+out = {'scope': 'cdd89db; real planner/layout/DAG; constant 1us fake device pricing. No measured speedup or Ramulator execution.'}
+solo = Workload('supervisor', (req('r', [Segment('doc', 'doc', 256)]),), {})
+out['fresh'] = {}
+for rung in PRESETS:
+    report, system, _ = run(solo, rung)
+    es = report['events']
+    out['fresh'][rung] = {
+        'reported_prefill_rows': report.get('prefill_attention_rows'),
+        'prefill_pim_scans': sum('pim_kv_scan' in e['name'] and not e['name'].startswith('decode_') for e in es),
+        'prefill_gpu_score': sum(e['name'] == 'gpu_prefill_score' for e in es),
+        'gpu_score_context_shapes': [c for c in system.devices['GPU'].calls if c[0] in ('score', 'context')][:2],
+        'stores': [{k:e[k] for k in ('device','rows','time_s','energy_nj')} for e in es if e['name'] in ('dram_store_master','dram_store_diff_and_live')],
+        'metadata_cost': sum(e['time_s'] + e['energy_nj'] for e in es if e['device'] in ('DIE','TLB')),
+    }
+
+a = req('a', [Segment('doc', 'shared', 256)])
+b = req('b', [Segment('user', 'private', 8), Segment('doc', 'shared', 256)])
+shared = Workload('supervisor', (a,b), {})
+out['corrected_indices'] = {}
+out['gpu_prefill_unneeded_q_transfers'] = {}
+for rung in ('A3b','A4c','A4e','A5','A6'):
+    p = build_reuse_plan(shared, 'recompute', epic_prefix_recompute_tokens=8,
+                        recompute_canonical=PRESETS[rung]['kv_mapping'] != 'naive')
+    out['corrected_indices'][rung] = list(p.reusable[0].epic_prefix_rows)
+    if rung in ('A3b','A4c','A4e'):
+        report, _, _ = run(shared, rung)
+        out['gpu_prefill_unneeded_q_transfers'][rung] = [
+            {k:e[k] for k in ('name','link_bytes','time_s')}
+            for e in report['events'] if e['request']=='b' and e['name']=='q_gpu_to_pim']
+
+reversed_wl = Workload('supervisor', (b,a), {})
+report, _, _ = run(reversed_wl, 'A5')
+es = report['events']
+owner_stores = [e for e in es if e['request']=='a' and e['name'] in ('dram_store_master','dram_store_diff_and_live')]
+consumer_scans = [e for e in es if e['request']=='b' and e['name']=='pim_kv_scan_score_softmax_pv']
+anc = {}
+for e in es:
+    anc[e['id']] = set(e['depends_on'])
+    for d in e['depends_on']:
+        anc[e['id']].update(anc[d])
+out['shared_owner_causality'] = {
+    'consumer_first_scan_start_s': min(e['start_s'] for e in consumer_scans),
+    'consumer_first_scan_end_s': min(e['end_s'] for e in consumer_scans),
+    'owner_first_store_start_s': min(e['start_s'] for e in owner_stores),
+    'owner_first_store_end_s': min(e['end_s'] for e in owner_stores),
+    'consumer_scan_has_owner_store_ancestor': any(s['id'] in anc[e['id']] for e in consumer_scans for s in owner_stores),
+    'validator_returned_report': True,
+}
+
+tlb = wr.LocalDiffKVLayout(256)
+for fp in ('c0','c1','c2','c3','c4'):
+    for row in range(256): tlb.reserve(0,'a',fp,row,'master')
+tlb.chunk_order = ['c0','c1','c2','c3','c4']
+tlb.finalize()
+def place(indices, policy):
+    reads = [tlb.locate(0,'a','c'+str(i),row,'master') for i in indices for row in range(256)]
+    return wr._striped_append_channel_extents(reads, policy=policy, heads_per_hbm=4, tlb=tlb)
+out['fixed_master_channels'] = {
+    'A3b_full': place((0,4),'slice-append'),
+    'A4c_full': place((0,4),'master-diff-local-append'),
+    'c4_only': place((4,),'slice-append'),
+    'c4_slot': tlb.chunk_slot('c4',4,'append'),
+    'note': 'Channel is persistent now; the second extent c4 changes row address 1024 -> 0 when c0 is absent.'}
+
+if wr._EC is not None:
+    wr._EC.close()
+    wr._EC = None
+ev = []
+for dev in ('PIM:pool0-14','PIM:pool0-0','PIM'):
+    wr._cacheblend_event(ev, layer=0,tier=0,request='r',name='audit',device=dev,rows=1,time_s=1.,energy=(),deps=())
+out['resource_alias_overlap'] = [
+    {'device':e.device,'start_s':e.start_s,'end_s':e.end_s}
+    for e in wr._schedule_cacheblend(ev,pipe=True)]
+
+out['workloads'] = []
+for path in sorted((ROOT/'workload/probe/sweep').glob('*.json')):
+    wl = load_workload(path)
+    p = build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8,recompute_canonical=False)
+    pc = build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8,recompute_canonical=True)
+    by = {r.request_id:r for r in wl.requests}
+    mismatches = sum(d.epic_prefix_rows != c.epic_prefix_rows for d,c in zip(p.reusable,pc.reusable))
+    offsets = {(r.request_id,i):sum(s.length for s in r.segments[:i]) for r in wl.requests for i in range(len(r.segments))}
+    implied_shift_zero_delta = 0
+    for d in p.reusable:
+        r, owner = by[d.request_id], by[d.owner_request_id]
+        owner_segs = [i for i,s in enumerate(owner.segments) if s.fingerprint == d.fingerprint]
+        if owner_segs and offsets[(r.request_id,d.segment_index)] != offsets[(owner.request_id,owner_segs[0])] and r.segments[d.segment_index].position_delta == 0:
+            implied_shift_zero_delta += 1
+    # Pure layout metadata inspection, one model layer, NO DAG cost calls.
+    layout = wr.TableLocalDiffKVLayout(256)
+    wr._prepare_cacheblend_tlb(wl, pc, 1, layout, wr._parent_output_fingerprints(wl))
+    outputs = wr._parent_output_fingerprints(wl)
+    all_output_ids = {outputs.get(r.request_id,r.request_id+'::output') for r in wl.requests}
+    hist = sum(r.history_len for r in wl.requests)
+    row = {
+        'file':str(path.relative_to(ROOT)), 'requests':len(wl.requests),'tiers':len(wl.tiers),
+        'input_tokens':sum(r.total_length for r in wl.requests),'output_tokens':sum(r.lout for r in wl.requests),
+        'history_tokens_as_new_resident_extents':hist,
+        'reused_tokens':p.reused_tokens,'corrections':sum(len(d.epic_prefix_rows) for d in p.reusable),
+        'A3b_vs_A4c_different_correction_sets':mismatches,
+        'nonzero_delta_segments':sum(s.position_delta!=0 for r in wl.requests for s in r.segments),
+        'offset_shifted_reuse_but_delta_zero':implied_shift_zero_delta,
+        'output_fingerprints_known_to_table':len(all_output_ids & set(layout.chunk_order)),
+        'output_fingerprints_total':len(all_output_ids),
+        'correction_indices_hash_a3b':digest([list(d.epic_prefix_rows) for d in p.reusable]),
+        'correction_indices_hash_a4c':digest([list(d.epic_prefix_rows) for d in pc.reusable]),
+    }
+    out['workloads'].append(row)
+
+# Verify a small cross-turn history segment is allocated separately from parent.
+parent = req('p',[Segment('doc','p-input',8)])
+child = req('c',[Segment('parent_out','p-output',2),Segment('user','c-input',4)],tier=1,parent='p',history=8)
+wl = Workload('supervisor',(parent,child),{})
+p = build_reuse_plan(wl,'epic',epic_prefix_recompute_tokens=0)
+tlb = wr.TableLocalDiffKVLayout(256)
+wr._prepare_cacheblend_tlb(wl,p,1,tlb,wr._parent_output_fingerprints(wl))
+out['history_address_identity'] = {
+    'parent_prefill_key_address':tlb.locate(0,'p','p-input',0,'master').key_address,
+    'child_resident_history_key_address':tlb.locate(0,'c','c::history',0,'master').key_address,
+    'history_has_no_producer_by_construction': True}
+
+out['policy_dispatch'] = {}
+for policy in ('epic','cachecraft','cachetune'):
+    try:
+        rep, _ = old.run(shared,'A6',policy=policy)
+        out['policy_dispatch'][policy] = {'makespan': 'makespan_s' in rep,
+                                         'decode_events':sum(e['name'].startswith('decode_') for e in rep.get('events',[]))}
+    except Exception as exc:
+        out['policy_dispatch'][policy] = {'error':str(exc)}
+if wr._EC is not None:
+    wr._EC.close()
+    wr._EC = None
+print(json.dumps(out,indent=2,sort_keys=True))

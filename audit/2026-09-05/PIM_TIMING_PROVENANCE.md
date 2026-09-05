@@ -1,5 +1,7 @@
 # PIM 计量来源、公平性与本轮修正
 
+> **版本更新：** 下文为 `8750b5b` 及当时工作区的来源核查，保留历史证据。当前 `cdd89db` 的 A1/fresh prefill 路由已修，最新判断见 [复审主报告](REAUDIT_cdd89db.md) 和 [计量专项报告](MODEL_PROVENANCE_REAUDIT.md)。bank scan 来自 Ramulator、普通 KV 读写另用公式的区别仍成立；15 倍读写差率、缓存、GQA 与能量维度问题尚未解决。
+
 对象：`8750b5b` 及本轮工作区修改，2026-09-05。本次沿实际调用链检查了七档的 bank scan、外围事件、MQ、缓存与能耗。独立探针为 [pim_provenance.py](pim_provenance.py)，输出为 [pim_provenance.json](pim_provenance.json)。
 
 **结论：核心 bank scan 使用 Ramulator cycles，没有发现按 rung 给最终 scan 时间乘人为收益系数；但不能说所有 PIM 相关开销均由 Ramulator 直接输出。** 当前仍有公式计价的 KV store/read 和系统调度假设。能耗本来就是 AttAcc energy model，不是 Ramulator 原生输出；按用户确认的实验口径，这一点可以接受。
