@@ -28,8 +28,8 @@
 
 | Agent | 独立范围 | 产出 |
 |---|---|---|
-| `independent_fairness_audit` | 独立读当前源码/论文，另做小型布局、设备桩、MQ 参数探针 | [独立复审](../../audit/2026-09-05/INDEPENDENT_REAUDIT.md) |
-| `attacc_model_provenance` | AttAcc diff、GPU/PIM 单价与工作量、MQ interval/trace、缓存/二进制来源 | [计量专项](../../audit/2026-09-05/MODEL_PROVENANCE_REAUDIT.md) |
+| `independent_fairness_audit` | 独立读当前源码/论文，另做小型布局、设备桩、MQ 参数探针 | [独立复审](../../audit/2026-09-05/archive/INDEPENDENT_REAUDIT.md) |
+| `attacc_model_provenance` | AttAcc diff、GPU/PIM 单价与工作量、MQ interval/trace、缓存/二进制来源 | [计量专项](../../audit/2026-09-05/archive/MODEL_PROVENANCE_REAUDIT.md) |
 
 主审读完两份报告后再次校核关键结论。例如，要求独立报告明确：修正集合不一致已经证实，但本版本 TLB 零计价、scan 补 full master，不能直接把旧的描述符收费惩罚解释成当前测得的性能劣势。
 
@@ -52,11 +52,11 @@
 
 | 文件 | 修改 | 为什么 |
 |---|---|---|
-| [REAUDIT_cdd89db.md](../../audit/2026-09-05/REAUDIT_cdd89db.md) | 新主报告，逐档裁定、R01–R14、偏差方向、已修状态、建议顺序 | 当前版本不能沿用旧状态，也不能因 preset 名称就确认公平 |
+| [REAUDIT_cdd89db.md](../../audit/2026-09-05/archive/REAUDIT_cdd89db.md) | 新主报告，逐档裁定、R01–R14、偏差方向、已修状态、建议顺序 | 当前版本不能沿用旧状态，也不能因 preset 名称就确认公平 |
 | 两份 agent 报告 | 保留各自独立检查结果、来源与边界 | 让主审结论可以被单独复核，而不只依赖同一套旧报告 |
-| [reaudit_cdd89db_evidence.json](../../audit/2026-09-05/reaudit_cdd89db_evidence.json) | 归档本轮结构反例、42 输入统计 | 不覆盖旧 evidence，也不把设备桩结果充作性能结果 |
-| [reaudit_cdd89db_probe.txt](../../audit/2026-09-05/reaudit_cdd89db_probe.txt) | 归档 `/tmp` 中的诊断源码文本 | 提供可复现构造；不改生产代码或测试 |
-| [file_coverage.csv](../../audit/2026-09-05/reaudit_cdd89db_file_coverage.csv) / [manifest](../../audit/2026-09-05/reaudit_cdd89db_manifest.json) | 110 个变更文件的范围、hash、论文/代码快照、验证方式 | 明确看了什么、怎样看以及版本界限 |
+| [reaudit_cdd89db_evidence.json](../../audit/2026-09-05/archive/reaudit_cdd89db_evidence.json) | 归档本轮结构反例、42 输入统计 | 不覆盖旧 evidence，也不把设备桩结果充作性能结果 |
+| [reaudit_cdd89db_probe.txt](../../audit/2026-09-05/archive/reaudit_cdd89db_probe.txt) | 归档 `/tmp` 中的诊断源码文本 | 提供可复现构造；不改生产代码或测试 |
+| [file_coverage.csv](../../audit/2026-09-05/archive/reaudit_cdd89db_file_coverage.csv) / [manifest](../../audit/2026-09-05/archive/reaudit_cdd89db_manifest.json) | 110 个变更文件的范围、hash、论文/代码快照、验证方式 | 明确看了什么、怎样看以及版本界限 |
 | 旧 `REPORT.md` / `PIM_TIMING_PROVENANCE.md` | 顶部添加新状态入口，保留旧正文和证据 | 旧 A1/fresh 路由等结论已过时；需要防止被当成当前事实 |
 | `docs/README_audit_fixes.md` | 增加最新已修/未修状态入口 | 保持修复建议与当前状态一致，本轮不实施 |
 | `docs/README_design_ladder.md` / `README_run_guide.md` | 增加审计状态提示 | 机制目标、同一计划要求、历史手算和 A6 全局下界不等于已证明性质 |

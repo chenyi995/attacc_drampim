@@ -1,6 +1,6 @@
 # Fugue 设计阶梯：A1 → A2 → A3b → A4c → A4e → A5 → A6
 
-> **审计状态（`cdd89db`）：** 本页的机制定义和历史手算不能当作当前实现已公平的证明。A1/A2 是独立 baseline，从 A3b 起才要求按 claim 增量；当前仍有非 claim 读写差率、分档修正集合及物理 row 问题。[存储专项](../audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md) 已复现 store/scan 通道不一致。按用户最新澄清，A6 接受简单逐 request 选较快侧，不要求候选 DAG，也不保证全局 makespan 恒不差于两种固定策略。详见 [复审](../audit/2026-09-05/REAUDIT_cdd89db.md)。
+> **审计入口：** 本轮候选问题统一看 [CURRENT_ISSUES.md](../audit/2026-09-05/CURRENT_ISSUES.md)。其中逐项对照论文和 AttAcc，状态以用户裁决为准；本页介绍运行/机制，不另列必须修复清单。
 
 目标读者：有计算机背景、不熟悉本仓库的人。每一档只比上一档多**一件事**，每件事都是论文
 （`KVPIM-1Fugue-ASPLOS2027`）的一条 claim；本页把那件事说到**哪个函数、哪个参数、归约里哪一项变了**。
@@ -138,11 +138,11 @@ naive（A4c）是写入序轮转：可能碰巧错开，也可能碰巧撞上 �
 
 ```
 t_xpu  = 驻留行读回链路 + GPU 全上下文注意力
-t_bank = token 数最多通道的 PIM 扫描估价 × sweep 次数 + TLB plan（0）+ Q/ctx 链路
+t_bank = 各 sweep 的全部通道估价取 max 后求和（尾批用实际 Q 数）+ TLB plan（0）+ Q/ctx 链路
 prefill_side = "pim" if t_bank <= t_xpu else "gpu"
 ```
 
-按用户确认，逐 request 比较这两侧估计耗时的机制可以接受。当前实现只询价 token 数最多的一条通道，尚不等于提交时对全部通道定价后取最慢者；其他估价覆盖问题见 [SS06](../audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md)。`A6 ≤ min(A4e, A5)` 不是整个 workload 的恒等保证；是否混合执行应看每个 request 的 `side` 记录。
+上式记录当前代码现状。chenyi9 最新裁决为按实际需要的项估算，Q 输入传输可忽略、空回读为零；执行 agent 应将实现与论文同步到 [C5 交接公式](../audit/2026-09-05/CURRENT_ISSUES.md#c5)。全部 lane/尾批已修，逐 request 比价继续接受；本次只更新审计说明。`A6 ≤ min(A4e, A5)` 不是整个 workload 的恒等保证；是否混合执行应看每个 request 的 `side` 记录。
 
 ---
 

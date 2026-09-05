@@ -1,17 +1,19 @@
 # 运行指南：七档阶梯的 baseline + sweep（chenyi9 裁决 2026-09-05）
 
-> **审计状态（`cdd89db`）：** “同一份复用计划”是验收要求，当前默认脚本实际还会按档改变 corrected rows；本页也不能作为 store/scan 物理公平性或 A6 全局最优的证明。[最新存储专项](../audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md) 已确认通道/地址模型分离；A6 按用户澄清接受简单逐 request 选较小估价，不要求候选 DAG。42 个输入均已做结构审查，未重跑性能矩阵。关于 delta=0、history 抽象、输出 fingerprint 已进入 table 等发现，见 [复审 R01–R14](../audit/2026-09-05/REAUDIT_cdd89db.md)。
+> **审计入口：** 本轮候选问题统一看 [CURRENT_ISSUES.md](../audit/2026-09-05/CURRENT_ISSUES.md)。其中逐项对照论文和 AttAcc，状态以用户裁决为准；本页介绍运行/机制，不另列必须修复清单。
 
 这一页定死跑论文数据时**必须开的选项**、公平规则、baseline 与 sweep 矩阵、跑法与汇总。
 所有档同一份 workload、同一份复用计划，只换 `--ablation`。
+
+**按共同 AttAcc 口径比较。** chenyi9 最新要求接受共同模型限制，每项先说明上游建模及分档影响再裁决，见 [审阅清单](../audit/2026-09-05/CURRENT_ISSUES.md)。GPU attention 共用 FlashAttention，必须启用；CLI 默认仍为 legacy，裸 ladder 也需设置 `GPU_MODEL=flash`，sweep 默认 flash。pipeline 保持当前开启；共同追加顺序近似不再自动要求优化。旧结果开关继续如实标注，缺记录不能据此断言混用或不公平。原始 AttAcc 的 pipe=False 仍包含公式 overlap，不能和当前 DAG 的 SERIAL 完全等同。
 
 ## 1. 必须开的选项
 
 | 选项 | 值 | 为什么 |
 |---|---|---|
 | `--engine dag` | 固定 | 物理事件 DAG 引擎（真实 extent 进 Ramulator） |
-| `--pipeopt` | 开（默认 ON） | 各设备各自的资源时间轴，通道 lane 取 max；`--no-pipeopt` 是 AttAcc 的串行约定，会抹掉布局收益 |
-| `--gpu-model flash` | **阶梯脚本与 sweep 脚本默认 flash**（直接调 `main.py` 时必须显式传；`GPU_MODEL=legacy` 才退回原版公式） | GPU attention 按 FlashAttention-2 融合核定价（每 (head, request, 128 行 Q 块) 一个 CTA，效率随 key 长度取 FA-2 A100 曲线，S 不落 HBM，decode 用 flash-decoding）。默认 `legacy` 是 AttAcc 原版 xPU 公式，attention 只有 ~11 TFLOPS，会让 bank sweep 在任何形状上都赢 GPU，A6 ≡ A5（session 2026-09-05 §9） |
+| `--pipeopt` | 保持开（默认 ON） | 各档共用调度约定；不要求为了绝对精度另换更强调度。旧 false 配置需说明其实际模型含义 |
+| `--gpu-model flash` | **阶梯脚本与 sweep 脚本默认 flash**（直接调 `main.py` 时必须显式传；`GPU_MODEL=legacy` 才退回原版公式） | GPU attention 共用 FlashAttention-2 解析模型；论文图近似参数如实说明，近似本身不列问题。默认 legacy 不满足用户明确要求 |
 | `--powerlimit` | 开（默认 ON） | Ramulator 功率受限预设：nCCDAB 6 tCK，MQ 命令按能量钳位（n=8 时 8 tCK）。`--no-powerlimit` 是 NPC 4 tCK |
 | `--pim-link nvlink3` | 默认 | 600 GB/s，AttAcc 原版假设；决定 GPU 侧回读驻留 KV 的代价 |
 | `--word 2` | 默认 | FP16 |
@@ -34,6 +36,7 @@ fresh prefill 按档选边；consumer 的扫描等 owner 落地；位移从复�
 2. 修正是 per-agent 的、只由位移决定；共享 chunk 由 `(tier, id)` 排序最先的请求声明，其余按写入序复用；没有人为的"每个修正独占一行"之类惩罚。
 3. 每档只换 preset（`src/ablation.py`）：A1 硬件 baseline（AttAcc 原样）、A2 软件 baseline（AttAcc 纯 GPU 计算，KV 在远端 AttAcc HBM 当纯存储，每步经链路回读）、A3b 朴素 PIM 存储、A4c per-head diff 行、A4e placement table、A5 prefill 进 PIM + MQ、A6 逐 request 选边。
 4. 报三个数：**E2E = 整个 workload 的总时间**（`makespan_s`）、**TBT**（两种口径都出：每请求 `(end_s − first_token_s)/(lout−1)` 的均值，和论文用的按 step 加权 `Σ(end−first)/Σ(lout−1)`）、**能量与平均功率**（`energy_nj`，按类拆 GPU / LINK / PIM）。
+5. 比较时核对实际 GPU 模型、pipe、硬件/精度和输入口径是否共用。当前 DAG 报告缺 gpu_model，A2 也缺 pipe 字段；先注明哪些已知、哪些未知，不仅因缺字段判结果不公平，也不擅自加一套强制 provenance 系统。发现不同档实际混配置/版本时，先展示证据交用户裁决。
 
 ## 3. flash 下两侧的已知交叉点（选边器的价格，CACHEBLEND-TINY）
 

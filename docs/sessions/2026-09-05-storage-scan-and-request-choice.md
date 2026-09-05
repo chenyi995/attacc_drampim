@@ -72,7 +72,7 @@ git diff --check
 
 探针退出码为 0。主审检查 JSON 中五档 channel/row、A1 private block、A2 remote bytes 和 A6 询价列表；独立报告得到相同五档布局反例。为了隔离 A6 的两个 channel，临时探针加入明确的 co-read 集合后重新执行；第一次没有共读关系时 table 将所有对象放在 ch0，不能构成该估价反例，未把那个试探结果作为结论证据。
 
-最终核验在 [manifest](../../audit/2026-09-05/storage_scan_manifest.json) 记录：文档 diff 空白检查、更新 Markdown 的本地链接、HEAD、相对于前轮 source snapshot 的 92 个代码/测试/脚本/数据文件指纹，以及 tracked 非文档改动列表。前轮 manifest 的文档 SHA 是前轮快照；本轮更新过的报告以新 manifest 的指纹为准，未覆写历史证据。
+最终核验在 [manifest](../../audit/2026-09-05/archive/storage_scan_manifest.json) 记录：文档 diff 空白检查、更新 Markdown 的本地链接、HEAD、相对于前轮 source snapshot 的 92 个代码/测试/脚本/数据文件指纹，以及 tracked 非文档改动列表。前轮 manifest 的文档 SHA 是前轮快照；本轮更新过的报告以新 manifest 的指纹为准，未覆写历史证据。
 
 未跑全套测试、性能矩阵、真实 Ramulator、GPU benchmark、RTL 或综合，未安装依赖，未修改 implementation/tests/workloads/现有实验结果。探针中的 µs 仅来自设备桩，不能引用为真实性能。A1 的 256-token padded scan 也没有被描述成 16 倍 E2E 差距。
 

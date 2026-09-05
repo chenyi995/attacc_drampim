@@ -36,9 +36,9 @@
 
 | 阶段 | 做了什么 | 产出 / 结论 |
 |---|---|---|
-| 独立审计 | 对照论文及相对 `c600051` 的 36 个变更文件，追踪逻辑计划、布局、事件、计价与汇总 | [REPORT.md](../../audit/2026-09-05/REPORT.md)、[原始反例](../../audit/2026-09-05/evidence.json)；原有 102 tests 通过但不能覆盖论文约束 |
+| 独立审计 | 对照论文及相对 `c600051` 的 36 个变更文件，追踪逻辑计划、布局、事件、计价与汇总 | [REPORT.md](../../audit/2026-09-05/archive/REPORT.md)、[原始反例](../../audit/2026-09-05/archive/evidence.json)；原有 102 tests 通过但不能覆盖论文约束 |
 | 用户确认口径 | 接受 A1/A2 独立 baseline、A5 机制包与合理合成输入 | 更新首页与原报告，创建 [修改建议 README](../README_audit_fixes.md) |
-| PIM 来源核查 | 检查 cycles 解析、MQ trace、缓存、带宽公式与 AttAcc 能量表 | [PIM_TIMING_PROVENANCE.md](../../audit/2026-09-05/PIM_TIMING_PROVENANCE.md)、[来源探针](../../audit/2026-09-05/pim_provenance.py) |
+| PIM 来源核查 | 检查 cycles 解析、MQ trace、缓存、带宽公式与 AttAcc 能量表 | [PIM_TIMING_PROVENANCE.md](../../audit/2026-09-05/archive/PIM_TIMING_PROVENANCE.md)、[来源探针](../../audit/2026-09-05/archive/pim_provenance.py) |
 | 计量修正 | 排除新增 DIE/TLB 时间与能量，移除其额外资源占用，A6 探针同步 | Python/C++、报表、验证器一致修改 |
 | 旋转修正 | 按正文删除 DIE rotate 与额外 position-transform，直接保留 Q 就绪和 KV landing 依赖 | 默认 GPU 路径不再含 DIE 旋转；旧 `die` 模式显式拒绝 |
 | 验证与归档 | 构建 native core，新增回归检查，执行完整测试，保留修改前证据 | 105 tests 通过；本 session 文档及索引 |
@@ -138,11 +138,11 @@ GPU Q / variants 到达 ─┐
 | [test_attacc_metadata.py](../../tests/test_attacc_metadata.py) | 新增三个回归测试，含多档、warm/cold、两种 pipe 模式及 native/Python 检查 | 防止只改报表、不改时间轴，或只修一条执行路径 |
 | [仓库 README](../../README.md) | 修正 A1/A2 与 A5 的消融口径，加入建议文档与本 session 入口 | 首页不再继续宣称所有相邻 baseline 都应只差一个因素 |
 | [修改建议 README](../README_audit_fixes.md) | 给出分阶段修法、验收和机制 workload；后续标记本次已落地的计量修正 | 区分建议、用户已确认约束与实际完成项 |
-| [审计报告](../../audit/2026-09-05/REPORT.md) | 保存初始发现，补充用户口径和代码修正说明 | 避免把已经接受的实验设计继续当作违规，也不抹掉原始反例 |
-| [PIM 来源报告](../../audit/2026-09-05/PIM_TIMING_PROVENANCE.md) | 逐档记录 Ramulator/公式/AttAcc energy 来源与残余问题 | 回答“是不是都来自 Ramulator”时区分 scan、外围与能量 |
+| [审计报告](../../audit/2026-09-05/archive/REPORT.md) | 保存初始发现，补充用户口径和代码修正说明 | 避免把已经接受的实验设计继续当作违规，也不抹掉原始反例 |
+| [PIM 来源报告](../../audit/2026-09-05/archive/PIM_TIMING_PROVENANCE.md) | 逐档记录 Ramulator/公式/AttAcc energy 来源与残余问题 | 回答“是不是都来自 Ramulator”时区分 scan、外围与能量 |
 | `audit/2026-09-05/reproduce.py`, `evidence.json`, `unittest.log` | 初次审计探针、原始结果和 102-test 日志 | 保存修改前可复核的证据；`evidence.json` 未覆盖 |
 | `audit/2026-09-05/pim_provenance.py`, `pim_provenance.json` | 新增计量来源探针及结果 | 验证 cycles 转换、MQ 命令数与公式差异，不冒充真实硬件测速 |
-| [manifest.json](../../audit/2026-09-05/manifest.json) | 分别记录初始输入、后续文档与实现修改的 SHA-256 | 区分相同 HEAD 下不同工作区状态，避免旧结果与新代码混用 |
+| [manifest.json](../../audit/2026-09-05/archive/manifest.json) | 分别记录初始输入、后续文档与实现修改的 SHA-256 | 区分相同 HEAD 下不同工作区状态，避免旧结果与新代码混用 |
 | [session 索引](README.md)、本文、[主文档索引](../README.md) | 新增可发现的 session 记录，链接修改原因与证据 | 用户要求每次改动详细记录“为什么修改” |
 
 本轮没有修改 `src/devices.py`、`src/config.py`、`src/ramulator_wrapper.py` 或 PIM trace generator 的生产实现。原始 AttAcc energy table、Ramulator 命令时序及相关代价没有因 DIE/TLB 修正而被整体替换。
@@ -185,7 +185,7 @@ GPU Q / variants 到达 ─┐
 
 新回归测试使用不提供 DIE SRAM/bandwidth 标定的设备桩，确保相应执行路径不再依赖这些新成本。各含 PIM attention 的 rung 均检查：DIE/TLB time/energy 为零，PIM scan time/energy 仍为正，默认路径没有 DIE rotation/position-transform。A2 没有 bank attention，不伪造一个 PIM 项要求它通过这类检查。
 
-完整修正后测试日志：[unittest_attacc_metadata.log](../../audit/2026-09-05/unittest_attacc_metadata.log)。测试中的任意时间值只用于依赖与调度验证，不是 GPU/PIM 的真实测量。
+完整修正后测试日志：[unittest_attacc_metadata.log](../../audit/2026-09-05/archive/unittest_attacc_metadata.log)。测试中的任意时间值只用于依赖与调度验证，不是 GPU/PIM 的真实测量。
 
 没有执行 Ramulator 的干净完整性能复现、没有重跑论文 588 点矩阵、没有做 RTL 综合或数值 attention 等价性测试。本文补写本身仅改文档，未因此再次运行已经通过且未发生行为变化的完整测试。
 

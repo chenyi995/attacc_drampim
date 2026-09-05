@@ -1,15 +1,8 @@
 # Fugue（`chenyi-0905`）：文档索引
 
-本分支只放论文 `KVPIM-1Fugue-ASPLOS2027` 用到的东西：根基是 **AttAcc 原版**（上游 `c600051`），
-之上是 Fugue 的引擎与七档设计阶梯。消融用的其余档、sweep 编排与旧 session 记录在
-`chenyi-0904-test` 分支。当前分支的新会话从 [session 文档索引](sessions/README.md) 归档。
-当前分支已包含 `workload/probe/` 及其 42 个 sweep 输入。
+**本轮 audit 只需看 [CURRENT_ISSUES.md](../audit/2026-09-05/CURRENT_ISSUES.md)。** 每个 case 都解释论文声明、实际行为、AttAcc 来源和相对影响；旧报告与证据已归档，不再作为并列的“最新报告”。[Audit 目录入口](../audit/2026-09-05/README.md)；[整理 session](sessions/2026-09-05-audit-docs-cleanup.md)。
 
-最新审计：[存储与扫描专项](../audit/2026-09-05/STORAGE_SCAN_CONSISTENCY.md)，补充 [cdd89db 七档公平性复审](../audit/2026-09-05/REAUDIT_cdd89db.md)。A3b–A6 的写入与扫描仍使用两套映射；A1/A2 的抽象和数量边界已分别检查。A6 按用户澄清接受简单逐 request 选边，不要求两套候选 DAG。主审与独立 agent 均已复核；仅修改文档，见 [最新 session](sessions/2026-09-05-storage-scan-and-request-choice.md) 与 [前轮 session](sessions/2026-09-05-cdd89db-fairness-reaudit.md)。
-
-最近修改：[2026-09-05（晚）：审阅计量改动并修复 F01 / F02 / F04](sessions/2026-09-05-ladder-fixes-f01-f02-f04.md)
-（A1 prefill 回到 GPU、A3b 持久写入序放置、fresh prefill 按档选边）；之前是
-[2026-09-05：AttAcc 计量口径与 GPU query 旋转](sessions/2026-09-05-attacc-accounting-and-rotation.md)。
+本仓库在原始 AttAcc 上实现 Fugue 的七档比较。当前口径接受共同模型限制，FlashAttention 必须启用，候选问题由用户逐项裁决；设计说明见下方，历次记录见 [session 索引](sessions/README.md)。
 
 ## 运行指南 —— `README_run_guide.md`
 
@@ -63,11 +56,12 @@ RD=/data2/<you>/scratch; mkdir -p $RD; ln -sf $PWD/ramulator2/ramulator2 $RD/; l
 export ATTACC_RAMULATOR_DIR=$RD ATTACC_RAMULATOR_LOG=$RD/ramulator.out
 python3 main.py --system dgx-attacc --model LLAMA3-8B --workload <wl.json> \
   --reuse recompute --epic-prefix-recompute-tokens 8 --ablation A4e --engine dag \
+  --gpu-model flash --pipeopt \
   --workload-report out.json --workload-report-events none \
   --cacheblend-batch-size 8 --num-hbm 1 --ngpu 1 --ramulator-workers 8
 
 # 4. 七档一键
-RUNGS="A1 A2 A3b A4c A4e A5 A6" NUM_HBM=1 NGPU=1 bash experiments/run_dag_ladder.sh <wl.json> LLAMA3-8B <outdir>
+GPU_MODEL=flash RUNGS="A1 A2 A3b A4c A4e A5 A6" NUM_HBM=1 NGPU=1 bash experiments/run_dag_ladder.sh <wl.json> LLAMA3-8B <outdir>
 
 # 5. 测试
 python3 -m unittest discover -s tests         # 最近验证：108/108
@@ -75,4 +69,6 @@ python3 -m unittest discover -s tests         # 最近验证：108/108
 
 模型 ↔ `--ngpu` / `--num-hbm`：LLAMA-7B、LLAMA3-8B 1/1；GPT-13B、LLAMA-33B 2/10；LLAMA-65B、GPT-175B 8/40。
 A1 是唯一用 `--reuse no-reuse` 且不带 `--epic-prefix-recompute-tokens` 的档。
-`--pipeopt` 默认 ON（`--no-pipeopt` 是 AttAcc 的 serial 保守约定，会抹掉布局收益）。
+`--pipeopt` 默认 ON；`--no-pipeopt` 是串行对照，不能替代本轮要求的正式配置。
+直接运行 `main.py` 必须显式传 `--gpu-model flash`；只设置同名环境变量不会改变 CLI 默认。
+以上命令仅补齐配置，不代表当前实现和结果已通过审计。
