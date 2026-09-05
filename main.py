@@ -538,8 +538,13 @@ def main():
             pim_type = PIMType.BUFFER
         else:
             pim_type = PIMType.BA
+        # One AttAcc per GPU (audit F-item, fixed 2026-09-05): the PIM
+        # energy multiplier follows --ngpu like the GPU's num_xpu does.  It
+        # used to stay at make_pim_config's default of 8 whatever --ngpu was,
+        # so every PIM-side energy was 8x on a 1-GPU run.
         pim_config = make_pim_config(pim_type,
                                      pim_link,
+                                     num_attacc=num_gpu,
                                      num_hbm=args.num_hbm,
                                      power_constraint=args.powerlimit)
         system.set_accelerator(modelinfos, DeviceType.PIM, pim_config,
