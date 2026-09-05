@@ -473,14 +473,53 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
 
     def test_a3b_gets_the_shadow_rows_despite_having_no_mask_gate(self):
         visible = self._visible(chunks=4, k=8)
-        reads, masked = _pool_reads(self._tlb(False, "slice-append"), visible)
-        # 4 x 256 visible + the 32 shadowed master rows read back
+        reads, masked, plan_reads = _pool_reads(
+            self._tlb(False, "slice-append"), visible)
+        # what the DRAM streams: 4 x 256 visible + the 32 shadowed master rows
         self.assertEqual(len(reads), 4 * 256 + 32)
-        # ``masked_rows`` means "streamed by the DRAM, ignored by the score",
-        # which is exactly what happens to a stale row here: the row is opened
-        # for its other tokens and the stale one does not reach the score.
-        # (It is a report field only -- time and energy come from Ramulator.)
-        self.assertEqual(len(masked), 32)
+        # what the die drops: NOTHING.  A3b has no mask gate, so it may not
+        # claim masked rows -- the first version of this fix did, which
+        # handed A3b a capability the rung is defined not to have.
+        self.assertEqual(masked, set())
+        # what the TLB plans: the UNEXPANDED stream, so the master run still
+        # splits at every skipped row and the descriptor count still rises.
+        self.assertEqual(len(plan_reads), 4 * 256)
+        self.assertIsNot(plan_reads, reads)
+
+    def test_a_maskless_layout_still_splits_its_master_run(self):
+        """The defining property of NaiveKVLayout, pinned.
+
+        "a corrected row's master copy is skipped, SPLITTING the master run".
+        The first version of the 2026-09-04 fix put the shadow rows into the
+        list `tlb.scan_runs` coalesces, so the holes closed, the runs merged
+        10 -> 2, the TLB descriptor cost collapsed and A3b came out 5.5%
+        faster than it should be.  `plan_reads` is what keeps them apart.
+        """
+        from src.workload_runner import NaiveKVLayout
+        from dataclasses import replace as _replace
+        corrected = (20, 132, 155, 197, 207, 215, 244, 248)   # real t1n0 rows
+        tlb = NaiveKVLayout(256, "slice")
+        for row in range(256):
+            tlb.reserve(0, "owner", "fp0", row, "master")
+        for row in corrected:
+            tlb.reserve(0, "consumer", "fp0", row, "diff")
+        tlb.finalize()
+        visible = []
+        for row in range(256):
+            master = tlb.locate(0, "owner", "fp0", row, "master")
+            if row in corrected:
+                diff = tlb.locate(0, "consumer", "fp0", row, "diff")
+                visible.append(_replace(diff, shadow=master))
+            else:
+                visible.append(master)
+        reads, masked, plan_reads = _pool_reads(tlb, visible)
+        self.assertEqual(masked, set())                 # no mask gate
+        self.assertEqual(len(reads), 256 + len(corrected))   # rows opened
+        # eight skipped rows cut the 256-row stream into nine pieces, and the
+        # corrected rows are a tenth run of their own
+        self.assertEqual(len(tlb.scan_runs(plan_reads)), 10)
+        # ... which is exactly what merging them away would have destroyed
+        self.assertLess(len(tlb.scan_runs(reads)), 10)
 
     def test_a3_keeps_the_legacy_behaviour(self):
         """A1/A3/A3a stay on the chunk-count model, so the A3-vs-A3a contrast
@@ -488,16 +527,18 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
         visible = self._visible(chunks=4, k=8)
         for policy in ("single", "slice"):
             self.assertNotIn(policy, _APPEND_POLICIES)
-            reads, masked = _pool_reads(self._tlb(False, policy), visible)
+            reads, masked, plan_reads = _pool_reads(
+                self._tlb(False, policy), visible)
             self.assertEqual(len(reads), 4 * 256)
             self.assertEqual(masked, set())
+            self.assertEqual(len(plan_reads), 4 * 256)
 
     def test_a3b_master_stream_no_longer_shrinks_with_k(self):
         """The regression itself: the master side is the owner's chunks and
         owes nothing to k."""
         for k in (0, 1, 8, 32, 64, 128):
-            reads, _masked = _pool_reads(self._tlb(False, "slice-append"),
-                                         self._visible(chunks=4, k=k))
+            reads, _masked, _plan = _pool_reads(
+                self._tlb(False, "slice-append"), self._visible(chunks=4, k=k))
             master = sum(rows for kind, rows in _read_extents(reads)
                          if kind != "diff")
             self.assertEqual(master, 4 * 256,
@@ -507,8 +548,8 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
         """Nothing pinned this before, which is why the bug survived."""
         previous_load = previous_acts = -1
         for k in (0, 1, 8, 16, 32, 64, 128):
-            reads, _masked = _pool_reads(self._tlb(False, "slice-append"),
-                                         self._visible(chunks=4, k=k))
+            reads, _masked, _plan = _pool_reads(
+                self._tlb(False, "slice-append"), self._visible(chunks=4, k=k))
             loads, _active, _runs, groups = _placement_channel_runs(
                 reads, policy="slice-append", heads_per_hbm=1)
             self.assertGreaterEqual(max(loads), previous_load)
@@ -523,8 +564,9 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
         same single activation.  Only crossing 256 tokens buys another ACT.
         """
         for k, diff_acts in ((8, 1), (32, 1), (64, 1), (65, 2)):
-            reads, _masked = _pool_reads(self._tlb(True, "master-diff-table-append"),
-                                         self._visible(chunks=4, k=k))
+            reads, _masked, _plan = _pool_reads(
+                self._tlb(True, "master-diff-table-append"),
+                self._visible(chunks=4, k=k))
             groups = _striped_append_channel_extents(
                 reads, policy="master-diff-table-append", heads_per_hbm=1)
             # 4 master rows (one per chunk) + the packed diff pool

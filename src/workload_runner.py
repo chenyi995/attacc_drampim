@@ -8,6 +8,7 @@ GPU/PIM prefill split needed for position-independent KV reuse.
 from __future__ import annotations
 
 import math
+import os
 import sys
 import time
 from array import array
@@ -1122,6 +1123,11 @@ def _address_key(location: KVLocation) -> Tuple[int, int]:
 
 from src import layout_probe
 
+# DIAGNOSTIC ONLY (2026-09-04): restore the pre-fix _pool_reads so the two
+# behaviours can be measured against each other on the same workload.
+# Not a supported knob -- it reinstates a bug on purpose.
+_LEGACY_POOL_READS = os.environ.get("KVPIM_LEGACY_POOL_READS", "") == "1"
+
 
 def _pool_reads(tlb, locations: Sequence[KVLocation]) -> Tuple[List[KVLocation], set]:
     """Physical read stream: which rows the DRAM actually touches.
@@ -1144,11 +1150,36 @@ def _pool_reads(tlb, locations: Sequence[KVLocation]) -> Tuple[List[KVLocation],
     Every striped-append rung therefore gets the shadow rows regardless of
     the mask gate.  A1/A3/A3a keep the legacy chunk-count model and the old
     behaviour, so the A3-vs-A3a contrast survives (fix chenyi9 2026-09-04).
+
+    THREE ANSWERS, NOT ONE (2026-09-04 evening).  The first version of this
+    fix returned a single list for three different questions and silently got
+    two of them wrong for A3b:
+
+    ``reads``       what the DRAM streams -- the shadow rows ARE here, because
+                    their row is opened for its other tokens.
+    ``masked``      what the die drops before the score.  A layout with no
+                    mask gate CANNOT drop anything, so this stays empty for
+                    it; reporting masked rows there claimed a capability the
+                    rung is defined not to have.
+    ``plan_reads``  what ``tlb.scan_runs`` coalesces into TLB descriptors.
+                    Without a mask gate the scan must SKIP the stale row, so
+                    the master run splits and the descriptor count rises --
+                    ``NaiveKVLayout``'s defining property ("a corrected row's
+                    master copy is skipped, splitting the master run").
+                    Filling those holes collapsed A3b's descriptors 10 -> 2
+                    and made it 5.5% faster than it should be.
     """
-    if (getattr(tlb, "shadow_reads", True)
-            or getattr(tlb, "layout_policy", None) in _APPEND_POLICIES):
-        return _physical_reads(locations)
-    return list(locations), set()
+    gate = getattr(tlb, "shadow_reads", True)
+    if gate:
+        reads, masked = _physical_reads(locations)
+        return reads, masked, reads
+    plan_reads = list(locations)          # runs split at every skipped row
+    if (not _LEGACY_POOL_READS
+            and getattr(tlb, "layout_policy", None) in _APPEND_POLICIES):
+        # rows are activated even though they are neither scored nor masked
+        reads, _shadow_masked = _physical_reads(locations)
+        return reads, set(), plan_reads
+    return plan_reads, set(), plan_reads
 
 
 def _physical_reads(locations: Sequence[KVLocation]) -> Tuple[List[KVLocation], set]:
@@ -2701,7 +2732,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             # ``old`` is the consumer-visible KV (one entry per position);
             # ``reads`` is what the master/diff pools physically stream, with
             # shadowed master rows masked rather than skipped.
-            reads, masked_keys = _pool_reads(tlb, old)
+            reads, masked_keys, plan_reads = _pool_reads(tlb, old)
             context_ready = local_last
             if old:
                 rotate_ready = _append_q_rotate_distribution(
@@ -2724,7 +2755,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     # the ONE shared KV head.
                     op.pim_shared_kv = True
                     op.pim_shared_queries = _gqa_group(system)
-                op.pim_kv_runs = tlb.scan_runs(reads)
+                op.pim_kv_runs = tlb.scan_runs(plan_reads)
                 plan_time_s, plan_energy = _tlb_plan_cost(op.pim_kv_runs)
                 address_plan = _cacheblend_event(
                     events, layer=layer_index, tier=tier, request=request.request_id,
@@ -2833,14 +2864,16 @@ def _append_cacheblend_decode_batched(
     _old_state: Dict[str, Dict[int, List[KVLocation]]] = {
         request.request_id: {} for request in requests
     }
-    _reads_state: Dict[str, Dict[int, Tuple[List[KVLocation], set]]] = {
+    _reads_state: Dict[str, Dict[int, Tuple[List[KVLocation], set, List[KVLocation]]]] = {
         request.request_id: {} for request in requests
     }
     _delta_state: Dict[Tuple[str, int], Dict[Tuple[int, int], int]] = {}
     _shadow_gate = getattr(tlb, "shadow_reads", True)
+    _append_gate = (not _LEGACY_POOL_READS and
+                    getattr(tlb, "layout_policy", None) in _APPEND_POLICIES)
 
     def _decode_state(request_id: str, layer: int):
-        """(resident locations, (physical reads, masked keys)) for this layer."""
+        """(resident locations, (reads, masked keys, plan reads)) for this layer."""
         per_layer = _old_state[request_id]
         if layer not in per_layer:
             locations = [location for _, _, _, location
@@ -2857,11 +2890,16 @@ def _append_cacheblend_decode_batched(
         if layer not in per_layer:
             return                      # not materialised yet; lazy init folds it in
         per_layer[layer].append(location)
-        reads, masked = _reads_state[request_id][layer]
+        reads, masked, plan_reads = _reads_state[request_id][layer]
         reads.append(location)
-        if _shadow_gate and location.shadow is not None:
+        if plan_reads is not reads:
+            plan_reads.append(location)
+        if location.shadow is not None and (
+                _shadow_gate or _append_gate):
+            # streamed either way; only a mask gate may also DROP it
             reads.append(location.shadow)
-            masked.add(_address_key(location.shadow))
+            if _shadow_gate:
+                masked.add(_address_key(location.shadow))
 
     def _decode_deltas(request, layer: int):
         """Prefill position deltas: independent of the output row."""
