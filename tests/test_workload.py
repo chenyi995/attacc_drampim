@@ -1746,6 +1746,99 @@ class AgenticHistoryTests(unittest.TestCase):
         # corrections, turn 1 = its 2 fresh query tokens only
         self.assertEqual(rows["pim"], 2 * (10 + 6 + 2))
 
+    def _turns(self, rounds=3, k=2):
+        """One shared chunk read by an agent over ``rounds`` turns; each turn
+        re-lists the whole earlier context (the turns encoding)."""
+        import hashlib
+        doc = hashlib.sha256(b"doc").hexdigest()[:16]
+        owner = Request("a_owner", 0, None, 2, (Segment("sys", "sa", 2), Segment("doc", doc, 8)), 10)
+        requests = [owner]
+        context = [Segment("sys", "sw", 4), Segment("doc", doc, 8)]
+        for r in range(rounds):
+            rid = "w_t%d" % r
+            parent = None if r == 0 else "w_t%d" % (r - 1)
+            segs = list(context)
+            if parent is not None:
+                segs.append(Segment("parent_out", parent + "-out", 2))
+            segs.append(Segment("user", "q%d" % r, 2))
+            requests.append(Request(rid, r, parent, 2, tuple(segs),
+                                    sum(s.length for s in segs)))
+            context = [Segment("user" if s.role == "parent_out" else s.role, s.fingerprint, s.length)
+                       for s in segs]
+        workload = Workload("supervisor", tuple(requests), {})
+        return workload, build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=k)
+
+    def test_every_later_turn_inherits_from_the_turn_that_wrote_the_diff(self):
+        """C8.1 (2026-09-05): the third turn must point at the writer (turn
+        0), not at turn 1 which only inherited."""
+        workload, plan = self._turns(rounds=3)
+        by_key = {(d.request_id, d.segment_index): d for d in plan.reusable}
+        self.assertIsNone(by_key[("w_t0", 1)].inherits_from)
+        self.assertEqual(by_key[("w_t1", 1)].inherits_from, "w_t0")
+        self.assertEqual(by_key[("w_t2", 1)].inherits_from, "w_t0")
+        self.assertEqual(by_key[("w_t2", 1)].inherits_segment_index, 1)
+        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                   pim_prefill_mode="pim")
+        diff_owners = {e["location"]["owner"] for e in report["tlb"]["entries"]
+                       if e["request"] == "w_t2" and e["location"]["kind"] == "diff"}
+        self.assertEqual(diff_owners, {"w_t0"})
+
+    def test_a_turn_reads_the_inherited_corrections_it_does_not_recompute(self):
+        """C8.2: the second turn's prefill scan / readback contains the
+        inherited diff rows, and its GPU block spans the whole context."""
+        workload, plan = self._turns(rounds=2)
+        for mode in ("pim", "gpu"):
+            report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                       pim_prefill_mode=mode)
+            events = [e for e in report["events"] if e["request"] == "w_t1"
+                      and e["transformer_layer"] == 0]
+            if mode == "pim":
+                scan = next(e for e in events if e["name"] == "pim_kv_scan_score_softmax_pv")
+                self.assertEqual(scan["rows"], 16 + 2)     # 14 masters + 2 inherited diffs + 2 fresh
+                # their stale master copies, folded over the 4 toy heads
+                self.assertEqual(scan["masked_rows"], 2 * 4)
+            else:
+                readback = next(e for e in events if e["name"] == "kv_pim_to_gpu")
+                # 14 resident rows (sys 4 + 6 uncorrected doc + q0 2 + out 2)
+                # plus the 2 inherited diffs, read back instead of recomputed
+                self.assertEqual(readback["rows"], 14 + 2)
+                score = next(e for e in events if e["name"] == "gpu_prefill_score")
+                self.assertEqual(score["rows"], 2)          # only the 2 fresh queries computed
+
+    def test_gpu_only_baseline_does_not_recompute_inherited_corrections(self):
+        """C8.3: A2 classifies an inherited correction as a resident row."""
+        from src.workload_runner import _software_reuse_rows
+        workload, plan = self._turns(rounds=2)
+        turn1 = next(r for r in workload.requests if r.request_id == "w_t1")
+        compute, resident = _software_reuse_rows(plan, 0, turn1)
+        self.assertEqual(compute, [16, 17])                 # the fresh query only
+        self.assertEqual(resident, 16)
+
+    def test_cacheblend_inherits_the_sampled_rows_of_the_writer(self):
+        """C8.4: a later turn keeps the per-layer rows its writer sampled."""
+        workload, _ = self._turns(rounds=2)
+        plan = build_reuse_plan(workload, "cacheblend", 0.25, 0, (), (0, 1), 1)
+        rows0 = plan.cacheblend_partial_rows[0]["w_t0"][1]
+        rows1 = plan.cacheblend_partial_rows[0]["w_t1"][1]
+        self.assertTrue(rows0)
+        self.assertEqual(rows0, rows1)
+        run_reuse_prefill(self._toy_system(), workload, plan, pipe=True, pim_prefill_mode="pim")
+
+    def test_a_changed_prefix_blocks_inheritance(self):
+        """A later turn with a different prefix in front of the chunk cannot
+        reuse a correction shaped by the old prefix."""
+        import hashlib
+        doc = hashlib.sha256(b"doc").hexdigest()[:16]
+        owner = Request("a_owner", 0, None, 2, (Segment("sys", "sa", 2), Segment("doc", doc, 8)), 10)
+        turn0 = Request("w_t0", 0, None, 2, (Segment("sys", "sw", 4), Segment("doc", doc, 8)), 12)
+        turn1 = Request("w_t1", 1, "w_t0", 2,
+                        (Segment("sys", "OTHER", 4), Segment("doc", doc, 8),
+                         Segment("parent_out", "w_t0-out", 2), Segment("user", "q1", 2)), 16)
+        workload = Workload("supervisor", (owner, turn0, turn1), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=2)
+        by_key = {(d.request_id, d.segment_index): d for d in plan.reusable}
+        self.assertIsNone(by_key[("w_t1", 1)].inherits_from)
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the
