@@ -4,7 +4,10 @@
 
 本仓库在原始 AttAcc 上实现 Fugue 的七档比较。当前口径接受共同模型限制，FlashAttention 必须启用，候选问题由用户逐项裁决；设计说明见下方，历次记录见 [session 索引](sessions/README.md)。
 
-## 运行指南 —— `README_run_guide.md`
+## 运行指南 —— `README_run_guide.md`，分机器的跑法在 `run/`
+
+`run/README_run_squire.md`（本机直跑，64 核 / 500 GB 预算、监视器、scratch 在 /data2）与
+`run/README_run_athena.md`（Slurm，scratch 在 /localdata，一档一核的要价规则）。
 
 跑论文数据必须开的选项（`--gpu-model flash`、`--pipeopt`、`--powerlimit`、k=8、batch 8）、公平规则、
 baseline + 八个 sweep 轴、跑法与汇总；workload 矩阵在 `workload/probe/sweep/`（`gen_sweep.py` 生成，42 个文件）。

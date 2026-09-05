@@ -87,6 +87,8 @@ fresh prefill 按档选边；consumer 的扫描等 owner 落地；位移从复�
 
 ## 6. 跑法
 
+机器相关的部分（scratch、编译器、并行度、Slurm 要价）见 `run/README_run_squire.md` 与 `run/README_run_athena.md`；下面是通用命令。
+
 ```bash
 # 一次性环境（scratch 放 /data2；Ramulator 二进制与 trace_gen 软链；签名缓存会落在这里）
 export KVPIM_SCRATCH=/data2/<you>/scratch_0905
