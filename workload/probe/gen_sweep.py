@@ -21,11 +21,18 @@ Two encodings of the same session:
                    ``chunks | own`` per round (one prefill, one decode of
                    LOUT tokens).  Simple, hand-checkable.
   ``turns``        one request per (agent, round): tier = round, parent =
-                   the agent's previous round, a ``parent_out`` segment for
-                   its decoded output, ``history_len`` = the agent's earlier
-                   prefill rows (resident, never recomputed), LOUT tokens
-                   decoded per round.  The realistic multi-turn form; the
-                   decode rows of round r are what round r+1 attends.
+                   the agent's previous round.  Round r RE-LISTS the agent's
+                   whole earlier context -- system prompt, every earlier
+                   retrieved chunk, every earlier own block and every earlier
+                   decoded output (the previous round's as ``parent_out``,
+                   older ones as reused segments) -- at the same offsets, then
+                   adds this round's chunks and own block.  So the planner
+                   reuses the SAME physical objects: the earlier turns'
+                   masters, the corrections they already wrote (inherited,
+                   not recomputed -- C8, chenyi9 2026-09-05), the outputs.
+                   No ``history_len`` placeholder.  LOUT tokens decoded per
+                   round; the decode rows of round r are what round r+1
+                   attends.
 
 Standalone fresh chat prompts (S5) are extra tier-0 requests of 2k/4k/8k
 tokens with no reuse; ``fresh_share`` is their fraction of all requests.
@@ -101,25 +108,27 @@ def build(p, form):
             agents.append({"id": wid, "tier": 0, "parent": None, "history_len": 0,
                            "lout": p["lout"], "segs": segs})
         else:
-            history = 0
+            context = [{"role": "sys", "sha": sha(wid + "-sys"), "len": SYS}]
             for round_index in range(p["rounds"]):
                 rid = "%s_t%02d" % (wid, round_index)
-                segs = []
-                if round_index == 0:
-                    segs.append({"role": "sys", "sha": sha(wid + "-sys"), "len": SYS})
-                    parent = None
-                else:
-                    parent = "%s_t%02d" % (wid, round_index - 1)
+                parent = None if round_index == 0 else "%s_t%02d" % (wid, round_index - 1)
+                segs = [dict(seg) for seg in context]
+                if parent is not None:
+                    # the previous round's decoded output, right after the
+                    # context it was decoded from
                     segs.append({"role": "parent_out", "sha": sha(parent + "-out"),
                                  "len": p["lout"]})
                 segs += [_chunk(index) for index in _retrieved(agent, round_index, p)]
                 segs.append({"role": "user", "sha": sha("%s-own-%d" % (wid, round_index)),
                              "len": p["own"]})
                 agents.append({"id": rid, "tier": round_index, "parent": parent,
-                               "history_len": history, "lout": p["lout"], "segs": segs})
-                # next round holds this round's prefill rows as resident history
-                # (its decoded output arrives as the parent_out segment)
-                history += sum(seg["len"] for seg in segs)
+                               "history_len": 0, "lout": p["lout"], "segs": segs})
+                # the next round re-lists everything above; the output this
+                # round decodes becomes an ordinary reused segment two rounds on
+                context = [dict(seg) for seg in segs]
+                if parent is not None:
+                    context[len(context) - len(segs) + segs.index(
+                        next(seg for seg in segs if seg["role"] == "parent_out"))]["role"] = "user"
     agents += _fresh_prompts(p, len(agents))
     meta = {"format": "v2-dag", "kind": "ladder sweep point (gen_sweep.py, 2026-09-05)",
             "form": form, "block_tokens": BLOCK, "sys_tokens": SYS}

@@ -381,9 +381,29 @@
    "id": "w00_t01",
    "tier": 1,
    "parent": "w00_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "9fff7867dbd2856f",
@@ -439,9 +459,29 @@
    "id": "w01_t01",
    "tier": 1,
    "parent": "w01_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "bdc4a8c5d79f4c61",
@@ -497,9 +537,29 @@
    "id": "w02_t01",
    "tier": 1,
    "parent": "w02_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "2682c0bc53ab8e33",
@@ -555,9 +615,29 @@
    "id": "w03_t01",
    "tier": 1,
    "parent": "w03_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "8f2d6318f34716cd",
@@ -613,9 +693,29 @@
    "id": "w04_t01",
    "tier": 1,
    "parent": "w04_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "2d109ec9ebb79c25",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "69537062f4ecc172",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "299d9dd4e99a6202",
@@ -671,9 +771,29 @@
    "id": "w05_t01",
    "tier": 1,
    "parent": "w05_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "6c647ada09668ebb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "913837af19043b73",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "d3755d38a9dc22bf",
@@ -729,9 +849,29 @@
    "id": "w06_t01",
    "tier": 1,
    "parent": "w06_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "88d2a6fb543350b9",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1bf9db4905745ab",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "455752ef5c8357a8",
@@ -787,9 +927,29 @@
    "id": "w07_t01",
    "tier": 1,
    "parent": "w07_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "eec9e3c527160d6e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b2894216a238048b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "29b799d553dcab1b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a8353cda89533488",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "19b17030a8ab7f2c",

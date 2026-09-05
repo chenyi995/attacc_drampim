@@ -381,9 +381,29 @@
    "id": "w00_t01",
    "tier": 1,
    "parent": "w00_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "9fff7867dbd2856f",
@@ -410,9 +430,49 @@
    "id": "w00_t02",
    "tier": 2,
    "parent": "w00_t01",
-   "history_len": 1792,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "9fff7867dbd2856f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c41d63690bec5073",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "1e3464fbad33bce7",
@@ -439,9 +499,69 @@
    "id": "w00_t03",
    "tier": 3,
    "parent": "w00_t02",
-   "history_len": 2688,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "9fff7867dbd2856f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c41d63690bec5073",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e3464fbad33bce7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7abb4557cf81664e",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "aa56045a56d83564",
@@ -468,9 +588,89 @@
    "id": "w00_t04",
    "tier": 4,
    "parent": "w00_t03",
-   "history_len": 3584,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "9fff7867dbd2856f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c41d63690bec5073",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e3464fbad33bce7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7abb4557cf81664e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "aa56045a56d83564",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ca31513abbf7b880",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "f652ae2a5d281623",
@@ -497,9 +697,109 @@
    "id": "w00_t05",
    "tier": 5,
    "parent": "w00_t04",
-   "history_len": 4480,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "9fff7867dbd2856f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c41d63690bec5073",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e3464fbad33bce7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7abb4557cf81664e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "aa56045a56d83564",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ca31513abbf7b880",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f652ae2a5d281623",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c68cfb6190b4d0b9",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "b4d8e2d7c6960593",
@@ -526,9 +826,129 @@
    "id": "w00_t06",
    "tier": 6,
    "parent": "w00_t05",
-   "history_len": 5376,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "9fff7867dbd2856f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c41d63690bec5073",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e3464fbad33bce7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7abb4557cf81664e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "aa56045a56d83564",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ca31513abbf7b880",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f652ae2a5d281623",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c68cfb6190b4d0b9",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "b4d8e2d7c6960593",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "62aaf3fa2e24f624",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "abd5f070368a4e61",
@@ -555,9 +975,149 @@
    "id": "w00_t07",
    "tier": 7,
    "parent": "w00_t06",
-   "history_len": 6272,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "260e487ddb1a11d7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "a5196a8c72f02c87",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "106cceb689606285",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "d4ea9d70344e3265",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "9fff7867dbd2856f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c41d63690bec5073",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e3464fbad33bce7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7abb4557cf81664e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "aa56045a56d83564",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ca31513abbf7b880",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f652ae2a5d281623",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c68cfb6190b4d0b9",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "b4d8e2d7c6960593",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "62aaf3fa2e24f624",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "abd5f070368a4e61",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "0354dd8a4110d523",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "e557f6baf7a317d3",
@@ -613,9 +1173,29 @@
    "id": "w01_t01",
    "tier": 1,
    "parent": "w01_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "bdc4a8c5d79f4c61",
@@ -642,9 +1222,49 @@
    "id": "w01_t02",
    "tier": 2,
    "parent": "w01_t01",
-   "history_len": 1792,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "bdc4a8c5d79f4c61",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "104592244d1fb44b",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "75851702f77f3a9f",
@@ -671,9 +1291,69 @@
    "id": "w01_t03",
    "tier": 3,
    "parent": "w01_t02",
-   "history_len": 2688,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "bdc4a8c5d79f4c61",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "104592244d1fb44b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "75851702f77f3a9f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5368bcc43bff0294",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "80234f9be5322cfb",
@@ -700,9 +1380,89 @@
    "id": "w01_t04",
    "tier": 4,
    "parent": "w01_t03",
-   "history_len": 3584,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "bdc4a8c5d79f4c61",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "104592244d1fb44b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "75851702f77f3a9f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5368bcc43bff0294",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "80234f9be5322cfb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "93205ac9624ff369",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "8227548d986f7e91",
@@ -729,9 +1489,109 @@
    "id": "w01_t05",
    "tier": 5,
    "parent": "w01_t04",
-   "history_len": 4480,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "bdc4a8c5d79f4c61",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "104592244d1fb44b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "75851702f77f3a9f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5368bcc43bff0294",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "80234f9be5322cfb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "93205ac9624ff369",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8227548d986f7e91",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e6d5560c465445a7",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "d4be3e9eccf44f98",
@@ -758,9 +1618,129 @@
    "id": "w01_t06",
    "tier": 6,
    "parent": "w01_t05",
-   "history_len": 5376,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "bdc4a8c5d79f4c61",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "104592244d1fb44b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "75851702f77f3a9f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5368bcc43bff0294",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "80234f9be5322cfb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "93205ac9624ff369",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8227548d986f7e91",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e6d5560c465445a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "d4be3e9eccf44f98",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "aaeaef5ebe17f9ba",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "691e822d13890435",
@@ -787,9 +1767,149 @@
    "id": "w01_t07",
    "tier": 7,
    "parent": "w01_t06",
-   "history_len": 6272,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "1595bab751c9b0b4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4f792a9324d06cdc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "8a733b957e03ed62",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "940f9b6a6dd5634e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "bdc4a8c5d79f4c61",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "104592244d1fb44b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "75851702f77f3a9f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5368bcc43bff0294",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "80234f9be5322cfb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "93205ac9624ff369",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8227548d986f7e91",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e6d5560c465445a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "d4be3e9eccf44f98",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "aaeaef5ebe17f9ba",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "691e822d13890435",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b2894216a238048b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "29b799d553dcab1b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "38c590e233184dda",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "d9913f4a82a3f748",
@@ -845,9 +1965,29 @@
    "id": "w02_t01",
    "tier": 1,
    "parent": "w02_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "2682c0bc53ab8e33",
@@ -874,9 +2014,49 @@
    "id": "w02_t02",
    "tier": 2,
    "parent": "w02_t01",
-   "history_len": 1792,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "2682c0bc53ab8e33",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "bfb93e2c2e1e34ab",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "d99627f0d1a15caa",
@@ -903,9 +2083,69 @@
    "id": "w02_t03",
    "tier": 3,
    "parent": "w02_t02",
-   "history_len": 2688,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "2682c0bc53ab8e33",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "bfb93e2c2e1e34ab",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "d99627f0d1a15caa",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c6694f56d92baf1",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "eba7938fb13ff525",
@@ -932,9 +2172,89 @@
    "id": "w02_t04",
    "tier": 4,
    "parent": "w02_t03",
-   "history_len": 3584,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "2682c0bc53ab8e33",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "bfb93e2c2e1e34ab",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "d99627f0d1a15caa",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c6694f56d92baf1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "eba7938fb13ff525",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "749dbe2b1508a53a",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "b58aad7667f7467f",
@@ -961,9 +2281,109 @@
    "id": "w02_t05",
    "tier": 5,
    "parent": "w02_t04",
-   "history_len": 4480,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "2682c0bc53ab8e33",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "bfb93e2c2e1e34ab",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "d99627f0d1a15caa",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c6694f56d92baf1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "eba7938fb13ff525",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "749dbe2b1508a53a",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "b58aad7667f7467f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "dcd6237c73c1c4b8",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "645328ec8eb87be2",
@@ -990,9 +2410,129 @@
    "id": "w02_t06",
    "tier": 6,
    "parent": "w02_t05",
-   "history_len": 5376,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "2682c0bc53ab8e33",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "bfb93e2c2e1e34ab",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "d99627f0d1a15caa",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c6694f56d92baf1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "eba7938fb13ff525",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "749dbe2b1508a53a",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "b58aad7667f7467f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "dcd6237c73c1c4b8",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "645328ec8eb87be2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b2894216a238048b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "29b799d553dcab1b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4811165347fea428",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "490c253de7ac3c88",
@@ -1019,9 +2559,149 @@
    "id": "w02_t07",
    "tier": 7,
    "parent": "w02_t06",
-   "history_len": 6272,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "51f54b7f60868c2c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b58b7f2bca57800e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4af56c0a84fa1978",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6ff6fefa6db1caaf",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "2682c0bc53ab8e33",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "bfb93e2c2e1e34ab",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "d99627f0d1a15caa",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c6694f56d92baf1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "eba7938fb13ff525",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "749dbe2b1508a53a",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "b58aad7667f7467f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "dcd6237c73c1c4b8",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "645328ec8eb87be2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b2894216a238048b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "29b799d553dcab1b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4811165347fea428",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "490c253de7ac3c88",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "908205c4c2ebc279",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "07b69cb358e6b7c7",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4edfdf6625ea692d",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "fca8d3a2a512595f",
@@ -1077,9 +2757,29 @@
    "id": "w03_t01",
    "tier": 1,
    "parent": "w03_t00",
-   "history_len": 896,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "8f2d6318f34716cd",
@@ -1106,9 +2806,49 @@
    "id": "w03_t02",
    "tier": 2,
    "parent": "w03_t01",
-   "history_len": 1792,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8f2d6318f34716cd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "36c04fdb635ecc70",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "ca7fda644eff9c2f",
@@ -1135,9 +2875,69 @@
    "id": "w03_t03",
    "tier": 3,
    "parent": "w03_t02",
-   "history_len": 2688,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8f2d6318f34716cd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "36c04fdb635ecc70",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ca7fda644eff9c2f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "3e1aff743b64c1a1",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "5af478e43e19b584",
@@ -1164,9 +2964,89 @@
    "id": "w03_t04",
    "tier": 4,
    "parent": "w03_t03",
-   "history_len": 3584,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8f2d6318f34716cd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "36c04fdb635ecc70",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ca7fda644eff9c2f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "3e1aff743b64c1a1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "5af478e43e19b584",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b7a354f2e8f7212f",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "beddad4053f61127",
@@ -1193,9 +3073,109 @@
    "id": "w03_t05",
    "tier": 5,
    "parent": "w03_t04",
-   "history_len": 4480,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8f2d6318f34716cd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "36c04fdb635ecc70",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ca7fda644eff9c2f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "3e1aff743b64c1a1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "5af478e43e19b584",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b7a354f2e8f7212f",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "beddad4053f61127",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b2894216a238048b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "29b799d553dcab1b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "33e0fab6d67d3664",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "ed177f42eeb2fa53",
@@ -1222,9 +3202,129 @@
    "id": "w03_t06",
    "tier": 6,
    "parent": "w03_t05",
-   "history_len": 5376,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8f2d6318f34716cd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "36c04fdb635ecc70",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ca7fda644eff9c2f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "3e1aff743b64c1a1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "5af478e43e19b584",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b7a354f2e8f7212f",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "beddad4053f61127",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b2894216a238048b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "29b799d553dcab1b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "33e0fab6d67d3664",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ed177f42eeb2fa53",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "908205c4c2ebc279",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "07b69cb358e6b7c7",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "95e34273e6f08c0e",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "77672fef1c06d575",
@@ -1251,9 +3351,149 @@
    "id": "w03_t07",
    "tier": 7,
    "parent": "w03_t06",
-   "history_len": 6272,
+   "history_len": 0,
    "lout": 256,
    "segs": [
+    {
+     "role": "sys",
+     "sha": "b6b1b09536efc449",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3b6930415f1b4d64",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "d2196c13a15213d8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a29d550ff4a9f37",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8f2d6318f34716cd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b0762c36489d8639",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "83a8d9f77081937b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "36c04fdb635ecc70",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ca7fda644eff9c2f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "4b20c0a591f537c2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "20f5fc6b78ffe5a5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "3e1aff743b64c1a1",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "5af478e43e19b584",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bb04912044c9d314",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c45bf7427938135e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b7a354f2e8f7212f",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "beddad4053f61127",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b2894216a238048b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "29b799d553dcab1b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "33e0fab6d67d3664",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ed177f42eeb2fa53",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "908205c4c2ebc279",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "07b69cb358e6b7c7",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "95e34273e6f08c0e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "77672fef1c06d575",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7aa2300475f47ac1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0ed8b8087ac86d61",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "093afe94b6d8c675",
+     "len": 128
+    },
     {
      "role": "parent_out",
      "sha": "1ac9288016cec8ff",
