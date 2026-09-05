@@ -1,5 +1,8 @@
 # 怎么跑:squire(本机直跑,无 Slurm)
 
+> **2026-09-04：`--pipeopt` 已默认 ON**（裁决：必须常开）。本页示例命令不带它也是 pipeopt 模式；
+> 要复现 2026-09-04 之前的 serial 数才需要显式 `--no-pipeopt`。
+
 **squire** 是那台 128 核、带 `/data2`、**没有 Slurm** 的机器。它上面
 `which sbatch` 是空的,`output/_orch2/*.sh`(sbatch、athena 分区、集群 REPO 路径)
 **全部用不了**,所以有一套单独的本机跑法。

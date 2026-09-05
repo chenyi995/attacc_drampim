@@ -1,5 +1,8 @@
 # 怎么跑:athena 集群(Slurm)
 
+> **2026-09-04：`--pipeopt` 已默认 ON**（裁决：必须常开）。本页示例命令不带它也是 pipeopt 模式；
+> 要复现 2026-09-04 之前的 serial 数才需要显式 `--no-pipeopt`。
+
 **这台机器**(`athena.egr.duke.edu`)是**带 Slurm 的集群登录节点**,活干在
 `node1`–`node6` 上。跑法只有一条:写 sbatch,`sbatch` 出去,别在登录节点上跑真实
 负载。

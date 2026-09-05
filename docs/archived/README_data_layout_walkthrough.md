@@ -1,3 +1,11 @@
+> **已归档 2026-09-04。** 本页走查的是 A3b → A4 → A4b 那条布局线，而那条线当天被
+> **A4c / A4d** 取代（`../README_design_ladder.md` §3–§4、§9）：A4/A4b 把 ch15 从 master 池里
+> 全局拿走，在所有实测 workload 上输给 A3b。此外本页的数字建立在三处当天修掉的坍缩之上
+> （`sorted()` 全知分配、master/diff 段求和重打包、`_pool_reads` 一表三用；
+> `../sessions/2026-09-04.md` §11、§15）。**§1–§6 的几何（一次 ACT = 256 token、
+> unit→channel 映射、`stripe_m` 取整导致 A4 退化）仍然成立**，§7–§8 的数字不要引用。
+> 当前口径与手算样例改看 `../README_design_ladder.md` 与 `../../output/analysis/layout_grid_csv.py`。
+
 # A3b–A6 的数据布局走查（GPT-13B / baseline）
 
 > **⚠️ 2026-09-03 晚:本页的数字待重算,机制描述仍然有效。**

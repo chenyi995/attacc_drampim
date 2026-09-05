@@ -1,3 +1,9 @@
+> **已归档 2026-09-04。** 本页描述的是 6 模型 × 14 配置 × **9 档**的 sweep 流程，
+> 而阶梯已于当天重定为 **A1 / A2 / A4c / A4d / A5 / A6**（`../README_design_ladder.md`），
+> A3/A3a/A3b/A4/A4b 只剩消融用途；它引用的设计规范、结果页与合并版跑法文档也都已归档。
+> 怎么跑改看 `../README_run_athena_slurm.md`（Slurm）/ `../README_run_squire_local.md`（本机）。
+> 流程骨架（setup → 跑 → 提取 → 独立复核 → commit）仍然适用，档位表与产物名不再适用。
+
 # 运行指南：experiment1 多模型 sweep（给另一台机器上的 AI 照着跑）
 
 本指南面向**在一台全新机器上 clone 了本仓库的 AI**（目标机量级 ~300 CPU core /
