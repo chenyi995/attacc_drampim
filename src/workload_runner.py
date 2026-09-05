@@ -2873,6 +2873,37 @@ def _post_attention_gpu(system, events, templates, *, layer, tier, request,
     return last
 
 
+def _record_object_stores(registry: Dict[Tuple[int, str, str], List[str]], layer: int,
+                          locations: Sequence[KVLocation], store_events: Sequence[str]) -> None:
+    """Remember which store events land each (layer, owner, fingerprint)."""
+    if not store_events:
+        return
+    for location in locations:
+        registry.setdefault((layer, location.owner, location.fingerprint),
+                            []).extend(store_events)
+
+
+def _owner_store_deps(registry: Dict[Tuple[int, str, str], List[str]], layer: int,
+                      bindings, request_id: str) -> Tuple[str, ...]:
+    """Store events of OTHER requests whose rows this layer reuses.
+
+    Re-audit R05 (2026-09-05): a same-tier consumer used to inherit only the
+    previous tier's completion, so listed before its owner it could scan a
+    shared chunk before the owner had landed it.  Every reused master row
+    (and the master a correction shadows) now waits for its owner's store.
+    """
+    deps: Dict[str, None] = {}
+    for _position, reused, _corrected, location in bindings:
+        if not reused:
+            continue
+        for candidate in (location, location.shadow):
+            if candidate is None or candidate.owner == request_id:
+                continue
+            for event in registry.get((layer, candidate.owner, candidate.fingerprint), ()):
+                deps[event] = None
+    return tuple(deps)
+
+
 def _prefill_location_deltas(request, bindings):
     """Map a consumer-visible resident K/V vector to its RoPE position delta."""
     result = {}
@@ -4603,10 +4634,14 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     epic_bitmap_loaded: set = set()
     di_bitmap_bytes_total = 0
 
+    store_registry: Dict[Tuple[int, str, str], List[str]] = {}
     for tier, requests, _, _ in _tier_shapes(workload):
         tier_done: List[str] = []
         decode_inputs = []
-        for request in requests:
+        # Owners before consumers (ownership is the first request in sorted
+        # (tier, id) order, see build_reuse_plan), so a consumer's dependency
+        # on the owner's store can be expressed when it is built.
+        for request in sorted(requests, key=lambda item: item.request_id):
             request_ready: Tuple[str, ...] = previous_tier_done
             # A layer's K/V writeback is not an input to the next layer's GPU
             # QKV.  Keep it pending so it can overlap that compute exactly as
@@ -4622,6 +4657,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             _cacheblend_tlb_rows(workload, plan, layer_index,
                                                  request, tlb, force_fresh=full))
                 prefill_bindings[layer_index] = bindings
+                owner_deps = _owner_store_deps(store_registry, layer_index, bindings,
+                                               request.request_id)
+                if owner_deps:
+                    request_ready = tuple(dict.fromkeys(request_ready + owner_deps))
                 side_rows = prefill_attn_rows.setdefault(
                     request.request_id, {"pim": 0, "gpu": 0})
                 if physical_no_reuse:
@@ -4659,6 +4698,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             tier=tier, request=request, bindings=bindings,
                             initial_deps=request_ready, heads=heads)
                         prefill_store_events.extend(store)
+                        _record_object_stores(store_registry, layer_index,
+                                              [loc for _, reused, corrected, loc in bindings
+                                               if not reused or corrected], store)
                         request_ready = (post_last,)
                     continue
                 reusable = [item for item in bindings if item[1]]
@@ -4730,6 +4772,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             tier=tier, request=request, bindings=bindings,
                             initial_deps=request_ready, heads=heads)
                         prefill_store_events.extend(store)
+                        _record_object_stores(store_registry, layer_index,
+                                              [loc for _, reused, corrected, loc in bindings
+                                               if not reused or corrected], store)
                         request_ready = (post_last,)
                         continue
 
@@ -4832,6 +4877,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         locations=writes, dbyte=dbyte, deps=(kv_link,),
                         positions=compute_positions)
                     prefill_store_events.extend(store)
+                    _record_object_stores(store_registry, layer_index,
+                                          [loc for _, reused, corrected, loc in bindings
+                                           if not reused or corrected], store)
                     scan_addresses = [address for loc in scan_locations
                                       for address in (loc.key_address, loc.value_address)]
                     pim_results = []
@@ -4963,6 +5011,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     locations=writes, dbyte=dbyte, deps=(kv_link,),
                     positions=compute_positions)
                 prefill_store_events.extend(store)
+                _record_object_stores(store_registry, layer_index,
+                                      [loc for _, reused, corrected, loc in bindings
+                                       if not reused or corrected], store)
                 request_ready = (post_last,)
             # Decode consumes the prefill KV of every layer, so this is the
             # first required join point for asynchronous prefill writeback.

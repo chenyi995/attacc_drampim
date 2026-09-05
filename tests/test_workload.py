@@ -1616,6 +1616,37 @@ class AgenticHistoryTests(unittest.TestCase):
         self.assertEqual(len(shas), 1)
         self.assertFalse(plan.config.recompute_canonical)
 
+    def test_consumer_waits_for_the_owner_store_even_when_listed_first(self):
+        """R05 (2026-09-05): a same-tier consumer's scan depends on the
+        owner's landing of the shared rows, whatever the JSON order."""
+        import hashlib
+        doc = hashlib.sha256(b"doc").hexdigest()[:16]
+        consumer = Request("b_consumer", 0, None, 2, (Segment("sys", "sb", 4), Segment("doc", doc, 8)), 12)
+        owner = Request("a_owner", 0, None, 2, (Segment("sys", "sa", 2), Segment("doc", doc, 8)), 10)
+        workload = Workload("supervisor", (consumer, owner), {})     # consumer FIRST
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        self.assertEqual({d.owner_request_id for d in plan.reusable}, {"a_owner"})
+        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                   pim_prefill_mode="pim")
+        events = {event["id"]: event for event in report["events"]}
+        owner_stores = {eid for eid, e in events.items()
+                        if e["request"] == "a_owner" and e["name"].startswith("dram_store")}
+        self.assertTrue(owner_stores)
+        scans = [e for e in report["events"] if e["request"] == "b_consumer"
+                 and e["name"] == "pim_kv_scan_score_softmax_pv"]
+        self.assertTrue(scans)
+
+        def ancestors(event_id, seen):
+            for dep in events[event_id]["depends_on"]:
+                if dep not in seen:
+                    seen.add(dep)
+                    ancestors(dep, seen)
+            return seen
+
+        for scan in scans:
+            self.assertTrue(owner_stores & ancestors(scan["id"], set()),
+                            "consumer scan has no owner store ancestor")
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the
