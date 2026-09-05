@@ -3951,31 +3951,41 @@ def _resolve_prefill_side(system, tlb, x2g, templates: Mapping[str, Layer], *,
                                 heads_per_hbm=probe_heads_per_hbm, tlb=tlb))
     busiest_run = (max(probe_runs, key=lambda run: run[2])
                    if probe_runs else None)
-    est = deepcopy(score)
-    est.m, est.n, est.k, est.numOp = (
-        min(cap, len(compute_positions)),
-        busiest_run[2] if busiest_run else 0, system.model.dhead, 1)
-    est.pim_kv_runs = (busiest_run,) if busiest_run else ()
-    if busiest_run and probe_groups:
-        est.pim_kv_extent_groups = tuple(
-            group for group in probe_groups if group[0] == busiest_run[3])
-    est.pim_shared_kv = est.m * _gqa_group(system) > 1
-    est.pim_shared_queries = est.m * _gqa_group(system)
-    _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)
     accelerator = system.devices["Acc"]
-    # Under a warm build the patched entries return zero placeholders; the
-    # side DECISION must be real, so the probe prices through the original
-    # entry (an inline cold simulation that also warms the cache).
-    if not busiest_run:
-        measured = []
-    elif _WARM_BYPASS is not None:
-        measured = _WARM_BYPASS[0](est)
-    elif hasattr(accelerator, "get_time_and_energy_runs"):
-        measured = accelerator.get_time_and_energy_runs(est)
-    else:
-        # Aggregate mock-device API of lightweight tests.
-        measured = [accelerator.get_time_and_energy(est)]
-    t_bank = max([item[0] for item in measured], default=0.0) * sweeps
+
+    def _sweep_price(resident_queries: int) -> float:
+        # Price EVERY lane the committed scan would run, in the same shape
+        # (re-audit R07 / SS06): the scan completes when its slowest lane
+        # does, and the lane with the most tokens is not always the slowest
+        # -- a lane with more, shorter extents pays more activations.
+        est = deepcopy(score)
+        est.m, est.n, est.k, est.numOp = (
+            resident_queries, busiest_run[2] if busiest_run else 0,
+            system.model.dhead, 1)
+        est.pim_kv_runs = tuple(probe_runs)
+        if probe_groups:
+            est.pim_kv_extent_groups = tuple(probe_groups)
+        est.pim_shared_kv = est.m * _gqa_group(system) > 1
+        est.pim_shared_queries = est.m * _gqa_group(system)
+        _apply_pim_batch(est, pim_batch_command, pim_pe_freq_ghz)
+        if not probe_runs:
+            measured = []
+        elif _WARM_BYPASS is not None:
+            measured = _WARM_BYPASS[0](est)
+        elif hasattr(accelerator, "get_time_and_energy_runs"):
+            measured = accelerator.get_time_and_energy_runs(est)
+        else:
+            # Aggregate mock-device API of lightweight tests.
+            measured = [accelerator.get_time_and_energy(est)]
+        return max([item[0] for item in measured], default=0.0)
+
+    # full sweeps at the resident-Q cap, then the tail at its real query count
+    full_sweeps, tail_queries = divmod(len(compute_positions), cap)
+    t_bank = 0.0
+    if full_sweeps:
+        t_bank += full_sweeps * _sweep_price(cap)
+    if tail_queries:
+        t_bank += _sweep_price(tail_queries)
     t_bank += _tlb_plan_cost(tlb_runs)[0] * sweeps
     for name in ("q_gpu_to_pim", "ctx_pim_to_gpu"):
         op = _link_layer(x2g, name, len(compute_positions) * local_hidden * dbyte)
@@ -3992,6 +4002,7 @@ def _resolve_prefill_side(system, tlb, x2g, templates: Mapping[str, Layer], *,
                 "readback_rows": len(readback_rows),
                 "scan_rows": len(scan_locations), "sweeps": sweeps,
                 "busiest_channel_rows": busiest_run[2] if busiest_run else 0,
+                "lanes": len(probe_runs),
                 "t_xpu_s": t_xpu, "t_bank_s": t_bank, "side": prefill_side}) + "\n")
     return prefill_side
 
