@@ -7,6 +7,7 @@ GPU/PIM prefill split needed for position-independent KV reuse.
 
 from __future__ import annotations
 
+import json
 import math
 import os
 import sys
@@ -3723,6 +3724,17 @@ def _resolve_prefill_side(system, tlb, x2g, templates: Mapping[str, Layer], *,
         t_bank += system.devices["GPU"].get_time_and_energy(op)[0]
     prefill_side = "pim" if t_bank <= t_xpu else "gpu"
     decided[request_id] = prefill_side
+    log_path = os.environ.get("KVPIM_PREFILL_SIDE_LOG")
+    if log_path:
+        # Diagnostic only (2026-09-05): one JSON line per decision, so a
+        # workload can be tuned against the two prices the chooser saw.
+        with open(log_path, "a") as handle:
+            handle.write(json.dumps({
+                "request": request_id, "compute_rows": len(compute_positions),
+                "readback_rows": len(readback_rows),
+                "scan_rows": len(scan_locations), "sweeps": sweeps,
+                "busiest_channel_rows": busiest_run[2] if busiest_run else 0,
+                "t_xpu_s": t_xpu, "t_bank_s": t_bank, "side": prefill_side}) + "\n")
     return prefill_side
 
 
