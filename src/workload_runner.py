@@ -914,29 +914,48 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
                 base = (head * stripe) % _HBM_CHANNELS
                 add((base + stripe - 1) % _HBM_CHANNELS, sum(repairs))
     elif policy == "slice-append":
-        stripe = max(1, _HBM_CHANNELS // heads)
-        units = _units(master_runs)
-        for head in range(heads):
-            base = (head * stripe) % _HBM_CHANNELS
-            for unit, rows in enumerate(units):
-                add((base + (unit % stripe)) % _HBM_CHANNELS, rows)
-            # No diff pool, but a head's OWN repairs are still one contiguous
-            # append (ruling chenyi9 2026-09-03): they are produced together by
-            # that head's prefill and land back to back, so they share rows --
-            # within the head.  What A3b cannot do is share rows ACROSS heads,
-            # and that is the only thing the diff pool adds.  Worked example
-            # from the ruling, four heads generated together over a 24-chunk
-            # corpus at k=8: each head's 24 x 8 = 192 tokens fit one row, so
-            # A3b pays FOUR rows, one per head, against the pool's
-            # 4 x 24 x 8 = 768 = exactly THREE.  At the swept C=16 it is four
-            # rows against 4 x 16 x 8 = 512 = exactly TWO -- which is why the
-            # sweep moved to C=16: the payoff doubles.
-            for index, repair in enumerate(repairs):
-                # each contiguous repair run is its own row-aligned extent;
-                # repairs the allocator placed side by side already arrived
-                # here as ONE run and cost one row between them
-                add((base + ((len(units) + index) % stripe)) % _HBM_CHANNELS,
-                    repair)
+        # A3b: ONE append stream, chunks and repairs alike, each object on
+        # the persistent write-order slot of the head's stripe (F02 fix,
+        # 2026-09-05).  Until then this branch re-rotated by the unit index
+        # of the CURRENT scan, so the same chunk moved between scans and
+        # every scan came out perfectly balanced -- neither of which a
+        # store can do -- and A3b no longer shared A4c's master placement,
+        # which broke the claim-1 attribution.  Master now goes through the
+        # same table A4c consults.  No diff pool, but a head's OWN repairs
+        # are still one contiguous append (ruling chenyi9 2026-09-03): they
+        # are produced together by that head's prefill and land back to
+        # back, so they share rows -- within the head.  What A3b cannot do
+        # is share rows ACROSS heads or gather them off the master stream,
+        # so each repair takes a slot of the same rotation the chunks use.
+        # Worked example from the ruling, four heads generated together
+        # over a 24-chunk corpus at k=8: each head's 24 x 8 = 192 tokens fit
+        # one row, so A3b pays FOUR rows, one per head, against the pool's
+        # 4 x 24 x 8 = 768 = exactly THREE.  At the swept C=16 it is four
+        # rows against 4 x 16 x 8 = 512 = exactly TWO -- which is why the
+        # sweep moved to C=16: the payoff doubles.
+        stripe = _place_master_by_slot("append")
+        if tlb is None or not hasattr(tlb, "chunk_slot"):
+            # probe / unit test without an allocator: the old per-scan
+            # rotation simply continues past the master units
+            units = _units(master_runs)
+            for head in range(heads):
+                base = (head * stripe) % _HBM_CHANNELS
+                for index, repair in enumerate(repairs):
+                    add((base + ((len(units) + index) % stripe)) % _HBM_CHANNELS,
+                        repair)
+        else:
+            by_repair: Dict[Tuple[str, str], List[KVLocation]] = {}
+            for location in reads:
+                if location.kind == "diff":
+                    by_repair.setdefault((location.owner, location.fingerprint),
+                                         []).append(location)
+            for (owner, fingerprint), locations in by_repair.items():
+                slot = tlb.chunk_slot("diff:{}:{}".format(owner, fingerprint),
+                                      stripe, "append")
+                for _k, _v, count, _cb, _cc in tlb.scan_runs(locations):
+                    for head in range(heads):
+                        base = (head * stripe) % _HBM_CHANNELS
+                        add((base + slot) % _HBM_CHANNELS, count)
     else:
         master_units = _units(master_runs)
         if policy == "master-diff-slice-append":

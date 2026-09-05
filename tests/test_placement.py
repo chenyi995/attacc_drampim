@@ -654,6 +654,32 @@ class ShadowRowsAreActivatedTest(unittest.TestCase):
             self.assertGreaterEqual(acts, previous,
                                     "cost fell going to k={}".format(k))
             previous = acts
+    def test_a3b_chunk_keeps_its_channel_across_scans(self):
+        """F02 (2026-09-05): A3b places by the persistent write-order slot.
+
+        The old branch re-rotated by the unit index of the CURRENT scan, so
+        a scan that read only seg2 and seg3 put them on ch0 and ch1 -- the
+        same chunks sat on ch2 and ch3 in the full scan.  No store can move
+        a chunk between scans; and A3b must share A4c's master placement so
+        that the A3b -> A4c step is the diff gather alone.
+        """
+        tlb, reads = build_allocator(segments=4, repair_rows=8, pooled=False)
+        full_loads, _a, _r, _g = _placement_channel_runs(
+            reads, policy="slice-append", heads_per_hbm=1, tlb=tlb)
+        partial = [r for r in reads if r.fingerprint in ("seg2", "seg3")]
+        loads, _a, _r, _g = _placement_channel_runs(
+            partial, policy="slice-append", heads_per_hbm=1, tlb=tlb)
+        self.assertGreater(full_loads[2], 0)
+        self.assertGreater(full_loads[3], 0)
+        self.assertGreater(loads[2], 0)
+        self.assertGreater(loads[3], 0)
+        self.assertEqual((loads[0], loads[1]), (0.0, 0.0))
+        # ... and the same table A4c consults gives the same master slots
+        a4c, _a, _r, _g = _placement_channel_runs(
+            partial, policy="master-diff-local-append", heads_per_hbm=1, tlb=tlb)
+        self.assertGreater(a4c[2], 0)
+        self.assertGreater(a4c[3], 0)
+
     def test_activations_step_at_the_row_boundary_not_with_k(self):
         """Ruling example (chenyi9 2026-09-04): four 256-token chunks, pooled.
 
