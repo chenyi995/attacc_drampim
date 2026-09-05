@@ -1,0 +1,1285 @@
+{
+  "1024_token_segment_one_slot": [
+    [
+      0,
+      1,
+      [
+        [
+          0,
+          8388608,
+          256
+        ],
+        [
+          1024,
+          8389632,
+          256
+        ],
+        [
+          2048,
+          8390656,
+          256
+        ],
+        [
+          3072,
+          8391680,
+          256
+        ]
+      ]
+    ],
+    [
+      4,
+      1,
+      [
+        [
+          4294967296,
+          4303355904,
+          256
+        ],
+        [
+          4294968320,
+          4303356928,
+          256
+        ],
+        [
+          4294969344,
+          4303357952,
+          256
+        ],
+        [
+          4294970368,
+          4303358976,
+          256
+        ]
+      ]
+    ],
+    [
+      8,
+      1,
+      [
+        [
+          8589934592,
+          8598323200,
+          256
+        ],
+        [
+          8589935616,
+          8598324224,
+          256
+        ],
+        [
+          8589936640,
+          8598325248,
+          256
+        ],
+        [
+          8589937664,
+          8598326272,
+          256
+        ]
+      ]
+    ],
+    [
+      12,
+      1,
+      [
+        [
+          12884901888,
+          12893290496,
+          256
+        ],
+        [
+          12884902912,
+          12893291520,
+          256
+        ],
+        [
+          12884903936,
+          12893292544,
+          256
+        ],
+        [
+          12884904960,
+          12893293568,
+          256
+        ]
+      ]
+    ]
+  ],
+  "A1_fresh_prefill": {
+    "actual_events": {
+      "ADDR:contiguous_address_plan": 1,
+      "GPU:gpu_comm_g2g": 2,
+      "GPU:gpu_ff1": 1,
+      "GPU:gpu_ff2": 1,
+      "GPU:gpu_gelu": 1,
+      "GPU:gpu_norm1": 1,
+      "GPU:gpu_norm2": 1,
+      "GPU:gpu_proj": 1,
+      "GPU:qkv": 1,
+      "LINK:ctx_pim_to_gpu": 1,
+      "LINK:kv_gpu_to_pim": 1,
+      "LINK:q_gpu_to_pim": 1,
+      "PIM:dram_store_master": 1,
+      "PIM:pim_kv_scan_score_softmax_pv": 1
+    },
+    "gpu_matmul_shapes": [
+      [
+        "score",
+        1,
+        1,
+        128,
+        8
+      ],
+      [
+        "context",
+        1,
+        1,
+        1,
+        8
+      ]
+    ],
+    "reported_attention_rows": {
+      "gpu": 256,
+      "pim": 0
+    }
+  },
+  "A3b_fresh_prefill": {
+    "actual_events": {
+      "GPU:gpu_comm_g2g": 2,
+      "GPU:gpu_context": 1,
+      "GPU:gpu_ff1": 1,
+      "GPU:gpu_ff2": 1,
+      "GPU:gpu_gelu": 1,
+      "GPU:gpu_norm1": 1,
+      "GPU:gpu_norm2": 1,
+      "GPU:gpu_proj": 1,
+      "GPU:gpu_score": 1,
+      "GPU:gpu_softmax": 1,
+      "GPU:qkv": 1,
+      "LINK:kv_gpu_to_pim": 1,
+      "PIM:pool0-0:dram_store_master": 1
+    },
+    "gpu_matmul_shapes": [
+      [
+        "score",
+        256,
+        256,
+        128,
+        8
+      ],
+      [
+        "context",
+        256,
+        256,
+        1,
+        8
+      ],
+      [
+        "score",
+        1,
+        1,
+        128,
+        8
+      ],
+      [
+        "context",
+        1,
+        1,
+        1,
+        8
+      ]
+    ],
+    "reported_attention_rows": {
+      "gpu": 256,
+      "pim": 0
+    }
+  },
+  "A5_fresh_prefill": {
+    "actual_events": {
+      "GPU:gpu_comm_g2g": 2,
+      "GPU:gpu_context": 1,
+      "GPU:gpu_ff1": 1,
+      "GPU:gpu_ff2": 1,
+      "GPU:gpu_gelu": 1,
+      "GPU:gpu_norm1": 1,
+      "GPU:gpu_norm2": 1,
+      "GPU:gpu_proj": 1,
+      "GPU:gpu_score": 1,
+      "GPU:gpu_softmax": 1,
+      "GPU:qkv": 1,
+      "LINK:kv_gpu_to_pim": 1,
+      "PIM:pool0-14:dram_store_master": 1
+    },
+    "gpu_matmul_shapes": [
+      [
+        "score",
+        256,
+        256,
+        128,
+        8
+      ],
+      [
+        "context",
+        256,
+        256,
+        1,
+        8
+      ],
+      [
+        "score",
+        1,
+        1,
+        128,
+        8
+      ],
+      [
+        "context",
+        1,
+        1,
+        1,
+        8
+      ]
+    ],
+    "reported_attention_rows": {
+      "gpu": 256,
+      "pim": 0
+    }
+  },
+  "a3b_same_chunk_changes_channel": {
+    "c4_after_c0": [
+      [
+        0,
+        1,
+        [
+          [
+            0,
+            8388608,
+            256
+          ]
+        ]
+      ],
+      [
+        1,
+        1,
+        [
+          [
+            1073741824,
+            1082130432,
+            256
+          ]
+        ]
+      ],
+      [
+        4,
+        1,
+        [
+          [
+            4294967296,
+            4303355904,
+            256
+          ]
+        ]
+      ],
+      [
+        5,
+        1,
+        [
+          [
+            5368709120,
+            5377097728,
+            256
+          ]
+        ]
+      ],
+      [
+        8,
+        1,
+        [
+          [
+            8589934592,
+            8598323200,
+            256
+          ]
+        ]
+      ],
+      [
+        9,
+        1,
+        [
+          [
+            9663676416,
+            9672065024,
+            256
+          ]
+        ]
+      ],
+      [
+        12,
+        1,
+        [
+          [
+            12884901888,
+            12893290496,
+            256
+          ]
+        ]
+      ],
+      [
+        13,
+        1,
+        [
+          [
+            13958643712,
+            13967032320,
+            256
+          ]
+        ]
+      ]
+    ],
+    "c4_alone": [
+      [
+        0,
+        1,
+        [
+          [
+            0,
+            8388608,
+            256
+          ]
+        ]
+      ],
+      [
+        4,
+        1,
+        [
+          [
+            4294967296,
+            4303355904,
+            256
+          ]
+        ]
+      ],
+      [
+        8,
+        1,
+        [
+          [
+            8589934592,
+            8598323200,
+            256
+          ]
+        ]
+      ],
+      [
+        12,
+        1,
+        [
+          [
+            12884901888,
+            12893290496,
+            256
+          ]
+        ]
+      ]
+    ],
+    "c4_persistent_slot": 0
+  },
+  "default_pim_count": 8,
+  "external_workload_stats": [
+    {
+      "corrections": 6088,
+      "histories": 4096,
+      "inputs": 405504,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 8192,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_C40.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 16
+        },
+        "1": {
+          "corrections": 6088,
+          "requests": 16
+        }
+      },
+      "requests": 32,
+      "reused": 382720,
+      "segment_lengths": {
+        "256": 1584
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 1992,
+      "histories": 4096,
+      "inputs": 143360,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 8192,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_C8.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 16
+        },
+        "1": {
+          "corrections": 1992,
+          "requests": 16
+        }
+      },
+      "requests": 32,
+      "reused": 128768,
+      "segment_lengths": {
+        "256": 560
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 0,
+      "histories": 0,
+      "inputs": 73728,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 4096,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_D1.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 16
+        }
+      },
+      "requests": 16,
+      "reused": 65280,
+      "segment_lengths": {
+        "256": 288
+      },
+      "tiers": 1,
+      "timestamped": 0
+    },
+    {
+      "corrections": 9048,
+      "histories": 24576,
+      "inputs": 479232,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 16384,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_D4.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 16
+        },
+        "1": {
+          "corrections": 3016,
+          "requests": 16
+        },
+        "2": {
+          "corrections": 3016,
+          "requests": 16
+        },
+        "3": {
+          "corrections": 3016,
+          "requests": 16
+        }
+      },
+      "requests": 64,
+      "reused": 446208,
+      "segment_lengths": {
+        "256": 1872
+      },
+      "tiers": 4,
+      "timestamped": 0
+    },
+    {
+      "corrections": 568,
+      "histories": 1024,
+      "inputs": 39936,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 2048,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_N4.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 4
+        },
+        "1": {
+          "corrections": 568,
+          "requests": 4
+        }
+      },
+      "requests": 8,
+      "reused": 32512,
+      "segment_lengths": {
+        "256": 156
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 24328,
+      "histories": 16384,
+      "inputs": 1622016,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 32768,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_N64.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 64
+        },
+        "1": {
+          "corrections": 24328,
+          "requests": 64
+        }
+      },
+      "requests": 128,
+      "reused": 1568512,
+      "segment_lengths": {
+        "256": 6336
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 3016,
+      "histories": 4096,
+      "inputs": 208896,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 8192,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_baseline_alltoall_N16_C16_D2.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 16
+        },
+        "1": {
+          "corrections": 3016,
+          "requests": 16
+        }
+      },
+      "requests": 32,
+      "reused": 192256,
+      "segment_lengths": {
+        "256": 816
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 128,
+      "histories": 4096,
+      "inputs": 78336,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 4352,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_broadcast.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 1
+        },
+        "1": {
+          "corrections": 128,
+          "requests": 16
+        }
+      },
+      "requests": 17,
+      "reused": 69632,
+      "segment_lengths": {
+        "256": 306
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 24,
+      "histories": 1536,
+      "inputs": 18432,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 1024,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_pipeline_D4.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 1
+        },
+        "1": {
+          "corrections": 8,
+          "requests": 1
+        },
+        "2": {
+          "corrections": 8,
+          "requests": 1
+        },
+        "3": {
+          "corrections": 8,
+          "requests": 1
+        }
+      },
+      "requests": 4,
+      "reused": 13056,
+      "segment_lengths": {
+        "256": 72
+      },
+      "tiers": 4,
+      "timestamped": 0
+    },
+    {
+      "corrections": 968,
+      "histories": 4096,
+      "inputs": 208896,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 8192,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_private.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 16
+        },
+        "1": {
+          "corrections": 968,
+          "requests": 16
+        }
+      },
+      "requests": 32,
+      "reused": 65280,
+      "segment_lengths": {
+        "256": 816
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 136,
+      "histories": 256,
+      "inputs": 82176,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 4352,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_reduce.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 16
+        },
+        "1": {
+          "corrections": 136,
+          "requests": 1
+        }
+      },
+      "requests": 17,
+      "reused": 69632,
+      "segment_lengths": {
+        "256": 321
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 392,
+      "histories": 16896,
+      "inputs": 160512,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 8704,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/workload/sweep/wl_supervisor_D4.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 1
+        },
+        "1": {
+          "corrections": 128,
+          "requests": 16
+        },
+        "2": {
+          "corrections": 136,
+          "requests": 1
+        },
+        "3": {
+          "corrections": 128,
+          "requests": 16
+        }
+      },
+      "requests": 34,
+      "reused": 143616,
+      "segment_lengths": {
+        "256": 627
+      },
+      "tiers": 4,
+      "timestamped": 0
+    },
+    {
+      "corrections": 0,
+      "histories": 0,
+      "inputs": 479301,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 10202,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/experiments/paper_ladder/workloads/workload_mooncake_toolagent_n40_o0.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 40
+        }
+      },
+      "requests": 40,
+      "reused": 85504,
+      "segment_lengths": {
+        "22": 2,
+        "26": 1,
+        "42": 1,
+        "46": 1,
+        "49": 1,
+        "54": 1,
+        "61": 1,
+        "65": 1,
+        "68": 1,
+        "69": 1,
+        "75": 1,
+        "84": 1,
+        "89": 1,
+        "101": 1,
+        "102": 1,
+        "104": 1,
+        "109": 1,
+        "129": 1,
+        "154": 1,
+        "164": 1,
+        "180": 1,
+        "202": 1,
+        "211": 1,
+        "225": 1,
+        "226": 1,
+        "232": 1,
+        "241": 1,
+        "242": 1,
+        "258": 1,
+        "264": 1,
+        "292": 1,
+        "309": 1,
+        "322": 1,
+        "324": 1,
+        "354": 1,
+        "362": 1,
+        "427": 1,
+        "455": 1,
+        "476": 1,
+        "512": 922
+      },
+      "tiers": 1,
+      "timestamped": 0
+    },
+    {
+      "corrections": 280,
+      "histories": 450148,
+      "inputs": 119100,
+      "max_distinct_doc_offsets_within_tier": 1,
+      "outputs": 19055,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/experiments/paper_ladder/workloads/workload_mooncakemt_c8_r3-8.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 8
+        },
+        "1": {
+          "corrections": 64,
+          "requests": 8
+        },
+        "2": {
+          "corrections": 64,
+          "requests": 8
+        },
+        "3": {
+          "corrections": 48,
+          "requests": 6
+        },
+        "4": {
+          "corrections": 40,
+          "requests": 5
+        },
+        "5": {
+          "corrections": 32,
+          "requests": 4
+        },
+        "6": {
+          "corrections": 24,
+          "requests": 3
+        },
+        "7": {
+          "corrections": 8,
+          "requests": 1
+        }
+      },
+      "requests": 43,
+      "reused": 17510,
+      "segment_lengths": {
+        "5": 1,
+        "7": 2,
+        "11": 1,
+        "14": 1,
+        "15": 1,
+        "17": 1,
+        "19": 1,
+        "26": 1,
+        "28": 1,
+        "29": 1,
+        "35": 2,
+        "36": 1,
+        "42": 1,
+        "45": 1,
+        "62": 1,
+        "64": 1,
+        "80": 1,
+        "91": 1,
+        "111": 2,
+        "184": 1,
+        "210": 1,
+        "216": 1,
+        "217": 1,
+        "219": 1,
+        "227": 1,
+        "241": 1,
+        "244": 1,
+        "247": 1,
+        "262": 1,
+        "269": 1,
+        "279": 1,
+        "300": 2,
+        "314": 1,
+        "324": 2,
+        "331": 1,
+        "339": 1,
+        "347": 1,
+        "348": 1,
+        "366": 2,
+        "370": 2,
+        "385": 1,
+        "427": 1,
+        "438": 1,
+        "442": 1,
+        "445": 1,
+        "451": 1,
+        "475": 1,
+        "478": 1,
+        "502": 1,
+        "512": 155,
+        "524": 1,
+        "526": 1,
+        "534": 1,
+        "536": 1,
+        "547": 1,
+        "558": 1,
+        "562": 1,
+        "564": 1,
+        "579": 1,
+        "661": 1,
+        "664": 1,
+        "669": 1,
+        "965": 1,
+        "1555": 1,
+        "1730": 1,
+        "1758": 1,
+        "1860": 1,
+        "1872": 1,
+        "1953": 1,
+        "1954": 1,
+        "2775": 1,
+        "4247": 1
+      },
+      "tiers": 8,
+      "timestamped": 43
+    },
+    {
+      "corrections": 104,
+      "histories": 0,
+      "inputs": 212785,
+      "max_distinct_doc_offsets_within_tier": 4,
+      "outputs": 75,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/experiments/paper_ladder/workloads/workload_multihoprag_n32_o0.json",
+      "per_tier": {
+        "0": {
+          "corrections": 104,
+          "requests": 32
+        }
+      },
+      "requests": 32,
+      "reused": 43096,
+      "segment_lengths": {
+        "37": 2,
+        "40": 1,
+        "41": 1,
+        "42": 1,
+        "43": 32,
+        "44": 1,
+        "45": 1,
+        "47": 3,
+        "48": 1,
+        "52": 2,
+        "54": 1,
+        "55": 2,
+        "58": 2,
+        "60": 1,
+        "61": 3,
+        "63": 3,
+        "64": 1,
+        "66": 1,
+        "68": 1,
+        "69": 1,
+        "74": 1,
+        "76": 1,
+        "79": 1,
+        "1088": 1,
+        "1102": 1,
+        "1132": 1,
+        "1134": 1,
+        "1172": 1,
+        "1265": 1,
+        "1270": 1,
+        "1281": 1,
+        "1289": 5,
+        "1309": 1,
+        "1317": 1,
+        "1328": 1,
+        "1420": 1,
+        "1438": 1,
+        "1481": 2,
+        "1487": 1,
+        "1499": 3,
+        "1503": 1,
+        "1513": 1,
+        "1517": 1,
+        "1518": 1,
+        "1542": 3,
+        "1581": 1,
+        "1586": 1,
+        "1624": 2,
+        "1718": 1,
+        "1726": 1,
+        "1739": 1,
+        "1740": 1,
+        "1814": 1,
+        "1830": 1,
+        "1870": 3,
+        "1898": 1,
+        "1926": 1,
+        "1964": 1,
+        "1969": 1,
+        "1987": 1,
+        "2030": 2,
+        "2054": 1,
+        "2066": 1,
+        "2078": 1,
+        "2085": 1,
+        "2108": 1,
+        "2149": 1,
+        "2216": 1,
+        "2250": 1,
+        "2286": 1,
+        "2361": 1,
+        "2537": 2,
+        "2628": 1,
+        "2678": 2,
+        "2727": 1,
+        "2733": 1,
+        "2977": 1,
+        "3005": 1,
+        "3552": 2,
+        "3561": 1,
+        "3723": 1,
+        "3942": 1,
+        "4130": 1,
+        "4839": 1,
+        "5234": 2,
+        "10186": 2,
+        "10459": 1,
+        "16151": 1
+      },
+      "tiers": 1,
+      "timestamped": 0
+    },
+    {
+      "corrections": 32,
+      "histories": 0,
+      "inputs": 3350,
+      "max_distinct_doc_offsets_within_tier": 0,
+      "outputs": 750,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/experiments/paper_ladder/workloads/workload_relay_s400w4t1.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 1
+        },
+        "1": {
+          "corrections": 32,
+          "requests": 4
+        }
+      },
+      "requests": 5,
+      "reused": 2200,
+      "segment_lengths": {
+        "150": 9,
+        "400": 5
+      },
+      "tiers": 2,
+      "timestamped": 0
+    },
+    {
+      "corrections": 334,
+      "histories": 22172,
+      "inputs": 12923,
+      "max_distinct_doc_offsets_within_tier": 0,
+      "outputs": 14414,
+      "path": "/data2/chenyi9/KV-PIM/attacc_drampim_xinyao/experiments/paper_ladder/workloads/workload_sharegpt_c10_r3-8_o0.json",
+      "per_tier": {
+        "0": {
+          "corrections": 0,
+          "requests": 10
+        },
+        "1": {
+          "corrections": 77,
+          "requests": 10
+        },
+        "2": {
+          "corrections": 78,
+          "requests": 10
+        },
+        "3": {
+          "corrections": 59,
+          "requests": 7
+        },
+        "4": {
+          "corrections": 48,
+          "requests": 6
+        },
+        "5": {
+          "corrections": 48,
+          "requests": 6
+        },
+        "6": {
+          "corrections": 16,
+          "requests": 2
+        },
+        "7": {
+          "corrections": 8,
+          "requests": 1
+        }
+      },
+      "requests": 52,
+      "reused": 11308,
+      "segment_lengths": {
+        "2": 1,
+        "3": 4,
+        "5": 7,
+        "6": 4,
+        "7": 3,
+        "8": 4,
+        "9": 1,
+        "10": 3,
+        "11": 3,
+        "12": 4,
+        "13": 1,
+        "14": 1,
+        "15": 1,
+        "16": 2,
+        "17": 1,
+        "18": 2,
+        "19": 2,
+        "20": 1,
+        "23": 1,
+        "30": 1,
+        "33": 1,
+        "34": 1,
+        "36": 1,
+        "40": 1,
+        "51": 1,
+        "91": 1,
+        "118": 1,
+        "119": 1,
+        "125": 1,
+        "129": 1,
+        "150": 1,
+        "158": 1,
+        "181": 1,
+        "193": 2,
+        "194": 1,
+        "210": 1,
+        "214": 1,
+        "244": 2,
+        "246": 1,
+        "247": 1,
+        "270": 1,
+        "275": 1,
+        "281": 1,
+        "286": 1,
+        "289": 1,
+        "299": 1,
+        "307": 1,
+        "318": 1,
+        "319": 1,
+        "325": 1,
+        "326": 1,
+        "332": 1,
+        "335": 2,
+        "336": 1,
+        "367": 1,
+        "381": 1,
+        "391": 1,
+        "394": 1,
+        "417": 1,
+        "425": 1,
+        "440": 1,
+        "475": 1,
+        "604": 1,
+        "662": 1
+      },
+      "tiers": 8,
+      "timestamped": 0
+    }
+  ],
+  "future_reader_changes_placement": {
+    "future_reads_both": {
+      "a": 0,
+      "b": 1
+    },
+    "no_future_reader": {
+      "a": 0,
+      "b": 0
+    }
+  },
+  "llama3_qkv_width": {
+    "actual": 12288,
+    "geometry_expected": 6144
+  },
+  "overlapping_physical_resources": [
+    {
+      "end": 1.0,
+      "resource": "PIM:pool0-14",
+      "start": 0.0
+    },
+    {
+      "end": 1.0,
+      "resource": "PIM:pool0-0",
+      "start": 0.0
+    },
+    {
+      "end": 1.0,
+      "resource": "PIM",
+      "start": 0.0
+    }
+  ],
+  "paper_contract_checks": {
+    "A1_fresh_prefill_has_gpu_score": false,
+    "A5_fresh_prefill_has_pim_scan": false,
+    "all_policy_sweeps_include_decode_and_makespan": false,
+    "llama3_qkv_width_matches_gqa_geometry": false,
+    "overlapping_pim_resources_do_not_all_run_at_once": false,
+    "rungs_preserve_corrected_token_indices": false,
+    "shared_scan_does_not_finish_before_owner_store_starts": false,
+    "zero_diff_preserves_master_channels": false
+  },
+  "policy_dispatch": {
+    "cachecraft": {
+      "decode_events": 0,
+      "event_count": 30,
+      "keys": [
+        "events",
+        "gpu_time_s_unoverlapped",
+        "link_bytes",
+        "pim_time_s_unoverlapped",
+        "policy"
+      ]
+    },
+    "cachetune": {
+      "decode_events": 0,
+      "event_count": 30,
+      "keys": [
+        "events",
+        "gpu_time_s_unoverlapped",
+        "link_bytes",
+        "pim_time_s_unoverlapped",
+        "policy"
+      ]
+    },
+    "epic": {
+      "decode_events": 47,
+      "event_count": 81,
+      "keys": [
+        "batches",
+        "cacheblend_batch_size",
+        "cacheblend_rotate_mode",
+        "dag_build_s",
+        "dag_finalize_s",
+        "decode_attn",
+        "di_bitmap_bytes",
+        "di_write_filter",
+        "die_time_s_unoverlapped",
+        "energy_breakdown_nj",
+        "energy_nj",
+        "energy_unit",
+        "event_count",
+        "events",
+        "gemv_buffer_bytes",
+        "gpu_time_s_unoverlapped",
+        "history_rows",
+        "kv_mapping",
+        "latency_model",
+        "link_bytes",
+        "makespan_s",
+        "overlap_validation",
+        "pim_batch_command",
+        "pim_pe_freq_ghz",
+        "pim_pool_time_s_unoverlapped",
+        "pim_prefill_mode",
+        "pim_prefill_sides",
+        "pim_sweep_query_capacity",
+        "pim_time_s_unoverlapped",
+        "policy",
+        "prefill_attention_rows",
+        "prefill_attention_sides",
+        "summary",
+        "tlb"
+      ]
+    }
+  },
+  "rung_dependent_recompute_rows": {
+    "A3b": [
+      20,
+      132,
+      155,
+      197,
+      207,
+      215,
+      244,
+      248
+    ],
+    "A4c": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "same_tier_read_before_owner_write": {
+    "consumer_first_scan_end_s": 5.091952999999997e-06,
+    "owner_store_start_s": 1.7650816999999994e-05
+  },
+  "zero_diff_master_loads": {
+    "master-diff-local-append": {
+      "0": 512,
+      "4": 512,
+      "8": 512,
+      "12": 512
+    },
+    "slice-append": {
+      "0": 256,
+      "1": 256,
+      "4": 256,
+      "5": 256,
+      "8": 256,
+      "9": 256,
+      "12": 256,
+      "13": 256
+    }
+  }
+}

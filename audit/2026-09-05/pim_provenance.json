@@ -1,0 +1,181 @@
+{
+  "A3b_over_A4c_master_store_duration": 15.0,
+  "cache_drops_relative_row_identity": {
+    "different_row_extents": [
+      [
+        0,
+        8388608,
+        8
+      ],
+      [
+        1088,
+        8389696,
+        8
+      ]
+    ],
+    "extent_signature_equal": true,
+    "same_row_extents": [
+      [
+        0,
+        8388608,
+        8
+      ],
+      [
+        64,
+        8388672,
+        8
+      ]
+    ]
+  },
+  "injected_raw_cycles": 1000,
+  "real_generator_commands": {
+    "mq": {
+      "PIM_BARRIER": 5,
+      "PIM_MAC_AB": 64,
+      "PIM_MV_GB": 64,
+      "PIM_MV_SB": 192,
+      "PIM_SFM": 8,
+      "PIM_WR_GB": 64
+    },
+    "replicate": {
+      "PIM_BARRIER": 5,
+      "PIM_MAC_AB": 512,
+      "PIM_MV_GB": 64,
+      "PIM_MV_SB": 192,
+      "PIM_SFM": 8,
+      "PIM_WR_GB": 64
+    }
+  },
+  "scope": "Boundary-injection, formula and trace-generation probes; no real Ramulator cycles or speedups measured.",
+  "wrapper_results": {
+    "A1": {
+      "boundary_arguments": {
+        "channel_base": null,
+        "channel_count": 16,
+        "has_extent_list": false,
+        "mq_command": false,
+        "nCCDAB_override": null,
+        "shared_queries": 8,
+        "simulated_length": 512
+      },
+      "ratio_to_raw_cycles_times_tCK": 1.0,
+      "returned_time_s": 7.690000000000001e-07
+    },
+    "A3b": {
+      "boundary_arguments": {
+        "channel_base": 0,
+        "channel_count": 1,
+        "has_extent_list": true,
+        "mq_command": false,
+        "nCCDAB_override": null,
+        "shared_queries": 8,
+        "simulated_length": 257
+      },
+      "ratio_to_raw_cycles_times_tCK": 1.0,
+      "returned_time_s": 7.690000000000001e-07
+    },
+    "A4c": {
+      "boundary_arguments": {
+        "channel_base": 0,
+        "channel_count": 1,
+        "has_extent_list": true,
+        "mq_command": false,
+        "nCCDAB_override": null,
+        "shared_queries": 8,
+        "simulated_length": 257
+      },
+      "ratio_to_raw_cycles_times_tCK": 1.0,
+      "returned_time_s": 7.690000000000001e-07
+    },
+    "A4e": {
+      "boundary_arguments": {
+        "channel_base": 0,
+        "channel_count": 1,
+        "has_extent_list": true,
+        "mq_command": false,
+        "nCCDAB_override": null,
+        "shared_queries": 8,
+        "simulated_length": 257
+      },
+      "ratio_to_raw_cycles_times_tCK": 1.0,
+      "returned_time_s": 7.690000000000001e-07
+    },
+    "A5": {
+      "boundary_arguments": {
+        "channel_base": 0,
+        "channel_count": 1,
+        "has_extent_list": true,
+        "mq_command": true,
+        "nCCDAB_override": 8,
+        "shared_queries": 8,
+        "simulated_length": 257
+      },
+      "ratio_to_raw_cycles_times_tCK": 1.0,
+      "returned_time_s": 7.690000000000001e-07
+    },
+    "A6": {
+      "boundary_arguments": {
+        "channel_base": 0,
+        "channel_count": 1,
+        "has_extent_list": true,
+        "mq_command": true,
+        "nCCDAB_override": 8,
+        "shared_queries": 8,
+        "simulated_length": 257
+      },
+      "ratio_to_raw_cycles_times_tCK": 1.0,
+      "returned_time_s": 7.690000000000001e-07
+    }
+  },
+  "zero_diff_master_store_formula": {
+    "A1": [
+      {
+        "device": "PIM",
+        "name": "dram_store_master",
+        "rows": 256,
+        "time_s": 1.048576e-06
+      }
+    ],
+    "A2": [],
+    "A3b": [
+      {
+        "device": "PIM:pool0-0",
+        "name": "dram_store_master",
+        "rows": 256,
+        "time_s": 2.097152e-06
+      }
+    ],
+    "A4c": [
+      {
+        "device": "PIM:pool0-14",
+        "name": "dram_store_master",
+        "rows": 256,
+        "time_s": 1.3981013333333334e-07
+      }
+    ],
+    "A4e": [
+      {
+        "device": "PIM:pool0-14",
+        "name": "dram_store_master",
+        "rows": 256,
+        "time_s": 1.3981013333333334e-07
+      }
+    ],
+    "A5": [
+      {
+        "device": "PIM:pool0-14",
+        "name": "dram_store_master",
+        "rows": 256,
+        "time_s": 1.3981013333333334e-07
+      }
+    ],
+    "A6": [
+      {
+        "device": "PIM:pool0-14",
+        "name": "dram_store_master",
+        "rows": 256,
+        "time_s": 1.3981013333333334e-07
+      }
+    ]
+  }
+}

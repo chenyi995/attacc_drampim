@@ -1,0 +1,19 @@
+......................................................................................................
+----------------------------------------------------------------------
+Ran 102 tests in 83.278s
+
+OK
+    Batch: 8, Throughput: 236500.23 tokens/s Latency: 0.03ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 8, Throughput: 236500.23 tokens/s Latency: 0.03ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 2, Throughput: 22632.14 tokens/s Latency: 0.09ms, pipe/ff_parallel: True/True, powerlimit: False
+    Batch: 1, Throughput: 45239.20 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 1, Throughput: 15075.51 tokens/s Latency: 0.07ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 1, Throughput: 15075.51 tokens/s Latency: 0.07ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 1, Throughput: 45228.41 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 2, Throughput: 90428.52 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 1, Throughput: 45228.41 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 2, Throughput: 90428.52 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 1, Throughput: 44105.09 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 4, Throughput: 175226.45 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 1, Throughput: 44105.09 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False
+    Batch: 4, Throughput: 175226.45 tokens/s Latency: 0.02ms, pipe/ff_parallel: True/False, powerlimit: False

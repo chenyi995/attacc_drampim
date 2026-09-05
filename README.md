@@ -4,11 +4,17 @@ This branch is the **original AttAcc simulator** (upstream `c600051`, below) plu
 Fugue design: a physical event-DAG engine, the shared-KV store with per-agent diff
 rows and a conflict-aware placement table, MQ batching, and the dynamic prefill
 placement rule -- exposed as the seven-rung ladder **A1 A2 A3b A4c A4e A5 A6**.
-Each rung differs from the previous one by exactly one paper claim.
+A1 and A2 are independent baselines. Starting from A3b, each rung adds one
+paper-defined mechanism; A5 includes PIM prefill and its MQ support as a package.
 
 Start at **`docs/README.md`** (what changed, how to build and run) and
 **`docs/README_design_ladder.md`** (every rung, down to the function and the
 reduction term, with measured evidence).  Workloads are kept out of this branch.
+
+For the audited implementation gaps and concrete repair suggestions under this
+ladder definition, see [修改建议与验收标准](docs/README_audit_fixes.md).
+The reasons, scope, and validation for the accounting and rotation changes are
+recorded in the [2026-09-05 session](docs/sessions/2026-09-05-attacc-accounting-and-rotation.md).
 
 ---
 

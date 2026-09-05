@@ -1,8 +1,12 @@
 # Fugue（`chenyi-0905`）：文档索引
 
 本分支只放论文 `KVPIM-1Fugue-ASPLOS2027` 用到的东西：根基是 **AttAcc 原版**（上游 `c600051`），
-之上是 Fugue 的引擎与七档设计阶梯。消融用的其余档、sweep 编排、历史 session 记录都不在这里
-（在 `chenyi-0904-test` 分支）。workload 另行迁移，本分支不含。
+之上是 Fugue 的引擎与七档设计阶梯。消融用的其余档、sweep 编排与旧 session 记录在
+`chenyi-0904-test` 分支。当前分支的新会话从 [session 文档索引](sessions/README.md) 归档。
+workload 另行迁移，本分支不含。
+
+最近修改：[2026-09-05：AttAcc 计量口径与 GPU query 旋转](sessions/2026-09-05-attacc-accounting-and-rotation.md)，
+详细记录修改原因、用户依据、逐文件变更、验证结果和未完成事项。
 
 ## 设计阶梯 —— `README_design_ladder.md`
 
@@ -31,7 +35,7 @@
 | `pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py` | `--kv-extents-file`：一条通道的全部 extent 作为一次仿真，ACT 由行缓冲决定；MQ / shared-kv 命令 |
 | `pim_ramulator_src/hbm3_pim_controller.cpp` | `pim_activations` 统计（ACT / ACTAB / ACTSB / ACTPB） |
 | `pim_ramulator_src/HBM3-PIM.cpp` | MVSB ↔ MVGB/WRGB 方向切换时序 |
-| `tests/` | 102 个单测（放置规则、slot 表、preset → TLB 类 → policy 三跳一致、事件路径） |
+| `tests/` | 当前 105 个单测，包括放置/事件路径、DIE/TLB 计量与 Python/C++ metadata 调度一致性 |
 | `output/analysis/` | 布局手算 CSV（`layout_grid_csv.py`）、放置规则独立重写 vs 引擎 dump 对账（`layout_handcheck_theory.py`）、同分配器只改 diff 落点的公平对照（`diff_gather_effect.py`） |
 
 ## 怎么跑
@@ -58,7 +62,7 @@ python3 main.py --system dgx-attacc --model LLAMA3-8B --workload <wl.json> \
 RUNGS="A1 A2 A3b A4c A4e A5 A6" NUM_HBM=1 NGPU=1 bash experiments/run_dag_ladder.sh <wl.json> LLAMA3-8B <outdir>
 
 # 5. 测试
-python3 -m unittest discover -s tests         # 102/102
+python3 -m unittest discover -s tests         # 最近验证：105/105
 ```
 
 模型 ↔ `--ngpu` / `--num-hbm`：LLAMA-7B、LLAMA3-8B 1/1；GPT-13B、LLAMA-33B 2/10；LLAMA-65B、GPT-175B 8/40。
