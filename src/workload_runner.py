@@ -451,7 +451,7 @@ def _run_legacy_reuse_prefill(system, workload: Workload, plan: ReusePlan) -> Di
                         time_s, energy = system.devices["GPU"].get_time_and_energy(layer)
                         _event(events, layer_index, request.request_id, layer.name,
                                "GPU", request.total_length, time_s, energy)
-                    kv_bytes = request.total_length * 2 * local_hidden * dbyte
+                    kv_bytes = request.total_length * 2 * _kv_hidden(system, local_hidden) * dbyte
                     layer = _link_layer(x2g_template, "kv_gpu_to_pim", kv_bytes)
                     time_s, energy = system.devices["GPU"].get_time_and_energy(layer)
                     _event(events, layer_index, request.request_id, layer.name,
@@ -485,7 +485,7 @@ def _run_legacy_reuse_prefill(system, workload: Workload, plan: ReusePlan) -> Di
                 time_s, energy = system.devices["GPU"].get_time_and_energy(layer)
                 _event(events, layer_index, request.request_id, layer.name,
                        "LINK", rows, time_s, energy, ctx_bytes)
-                kv_bytes = rows * 2 * local_hidden * dbyte
+                kv_bytes = rows * 2 * _kv_hidden(system, local_hidden) * dbyte
                 layer = _link_layer(x2g_template, "kv_gpu_to_pim", kv_bytes)
                 time_s, energy = system.devices["GPU"].get_time_and_energy(layer)
                 _event(events, layer_index, request.request_id, layer.name,
@@ -1997,6 +1997,11 @@ _RETAIN_EVENT_ADDRESSES = True
 _EC = None
 
 
+def _kv_hidden(system, local_hidden: int) -> int:
+    """Local K (or V) width in elements: KV heads x dhead (R08, 2026-09-05)."""
+    return max(1, int(local_hidden) // _gqa_group(system))
+
+
 def _gqa_group(system) -> int:
     """Q heads per shared KV head (1 = MHA; ruling chenyi9 2026-08-27)."""
     return max(1, int(getattr(system.model, "gqa_size", 1) or 1))
@@ -3322,7 +3327,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             # the critical Q transfer and allow it to overlap the local/PIM
             # attention path below.  The PIM write remains ordered after the
             # scan in event construction, but only depends on this transfer.
-            kv_bytes = 2 * local_hidden * dbyte
+            kv_bytes = 2 * _kv_hidden(system, local_hidden) * dbyte
             kv_transfer = _link_layer(x2g, "decode_kv_gpu_to_pim", kv_bytes)
             time_s, energy = system.devices["GPU"].get_time_and_energy(kv_transfer)
             kv_link = _cacheblend_event(
@@ -3910,7 +3915,7 @@ def _append_gpu_prefill_layer(
     # QKV produces K/V as well as Q.  Put the new K/V on the link at once,
     # in parallel with GPU attention; its bank write is emitted last so it
     # cannot delay the attention block.
-    kv_bytes = rows * 2 * local_hidden * dbyte
+    kv_bytes = rows * 2 * _kv_hidden(system, local_hidden) * dbyte
     transfer = _link_layer(x2g, "kv_gpu_to_pim", kv_bytes)
     time_s, energy = system.devices["GPU"].get_time_and_energy(transfer)
     kv_link = _cacheblend_event(
@@ -3927,7 +3932,7 @@ def _append_gpu_prefill_layer(
             system, events, layer=layer, tier=tier, request=request.request_id,
             name="dram_read_resident", locations=history, dbyte=dbyte,
             deps=initial_deps, positions=positions)
-        readback_bytes = len(history) * 2 * local_hidden * dbyte
+        readback_bytes = len(history) * 2 * _kv_hidden(system, local_hidden) * dbyte
         op = _link_layer(x2g, "kv_pim_to_gpu", readback_bytes)
         time_s, energy = system.devices["GPU"].get_time_and_energy(op)
         gpu_last = _cacheblend_event(
@@ -3992,7 +3997,7 @@ def _resolve_prefill_side(system, tlb, x2g, templates: Mapping[str, Layer], *,
     # xPU path: resident-row readback + full-context GPU attention block.
     t_xpu = 0.0
     op = _link_layer(x2g, "kv_pim_to_gpu",
-                     len(readback_rows) * 2 * local_hidden * dbyte)
+                     len(readback_rows) * 2 * _kv_hidden(system, local_hidden) * dbyte)
     t_xpu += system.devices["GPU"].get_time_and_energy(op)[0]
     full_rows = len(readback_rows) + len(compute_positions)
     for template, wide in ((score, "n"), (softmax, "n"), (context, "k")):
@@ -4829,7 +4834,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                 # link only when the PIM side is chosen (re-audit R06 / I06:
                 # the GPU branch used to pay a Q-to-PIM transfer it never
                 # consumed).
-                kv_bytes = len(compute_positions) * 2 * local_hidden * dbyte
+                kv_bytes = len(compute_positions) * 2 * _kv_hidden(system, local_hidden) * dbyte
                 writes = [loc for pos, reused, corrected, loc in bindings
                           if pos in compute_positions]
                 kv_transfer = _link_layer(x2g, "kv_gpu_to_pim", kv_bytes)
@@ -5005,7 +5010,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         request=request.request_id, name="dram_read_resident",
                         locations=readback_rows, dbyte=dbyte,
                         deps=request_ready, positions=compute_positions)
-                    readback_bytes = len(readback_rows) * 2 * local_hidden * dbyte
+                    readback_bytes = len(readback_rows) * 2 * _kv_hidden(system, local_hidden) * dbyte
                     op = _link_layer(x2g, "kv_pim_to_gpu", readback_bytes)
                     time_s, energy = system.devices["GPU"].get_time_and_energy(op)
                     gpu_last = _cacheblend_event(
