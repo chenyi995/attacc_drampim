@@ -1,0 +1,69 @@
+from pathlib import Path
+import hashlib,json,re,subprocess,shutil
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');Z=R/'audit/2026-09-05/archive'
+start=json.loads((Z/'fbe6756_audit_start.json').read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+checks={}
+for label in ('protected','existing_results','paper'):
+    errors=[]
+    for p,h in start[label].items():
+        target=Path(p) if Path(p).is_absolute() else R/p
+        if not target.is_file() or sha(target)!=h:errors.append(p)
+    checks[label]={'files':len(start[label]),'unchanged':not errors,'changed':errors}
+head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
+assert head==start['head'],(head,start['head'])
+assert all(v['unchanged'] for v in checks.values()),checks
+tracked_changes=subprocess.check_output(['git','diff','--name-only'],cwd=R,text=True).splitlines()
+assert all(p.startswith(('docs/','audit/')) for p in tracked_changes)
+new_files=subprocess.check_output(['git','ls-files','--others','--exclude-standard'],cwd=R,text=True).splitlines()
+unexpected=[p for p in new_files if not p.startswith(('docs/','audit/')) and p not in start['existing_results']]
+assert not unexpected,unexpected
+old_current=subprocess.check_output(['git','show','HEAD:audit/2026-09-05/CURRENT_ISSUES.md'],cwd=R)
+assert (Z/'CURRENT_ISSUES_before_fbe6756.txt').read_bytes()==old_current
+docs=[R/p for p in tracked_changes if p.endswith('.md')]+[R/'docs/sessions/2026-09-05-fbe6756-fix-verification.md']
+manifest=Z/'fbe6756_audit_manifest.json'
+manifest.write_text('{}\n')
+badlinks=[];links=0
+for doc in docs:
+    text=doc.read_text()
+    for raw in re.findall(r'\]\((<[^>]+>|[^)\n]+)\)',text):
+        target=raw[1:-1] if raw.startswith('<') else raw
+        if '://' in target:continue
+        target=target.split('#',1)[0]
+        target=re.sub(r':\d+$','',target)
+        if not target:continue
+        p=Path(target) if target.startswith('/') else doc.parent/target
+        links+=1
+        if not p.exists():badlinks.append({'doc':str(doc.relative_to(R)),'target':raw})
+assert not badlinks,badlinks
+main=json.loads((Z/'fbe6756_main_audit_evidence.json').read_text())
+assert all(d['status']=='ok' for key in ('GQA_all_rungs','MHA_all_rungs') for d in main[key].values())
+assert all(e['link_bytes']==e['expected_kv_bytes'] for key in ('GQA_all_rungs','MHA_all_rungs') for d in main[key].values() for e in d['kv_events'])
+c6={r['ablation']:r for r in main['C6_identical_summary_fixture']['output']}
+assert c6['A2']['cum_end_s']==c6['A3b']['cum_end_s']=='5.0'
+assert c6['A2']['tier_total_s']=='5.0' and c6['A3b']['tier_total_s']=='4.3'
+wl=json.loads((Z/'fbe6756_workload_evidence.json').read_text())['turns_files']
+assert len(wl)==21 and all(r['generator_equal'] and r['manifest_counts_equal'] and r['history_sum']==0 for r in wl)
+shutil.copyfile('/tmp/fbe6756_validate_audit.py',Z/'fbe6756_validate_audit.txt')
+artifacts=[p for p in Z.iterdir() if p.name not in ('fbe6756_audit_manifest.json',) and
+    (('fbe6756' in p.name) or p.name.startswith(('independent_c8_','head_energy_a4669f4')))]
+out={'revision':head,'previous_audit':'8c51672a3ef8b936340354b3211963cde8945c49','upstream':'c600051',
+ 'scope':'Audit only. Existing tests/helpers, fixed-price DAG, trace generation, in-memory workload regeneration. No Ramulator performance run.',
+ 'unmodified_checks':checks,'tracked_changes':tracked_changes,'unexpected_new_non_docs':unexpected,
+ 'previous_current_doc_preserved_byte_for_byte':True,'local_links_checked':links,'broken_local_links':badlinks,
+ 'tests':{'observed_result':'Ran 15 tests in 45.601s; OK','source':'Observed tool execution result this turn; not rerun for logging',
+ 'command':['PYTHONDONTWRITEBYTECODE=1','python3','-m','unittest','tests.test_placement.PhysicalLedgerTest','tests.test_placement.StackEnergyScaleTest',
+ 'tests.test_workload.AgenticHistoryTests.test_gqa_model_builds_every_rung_with_kv_head_wide_links',
+ 'tests.test_workload.AgenticHistoryTests.test_a_later_turn_attends_the_diff_its_earlier_turn_wrote',
+ 'tests.test_workload.AgenticHistoryTests.test_every_layout_executes_the_same_correction_plan',
+ 'tests.test_workload.AgenticHistoryTests.test_consumer_waits_for_the_owner_store_even_when_listed_first',
+ 'tests.test_workload.AgenticHistoryTests.test_fresh_prefill_follows_the_rung_prefill_side']},
+ 'agents':{'independent_fairness_audit':'C8 actual prefill/decode, ownership, software work and input boundary',
+ 'ledger_trace_boundary_audit':'C3 generator/mapper and master geometry',
+ 'attacc_model_provenance':'Head/stack energy chain and diagnostic'},
+ 'facts_checked':{'MHA_GQA_all_rungs':True,'C6_fixture_same_end_different_tier_total':True,'turns_regeneration_and_manifest_21':True},
+ 'artifact_sha256':{p.name:sha(p) for p in sorted(artifacts)},
+ 'documentation_sha256':{str(p.relative_to(R)):sha(p) for p in docs},
+ 'not_claimed':['No end-to-end performance result','No proof of workload-wide bias size','No exhaustive numerical KV validation','No authentication of all historical Ramulator caches']}
+manifest.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'checks':checks,'links':links,'badlinks':badlinks,'tracked_changes':tracked_changes,'artifacts':len(artifacts)},ensure_ascii=False,indent=2))

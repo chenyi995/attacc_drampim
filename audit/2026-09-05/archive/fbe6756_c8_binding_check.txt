@@ -1,0 +1,19 @@
+from pathlib import Path
+import json,sys
+sys.dont_write_bytecode=True
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');sys.path.insert(0,str(R))
+from src import workload_runner as wr
+from src.workload import load_workload,build_reuse_plan
+out={}
+for label,path in [('three_turns','/tmp/independent_c8_three_turns.json'),('generated','/tmp/independent_c8_generated_turns.json')]:
+    workload=load_workload(path);plan=build_reuse_plan(workload,'recompute',epic_prefix_recompute_tokens=2)
+    out[label]={}
+    for name,cls in [('A3b',wr.NaiveKVLayout),('A4c',wr.LocalDiffKVLayout),('A4e_A5_A6',wr.TableLocalDiffKVLayout)]:
+        tlb=cls(256);wr._prepare_cacheblend_tlb(workload,plan,1,tlb,wr._parent_output_fingerprints(workload))
+        failures={}
+        for request in workload.requests:
+            try: wr._cacheblend_tlb_rows(workload,plan,0,request,tlb)
+            except Exception as exc: failures[request.request_id]={'type':type(exc).__name__,'message':str(exc)}
+        out[label][name]=failures
+Path('/tmp/fbe6756_c8_binding_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps(out,indent=2))

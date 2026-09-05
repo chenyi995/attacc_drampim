@@ -4,6 +4,7 @@
 
 | 用途 | 文档 / 证据 |
 |---|---|
+| fbe6756 最新复查 | [主审 JSON](fbe6756_main_audit_evidence.json)、[C8 独立 JSON](independent_c8_fbe6756_evidence.json)、[地址](c3_fbe6756_evidence.json)、[能量](head_energy_a4669f4_evidence.json)、[manifest](fbe6756_audit_manifest.json)、[上次当前页快照](CURRENT_ISSUES_before_fbe6756.txt) |
 | C4 行列计时与默认路径 | [JSON](row_column_reachability_evidence.json)、[独立 probe](row_column_reachability_probe.txt)、[session](../../../docs/sessions/2026-09-05-row-column-audit-clarification.md) |
 | round 边界裁决与多轮覆盖 | [两轮证据及 B0 摘要](independent_round_boundary_evidence.json)、[独立 probe](independent_round_boundary_probe.txt) |
 | 最新裁决后的 C4/C7 复审 | [C4 JSON](pending_layout_reaudit_evidence.json)、[C4 probe](pending_layout_reaudit_probe.txt)、[C7 独立 JSON](independent_c7_reaudit_evidence.json)、[C7 probe](independent_c7_reaudit_probe.txt)、[验证记录](rulings_pending_reaudit_manifest.json) |

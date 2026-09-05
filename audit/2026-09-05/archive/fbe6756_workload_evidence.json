@@ -1,0 +1,195 @@
+{
+  "revision": "fbe6756",
+  "scope": "Read-only JSON regeneration in memory; no simulator or workload edits.",
+  "turns_files": [
+    {
+      "file": "B0_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 274688,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S1_agents_16_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 129,
+      "prefill_tokens": 532736,
+      "decode_tokens": 33024,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S1_agents_32_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 257,
+      "prefill_tokens": 1048832,
+      "decode_tokens": 65792,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S1_agents_4_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 33,
+      "prefill_tokens": 145664,
+      "decode_tokens": 8448,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S2_rounds_16_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 129,
+      "prefill_tokens": 991488,
+      "decode_tokens": 33024,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S2_rounds_2_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 17,
+      "prefill_tokens": 38144,
+      "decode_tokens": 4352,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S2_rounds_4_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 33,
+      "prefill_tokens": 88320,
+      "decode_tokens": 8448,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S3_lout_1024_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 446720,
+      "decode_tokens": 66560,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S3_lout_128_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 246016,
+      "decode_tokens": 8320,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S3_lout_2048_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 676096,
+      "decode_tokens": 133120,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S3_lout_512_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 332032,
+      "decode_tokens": 33280,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S4_own_1024_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 532736,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S4_own_16_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 242432,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S4_own_256_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 311552,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S4_own_64_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 256256,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S5_fresh_0p25_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 87,
+      "prefill_tokens": 377088,
+      "decode_tokens": 19456,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S5_fresh_0p5_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 130,
+      "prefill_tokens": 581888,
+      "decode_tokens": 24960,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S5_fresh_0p75_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 260,
+      "prefill_tokens": 1206528,
+      "decode_tokens": 41600,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S6_chunks_1_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 200960,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S6_chunks_4_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 422144,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    },
+    {
+      "file": "S6_chunks_8_turns.json",
+      "generator_equal": true,
+      "history_sum": 0,
+      "requests": 65,
+      "prefill_tokens": 717056,
+      "decode_tokens": 16640,
+      "manifest_counts_equal": true
+    }
+  ]
+}

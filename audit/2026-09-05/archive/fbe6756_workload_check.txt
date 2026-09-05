@@ -1,0 +1,19 @@
+from pathlib import Path
+import csv, importlib.util, json, sys
+sys.dont_write_bytecode=True
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+spec=importlib.util.spec_from_file_location('gen', R/'workload/probe/gen_sweep.py')
+gen=importlib.util.module_from_spec(spec);spec.loader.exec_module(gen)
+manifest={x['file']:x for x in csv.DictReader((R/'workload/probe/sweep/manifest.csv').open())}
+rows=[]
+for p in sorted((R/'workload/probe/sweep').glob('*_turns.json')):
+    w=json.loads(p.read_text()); params={k:w['meta'][k] for k in gen.BASELINE}
+    rebuilt=gen.build(params,'turns'); n,prefill,decode=gen.stats(w)
+    m=manifest[p.name]
+    rows.append({'file':p.name,'generator_equal':w==rebuilt,'history_sum':sum(a.get('history_len',0) for a in w['agents']),
+        'requests':n,'prefill_tokens':prefill,'decode_tokens':decode,
+        'manifest_counts_equal':(int(m['requests']),int(m['prefill_tokens']),int(m['decode_tokens']))==(n,prefill,decode)})
+out={'revision':'fbe6756','scope':'Read-only JSON regeneration in memory; no simulator or workload edits.', 'turns_files':rows}
+Path('/tmp/fbe6756_workload_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({'files':len(rows),'generator_equal':all(r['generator_equal'] for r in rows),
+ 'manifest_equal':all(r['manifest_counts_equal'] for r in rows),'all_history_zero':all(r['history_sum']==0 for r in rows)},indent=2))

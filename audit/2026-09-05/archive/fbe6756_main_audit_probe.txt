@@ -1,0 +1,102 @@
+"""Current helper/DAG and collector checks, with fixed device prices only.
+No Ramulator binary or real GPU latency is measured; all writes are /tmp.
+"""
+from pathlib import Path
+from types import SimpleNamespace
+from copy import deepcopy
+from collections import Counter
+from unittest.mock import patch
+import csv,importlib.util,importlib.machinery,json,subprocess,sys,tempfile
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');sys.path.insert(0,str(R));sys.dont_write_bytecode=True
+import src.workload_runner as w
+from src.ablation import PRESETS,resolve_config
+from src.model import Transformer
+from src.type import DataType,DeviceType
+from src.workload import Request,Segment,Workload,build_reuse_plan
+
+loader=importlib.machinery.SourceFileLoader('old_model_probe',str(R/'audit/2026-09-05/archive/model_provenance_8c51672_probe.txt'))
+spec=importlib.util.spec_from_loader(loader.name,loader);old=importlib.util.module_from_spec(spec);loader.exec_module(old)
+out={'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip(),
+     'scope':'Current DAG/helper with fake devices; collector fixture. No performance or Ramulator run.',
+     'GQA_all_rungs':old.rung_probe('LLAMA3-8B'),'MHA_all_rungs':old.rung_probe('CACHEBLEND-TINY')}
+
+class Device:
+    num_hbm=1;num_attacc=1;num_xpu=1
+    peak_memory_bandwidth=10**12;softmax_peak_bandwidth=10**12
+    energy_table={'mem':1,'sram':1,'alu':1}
+    def __init__(self):self.calls=[]
+    def record(self,op):
+        self.calls.append({'name':op.name,'m':op.m,'n':op.n,'k':op.k,'numOp':op.numOp,
+                          'shared_queries':getattr(op,'pim_shared_queries',1),
+                          'runs':getattr(op,'pim_kv_runs',())})
+    def get_time_and_energy(self,op):self.record(op);return 1e-6,[1,0,0,0,0,0]
+    def get_time_and_energy_runs(self,op):
+        self.record(op);return [(1e-6,[1,0,0,0,0,0]) for _ in op.pim_kv_runs]
+
+def run(request,rung):
+    wl=Workload('supervisor',(request,),{})
+    policy='no-reuse' if rung=='A1' else 'epic'
+    plan=build_reuse_plan(wl,policy,epic_prefix_recompute_tokens=2)
+    cfg=resolve_config(rung,None,None,None,policy=policy)
+    system=SimpleNamespace(hetero_name=DeviceType.PIM,devices={'GPU':Device(),'Acc':Device()},
+        model=Transformer(dict(name='audit',ndec=1,num_heads=8,hdim=1024,dhead=128,ff_scale=4,gqa_size=1,dtype=DataType.W16A16),1))
+    priced=[];resolve=w._resolve_prefill_side
+    def capture(*args,**kw):
+        begin={n:len(d.calls) for n,d in system.devices.items()}
+        side=resolve(*args,**kw)
+        priced.append({'request':kw['request_id'],'readback_rows':len(kw['readback_rows']),
+                       'compute_rows':len(kw['compute_positions']),'side':side,
+                       'calls':{n:d.calls[begin[n]:] for n,d in system.devices.items()}})
+        return side
+    with patch.object(w,'_new_event_core',return_value=None),patch.object(w,'_resolve_prefill_side',side_effect=capture):
+        report=w.run_reuse_prefill(system,wl,plan,pipe=True,cacheblend_batch_size=8,include_events=True,warm=False,
+          pim_prefill_mode=cfg.prefill_attn,decode_attn=cfg.decode_attn,kv_mapping=cfg.kv_mapping,
+          channel_placement=cfg.channel_placement,pim_batch_command=cfg.pim_batch_command,
+          pim_pe_freq_ghz=cfg.pim_pe_freq_ghz,gemv_buffer_bytes=cfg.gemv_buffer_bytes)
+    return report,priced
+out['C5_current_pricing']={}
+for label,history in [('fresh',0),('resident_history',16)]:
+    request=Request('r',0,None,2,(Segment('user','new',8),),8,history_len=history)
+    report,priced=run(request,'A6')
+    calls=priced[0]['calls']['GPU']
+    out['C5_current_pricing'][label]={'priced':priced,
+        'gpu_readback_pricing_calls':sum(x['name']=='kv_pim_to_gpu' for x in calls),
+        'q_input_pricing_calls':sum(x['name']=='q_gpu_to_pim' for x in calls),
+        'context_return_pricing_calls':sum(x['name']=='ctx_pim_to_gpu' for x in calls),
+        'actual_prefill_links':[{k:e[k] for k in ('name','rows','link_bytes')} for e in report['events'] if e['name'] in ('q_gpu_to_pim','kv_pim_to_gpu','kv_gpu_to_pim','ctx_pim_to_gpu')]}
+
+# Same request summary, different existence of PIM batch stamps: isolates collector metric semantics.
+summary={'requests':{'r':{'tier':0,'prefill_end_s':2.0,'first_token_s':3.0,'end_s':5.0}}}
+fixture={'A2':{'summary':deepcopy(summary),'batches':[]},
+         'A3b':{'summary':deepcopy(summary),'batches':[{'tier':0,'q_arrival_s':2.2,'attention_start_s':2.3},{'tier':0,'q_arrival_s':4.2,'attention_start_s':4.3}]}}
+with tempfile.TemporaryDirectory(prefix='fbe6756-collector-') as td:
+    for rung,rep in fixture.items():(Path(td)/f'dag_{rung}.json').write_text(json.dumps(rep))
+    result=subprocess.run([sys.executable,str(R/'experiments/collect_dag_ladder.py'),td,'synthetic.json','audit'],cwd=R,text=True,capture_output=True,check=True)
+    rows=list(csv.DictReader((Path(td)/'dag_ladder_tiers.csv').open()))
+    out['C6_identical_summary_fixture']={'input':fixture,'output':rows,
+       'note':'Chosen timestamp fixture in seconds, not measured runtime. Both summaries have prefill end 2, first token end 3, request end 5.'}
+
+out['C6_real_DAG_summaries']={}
+request=Request('r',0,None,2,(Segment('user','new',8),),8)
+with tempfile.TemporaryDirectory(prefix='fbe6756-collector-real-') as td:
+    for rung in ('A2','A3b'):
+        report,_=run(request,rung)
+        (Path(td)/f'dag_{rung}.json').write_text(json.dumps(report))
+        out['C6_real_DAG_summaries'][rung]={'summary':report['summary'],'batches':report.get('batches',[])}
+    subprocess.run([sys.executable,str(R/'experiments/collect_dag_ladder.py'),td,'synthetic.json','audit'],cwd=R,text=True,capture_output=True,check=True)
+    out['C6_real_DAG_tier_rows']=list(csv.DictReader((Path(td)/'dag_ladder_tiers.csv').open()))
+
+out['resolved_config_diffs']={}
+from dataclasses import asdict
+cfgs={r:asdict(resolve_config(r,None,None,None,policy='epic')) for r in ('A3b','A4c','A4e','A5','A6')}
+for a,b in zip(cfgs,list(cfgs)[1:]):
+    out['resolved_config_diffs'][a+'->'+b]={k:[cfgs[a][k],cfgs[b][k]] for k in cfgs[a] if k!='preset' and cfgs[a][k]!=cfgs[b][k]}
+assert all(v['status']=='ok' for v in out['GQA_all_rungs'].values())
+assert all(e['link_bytes']==e['expected_kv_bytes'] for v in out['GQA_all_rungs'].values() for e in v['kv_events'])
+assert out['C5_current_pricing']['fresh']['gpu_readback_pricing_calls']==0
+assert out['C5_current_pricing']['resident_history']['gpu_readback_pricing_calls']==1
+assert all(d['q_input_pricing_calls']==0 and d['context_return_pricing_calls']==1 for d in out['C5_current_pricing'].values())
+path=Path('/tmp/fbe6756_main_audit_evidence.json');path.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'GQA':{r:d['status'] for r,d in out['GQA_all_rungs'].items()},
+                 'C5':{r:{k:v for k,v in d.items() if k.endswith('pricing_calls')} for r,d in out['C5_current_pricing'].items()},
+                 'C6':out['C6_identical_summary_fixture']['output']},ensure_ascii=False,indent=2))

@@ -1,17 +1,17 @@
 # 2026-09-05 Audit：从这里开始
 
-**这一轮的问题在 [CURRENT_ISSUES.md](CURRENT_ISSUES.md)。** 不需要按时间顺序读历次报告。
+**最新复查版本 `fbe6756`，问题统一看 [CURRENT_ISSUES.md](CURRENT_ISSUES.md)。**
 
-这份文档先解释系统与七档，再逐个 case 说明：论文声明什么、用什么小输入验证、应当怎样、代码实际怎样、AttAcc 是否已有对应建模、影响哪两档，以及哪些事项已确定、哪些实现仍待验收。
+这轮还不能确认全部正确：跨轮旧 diff 的继承/实际 prefill 读取仍有缺口，tier 报表仍不同口径；能量诊断也需同步。GQA、diff 行地址隔离、默认 FlashAttention 和 A6 指定估价修改已经通过针对性复查。
 
 | 想看什么 | 打开哪里 |
 |---|---|
-| 已经确定、交给执行 agent 的事项 | [裁决清单](CURRENT_ISSUES.md#decisions) |
-| 贡献 README 的四个例子与实现是否对应 | [四贡献核对](CURRENT_ISSUES.md#contributions-check) |
-| 本轮需要过目的 case 与修改方向 | [CURRENT_ISSUES.md](CURRENT_ISSUES.md) |
-| 原始代码定位、JSON、独立 agent 和历史裁决 | [archive/README.md](archive/README.md) |
-| 本次为什么这样整理、验证了什么 | [session](../../docs/sessions/2026-09-05-audit-docs-cleanup.md) |
+| 已修与未修清单 | [最新结论](CURRENT_ISSUES.md#decisions) |
+| 多轮 a/c 原址引用、实际扫描和 A2 软件工作量 | [C8](CURRENT_ISSUES.md#c8) |
+| 相同完成时间为何报出不同 tier 时间 | [C6](CURRENT_ISSUES.md#c6) |
+| 能量来自哪里，新增外推是否共同适用 | [E1](CURRENT_ISSUES.md#e1) |
+| 与论文四项贡献和 workload 的关系 | [贡献核对](CURRENT_ISSUES.md#contributions-check) |
+| 本轮检查方式、修改文档的理由、独立 agent | [session](../../docs/sessions/2026-09-05-fbe6756-fix-verification.md) |
+| 原始证据和历史裁决 | [archive 索引](archive/README.md) |
 
-当前口径：接受 AttAcc 和各档共同的模型限制；不强求绝对精度。FlashAttention 必须共同启用。C2/C3/C6 已裁决修改；C5 按实际项估算并忽略 Q，C7 同轮/跨轮边界已定；C4 按共同近似记录，C8 按旧 master/diff 原址继续引用执行；本轮建模口径已定，实现仍待落实和验收。A1/A2 是独立 baseline，A5 的 prefill+MQ 是已接受机制包，A6 是简单逐 request 比价。
-
-源码审计时点为 `8c51672`，上游对照 `c600051`。本次整理没有跑新性能实验，没有修改实现或已有结果。
+按用户口径接受 AttAcc/各档共同近似，FlashAttention 和 pipeline 共同开启；不重复请求已确定的建模裁决。此次只改 audit/session 等文档，没有改实现、workload、论文或已有结果，没有运行性能模拟。上游对照仍是 `c600051`。

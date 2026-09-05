@@ -1,0 +1,235 @@
+{
+  "revision": "fbe6756",
+  "scope": "nominal ledger geometry, not ACT or performance",
+  "generator_parameters": {
+    "agents": 2,
+    "rounds": 2,
+    "chunks": 1,
+    "own": 2,
+    "lout": 2,
+    "corpus": 2,
+    "fresh_share": 0.0
+  },
+  "policy": "recompute",
+  "k": 8,
+  "heads_per_HBM": 4,
+  "head": 0,
+  "rungs": {
+    "A4c": {
+      "all_diff_in_allocation_order": [
+        {
+          "object_id": [
+            0,
+            "w01_t00",
+            "106cceb689606285",
+            "diff",
+            0
+          ],
+          "request_owner": "w01_t00",
+          "logical_worker": "w01",
+          "channel": 3,
+          "start_relative_diff_bytes": 0,
+          "end_relative_diff_bytes": 32,
+          "tokens": 8,
+          "nominal_row": 4096
+        },
+        {
+          "object_id": [
+            0,
+            "w00_t01",
+            "106cceb689606285",
+            "diff",
+            0
+          ],
+          "request_owner": "w00_t01",
+          "logical_worker": "w00",
+          "channel": 3,
+          "start_relative_diff_bytes": 32,
+          "end_relative_diff_bytes": 64,
+          "tokens": 8,
+          "nominal_row": 4096
+        },
+        {
+          "object_id": [
+            0,
+            "w01_t01",
+            "a5196a8c72f02c87",
+            "diff",
+            0
+          ],
+          "request_owner": "w01_t01",
+          "logical_worker": "w01",
+          "channel": 3,
+          "start_relative_diff_bytes": 64,
+          "end_relative_diff_bytes": 96,
+          "tokens": 8,
+          "nominal_row": 4096
+        }
+      ],
+      "workers": {
+        "w00": {
+          "tokens": 8,
+          "nominal_rows": [
+            4096
+          ],
+          "gaps": [],
+          "head0_extents": [
+            [
+              3,
+              1,
+              [
+                [
+                  3225419808,
+                  3233808416,
+                  8
+                ]
+              ]
+            ]
+          ]
+        },
+        "w01": {
+          "tokens": 16,
+          "nominal_rows": [
+            4096
+          ],
+          "gaps": [
+            {
+              "start_relative_diff_bytes": 32,
+              "end_relative_diff_bytes": 64,
+              "bytes": 32,
+              "intervening_owners": [
+                "w00_t01"
+              ]
+            }
+          ],
+          "head0_extents": [
+            [
+              3,
+              1,
+              [
+                [
+                  3225419776,
+                  3233808384,
+                  8
+                ],
+                [
+                  3225419840,
+                  3233808448,
+                  8
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    "A4e": {
+      "all_diff_in_allocation_order": [
+        {
+          "object_id": [
+            0,
+            "w01_t00",
+            "106cceb689606285",
+            "diff",
+            0
+          ],
+          "request_owner": "w01_t00",
+          "logical_worker": "w01",
+          "channel": 3,
+          "start_relative_diff_bytes": 0,
+          "end_relative_diff_bytes": 32,
+          "tokens": 8,
+          "nominal_row": 4096
+        },
+        {
+          "object_id": [
+            0,
+            "w00_t01",
+            "106cceb689606285",
+            "diff",
+            0
+          ],
+          "request_owner": "w00_t01",
+          "logical_worker": "w00",
+          "channel": 3,
+          "start_relative_diff_bytes": 32,
+          "end_relative_diff_bytes": 64,
+          "tokens": 8,
+          "nominal_row": 4096
+        },
+        {
+          "object_id": [
+            0,
+            "w01_t01",
+            "a5196a8c72f02c87",
+            "diff",
+            0
+          ],
+          "request_owner": "w01_t01",
+          "logical_worker": "w01",
+          "channel": 3,
+          "start_relative_diff_bytes": 64,
+          "end_relative_diff_bytes": 96,
+          "tokens": 8,
+          "nominal_row": 4096
+        }
+      ],
+      "workers": {
+        "w00": {
+          "tokens": 8,
+          "nominal_rows": [
+            4096
+          ],
+          "gaps": [],
+          "head0_extents": [
+            [
+              3,
+              1,
+              [
+                [
+                  3225419808,
+                  3233808416,
+                  8
+                ]
+              ]
+            ]
+          ]
+        },
+        "w01": {
+          "tokens": 16,
+          "nominal_rows": [
+            4096
+          ],
+          "gaps": [
+            {
+              "start_relative_diff_bytes": 32,
+              "end_relative_diff_bytes": 64,
+              "bytes": 32,
+              "intervening_owners": [
+                "w00_t01"
+              ]
+            }
+          ],
+          "head0_extents": [
+            [
+              3,
+              1,
+              [
+                [
+                  3225419776,
+                  3233808384,
+                  8
+                ],
+                [
+                  3225419840,
+                  3233808448,
+                  8
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    }
+  }
+}

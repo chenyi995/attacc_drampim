@@ -1,0 +1,60 @@
+"""Current generator, two workers/two rounds: allocation gaps only, no timing."""
+from pathlib import Path
+import importlib.util
+import json
+import sys
+sys.dont_write_bytecode=True
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT))
+from src import workload_runner as wr
+from src.workload import load_workload,build_reuse_plan
+spec=importlib.util.spec_from_file_location('gap_gen',ROOT/'workload/probe/gen_sweep.py')
+gen=importlib.util.module_from_spec(spec);spec.loader.exec_module(gen)
+params=dict(gen.BASELINE,agents=2,rounds=2,chunks=1,own=2,lout=2,corpus=2)
+generated=gen.build(params,'turns')
+input_path=Path('/tmp/independent_c8_agent_gap_input.json')
+input_path.write_text(json.dumps(generated,indent=2)+'\n')
+workload=load_workload(input_path)
+plan=build_reuse_plan(workload,'recompute',epic_prefix_recompute_tokens=8)
+out={'revision':'fbe6756','scope':'nominal ledger geometry, not ACT or performance',
+     'generator_parameters':params,'policy':'recompute','k':8,'heads_per_HBM':4,'head':0,
+     'rungs':{}}
+for rung,cls in [('A4c',wr.LocalDiffKVLayout),('A4e',wr.TableLocalDiffKVLayout)]:
+    tlb=cls(256)
+    wr._prepare_cacheblend_tlb(workload,plan,1,tlb,wr._parent_output_fingerprints(workload))
+    ledger=tlb.physical_ledger(tlb.layout_policy,4)
+    all_diff=[]
+    for key,record in ledger.objects.items():
+        if len(key)>3 and key[3]=='diff':
+            rows,_,slot,start=record
+            all_diff.append({'object_id':key,'request_owner':key[1],
+                'logical_worker':key[1].split('_t')[0], 'channel':ledger._channel(0,slot),
+                'start_relative_diff_bytes':start-wr._DIFF_REGION_BYTES,
+                'end_relative_diff_bytes':start-wr._DIFF_REGION_BYTES+len(rows)*wr._GEN_BYTES_PER_TOKEN,
+                'tokens':len(rows),
+                'nominal_row':start//wr._GEN_ROW_BYTES})
+    by_worker={}
+    for worker in sorted({d['logical_worker'] for d in all_diff}):
+        own=sorted([d for d in all_diff if d['logical_worker']==worker],
+                   key=lambda d:d['start_relative_diff_bytes'])
+        gaps=[]
+        for prev,nxt in zip(own,own[1:]):
+            start,end=prev['end_relative_diff_bytes'],nxt['start_relative_diff_bytes']
+            if start<end:
+                gaps.append({'start_relative_diff_bytes':start,'end_relative_diff_bytes':end,
+                             'bytes':end-start,'intervening_owners':[
+                                 d['request_owner'] for d in all_diff
+                                 if d['start_relative_diff_bytes']>=start and d['end_relative_diff_bytes']<=end]})
+        locs=[]
+        for d in own:
+            layer,owner,fp,kind,_=d['object_id']
+            for row in tlb._reserved_rows[(layer,owner,fp,kind)]:
+                locs.append(tlb.locate(layer,owner,fp,row,kind))
+        groups=[g for g in ledger.extent_groups(locs) if g[0]<4]
+        by_worker[worker]={'tokens':sum(d['tokens'] for d in own),'nominal_rows':sorted({d['nominal_row'] for d in own}),
+                           'gaps':gaps,'head0_extents':groups}
+    out['rungs'][rung]={'all_diff_in_allocation_order':sorted(all_diff,key=lambda d:d['start_relative_diff_bytes']),
+                       'workers':by_worker}
+target=Path('/tmp/independent_c8_agent_gap_evidence.json')
+target.write_text(json.dumps(out,indent=2)+'\n')
+print(target.read_text())

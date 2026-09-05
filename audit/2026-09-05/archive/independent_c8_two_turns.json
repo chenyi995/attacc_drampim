@@ -1,0 +1,78 @@
+{
+  "agents": [
+    {
+      "id": "a",
+      "tier": 0,
+      "parent": null,
+      "lout": 2,
+      "segs": [
+        {
+          "role": "sys",
+          "sha": "sa",
+          "len": 2
+        },
+        {
+          "role": "doc",
+          "sha": "D",
+          "len": 8
+        }
+      ]
+    },
+    {
+      "id": "w0",
+      "tier": 0,
+      "parent": null,
+      "lout": 2,
+      "segs": [
+        {
+          "role": "sys",
+          "sha": "sw",
+          "len": 4
+        },
+        {
+          "role": "doc",
+          "sha": "D",
+          "len": 8
+        },
+        {
+          "role": "user",
+          "sha": "own0",
+          "len": 2
+        }
+      ]
+    },
+    {
+      "id": "w1",
+      "tier": 1,
+      "parent": "w0",
+      "lout": 2,
+      "segs": [
+        {
+          "role": "sys",
+          "sha": "sw",
+          "len": 4
+        },
+        {
+          "role": "doc",
+          "sha": "D",
+          "len": 8
+        },
+        {
+          "role": "user",
+          "sha": "own0",
+          "len": 2
+        },
+        {
+          "role": "parent_out",
+          "sha": "w0-out",
+          "len": 2
+        },
+        {
+          "role": "user",
+          "sha": "own1",
+          "len": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+import hashlib, importlib.util, json, subprocess, sys
+from pathlib import Path
+from types import SimpleNamespace
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT))
+from src.workload_runner import CacheBlendTLB, PhysicalLedger, _DIFF_REGION_BYTES
+
+def make(corpus):
+    t=CacheBlendTLB(256,'slice')
+    for owner,fp,rs,kind in corpus:
+        for r in rs:t.reserve(0,owner,fp,r,kind)
+    t.finalize()
+    return t
+
+def locs(t,corpus):return [t.locate(0,o,fp,r,k) for o,fp,rs,k in corpus for r in rs]
+def fields(a):
+    x=a>>5; out={}
+    for name,b in [('col',5),('row',14),('bank',2),('bg',2),('rank',1),('pch',1),('channel',4)]:
+        out[name]=x&((1<<b)-1);x>>=b
+    return out
+
+def generate(extents):
+    s=importlib.util.spec_from_file_location('bank_gen',ROOT/'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py')
+    g=importlib.util.module_from_spec(s);s.loader.exec_module(g)
+    g.n_channel=1;g.pool_base=extents[0][0]//(1<<30)
+    g.Attention(sum(e[2] for e in extents),extents[0][0],extents[0][1],0,valid_channel=1,extents=extents)
+    def rows(buckets):return sorted({fields(int(c.split()[1],16))['row'] for b in buckets[0] for c in b})
+    return {'score_rows':rows(g.cmd_score_mac),'context_rows':rows(g.cmd_context_mac)}
+
+corpus=[('owner','c%d'%i,range(256),'master') for i in range(16)]+[('consumer','c0',range(8),'diff')]
+t=make(corpus); t.chunk_coread=[frozenset(fp for _,fp,_,_ in corpus)]; reads=locs(t,corpus)
+base={}
+for policy in ['master-diff-local-append','master-diff-table-local-append']:
+    l=t.physical_ledger(policy,1)
+    m=l.extent_groups(locs(t,[corpus[15]]))[0]
+    d=l.extent_groups(locs(t,[corpus[-1]]))[0]
+    base[policy]={'master':m,'diff':d,'master_key_fields':fields(m[2][0][0]),'diff_key_fields':fields(d[2][0][0]),
+                  'master_value_fields':fields(m[2][0][1]),'diff_value_fields':fields(d[2][0][1]),
+                  'combined_commands':generate(m[2]+d[2])}
+geometry=[]
+for heads in (1,2,3,4,8,16):
+    am=t.physical_ledger('slice-append',heads).extent_groups(locs(t,corpus[:-1]))
+    fm=t.physical_ledger('master-diff-local-append',heads).extent_groups(locs(t,corpus[:-1]))
+    dif=t.physical_ledger('master-diff-local-append',heads).extent_groups(locs(t,[corpus[-1]]))
+    geometry.append({'heads':heads,'master_A3b_A4c_equal':am==fm,'master_channels':[c for c,_,_ in fm],
+                     'diff_channels':[c for c,_,_ in dif],'diff_rows':sorted({fields(e[0])['row'] for c,_,es in dif for e in es})})
+
+# Real build boundary using 4097 tiny one-row master objects: allocation is
+# row aligned, so this remains a small helper (4097 reserved token ids).
+def guard(objects):
+    reserved={(0,'owner','m%d'%i,'master'):{0} for i in range(objects)}
+    stub=SimpleNamespace(_reserved_rows=reserved,chunk_coread=[])
+    try:
+        ledger=PhysicalLedger.build(stub,'master-diff-local-append',16)
+        return {'objects':objects,'status':'ok','object_count':len(ledger.objects)}
+    except Exception as e:return {'objects':objects,'status':type(e).__name__,'message':str(e)}
+
+sources=['pim_ramulator_src/hbm3_pim_linear_mappers.cpp','pim_ramulator_src/HBM3-PIM.cpp',
+'pim_ramulator_src/patches/src_dram_lambdas_action.patch','pim_ramulator_src/patches/src_dram_lambdas_preq.patch',
+'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py']
+source_checks=[]
+for f in sources:
+    current=(ROOT/f).read_bytes()
+    old=subprocess.check_output(['git','show','8c51672:'+f],cwd=ROOT)
+    source_checks.append({'path':f,'unchanged_from_8c51672':old==current,'sha256':hashlib.sha256(current).hexdigest()})
+out={'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+'method':'small PhysicalLedger build/extent lookup and tracked Attention command generation; mapper bit decoding; no Ramulator timing/numerical simulation',
+'diff_region_bytes':_DIFF_REGION_BYTES,'base_isolation':base,'geometry':geometry,'master_guard':[guard(4096),guard(4097)],
+'upstream_semantics_sources':source_checks,
+'capacity_boundary_source_inference':{'diff_region_end_before_master_V':1<<23,'diff_token_capacity_before_overlap':((1<<23)-_DIFF_REGION_BYTES)//4,
+'note':'No large-workload run: source has a master cursor bound but no matching diff_cursor bound. This is a capacity-boundary limitation, not evidence that current inputs cross it.'}}
+Path('/tmp/c3_fbe6756_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps(out,indent=2))

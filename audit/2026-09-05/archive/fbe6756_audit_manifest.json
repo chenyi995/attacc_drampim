@@ -1,0 +1,101 @@
+{
+  "revision": "fbe6756eb062e44f09a0d100538563c5bd93ff08",
+  "previous_audit": "8c51672a3ef8b936340354b3211963cde8945c49",
+  "upstream": "c600051",
+  "scope": "Audit only. Existing tests/helpers, fixed-price DAG, trace generation, in-memory workload regeneration. No Ramulator performance run.",
+  "unmodified_checks": {
+    "protected": {
+      "files": 137,
+      "unchanged": true,
+      "changed": []
+    },
+    "existing_results": {
+      "files": 125,
+      "unchanged": true,
+      "changed": []
+    },
+    "paper": {
+      "files": 10,
+      "unchanged": true,
+      "changed": []
+    }
+  },
+  "tracked_changes": [
+    "audit/2026-09-05/CURRENT_ISSUES.md",
+    "audit/2026-09-05/README.md",
+    "audit/2026-09-05/archive/README.md",
+    "docs/README_run_guide.md",
+    "docs/sessions/README.md"
+  ],
+  "unexpected_new_non_docs": [],
+  "previous_current_doc_preserved_byte_for_byte": true,
+  "local_links_checked": 102,
+  "broken_local_links": [],
+  "tests": {
+    "observed_result": "Ran 15 tests in 45.601s; OK",
+    "source": "Observed tool execution result this turn; not rerun for logging",
+    "command": [
+      "PYTHONDONTWRITEBYTECODE=1",
+      "python3",
+      "-m",
+      "unittest",
+      "tests.test_placement.PhysicalLedgerTest",
+      "tests.test_placement.StackEnergyScaleTest",
+      "tests.test_workload.AgenticHistoryTests.test_gqa_model_builds_every_rung_with_kv_head_wide_links",
+      "tests.test_workload.AgenticHistoryTests.test_a_later_turn_attends_the_diff_its_earlier_turn_wrote",
+      "tests.test_workload.AgenticHistoryTests.test_every_layout_executes_the_same_correction_plan",
+      "tests.test_workload.AgenticHistoryTests.test_consumer_waits_for_the_owner_store_even_when_listed_first",
+      "tests.test_workload.AgenticHistoryTests.test_fresh_prefill_follows_the_rung_prefill_side"
+    ]
+  },
+  "agents": {
+    "independent_fairness_audit": "C8 actual prefill/decode, ownership, software work and input boundary",
+    "ledger_trace_boundary_audit": "C3 generator/mapper and master geometry",
+    "attacc_model_provenance": "Head/stack energy chain and diagnostic"
+  },
+  "facts_checked": {
+    "MHA_GQA_all_rungs": true,
+    "C6_fixture_same_end_different_tier_total": true,
+    "turns_regeneration_and_manifest_21": true
+  },
+  "artifact_sha256": {
+    "CURRENT_ISSUES_before_fbe6756.txt": "c7349127edb04253ada47c102f0f79cc3f146977d3893c035d6c9db53b89ea93",
+    "c3_fbe6756_evidence.json": "c132e852543ea5815f8e2b4c2dbb8925e3096443690a7ecb2e272513d9253a19",
+    "c3_fbe6756_probe.txt": "f62da26808b4212480ee9d5553739e463265f58981b654990b2b42c98eb03cd6",
+    "fbe6756_audit_snapshot.txt": "6b5781dd601f21ddee3c84fdac07445901a230e856bc536b2d51959050ed871d",
+    "fbe6756_audit_start.json": "42a0635266e6bdacda41daa0c1a4a9d3eefbdcad13df47d4dd861a6cd91ed115",
+    "fbe6756_c8_binding_check.txt": "5bce5b18c5d93606cee9e0675cb25f0ac1384c3e18f8e8f095a231525258ff5f",
+    "fbe6756_c8_binding_evidence.json": "70904eff3c9de0245dab0eaeb58173cd20a330e8351e157e913ae0b80391baed",
+    "fbe6756_main_audit_evidence.json": "5ae797004333b14f8c49941ac7fad647871fdab3acab5afbb6d8bb725e03350f",
+    "fbe6756_main_audit_probe.txt": "86da27b897273b0b1dbf6e5c27186c7d01f05d3c3d12378138027e3f2df00fea",
+    "fbe6756_update_audit.txt": "5c6104833e1c2741bd2e36e4df2c47a0572bd61eed22d3b4de12bfc943d3c35f",
+    "fbe6756_validate_audit.txt": "e49c427cf01726c3c771cbefcc1dfcb803b16f0814b06ea44cfae4fb1cfa821c",
+    "fbe6756_workload_check.txt": "187134a1dc395f4bfb9a9c8a4102680ad98ffb79dabc7f69a6d06a87eb37f499",
+    "fbe6756_workload_evidence.json": "1289ee94110324e458b3ac50b6c0985deb2136ca3567ba9d5dce68c7106f0e0f",
+    "head_energy_a4669f4_evidence.json": "efb5a5e67bd67efe06afd9c83c7f2d570b30c3bf29f13770b266dfb69c1d6717",
+    "head_energy_a4669f4_probe.txt": "8bebaab81562b744b9fbc2478c06ee9eda15f9c4bc30c167e0d94f770a91eab3",
+    "independent_c8_agent_gap_evidence.json": "8922084287a51a7962c0f40b807255450bcc9009bb7e53f3945e712934624525",
+    "independent_c8_agent_gap_input.json": "0c304340b4528b6f03636c5564eabd6011a4b0a5defb9acecb073f52ec66d987",
+    "independent_c8_agent_gap_probe.txt": "a63c7d17a3451a32c185afd56a3f2a322930daf99be6ec2aaebc96a6711a4ade",
+    "independent_c8_changed_prefix.json": "2f376d01df608afc0e042561f78dcc97e14ee9932814e013ac1d66128bd620a4",
+    "independent_c8_fbe6756_evidence.json": "d6945dda6a0299e0fedb47fa56e71212bd61d638cbb6bbdeebcd5ee7a563765d",
+    "independent_c8_fbe6756_probe.txt": "d4efa072d20f14dcc977865e9fad4b9880db3c2b485496ed871baeaf931be3db",
+    "independent_c8_generated_turns.json": "f4604df9203211849682ac9b37be0720bf60f77a197102ad6b0d7abcb97f6a39",
+    "independent_c8_three_turns.json": "a519a199c6c1a2030ce75fdfcb2270454065835be0f5803c1aa0be436f6425b2",
+    "independent_c8_two_turns.json": "bf3acecebd4af78097ed8122fda2191ecc5f3a27d5c87bcd139b37a39d676b45"
+  },
+  "documentation_sha256": {
+    "audit/2026-09-05/CURRENT_ISSUES.md": "e8f366be0ff04ed2407d99678a2f2535cd08d5e2035dbd640de8b4c54239c2b2",
+    "audit/2026-09-05/README.md": "934610f53be757f6a17bba401f3a49e3b6313445a6de95375d2a662774ce3975",
+    "audit/2026-09-05/archive/README.md": "9ff6351ba3ef1c3a97b8517ef655a784ab0a1def662f5b4b73e60baf1e110260",
+    "docs/README_run_guide.md": "7dea88962a9bd5890b756598dc618a8b2d3bf4bd64ac7cccb9c1485978eadf71",
+    "docs/sessions/README.md": "dee034bd9d39b821c3cb77fcf21a5224e2581cbde2d4a92ccb626dd55894399d",
+    "docs/sessions/2026-09-05-fbe6756-fix-verification.md": "62c1174e4d2d27ddb99ec1e87f72cc7b929f90f339367b35224fcef5b750e9ab"
+  },
+  "not_claimed": [
+    "No end-to-end performance result",
+    "No proof of workload-wide bias size",
+    "No exhaustive numerical KV validation",
+    "No authentication of all historical Ramulator caches"
+  ]
+}

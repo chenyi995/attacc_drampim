@@ -1,0 +1,1132 @@
+{
+  "head": "fbe6756eb062e44f09a0d100538563c5bd93ff08",
+  "scope": "Current DAG/helper with fake devices; collector fixture. No performance or Ramulator run.",
+  "GQA_all_rungs": {
+    "A1": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 33,
+          "link_bytes": 135168,
+          "expected_kv_bytes": 135168
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 6,
+      "store_zero": true
+    },
+    "A2": {
+      "status": "ok",
+      "kv_events": [],
+      "store_count": 0,
+      "store_zero": true
+    },
+    "A3b": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4c": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4e": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A5": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    },
+    "A6": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    }
+  },
+  "MHA_all_rungs": {
+    "A1": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 33,
+          "link_bytes": 135168,
+          "expected_kv_bytes": 135168
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 6,
+      "store_zero": true
+    },
+    "A2": {
+      "status": "ok",
+      "kv_events": [],
+      "store_count": 0,
+      "store_zero": true
+    },
+    "A3b": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4c": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A4e": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 8,
+      "store_zero": true
+    },
+    "A5": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    },
+    "A6": {
+      "status": "ok",
+      "kv_events": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 32,
+          "link_bytes": 131072,
+          "expected_kv_bytes": 131072
+        },
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 2,
+          "link_bytes": 8192,
+          "expected_kv_bytes": 8192
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "rows": 1,
+          "link_bytes": 4096,
+          "expected_kv_bytes": 4096
+        }
+      ],
+      "store_count": 7,
+      "store_zero": true
+    }
+  },
+  "C5_current_pricing": {
+    "fresh": {
+      "priced": [
+        {
+          "request": "r",
+          "readback_rows": 0,
+          "compute_rows": 8,
+          "side": "pim",
+          "calls": {
+            "GPU": [
+              {
+                "name": "score",
+                "m": 8,
+                "n": 8,
+                "k": 128,
+                "numOp": 8,
+                "shared_queries": 1,
+                "runs": []
+              },
+              {
+                "name": "softmax",
+                "m": 8,
+                "n": 8,
+                "k": 1,
+                "numOp": 8,
+                "shared_queries": 1,
+                "runs": []
+              },
+              {
+                "name": "context",
+                "m": 8,
+                "n": 128,
+                "k": 8,
+                "numOp": 8,
+                "shared_queries": 1,
+                "runs": []
+              },
+              {
+                "name": "ctx_pim_to_gpu",
+                "m": 1,
+                "n": 8192,
+                "k": 1,
+                "numOp": 1,
+                "shared_queries": 1,
+                "runs": []
+              }
+            ],
+            "Acc": [
+              {
+                "name": "score",
+                "m": 8,
+                "n": 8,
+                "k": 128,
+                "numOp": 1,
+                "shared_queries": 8,
+                "runs": [
+                  [
+                    0,
+                    8388608,
+                    8,
+                    0,
+                    1
+                  ],
+                  [
+                    2147483648,
+                    2155872256,
+                    8,
+                    2,
+                    1
+                  ],
+                  [
+                    4294967296,
+                    4303355904,
+                    8,
+                    4,
+                    1
+                  ],
+                  [
+                    6442450944,
+                    6450839552,
+                    8,
+                    6,
+                    1
+                  ],
+                  [
+                    8589934592,
+                    8598323200,
+                    8,
+                    8,
+                    1
+                  ],
+                  [
+                    10737418240,
+                    10745806848,
+                    8,
+                    10,
+                    1
+                  ],
+                  [
+                    12884901888,
+                    12893290496,
+                    8,
+                    12,
+                    1
+                  ],
+                  [
+                    15032385536,
+                    15040774144,
+                    8,
+                    14,
+                    1
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "request": "r",
+          "readback_rows": 0,
+          "compute_rows": 8,
+          "side": "pim",
+          "calls": {
+            "GPU": [],
+            "Acc": []
+          }
+        }
+      ],
+      "gpu_readback_pricing_calls": 0,
+      "q_input_pricing_calls": 0,
+      "context_return_pricing_calls": 1,
+      "actual_prefill_links": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 8,
+          "link_bytes": 32768
+        },
+        {
+          "name": "q_gpu_to_pim",
+          "rows": 8,
+          "link_bytes": 16384
+        },
+        {
+          "name": "ctx_pim_to_gpu",
+          "rows": 8,
+          "link_bytes": 16384
+        }
+      ]
+    },
+    "resident_history": {
+      "priced": [
+        {
+          "request": "r",
+          "readback_rows": 16,
+          "compute_rows": 8,
+          "side": "pim",
+          "calls": {
+            "GPU": [
+              {
+                "name": "kv_pim_to_gpu",
+                "m": 1,
+                "n": 32768,
+                "k": 1,
+                "numOp": 1,
+                "shared_queries": 1,
+                "runs": []
+              },
+              {
+                "name": "score",
+                "m": 8,
+                "n": 24,
+                "k": 128,
+                "numOp": 8,
+                "shared_queries": 1,
+                "runs": []
+              },
+              {
+                "name": "softmax",
+                "m": 8,
+                "n": 24,
+                "k": 1,
+                "numOp": 8,
+                "shared_queries": 1,
+                "runs": []
+              },
+              {
+                "name": "context",
+                "m": 8,
+                "n": 128,
+                "k": 24,
+                "numOp": 8,
+                "shared_queries": 1,
+                "runs": []
+              },
+              {
+                "name": "ctx_pim_to_gpu",
+                "m": 1,
+                "n": 8192,
+                "k": 1,
+                "numOp": 1,
+                "shared_queries": 1,
+                "runs": []
+              }
+            ],
+            "Acc": [
+              {
+                "name": "score",
+                "m": 8,
+                "n": 16,
+                "k": 128,
+                "numOp": 1,
+                "shared_queries": 8,
+                "runs": [
+                  [
+                    0,
+                    8388608,
+                    8,
+                    0,
+                    1
+                  ],
+                  [
+                    1073741824,
+                    1082130432,
+                    16,
+                    1,
+                    1
+                  ],
+                  [
+                    2147483648,
+                    2155872256,
+                    8,
+                    2,
+                    1
+                  ],
+                  [
+                    3221225472,
+                    3229614080,
+                    16,
+                    3,
+                    1
+                  ],
+                  [
+                    4294967296,
+                    4303355904,
+                    8,
+                    4,
+                    1
+                  ],
+                  [
+                    5368709120,
+                    5377097728,
+                    16,
+                    5,
+                    1
+                  ],
+                  [
+                    6442450944,
+                    6450839552,
+                    8,
+                    6,
+                    1
+                  ],
+                  [
+                    7516192768,
+                    7524581376,
+                    16,
+                    7,
+                    1
+                  ],
+                  [
+                    8589934592,
+                    8598323200,
+                    8,
+                    8,
+                    1
+                  ],
+                  [
+                    9663676416,
+                    9672065024,
+                    16,
+                    9,
+                    1
+                  ],
+                  [
+                    10737418240,
+                    10745806848,
+                    8,
+                    10,
+                    1
+                  ],
+                  [
+                    11811160064,
+                    11819548672,
+                    16,
+                    11,
+                    1
+                  ],
+                  [
+                    12884901888,
+                    12893290496,
+                    8,
+                    12,
+                    1
+                  ],
+                  [
+                    13958643712,
+                    13967032320,
+                    16,
+                    13,
+                    1
+                  ],
+                  [
+                    15032385536,
+                    15040774144,
+                    8,
+                    14,
+                    1
+                  ],
+                  [
+                    16106127360,
+                    16114515968,
+                    16,
+                    15,
+                    1
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "gpu_readback_pricing_calls": 1,
+      "q_input_pricing_calls": 0,
+      "context_return_pricing_calls": 1,
+      "actual_prefill_links": [
+        {
+          "name": "kv_gpu_to_pim",
+          "rows": 8,
+          "link_bytes": 32768
+        },
+        {
+          "name": "q_gpu_to_pim",
+          "rows": 8,
+          "link_bytes": 16384
+        },
+        {
+          "name": "ctx_pim_to_gpu",
+          "rows": 8,
+          "link_bytes": 16384
+        }
+      ]
+    }
+  },
+  "C6_identical_summary_fixture": {
+    "input": {
+      "A2": {
+        "summary": {
+          "requests": {
+            "r": {
+              "tier": 0,
+              "prefill_end_s": 2.0,
+              "first_token_s": 3.0,
+              "end_s": 5.0
+            }
+          }
+        },
+        "batches": []
+      },
+      "A3b": {
+        "summary": {
+          "requests": {
+            "r": {
+              "tier": 0,
+              "prefill_end_s": 2.0,
+              "first_token_s": 3.0,
+              "end_s": 5.0
+            }
+          }
+        },
+        "batches": [
+          {
+            "tier": 0,
+            "q_arrival_s": 2.2,
+            "attention_start_s": 2.3
+          },
+          {
+            "tier": 0,
+            "q_arrival_s": 4.2,
+            "attention_start_s": 4.3
+          }
+        ]
+      }
+    },
+    "output": [
+      {
+        "workload": "synthetic.json",
+        "ablation": "A2",
+        "tier": "0",
+        "prefill_s": "3.0",
+        "decode_s": "2.0",
+        "tier_total_s": "5.0",
+        "first_s": "3.0",
+        "last_s": "5.0",
+        "cum_end_s": "5.0",
+        "decode_batches": "0"
+      },
+      {
+        "workload": "synthetic.json",
+        "ablation": "A3b",
+        "tier": "0",
+        "prefill_s": "2.2",
+        "decode_s": "2.0999999999999996",
+        "tier_total_s": "4.3",
+        "first_s": "2.2",
+        "last_s": "4.3",
+        "cum_end_s": "5.0",
+        "decode_batches": "2"
+      }
+    ],
+    "note": "Chosen timestamp fixture in seconds, not measured runtime. Both summaries have prefill end 2, first token end 3, request end 5."
+  },
+  "C6_real_DAG_summaries": {
+    "A2": {
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 4e-05,
+            "first_token_s": 2.5000000000000005e-05,
+            "end_s": 4e-05
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 4e-05,
+            "requests": 1
+          }
+        }
+      },
+      "batches": []
+    },
+    "A3b": {
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 1.2000000000000002e-05,
+            "first_token_s": 2.600000000000001e-05,
+            "end_s": 3.999999999999998e-05
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 3.999999999999998e-05,
+            "requests": 1
+          }
+        }
+      },
+      "batches": [
+        {
+          "id": "batch:t0:o0:l0:g0",
+          "tier": 0,
+          "output_row": 0,
+          "transformer_layer": 0,
+          "members": [
+            "r"
+          ],
+          "query_positions": {
+            "r": 8
+          },
+          "size": 1,
+          "admission": "global-q-ready-queue",
+          "qkv_batch_members": {
+            "r": [
+              "r"
+            ]
+          },
+          "q_arrival_s": 1.4000000000000003e-05,
+          "q_arrival_event_ids": [
+            "cb-16"
+          ],
+          "sweeps": [
+            {
+              "members": [
+                "r"
+              ],
+              "admission_s": 1.4000000000000003e-05,
+              "start_s": 1.4000000000000003e-05
+            }
+          ],
+          "attention_admission_s": 1.4000000000000003e-05,
+          "attention_start_s": 1.4000000000000003e-05
+        },
+        {
+          "id": "batch:t0:o1:l0:g0",
+          "tier": 0,
+          "output_row": 1,
+          "transformer_layer": 0,
+          "members": [
+            "r"
+          ],
+          "query_positions": {
+            "r": 9
+          },
+          "size": 1,
+          "admission": "global-q-ready-queue",
+          "qkv_batch_members": {
+            "r": [
+              "r"
+            ]
+          },
+          "q_arrival_s": 2.800000000000001e-05,
+          "q_arrival_event_ids": [
+            "cb-44"
+          ],
+          "sweeps": [
+            {
+              "members": [
+                "r"
+              ],
+              "admission_s": 2.800000000000001e-05,
+              "start_s": 2.800000000000001e-05
+            }
+          ],
+          "attention_admission_s": 2.800000000000001e-05,
+          "attention_start_s": 2.800000000000001e-05
+        }
+      ]
+    }
+  },
+  "C6_real_DAG_tier_rows": [
+    {
+      "workload": "synthetic.json",
+      "ablation": "A2",
+      "tier": "0",
+      "prefill_s": "2.5000000000000005e-05",
+      "decode_s": "1.4999999999999999e-05",
+      "tier_total_s": "4e-05",
+      "first_s": "2.5000000000000005e-05",
+      "last_s": "4e-05",
+      "cum_end_s": "4e-05",
+      "decode_batches": "0"
+    },
+    {
+      "workload": "synthetic.json",
+      "ablation": "A3b",
+      "tier": "0",
+      "prefill_s": "1.4000000000000003e-05",
+      "decode_s": "1.4000000000000007e-05",
+      "tier_total_s": "2.800000000000001e-05",
+      "first_s": "1.4000000000000003e-05",
+      "last_s": "2.800000000000001e-05",
+      "cum_end_s": "3.999999999999998e-05",
+      "decode_batches": "2"
+    }
+  ],
+  "resolved_config_diffs": {
+    "A3b->A4c": {
+      "kv_mapping": [
+        "naive",
+        "master-diff-local"
+      ]
+    },
+    "A4c->A4e": {
+      "kv_mapping": [
+        "master-diff-local",
+        "master-diff-table-local"
+      ]
+    },
+    "A4e->A5": {
+      "prefill_attn": [
+        "gpu",
+        "pim"
+      ],
+      "pim_prefill_query_batch": [
+        4,
+        8
+      ],
+      "pim_batch_command": [
+        "replicate",
+        "mq"
+      ],
+      "pim_pe_freq_ghz": [
+        0.666,
+        1.3004
+      ]
+    },
+    "A5->A6": {
+      "prefill_attn": [
+        "pim",
+        "dynamic"
+      ]
+    }
+  }
+}

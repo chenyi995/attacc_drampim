@@ -1,0 +1,15 @@
+from pathlib import Path
+import hashlib,json,subprocess
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+paths=subprocess.check_output(['git','ls-files','-z'],cwd=R).decode().split('\0')
+protected={p:sha(R/p) for p in paths if p and not p.startswith(('audit/','docs/')) and (R/p).is_file()}
+results={str(p.relative_to(R)):sha(p) for p in (R/'experiments/paper_ladder').rglob('*') if p.is_file() and '__pycache__' not in p.parts}
+paper=R.parent/'KVPIM-1Fugue-ASPLOS2027'
+record={'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip(),
+ 'status':subprocess.check_output(['git','status','--short'],cwd=R,text=True),
+ 'protected':protected,'existing_results':results,
+ 'paper':{str(p):sha(p) for p in paper.rglob('*.tex')},
+ 'all_changed_files':subprocess.check_output(['git','diff','--name-only','8c51672','HEAD'],cwd=R,text=True).splitlines()}
+Path('/tmp/fbe6756_audit_start.json').write_text(json.dumps(record,indent=2)+'\n')
+print(json.dumps({k:len(v) if isinstance(v,(dict,list)) else v for k,v in record.items()}))
