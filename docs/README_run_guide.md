@@ -63,6 +63,9 @@ A3b 持久写入序放置；fresh prefill 按档选边。
 
 ## 5. Sweep（每次只动一个轴；`workload/probe/sweep/manifest.csv`，42 个文件）
 
+**档数规则（chenyi9 裁决 2026-09-05）：只有 baseline B0 跑七档；每个 sweep 点只跑 A3b 和 A6**（朴素 PIM 存储 vs Fugue）。
+`run_sweep.sh` 按文件名自动选档，`RUNGS=...` 可覆盖。
+
 | # | 轴 | 取值（粗体 = baseline） | 隔离的差别 | legacy 下已有证据 |
 |---|---|---|---|---|
 | S1 | agent 数 | 4 / **8** / 16 / 32 | A3b→A4c→A4e：co-read 冲突随 N 涨 | N8→N16 TBT 收益 5–6% → 15–16% |
@@ -92,7 +95,7 @@ GPU_MODEL=flash RUNGS="A1 A2 A3b A4c A4e A5 A6" NUM_HBM=1 NGPU=1 RAMU_WORKERS=9 
 KVPIM_PREFILL_SIDE_LOG=$KVPIM_SCRATCH/sides.jsonl \
 bash experiments/run_dag_ladder.sh workload/probe/sweep/B0_interleaved.json CACHEBLEND-TINY $KVPIM_SCRATCH/out_B0
 
-# 整个矩阵（两两并行，62 核）：先 baseline，再 S5、S4（A5/A6），再 S1、S3（布局），其余
+# 整个矩阵：B0 七档两两并行（62 核）；sweep 点只跑 A3b + A6，四个并行（56 核）。顺序：B0，再 S5、S4（A5/A6），再 S1、S3（布局），其余
 bash experiments/run_sweep.sh $KVPIM_SCRATCH/sweep '^B0_'
 bash experiments/run_sweep.sh $KVPIM_SCRATCH/sweep '^S5_.*interleaved'
 bash experiments/run_sweep.sh $KVPIM_SCRATCH/sweep '^S4_.*interleaved'
@@ -111,5 +114,5 @@ python3 experiments/summarize_ladder.py $KVPIM_SCRATCH/sweep/B0_interleaved work
 
 ## 7. 运行量（CACHEBLEND-TINY，61–62 核）
 
-一个七档点 5–15 分钟（`turns` 写法与 S1_32 / S5_0p75 更慢）。interleaved 21 点约 3–4 小时，turns 21 点约 6–8 小时。
+一个七档点 5–15 分钟；一个 A3b + A6 点约 2–5 分钟（`turns` 写法与 S1_32 / S5_0p75 更慢）。interleaved 21 点约 1–2 小时，turns 21 点约 2–4 小时。
 LLAMA3-8B 上只跑 B0 + S1 + S4 + S5。
