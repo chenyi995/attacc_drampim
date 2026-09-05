@@ -5,7 +5,7 @@
 这一页定死跑论文数据时**必须开的选项**、公平规则、baseline 与 sweep 矩阵、跑法与汇总。
 所有档同一份 workload、同一份复用计划，只换 `--ablation`。
 
-**按共同 AttAcc 口径比较。** chenyi9 最新要求接受共同模型限制，每项先说明上游建模及分档影响再裁决，见 [审阅清单](../audit/2026-09-05/CURRENT_ISSUES.md)。GPU attention 共用 FlashAttention，必须启用；CLI 默认仍为 legacy，裸 ladder 也需设置 `GPU_MODEL=flash`，sweep 默认 flash。pipeline 保持当前开启；共同追加顺序近似不再自动要求优化。旧结果开关继续如实标注，缺记录不能据此断言混用或不公平。原始 AttAcc 的 pipe=False 仍包含公式 overlap，不能和当前 DAG 的 SERIAL 完全等同。
+**按共同 AttAcc 口径比较。** chenyi9 最新要求接受共同模型限制，每项先说明上游建模及分档影响再裁决，见 [审阅清单](../audit/2026-09-05/CURRENT_ISSUES.md)。GPU attention 共用 FlashAttention，必须启用；CLI 默认仍为 legacy，直接调用须传 `--gpu-model flash`；ladder 与 sweep 现均默认 flash。pipeline 保持当前开启；共同追加顺序近似不再自动要求优化。旧结果开关继续如实标注，缺记录不能据此断言混用或不公平。原始 AttAcc 的 pipe=False 仍包含公式 overlap，不能和当前 DAG 的 SERIAL 完全等同。
 
 ## 1. 必须开的选项
 

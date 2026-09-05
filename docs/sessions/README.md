@@ -4,6 +4,7 @@
 
 | 日期 | Session | 内容 |
 |---|---|---|
+| 2026-09-05（fbe6756 复核） | [新一轮修复验收](2026-09-05-fbe6756-fix-verification.md) | GQA/diff地址/flash/A6指定估价通过；三轮继承、prefill漏旧diff、A2工作量、tier口径与能量诊断仍需处理；主审+三个独立agent，仅audit |
 | 2026-09-05（口径确定与交接） | [已定原则、待执行和验收](2026-09-05-audit-decisions-finalized.md) | C8 按 a/c 原址继续引用要求对齐；本轮无待重复裁决口径；明确不代表代码已修 |
 | 2026-09-05（行列计时澄清） | [C4 与实际 decode 扫描输入](2026-09-05-row-column-audit-clarification.md) | 确认 ACTAB/PREA 由 Ramulator 处理；区分列地址边界与已证明性能问题；独立检查 reads/plan_reads |
 | 2026-09-05（裁决与未定项复审） | [C5 实际项估价、round 边界及 C4/C8 复审](2026-09-05-rulings-and-pending-reaudit.md) | 记录 C2/C3/C6 待执行、Q 忽略裁决；关闭同轮合并指控，补查两轮旧 diff 继承；只改审计文档 |
