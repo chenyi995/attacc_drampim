@@ -1601,6 +1601,21 @@ class AgenticHistoryTests(unittest.TestCase):
         self.assertEqual(rows["pim"], 0)
         self.assertGreater(rows["gpu"], 0)
 
+    def test_every_layout_executes_the_same_correction_plan(self):
+        """R02 (2026-09-05): the corrected rows are a property of the plan,
+        not of the layout; A3b's naive store and A4c's local-diff store must
+        report the same plan fingerprint."""
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=8)
+        shas = set()
+        for kv_mapping in ("naive", "master-diff-local", "master-diff-table-local"):
+            report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                       pim_prefill_mode="gpu", kv_mapping=kv_mapping,
+                                       channel_placement="slice")
+            shas.add(report["corrected_rows_sha"])
+        self.assertEqual(len(shas), 1)
+        self.assertFalse(plan.config.recompute_canonical)
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the

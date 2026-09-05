@@ -462,15 +462,13 @@ def main():
                 workload = Workload(workload.kind, tuple(
                     replace(request, history_len=args.history_len)
                     for request in workload.requests), workload.raw)
-            # Option-1 canonicalization (chenyi9 2026-08-27): random in-chunk
-            # rows are physically meaningful ONLY for the maskless naive
-            # layout (A3); every other layout gets the canonical head
-            # placement so scan shapes stay cache-shared.
-            _kv_for_canonical = args.kv_mapping
-            if not _kv_for_canonical and args.ablation:
-                _kv_for_canonical = PRESETS[args.ablation].get("kv_mapping")
-            recompute_canonical = (args.reuse == "recompute" and
-                                   _kv_for_canonical != "naive")
+            # ONE correction plan for every rung (ruling chenyi9 2026-09-05,
+            # re-audit R02): the recomputed rows of a shifted segment are the
+            # policy's random k rows (--reuse-seed) whatever the layout.  The
+            # 2026-08-27 "canonical head rows for every layout but naive"
+            # option gave A3b and A4c different token identities, so their
+            # comparison was not a layout comparison; it is withdrawn.
+            recompute_canonical = False
             reuse_plan = build_reuse_plan(
                 workload, args.reuse, args.cacheblend_recompute_ratio,
                 args.reuse_seed, args.cacheblend_full_layers,

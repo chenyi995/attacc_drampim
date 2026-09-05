@@ -7,6 +7,7 @@ GPU/PIM prefill split needed for position-independent KV reuse.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -2949,6 +2950,17 @@ def _append_q_rotate_distribution(system, events, x2g, *, layer, tier, request,
             time_s=0.0, energy=(), deps=(q_dependency,), positions=positions)
 
 
+def _corrected_rows_sha(workload: Workload, plan: ReusePlan, ndec: int) -> str:
+    """sha256 over (request, layer, sorted corrected positions) for the whole
+    run -- the identity of the software correction plan, layout-independent."""
+    digest = hashlib.sha256()
+    for request in workload.requests:
+        for layer in range(ndec):
+            rows = sorted(_policy_corrected_rows(plan, layer, request))
+            digest.update("{}|{}|{}\n".format(request.request_id, layer, rows).encode())
+    return digest.hexdigest()[:16]
+
+
 def _policy_corrected_rows(plan: ReusePlan, layer: int, request) -> set:
     """Return consumer positions whose reusable master KV is overlaid by diff.
 
@@ -5042,6 +5054,9 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
         "kv_mapping": "private" if physical_no_reuse else kv_mapping,
         "decode_attn": "pim",
         "pim_prefill_sides": dict(sorted(dynamic_prefill_sides.items())),
+        # Fingerprint of the correction plan the run executed: every rung of
+        # a ladder must report the same value (ruling chenyi9 2026-09-05).
+        "corrected_rows_sha": _corrected_rows_sha(workload, plan, system.model.ndec),
         "prefill_attention_rows": _prefill_side_summary(
             workload, prefill_attn_rows)[0],
         "prefill_attention_sides": _prefill_side_summary(
