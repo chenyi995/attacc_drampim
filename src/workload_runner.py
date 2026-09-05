@@ -3271,7 +3271,13 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                                    (softmax, "decode_gpu_local_softmax"),
                                    (context, "decode_gpu_local_context")):
                 op = deepcopy(template)
-                op.m, op.n, op.numOp = 1, 1, heads
+                # one key: score/softmax are (1 x 1), context is (1 x dhead)
+                # over that one key (re-audit R13: it was (1,1,1))
+                op.m, op.numOp = 1, heads
+                if name.endswith("context"):
+                    op.n, op.k = system.model.dhead, 1
+                else:
+                    op.n = 1
                 time_s, energy = system.devices["GPU"].get_time_and_energy(op)
                 local_last = _cacheblend_event(
                     events, layer=layer_index, tier=tier, request=request.request_id,
@@ -3609,7 +3615,11 @@ def _append_cacheblend_decode_batched(
                                        (softmax, "decode_batch_gpu_local_softmax"),
                                        (context, "decode_batch_gpu_local_context")):
                     op = deepcopy(template)
-                    op.m, op.n, op.numOp = len(group), 1, heads
+                    op.m, op.numOp = len(group), heads
+                    if name.endswith("context"):
+                        op.n, op.k = system.model.dhead, 1       # (m x dhead) over one key
+                    else:
+                        op.n = 1
                     time_s, energy = system.devices["GPU"].get_time_and_energy(op)
                     local_last = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=label,
