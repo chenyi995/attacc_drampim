@@ -1,0 +1,750 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "kind": "A6 crossover probe: standalone fresh prompts of 8..1024 tokens beside long reusers"
+ },
+ "agents": [
+  {
+   "id": "a0_owner",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "9ffeda3a9fbb5769",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "b1_longfresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "db9909d457e75c7a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5d9f408b69288664",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "1fba7eb360dbb623",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "0b86c17458ca673e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "30762e155ad85ebb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "2da4fda1b5a61722",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "9de9eae477e161fe",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f43bddacd602e9e8",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b43a2b9ed801758f",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "b3_longfresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "8299aa8cbc7b4328",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "416a98adab0fc291",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5f0cd523e5635c85",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f5cb5cd2e6e7f668",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b00c61e48abea9e7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ba6e5c4e970b5cce",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "844e072dafc2abfd",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ac0040464b9aeba2",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "bfc356b4e7ef9d0f",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "b5_longfresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "5fc3d2306e7b39b5",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "cefdaeab504cb341",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "372774aee28e9b21",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "fcc8444950d13666",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e1158b9a4b56f9f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e378022e79b8c44d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "266c8e2600595a45",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ff54d7e876fc2593",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "12022af03a9cb0e3",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "b7_longfresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "d567e66937645a38",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "cf781d8de801f404",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f3a3cc0537c431d5",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8e60cf3231b5fa6f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "7109edc571b4685f",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "085098b950e7176a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "2bb3d580b9e717a0",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "09f515876b15a27c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1efc2aa2a10c55e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "79e5c554b9f02105",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "631814f565bfe53c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2364a525a6d492c7",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "ba0e1cb562866a6c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ec8818e9b56ca37a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dbd7ba45843b35ed",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "56cf6441fefa3d66",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f2fc7f75d85fa92",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "95fb55a5cc0012f0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "444ac1e355de4d70",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "58fbaf5dfada2c5d",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ebd68aca974ee2bc",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "2c359a97fc3f24f7",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ce17ca186518b6b1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0bc9476e5028985a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c41fbf9e61698543",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "s8_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "b3af6d45b2283ae0",
+     "len": 8
+    }
+   ]
+  },
+  {
+   "id": "s16_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "b001fea9700483c0",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "s32_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "3fdfb24fc4cf009e",
+     "len": 32
+    }
+   ]
+  },
+  {
+   "id": "s64_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "245f7d96c78bdadb",
+     "len": 64
+    }
+   ]
+  },
+  {
+   "id": "s128_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a4f6e7a8fd2ca35b",
+     "len": 128
+    }
+   ]
+  },
+  {
+   "id": "s256_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "55811640ac954ebd",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "s512_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "0881c762f19f05e2",
+     "len": 512
+    }
+   ]
+  },
+  {
+   "id": "s1024_fresh",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "217aa0f5033acc7a",
+     "len": 1024
+    }
+   ]
+  }
+ ]
+}
