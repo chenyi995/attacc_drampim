@@ -15,6 +15,7 @@ from array import array
 from typing import Dict, Optional, Sequence
 
 _LIB_PATH = os.path.join(os.path.dirname(__file__), "cppcore", "libeventcore.so")
+DEPENDENCY_ONLY_DEVICES = frozenset(("DIE", "TLB"))
 
 
 def _load_library() -> Optional[ctypes.CDLL]:
@@ -23,6 +24,14 @@ def _load_library() -> Optional[ctypes.CDLL]:
     try:
         lib = ctypes.CDLL(_LIB_PATH)
     except OSError:
+        return None
+    # Older binaries cannot handle resource-free metadata nodes. Fall back
+    # to Python until the local core is rebuilt instead of using stale rules.
+    if not hasattr(lib, "ec_abi_version"):
+        return None
+    lib.ec_abi_version.restype = ctypes.c_int
+    lib.ec_abi_version.argtypes = []
+    if lib.ec_abi_version() != 2:
         return None
     lib.ec_new.restype = ctypes.c_void_p
     lib.ec_new.argtypes = [ctypes.c_int]
@@ -70,6 +79,8 @@ class EventCore:
             self._handle = None
 
     def _device(self, device: str) -> int:
+        if device in DEPENDENCY_ONLY_DEVICES:
+            return -1
         did = self._device_ids.get(device)
         if did is None:
             did = len(self._device_ids)

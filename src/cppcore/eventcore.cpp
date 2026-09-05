@@ -11,6 +11,7 @@
 //   no-pipe PIM pool scans emitted together form one parallel channel phase
 //   start      = max(avail[resource], end[dep] for dep in deps)  (left fold)
 //   end        = start + duration; avail[resource] = end
+//   device < 0 = dependency-only metadata: duration 0, no resource reservation
 // Floats are IEEE doubles with the same fold order as the Python max(),
 // so results are bit-identical.
 #include <cstddef>   // std::size_t (unqualified size_t below needs this on gcc 11)
@@ -31,17 +32,21 @@ struct Core {
     int64_t advanced = 0;              // events scheduled so far
 };
 inline double res_avail(Core* c, int32_t dev) {
+    if (dev < 0) return 0.0;  // dependency-only metadata, no hardware resource
     size_t r = c->pipe ? static_cast<size_t>(dev) : 0;
     if (r >= c->avail.size()) c->avail.resize(r + 1, 0.0);
     return c->avail[r];
 }
 inline void res_set(Core* c, int32_t dev, double v) {
+    if (dev < 0) return;
     size_t r = c->pipe ? static_cast<size_t>(dev) : 0;
     c->avail[r] = v;
 }
 }  // namespace
 
 extern "C" {
+
+int ec_abi_version() { return 2; }
 
 void* ec_new(int pipe) {
     Core* c = new Core();
@@ -64,7 +69,7 @@ int64_t ec_add(void* h, int32_t device, double duration, int32_t pool_scan,
     for (int32_t i = 0; i < ndep; ++i) {
         if (dep[i] < 0 || dep[i] >= index) return -1;  // future/invalid dep
     }
-    c->duration.push_back(duration);
+    c->duration.push_back(device < 0 ? 0.0 : duration);
     c->device.push_back(device);
     c->pool_scan.push_back(pool_scan);
     c->deps.insert(c->deps.end(), dep, dep + ndep);
@@ -75,7 +80,7 @@ int64_t ec_add(void* h, int32_t device, double duration, int32_t pool_scan,
 void ec_set_duration(void* h, int64_t index, double duration) {
     Core* c = static_cast<Core*>(h);
     if (index >= 0 && index < static_cast<int64_t>(c->duration.size()))
-        c->duration[index] = duration;
+        c->duration[index] = c->device[index] < 0 ? 0.0 : duration;
 }
 
 // Clear schedule state (keeps the event graph); next advance recomputes
