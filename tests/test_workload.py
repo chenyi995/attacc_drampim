@@ -728,9 +728,8 @@ class WorkloadTests(unittest.TestCase):
                   if event["request"] == "t1w0" and
                   event["transformer_layer"] == 2]
         names = [event["name"] for event in events]
+        self.assertNotIn("die_query_position_transform", names)
         self.assertLess(names.index("q_gpu_to_pim"),
-                        names.index("die_query_position_transform"))
-        self.assertLess(names.index("die_query_position_transform"),
                         names.index("tlb_lookup_and_bank_plan"))
         self.assertLess(names.index("tlb_lookup_and_bank_plan"),
                         names.index("pim_kv_scan_score_softmax_pv"))
@@ -917,20 +916,19 @@ class WorkloadTests(unittest.TestCase):
         gpu_rotate = [event for event in report["events"]
                       if event["name"] == "decode_gpu_rotate_q_extra_to_pim"]
         self.assertTrue(gpu_rotate)
-        die_report = run_reuse_prefill(System(), workload, plan, pipe=True,
-                                       cacheblend_batch_size=2,
-                                       cacheblend_rotate_mode="die")
+        with self.assertRaisesRegex(WorkloadValidationError, "DIE rotation"):
+            run_reuse_prefill(System(), workload, plan, pipe=True,
+                             cacheblend_batch_size=2, cacheblend_rotate_mode="die")
         bank_report = run_reuse_prefill(System(), workload, plan, pipe=True,
                                         cacheblend_batch_size=2,
                                         cacheblend_rotate_mode="bank")
-        self.assertEqual(die_report["cacheblend_rotate_mode"], "die")
         self.assertEqual(bank_report["cacheblend_rotate_mode"], "bank")
-        self.assertTrue(any(event["name"].startswith("decode_die_rotate_q_")
-                            for event in die_report["events"]))
+        self.assertFalse(any("die_rotate" in event["name"] or
+                             "die_query_position_transform" in event["name"]
+                             for event in report["events"]))
         self.assertTrue(any(event["name"] == "decode_bank_rotate_q_local"
                             for event in bank_report["events"]))
         self.assertGreater(report["link_bytes"], bank_report["link_bytes"])
-        self.assertGreaterEqual(die_report["makespan_s"], bank_report["makespan_s"])
 
     def test_cacheblend_decode_streams_master_and_diff_pools_sequentially(self):
         """Corrections mask master rows; they must not fragment the master stream.
@@ -1261,7 +1259,7 @@ class MQBatchCommandTests(unittest.TestCase):
         assemblies = [e for e in prefill if e["name"] == "die_score_assembly"]
         self.assertTrue(assemblies)
         # Landing order: every bank-whole prefill scan transitively follows a
-        # dram_store of this layer via its die_query_position_transform deps.
+        # dram_store of this layer via its address-plan dependencies.
         scans = [e for e in prefill
                  if e["name"] == "pim_kv_scan_score_softmax_pv"]
         self.assertTrue(scans)
