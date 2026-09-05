@@ -1647,6 +1647,26 @@ class AgenticHistoryTests(unittest.TestCase):
             self.assertTrue(owner_stores & ancestors(scan["id"], set()),
                             "consumer scan has no owner store ancestor")
 
+    def test_shifted_reuse_gets_query_variants_without_a_delta_field(self):
+        """R09 (2026-09-05): the position delta of a reused segment comes
+        from the plan (consumer offset minus owner offset), not from an
+        optional JSON field that every generated workload leaves at 0."""
+        import hashlib
+        from src.workload_runner import _apply_plan_deltas
+        doc = hashlib.sha256(b"doc").hexdigest()[:16]
+        owner = Request("a_owner", 0, None, 2, (Segment("sys", "sa", 2), Segment("doc", doc, 8)), 10)
+        consumer = Request("b_consumer", 0, None, 2, (Segment("sys", "sb", 4), Segment("doc", doc, 8)), 12)
+        workload = Workload("supervisor", (owner, consumer), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        shifted = _apply_plan_deltas(workload, plan)
+        self.assertEqual(shifted.requests[1].segments[1].position_delta, 2)
+        self.assertEqual(shifted.requests[0].segments[1].position_delta, 0)
+        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                   pim_prefill_mode="pim")
+        rotate = [e for e in report["events"] if "rotate_q_extra" in e["name"]
+                  and e["request"] == "b_consumer"]
+        self.assertTrue(rotate)
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the

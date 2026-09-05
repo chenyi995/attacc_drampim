@@ -2904,6 +2904,39 @@ def _owner_store_deps(registry: Dict[Tuple[int, str, str], List[str]], layer: in
     return tuple(deps)
 
 
+def _apply_plan_deltas(workload: Workload, plan: ReusePlan) -> Workload:
+    """Derive every reused segment's RoPE position delta from the plan.
+
+    Re-audit R09 (2026-09-05): the rotation path read only the optional
+    ``delta`` field of the JSON (default 0), so a shifted chunk got its k
+    recomputed rows but no query variants.  The shift is the consumer's
+    offset of the segment minus the owner's offset of the same fingerprint
+    (a parent's decoded output sits at the end of the parent's prompt).
+    """
+    by_id = {request.request_id: request for request in workload.requests}
+    deltas: Dict[Tuple[str, int], int] = {}
+    for decision in plan.reusable:
+        consumer = by_id[decision.request_id]
+        owner = by_id[decision.owner_request_id]
+        consumer_offset = sum(segment.length for segment in
+                              consumer.segments[:decision.segment_index])
+        owner_index = next((index for index, segment in enumerate(owner.segments)
+                            if segment.fingerprint == decision.fingerprint), None)
+        owner_offset = (owner.total_length if owner_index is None else
+                        sum(segment.length for segment in owner.segments[:owner_index]))
+        deltas[(decision.request_id, decision.segment_index)] = consumer_offset - owner_offset
+    if not deltas:
+        return workload
+    requests = []
+    for request in workload.requests:
+        segments = tuple(
+            replace(segment, position_delta=deltas[(request.request_id, index)])
+            if (request.request_id, index) in deltas else segment
+            for index, segment in enumerate(request.segments))
+        requests.append(replace(request, segments=segments))
+    return Workload(workload.kind, tuple(requests), workload.raw)
+
+
 def _prefill_location_deltas(request, bindings):
     """Map a consumer-visible resident K/V vector to its RoPE position delta."""
     result = {}
@@ -5194,6 +5227,7 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
     A3 scattered layout, private = A1 no-reuse layout, and decode_attn "gpu"
     (+ kv_mapping "none") = the A2 GPU-only rung.
     """
+    workload = _apply_plan_deltas(workload, plan)
     if decode_attn not in ("pim", "gpu"):
         raise WorkloadValidationError("--decode-attn must be 'pim' or 'gpu'")
     if cacheblend_rotate_mode not in _ROTATE_MODES:
