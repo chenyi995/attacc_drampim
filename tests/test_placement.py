@@ -778,8 +778,12 @@ class PhysicalLedgerTest(unittest.TestCase):
         reservations = [("owner", "c0", range(256), "master"),
                         ("consumer", "c0", range(8), "diff")]
         tlb = self._store(reservations)
-        groups = self._groups(tlb, self._reads(tlb, reservations), "master-diff-local-append")
-        keys = sorted(key for _c, _n, placed in groups for key, _v, _r in placed)
+        # 16 heads -> stripe 1: the head's master channel IS its diff channel
+        groups = self._groups(tlb, self._reads(tlb, reservations),
+                              "master-diff-local-append", heads=16)
+        keys = sorted(key for channel, _n, placed in groups if channel == 0
+                      for key, _v, _r in placed)
+        self.assertEqual(len(keys), 2)                       # master and diff on ch0
         fields = [Ramulator._address_mapping_signature(key) for key in keys]
         rows = {key // _GEN_ROW_BYTES for key in keys}
         self.assertEqual(len(rows), 2)                       # two distinct rows
