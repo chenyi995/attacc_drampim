@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Hand-calculation vs the engine, per scan (chenyi9 order 2026-09-04).
+"""LEGACY (2026-09-05): this rewrite models the per-scan synthetic placement of
+A3b/A4/A4b as it stood on 2026-09-03.  Since commit b4f57ce the ladder rungs
+place every object at write time in a persistent physical ledger
+(PhysicalLedger), so this hand model no longer describes A3b/A4c/A4e and
+must not be used as evidence for them.
+
+Hand-calculation vs the engine, per scan (chenyi9 order 2026-09-04).
 
     python3 output/analysis/layout_handcheck_theory.py <dump_dir> [--rungs A3b,A4,...]
 

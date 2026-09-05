@@ -53,7 +53,7 @@ CACHE = os.path.join(HERE, ".extract_cache.pkl")
 # report is read again.
 CACHE_SCHEMA = 2
 
-RUNGS = ["A1", "A2", "A3", "A3a", "A3b", "A4", "A4b", "A5", "A6"]
+RUNGS = ["A1", "A2", "A3b", "A4c", "A4e", "A5", "A6"]   # the paper ladder (2026-09-05)
 
 NUM = rb'(-?[0-9][0-9.eE+-]*)'
 
