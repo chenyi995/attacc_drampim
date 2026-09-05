@@ -2439,7 +2439,7 @@ def _append_placement_pim_scan(system, events: List[SplitEvent], *, op: Layer,
         layout_probe.record_scan(
             layer=layer, tier=tier, request=request, name=name, policy=policy,
             heads_per_hbm=heads_per_hbm, master_channels=master_channels,
-            kv_heads=kv_heads, num_hbm_used=num_hbm_used,
+            kv_heads=kv_heads, num_hbm_used=num_hbm_used, energy_scale=energy_scale,
             n_master=sum(1 for r in reads if r.kind != "diff"),
             n_diff=sum(1 for r in reads if r.kind == "diff"),
             # the (kind, tokens) cut the placement rule consumes, so the dump

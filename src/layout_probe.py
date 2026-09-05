@@ -174,7 +174,7 @@ def record_blocks(tlb, *, note: str = "") -> None:
 
 def record_scan(*, layer: int, tier: int, request: str, name: str,
                 policy: str, heads_per_hbm: int, master_channels: int,
-                kv_heads: int, num_hbm_used: int,
+                kv_heads: int, num_hbm_used: int, energy_scale=None,
                 n_master: int, n_diff: int,
                 read_extents: Sequence[Tuple[str, int]] = (),
                 loads: Sequence[float], active: Sequence[int],
@@ -216,7 +216,8 @@ def record_scan(*, layer: int, tier: int, request: str, name: str,
             # 1000) and scales by num_hbm_used; both shown so the sum is
             # reproducible by hand
             "energy_nj_one_stack": energy_pj / 1000.0,
-            "energy_nj_charged": energy_pj / 1000.0 * num_hbm_used,
+            "energy_nj_charged": energy_pj / 1000.0 * (
+                num_hbm_used if energy_scale is None else energy_scale),
         })
     scan_time = max((entry["time_s"] for entry in terms), default=0.0)
     _write({
@@ -225,6 +226,7 @@ def record_scan(*, layer: int, tier: int, request: str, name: str,
         "heads_per_hbm": int(heads_per_hbm),
         "master_channels": int(master_channels),
         "kv_heads": int(kv_heads), "num_hbm_used": int(num_hbm_used),
+        "energy_scale": float(num_hbm_used if energy_scale is None else energy_scale),
         "reads_master": int(n_master), "reads_diff": int(n_diff),
         "read_extents": cut[:256],
         "read_extents_n": len(cut),
@@ -241,5 +243,5 @@ def record_scan(*, layer: int, tier: int, request: str, name: str,
         "scan_energy_nj": sum(entry["energy_nj_charged"] for entry in terms),
         "scan_acts": sum(entry["acts"] for entry in terms),
         "reduction": "time = MAX over channels; energy = SUM over channels "
-                     "x num_hbm_used",
+                     "x energy_scale (real heads / simulated heads; E1 2026-09-05)",
     })
