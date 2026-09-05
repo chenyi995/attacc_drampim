@@ -21,7 +21,8 @@ from .model import Layer
 from .ramulator_wrapper import (MQ_DEFAULT_GEMV_BUFFER_BYTES,
                                 MQ_DEFAULT_PE_FREQ_GHZ, mq_query_capacity)
 from .type import DeviceType, LayerType
-from .cpp_eventcore import new_core as _new_event_core
+from .cpp_eventcore import (DEPENDENCY_ONLY_DEVICES,
+                           new_core as _new_event_core)
 from .workload import (CACHEBLEND_FAMILY, EPIC_FAMILY,
                        ReusePlan, Workload, WorkloadValidationError,
                        validate_reuse_plan)
@@ -304,6 +305,8 @@ def run_cacheblend_analytic_report(system, workload: Workload, plan: ReusePlan,
 def _event(events: List[SplitEvent], transformer_layer: int, request_id: str,
            name: str, device: str, rows: int, time_s: float,
            energy: Iterable[float], link_bytes: int = 0) -> None:
+    if device in DEPENDENCY_ONLY_DEVICES:
+        time_s, energy = 0.0, ()
     events.append(SplitEvent("legacy-{}".format(len(events)), transformer_layer,
                              0, request_id, name, device, rows, time_s,
                              sum(energy), link_bytes))
@@ -1076,15 +1079,10 @@ def placement_degeneracy_warning(system, kv_mapping: str,
                 kv_heads_total, channels))
 
 
-_ROTATE_MODES = ("gpu", "die", "bank")
-_DIE_ROTATE_CYCLE_S = 1e-9
-# After prefill, master and diff already sit as sequential streams in their
-# pools, so a scan needs one descriptor per contiguous physical run (base,
-# length, pool, mask bit-vector) rather than a lookup per logical row.  The
-# mask itself is applied on the die between QK^T and softmax at no extra
-# modeled cost; the cross-run softmax merge is the DIE LSE-merge event.
-_TLB_DESCRIPTOR_S = 5e-9
-_TLB_DESCRIPTOR_ENERGY = 0.1
+_ROTATE_MODES = ("gpu", "bank")
+# Address translation is shared by naive and Fugue layouts. Original AttAcc
+# has no separate DIE/TLB bookkeeping cost; retain dependencies without an
+# added charge in any rung (user accounting convention, 2026-09-05).
 
 
 def _apply_pim_batch(op, batch_command: str, pe_freq_ghz: float) -> None:
@@ -1100,8 +1098,8 @@ def _apply_pim_batch(op, batch_command: str, pe_freq_ghz: float) -> None:
 
 
 def _tlb_plan_cost(runs) -> Tuple[float, Tuple[float, ...]]:
-    count = max(1, len(runs))
-    return count * _TLB_DESCRIPTOR_S, (_TLB_DESCRIPTOR_ENERGY * count,)
+    """Metadata plans carry dependencies only, including A6 cost probes."""
+    return 0.0, ()
 
 
 @dataclass(frozen=True)
@@ -1894,6 +1892,8 @@ def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                       addresses: Sequence[int] = (),
                       batch_members: Sequence[str] = (),
                       masked_rows: int = 0) -> str:
+    if device in DEPENDENCY_ONLY_DEVICES:
+        time_s, energy = 0.0, ()
     event_id = "cb-{}".format(len(events))
     # A prefill TLB/link event names every visible K/V address; over a long
     # context that is O(L) per fresh token.  Keep those lists as packed
@@ -2266,14 +2266,15 @@ def _schedule_cacheblend(events: Sequence[SplitEvent], *, pipe: bool) -> List[Sp
             availability["SERIAL"] = group_end
             index = next_index
             continue
-        # Links, DIE/TLB and banks are each ordered resources; GPU and PIM
-        # work can overlap a link exactly as in the CacheBlend trace.  Without
-        # --pipeopt, all operations share one serial timeline.
-        resource = event.device if pipe else "SERIAL"
+        # Hardware operations reserve resources (one serial timeline without
+        # --pipeopt). DIE/TLB metadata only joins its own dependencies.
+        resource = (None if event.device in DEPENDENCY_ONLY_DEVICES
+                    else event.device if pipe else "SERIAL")
         start = max([availability.get(resource, 0.0)] +
                     [finish[dep] for dep in event.depends_on])
         end = start + event.time_s
-        availability[resource] = end
+        if resource is not None:
+            availability[resource] = end
         finish[event.event_id] = end
         scheduled.append(replace(event, start_s=start, end_s=end))
         index += 1
@@ -2296,10 +2297,12 @@ def _schedule_cacheblend_incremental(events: Sequence[SplitEvent], *, pipe: bool
     for event in events[start_index:]:
         if any(dep not in finish for dep in event.depends_on):
             raise WorkloadValidationError("CacheBlend event depends on a future event")
-        resource = event.device if pipe else "SERIAL"
+        resource = (None if event.device in DEPENDENCY_ONLY_DEVICES
+                    else event.device if pipe else "SERIAL")
         start = max([availability.get(resource, 0.0)] +
                     [finish[dep] for dep in event.depends_on])
-        availability[resource] = start + event.time_s
+        if resource is not None:
+            availability[resource] = start + event.time_s
         finish[event.event_id] = start + event.time_s
     return finish, availability
 
@@ -2386,9 +2389,10 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
     (``wrt_io_busy``); a later transfer starts at the later of its producer and
     that timeline.  With pipeline disabled it executes the decoder in one
     serial timeline.  CacheBlend extends this exact contract to explicitly
-    named GPU/PIM/DIE/TLB resources, which the original rectangular model did
-    not expose.  This checker replays those rules from the emitted DAG rather
-    than trusting the scheduling function that produced it.
+    named GPU/PIM resources. DIE/TLB metadata only joins dependencies, with
+    no extra time, energy or resource reservation under AttAcc accounting.
+    This checker replays those rules from the emitted DAG rather than
+    trusting the scheduling function that produced it.
     """
     finish: Dict[str, float] = {}
     available: Dict[str, float] = {}
@@ -2427,7 +2431,10 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
             available["SERIAL"] = phase_end
             index = next_index
             continue
-        resource = event.device if pipe else "SERIAL"
+        resource = (None if event.device in DEPENDENCY_ONLY_DEVICES
+                    else event.device if pipe else "SERIAL")
+        if resource is None and (event.time_s != 0.0 or event.energy_nj != 0.0):
+            raise WorkloadValidationError("DIE/TLB metadata must have zero modeled cost")
         expected = max([available.get(resource, 0.0)] +
                        [finish[dependency] for dependency in event.depends_on])
         if abs(event.start_s - expected) > tolerance:
@@ -2437,7 +2444,8 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
         if abs(event.end_s - (event.start_s + event.time_s)) > tolerance:
             raise WorkloadValidationError(
                 "CacheBlend event duration is inconsistent with the AttAcc timeline")
-        available[resource] = event.end_s
+        if resource is not None:
+            available[resource] = event.end_s
         finish[event.event_id] = event.end_s
         index += 1
     report = {
@@ -2633,9 +2641,8 @@ def _append_q_rotate_distribution(system, events, x2g, *, layer, tier, request,
 
     KV itself never crosses the link: ``locations`` already names PIM-resident
     master/diff vectors.  GPU rotation sends one additional Q shard for every
-    extra distinct delta; die rotation receives one raw Q and serializes
-    shifted variants master-first at one cycle each; bank rotation is the
-    requested zero-overhead local-rotate assumption.
+    extra distinct delta. The paper rotates Q on the GPU, never on the DIE;
+    ``bank`` is retained as an explicit experimental local-rotate assumption.
     """
     if rotate_mode not in _ROTATE_MODES:
         raise WorkloadValidationError("unknown CacheBlend rotate mode '{}'".format(rotate_mode))
@@ -2671,18 +2678,6 @@ def _append_q_rotate_distribution(system, events, x2g, *, layer, tier, request,
             events, layer=layer, tier=tier, request=request,
             name=name_prefix + "bank_rotate_q_local", device="PIM", rows=len(shifted),
             time_s=0.0, energy=(), deps=(q_dependency,), positions=positions)
-
-    # One die rotate unit: master targets issue before diff targets.  The
-    # chain makes the later diff Q depend on every earlier shifted variant.
-    last = q_dependency
-    for delta in shifted:
-        kind = "master" if "master" in targets[delta] else "diff"
-        last = _cacheblend_event(
-            events, layer=layer, tier=tier, request=request,
-            name=name_prefix + "die_rotate_q_" + kind, device="DIE", rows=1,
-            time_s=_DIE_ROTATE_CYCLE_S, energy=(), deps=(last,),
-            positions=positions)
-    return last
 
 
 def _policy_corrected_rows(plan: ReusePlan, layer: int, request) -> set:
@@ -3039,12 +3034,6 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     locations=reads, location_deltas=prefill_deltas[layer_index],
                     rotate_mode=rotate_mode, name_prefix="decode_",
                     positions=(request.total_length + output_row,))
-                die_q = _cacheblend_event(
-                    events, layer=layer_index, tier=tier, request=request.request_id,
-                    name="decode_die_query_position_transform", device="DIE", rows=1,
-                    time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
-                    energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
-                    deps=(rotate_ready,), positions=(request.total_length + output_row,))
                 op = deepcopy(score)
                 op.m, op.n, op.k, op.numOp = (1, len(reads), system.model.dhead,
                                               _gqa_kv_heads_local(system, heads))
@@ -3062,7 +3051,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     device=("ADDR" if contiguous_no_reuse else "TLB"), rows=len(old),
                     time_s=(0.0 if contiguous_no_reuse else plan_time_s),
                     energy=(() if contiguous_no_reuse else plan_energy),
-                    deps=(die_q,), positions=(request.total_length + output_row,),
+                    deps=(rotate_ready,), positions=(request.total_length + output_row,),
                     addresses=[address for location in reads
                                for address in (location.key_address, location.value_address)])
                 scan = _append_placement_pim_scan(
@@ -3079,14 +3068,10 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                     tlb=tlb)
                 # Every active channel yields one local softmax tuple; the DIE
                 # merges those with the GPU tuple.
-                merge_width = len(scan) + 1
                 die_merge = _cacheblend_event(
                     events, layer=layer_index, tier=tier, request=request.request_id,
                     name="decode_die_lse_merge", device="DIE", rows=1,
-                    time_s=(merge_width * tuple_bytes /
-                            system.devices["Acc"].softmax_peak_bandwidth),
-                    energy=(merge_width * tuple_bytes *
-                            system.devices["Acc"].energy_table["sram"],),
+                    time_s=0.0, energy=(),
                     deps=tuple(scan) + (tuple_link,),
                     positions=(request.total_length + output_row,))
                 ctx_transfer = _link_layer(x2g, "decode_ctx_pim_to_gpu", q_bytes)
@@ -3410,16 +3395,8 @@ def _append_cacheblend_decode_batched(
                         sweep_members = tuple(request.request_id for request in sweep)
                         sweep_positions = tuple(request.total_length + output_row
                                                 for request in sweep)
-                        die_qs = []
-                        for request in sweep:
-                            request_id = request.request_id
-                            position = request.total_length + output_row
-                            die_qs.append(_cacheblend_event(
-                                events, layer=layer_index, tier=tier, request=request_id,
-                                name="decode_die_query_position_transform", device="DIE", rows=1,
-                                time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
-                                energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
-                                deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,)))
+                        query_ready = tuple(rotate_ready.get(member, q_links[member])
+                                            for member in sweep_members)
                         op = deepcopy(score)
                         op.m, op.n, op.k, op.numOp = (len(sweep), len(common),
                                                       system.model.dhead,
@@ -3430,7 +3407,7 @@ def _append_cacheblend_decode_batched(
                             events, layer=layer_index, tier=tier, request=label,
                             name="decode_batch_tlb_lookup_and_bank_plan", device="TLB",
                             rows=len(common), time_s=plan_time_s,
-                            energy=plan_energy, deps=tuple(die_qs),
+                            energy=plan_energy, deps=query_ready,
                             positions=sweep_positions, addresses=common_addresses,
                             batch_members=sweep_members)
                         op.pim_shared_kv = True
@@ -3463,12 +3440,7 @@ def _append_cacheblend_decode_batched(
                                not in common_addresses]
                     private_masked = reads_by_request[request_id][1]
                     if private:
-                        die_q = _cacheblend_event(
-                            events, layer=layer_index, tier=tier, request=request_id,
-                            name="decode_die_query_position_transform", device="DIE", rows=1,
-                            time_s=q_bytes / system.devices["Acc"].softmax_peak_bandwidth,
-                            energy=(q_bytes * system.devices["Acc"].energy_table["sram"],),
-                            deps=(rotate_ready.get(request_id, q_links[request_id]),), positions=(position,))
+                        query_ready = rotate_ready.get(request_id, q_links[request_id])
                         addresses = [address for location in private
                                      for address in (location.key_address, location.value_address)]
                         op = deepcopy(score)
@@ -3487,7 +3459,7 @@ def _append_cacheblend_decode_batched(
                             device=("ADDR" if contiguous_no_reuse else "TLB"), rows=len(private),
                             time_s=(0.0 if contiguous_no_reuse else plan_time_s),
                             energy=(() if contiguous_no_reuse else plan_energy),
-                            deps=(die_q,), positions=(position,), addresses=addresses)
+                            deps=(query_ready,), positions=(position,), addresses=addresses)
                         scan_deps[request_id].extend(_append_placement_pim_scan(
                             system, events, op=op, layer=layer_index, tier=tier,
                             request=request_id, name="decode_pim_kv_scan_score_softmax_pv",
@@ -3507,14 +3479,10 @@ def _append_cacheblend_decode_batched(
                     if contribution:
                         # One local softmax tuple per physical run plus the
                         # GPU tuple.
-                        merge_width = len(contribution) + 1
                         merge = _cacheblend_event(
                             events, layer=layer_index, tier=tier, request=request_id,
                             name="decode_die_lse_merge", device="DIE", rows=1,
-                            time_s=(merge_width * tuple_bytes /
-                                    system.devices["Acc"].softmax_peak_bandwidth),
-                            energy=(merge_width * tuple_bytes *
-                                    system.devices["Acc"].energy_table["sram"],),
+                            time_s=0.0, energy=(),
                             deps=tuple(contribution + [tuple_links[request_id]]),
                             positions=(position,))
                         context_deps = (merge,)
@@ -4210,18 +4178,9 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         events, layer=layer_index, tier=tier,
                         request=request.request_id, name="die_load_di_bitmap",
                         device="DIE", rows=1,
-                        # Broadcast, not split: every stack's die stores the
-                        # SAME bitmap for its own head, so the wall time uses
-                        # one die's bandwidth share and the energy counts one
-                        # copy per stack (head->HBM remap, 2026-08-27).
-                        time_s=(bitmap_bytes /
-                                (system.devices["Acc"].softmax_peak_bandwidth /
-                                 max(1, getattr(system.devices["Acc"],
-                                                "num_hbm", 1)))),
-                        energy=(bitmap_bytes *
-                                max(1, getattr(system.devices["Acc"],
-                                               "num_hbm", 1)) *
-                                system.devices["Acc"].energy_table["sram"],),
+                        # The actual link transfer is priced above; metadata
+                        # loading adds no uncalibrated DIE cost.
+                        time_s=0.0, energy=(),
                         deps=(bitmap_link,))
                     request_ready = tuple(dict.fromkeys(
                         request_ready + (bitmap_load,)))
@@ -4453,7 +4412,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                            _gqa_group(system)))
                     for first in range(0, len(compute_positions), sweep_cap):
                         grouped_positions = compute_positions[first:first + sweep_cap]
-                        die_qs = []
+                        query_ready = []
                         for position in grouped_positions:
                             rotate_ready = _append_q_rotate_distribution(
                                 system, events, x2g, layer=layer_index, tier=tier,
@@ -4462,17 +4421,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                 location_deltas=location_deltas,
                                 rotate_mode=rotate_mode, name_prefix="",
                                 positions=(position,))
-                            die_qs.append(_cacheblend_event(
-                                events, layer=layer_index, tier=tier,
-                                request=request.request_id,
-                                name="die_query_position_transform", device="DIE",
-                                rows=1,
-                                time_s=((local_hidden * dbyte) /
-                                        system.devices["Acc"].softmax_peak_bandwidth),
-                                energy=(local_hidden * dbyte *
-                                        system.devices["Acc"].energy_table["sram"],),
-                                deps=tuple(dict.fromkeys((rotate_ready,) + tuple(store))),
-                                positions=(position,)))
+                            query_ready.append(rotate_ready)
                         op = deepcopy(score)
                         op.m, op.n, op.k, op.numOp = (len(grouped_positions),
                                                       len(scan_locations),
@@ -4485,7 +4434,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                             request=request.request_id,
                             name="tlb_lookup_and_bank_plan", device="TLB",
                             rows=len(scan_locations), time_s=plan_time_s,
-                            energy=plan_energy, deps=tuple(die_qs),
+                            energy=plan_energy,
+                            deps=tuple(dict.fromkeys(tuple(query_ready) + tuple(store))),
                             positions=tuple(grouped_positions),
                             addresses=scan_addresses)
                         op.pim_shared_kv = (len(grouped_positions) *
@@ -4505,16 +4455,12 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                 getattr(system.devices["Acc"], "num_hbm", 1),
                                 getattr(system.model, "tp", 1)),
                             tlb=tlb)
-                        assembly_bytes = heads * (system.model.dhead + 2) * dbyte
                         for position in grouped_positions:
                             pim_results.append(_cacheblend_event(
                                 events, layer=layer_index, tier=tier,
                                 request=request.request_id,
                                 name="die_score_assembly", device="DIE", rows=1,
-                                time_s=(len(scan) * assembly_bytes /
-                                        system.devices["Acc"].softmax_peak_bandwidth),
-                                energy=(len(scan) * assembly_bytes *
-                                        system.devices["Acc"].energy_table["sram"],),
+                                time_s=0.0, energy=(),
                                 deps=tuple(scan), positions=(position,)))
                     ctx_bytes = len(compute_positions) * local_hidden * dbyte
                     ctx_transfer = _link_layer(x2g, "ctx_pim_to_gpu", ctx_bytes)
@@ -4729,6 +4675,7 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
         "energy_nj": sum(event.energy_nj for event in scheduled),
         "energy_breakdown_nj": _energy_breakdown(scheduled, system.model.ndec),
         "energy_unit": "nJ",
+        "die_tlb_accounting": "dependency-only; no extra latency or energy beyond AttAcc",
     }
     ramulator = getattr(system.devices.get("Acc"), "ramulator", None)
     if ramulator is not None and hasattr(ramulator, "cache_report"):
@@ -4765,6 +4712,10 @@ def run_reuse_prefill(system, workload: Workload, plan: ReusePlan,
     """
     if decode_attn not in ("pim", "gpu"):
         raise WorkloadValidationError("--decode-attn must be 'pim' or 'gpu'")
+    if cacheblend_rotate_mode not in _ROTATE_MODES:
+        raise WorkloadValidationError(
+            "--cacheblend-rotate-mode must be 'gpu' (paper) or 'bank' (experimental); "
+            "DIE rotation is not part of Fugue")
     degenerate = placement_degeneracy_warning(system, kv_mapping,
                                               channel_placement)
     if degenerate is not None:
