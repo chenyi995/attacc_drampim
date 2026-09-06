@@ -1,6 +1,6 @@
 # 怎么跑：squire（本机直跑，无 Slurm）—— `chenyi-0905` 分支
 
-跑什么、怎么跑以 [运行协议](../README_run_protocol.md) 为准（每 GPU 5 个 HBM 栈、C1/C2 baseline、C1_S* sweep）；指标定义见 [实验指导](../experiments/README.md)。本页只讲这台机器的环境、预算和起停。
+跑什么、怎么跑以 [运行协议](../README_run_protocol.md) 为准（每 GPU 5 个 HBM 栈、W1 baseline 与 W1_S* sweep）；指标定义见 [实验指导](../experiments/README.md)。本页只讲这台机器的环境、预算和起停。
 
 squire（`squire.ece.uw.edu`）是 128 核、754 GB、带 `/data2`、**没有 Slurm** 的机器。
 本页只讲这台机器上的跑法；athena 集群（Slurm，`node1`–`node6`）见同目录的
@@ -71,8 +71,8 @@ tail -2 $KVPIM_SCRATCH/guard.log      # 每 30 s 一行：整机占用、本批 
 ```bash
 export ATTACC_RAMULATOR_DIR=$KVPIM_SCRATCH ATTACC_RAMULATOR_LOG=$KVPIM_SCRATCH/ramulator.out
 export PYTHONPATH=$PWD KVPIM_CPPCORE=1
-setsid nohup bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B '^C1_turns' LLAMA3-8B \
-    > $KVPIM_SCRATCH/proto_LLAMA3-8B.out 2>&1 < /dev/null &
+setsid nohup bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_w1_LLAMA3-8B '^W1_turns' LLAMA3-8B \
+    > $KVPIM_SCRATCH/proto_w1_LLAMA3-8B.out 2>&1 < /dev/null &
 ```
 
 `run_sweep.sh` 按 model 自动设 `NGPU`/`NUM_HBM`（协议 §1 的表），默认 flash、pipeopt、k=8、batch 8、`EVENTS=none`。
@@ -81,14 +81,14 @@ setsid nohup bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B '^C1_t
 一条 sweep 轴（每点 A3b + A6，三点并行 54 核）或整套协议（按 manifest 顺序分批）：
 
 ```bash
-bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B 'C1_S3_' LLAMA3-8B
-bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B '.' LLAMA3-8B
+bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_w1_LLAMA3-8B 'W1_S3_' LLAMA3-8B
+bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_w1_LLAMA3-8B '.' LLAMA3-8B
 ```
 
 单档手跑（调试）：
 
 ```bash
-python3 main.py --system dgx-attacc --model LLAMA3-8B --workload workload/probe/sweep/C1_turns.json \
+python3 main.py --system dgx-attacc --model LLAMA3-8B --workload workload/probe/sweep/W1_turns.json \
   --reuse recompute --epic-prefix-recompute-tokens 8 --ablation A6 --engine dag --pipeopt --gpu-model flash \
   --workload-report out.json --workload-report-events none --cacheblend-batch-size 8 --num-hbm 5 --ngpu 1 --ramulator-workers 8
 ```
@@ -96,8 +96,8 @@ python3 main.py --system dgx-attacc --model LLAMA3-8B --workload workload/probe/
 看进度：
 
 ```bash
-tail $KVPIM_SCRATCH/proto_LLAMA3-8B/sweep.log
-grep -h "done\|FAILED" $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns.log
+tail $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/sweep.log
+grep -h "done\|FAILED" $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/W1_turns.log
 ps -eo args --no-headers | grep 'python3 main.py' | grep -c scratch_0905     # 还在跑的档
 tail -1 $KVPIM_SCRATCH/guard.log
 ```
@@ -112,11 +112,11 @@ for p in $(ps -eo pid,args --no-headers | grep -E "run_dag_ladder.sh|run_sweep.s
 ## 4. 出数
 
 ```bash
-python3 experiments/extract_protocol.py $KVPIM_SCRATCH/proto_LLAMA3-8B --ref A3b     # protocol.csv + protocol.md：baseline 全表、sweep 的 A6/A3b
-python3 experiments/summarize_ladder.py $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns workload/probe/sweep/C1_turns.json A3b
+python3 experiments/extract_protocol.py $KVPIM_SCRATCH/proto_w1_LLAMA3-8B --ref A3b     # protocol.csv + protocol.md：baseline 全表、sweep 的 A6/A3b
+python3 experiments/summarize_ladder.py $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/C1_turns workload/probe/sweep/W1_turns.json A3b
 #   E2E = makespan；TTFT = 首 token − release；TBT 两种口径（论文用加权）；scan 三列；能量与平均功率；相对某档的比值
-cat $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns/dag_ladder.csv     # collect_dag_ladder.py 自动生成
-cat $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns.sides.jsonl        # A6 每个请求的 t_xpu / t_bank / side
+cat $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/W1_turns/dag_ladder.csv     # collect_dag_ladder.py 自动生成
+cat $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/W1_turns.sides.jsonl        # A6 每个请求的 t_xpu / t_bank / side
 ```
 
 结果目录不进仓库；汇总表进 `output/analysis/`，数字只能由脚本复制和计算（`agent.md` §3）。

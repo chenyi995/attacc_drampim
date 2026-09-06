@@ -1,8 +1,10 @@
 # 实验指导：指标定义、full events 与八通道
 
-**跑什么、怎么跑以 [运行协议](../README_run_protocol.md) 为准**（model 几何表、C1/C2 baseline、C1_S* sweep、`run_sweep.sh`、`extract_protocol.py`）。
+**跑什么、怎么跑以 [运行协议](../README_run_protocol.md) 为准**（model 几何表、W1 baseline 与 W1_S* sweep、`run_sweep.sh`、`extract_protocol.py`）。
 本页保留四项指标的定义与取数、`--workload-report-events full` 的用法和 A6 side log 的读法。机制解释见 [性能分析](../analysis/README.md)，
 实现核查见 [审计入口](../audit/README.md)。本页 2026-09-05 整理时没有启动性能任务。
+
+针对最新 S11 中“private scan 改善、TBT 改善较小”的问题，新增 [持续汇总、周期共读与低-query复用实验](../../workload/probe/targeted/README.md)。输入 JSON、闭式手算、真实账本核验、PIM/GPU 分界预算及运行/分组出表命令均已提供；其新输入尚未进行性能模拟。
 
 ## 1. 固定条件
 
@@ -25,10 +27,10 @@
 
 | 要回答什么 | 已有输入/控制 | 比较档位 |
 |---|---|---|
-| 完整阶梯 | `C1_turns.json`、`C2_turns.json`（协议 baseline） | 七档 |
+| 完整阶梯 | `W1_turns.json`、`C2_turns.json`（协议 baseline） | 七档 |
 | diff 聚合 | C1、`C1_S1_agents_4_turns.json`、`C1_S7_chunks_2_turns.json` | A3b、A4c |
 | 软件表 | C1 散取、`C1_S10_retrieval_consecutive_turns.json` | A4c、A4e，可带 A3b |
-| 选边 | `C1_S3_chatty_share_0p0_turns.json`、`C1_S3_chatty_share_1p0_turns.json`、`C1_S8_fresh_share_*` 控制 worker 新计算量与新鲜提示 | A4e、A5、A6 |
+| 选边 | `W1_S3_sessions_0p0_turns.json`、`W1_S3_sessions_1p0_turns.json`、`C1_S8_fresh_share_*` 控制 worker 新计算量与新鲜提示 | A4e、A5、A6 |
 | 输出长度不均 | `C1_S5_lout_chatty_8_turns.json`、`C1_S5_lout_chatty_128_turns.json` | 归因布局需 A3b/A4c/A4e，归因选边需 A4e/A5/A6 |
 
 旧的 B1/T1–T9 文件（本页最初引用的）已从 `sweep/` 移除，`LEGACY_MATRIX=1 python3 workload/probe/gen_sweep.py --all <dir>` 可复现。
@@ -62,7 +64,7 @@ test -d "$ATTACC_RAMULATOR_DIR/trace_gen"
 
 ```bash
 FUGUE_MODEL=LLAMA3-8B
-FUGUE_WL=workload/probe/sweep/C1_turns.json
+FUGUE_WL=workload/probe/sweep/W1_turns.json
 FUGUE_STAMP=$(date +%Y%m%d-%H%M%S)
 FUGUE_OUTROOT="$KVPIM_SCRATCH/B1_8ch_${FUGUE_MODEL}_${FUGUE_STAMP}"
 FUGUE_RUNGS="A1 A2 A3b A4c A4e A5 A6"
@@ -104,14 +106,14 @@ A6 的 side log 记录真实 m、R、scan rows、sweeps、t_xpu_s、t_bank_s 与
 ```bash
 GPU_MODEL=flash EPIC_K=4 NUM_HBM=5 NGPU=1 RAMU_WORKERS=7 \
 RUNGS="A4e A5 A6" \
-KVPIM_PREFILL_SIDE_LOG="$KVPIM_SCRATCH/C1_8ch_k4.sides.jsonl" \
-bash experiments/run_dag_ladder.sh workload/probe/sweep/C1_turns.json \
-    LLAMA3-8B "$KVPIM_SCRATCH/C1_8ch_k4_summary"
+KVPIM_PREFILL_SIDE_LOG="$KVPIM_SCRATCH/W1_8ch_k4.sides.jsonl" \
+bash experiments/run_dag_ladder.sh workload/probe/sweep/W1_turns.json \
+    LLAMA3-8B "$KVPIM_SCRATCH/W1_8ch_k4_summary"
 
 GPU_MODEL=flash EPIC_K=4 NUM_HBM=5 NGPU=1 \
 RUNGS="A4e A5 A6" PARALLEL=1 RAMU_WORKERS=7 \
 bash experiments/run_sweep.sh "$KVPIM_SCRATCH/short_prefill_8ch_k4" \
-    '^(C1_turns|C1_S3_chatty_share_.*_turns)[.]json$' LLAMA3-8B
+    '^(C1_turns|W1_S3_sessions_.*_turns)[.]json$' LLAMA3-8B
 ```
 
 `run_sweep.sh` 把 `C[0-9]+_turns.json` 视为 baseline（七档），其余点只跑 A3b/A6；要归因 A5/A6 显式给 RUNGS。这些 summary 入口与上一节 full 入口的产物粒度不同，不能把 lane-sum 改名为 scan latency。

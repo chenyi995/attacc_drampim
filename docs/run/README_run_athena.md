@@ -1,6 +1,6 @@
 # 怎么跑：athena 集群（Slurm）—— `chenyi-0905` 分支
 
-跑什么、怎么跑以 [运行协议](../README_run_protocol.md) 为准（每 GPU 5 个 HBM 栈、C1/C2 baseline、C1_S* sweep）；指标定义见 [实验指导](../experiments/README.md)。本页只讲集群的环境与提交方式。
+跑什么、怎么跑以 [运行协议](../README_run_protocol.md) 为准（每 GPU 5 个 HBM 栈、W1 baseline 与 W1_S* sweep）；指标定义见 [实验指导](../experiments/README.md)。本页只讲集群的环境与提交方式。
 
 athena（`athena.egr.duke.edu`）是带 Slurm 的集群登录节点，活干在 `node1`–`node6` 上。
 跑法只有一条：写 sbatch 提交，**不在登录节点上跑真实负载**。squire（本机直跑）见同目录的
@@ -69,7 +69,7 @@ python3 -m unittest discover -s tests          # 应与 squire 一致：121/121
 
 ```bash
 #!/usr/bin/env bash
-#SBATCH --job-name=kvpim_C1
+#SBATCH --job-name=kvpim_W1
 #SBATCH --partition=athena-genai --nodelist=node6
 #SBATCH --cpus-per-task=9 --mem=60G --time=6:00:00
 #SBATCH --output=%x_%j.out
@@ -79,8 +79,8 @@ export ATTACC_RAMULATOR_DIR=$KVPIM_SCRATCH ATTACC_RAMULATOR_LOG=$KVPIM_SCRATCH/r
 export PYTHONPATH=$REPO KVPIM_CPPCORE=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 cd $REPO
 RUNGS="A1 A2 A3b A4c A4e A5 A6" NUM_HBM=5 NGPU=1 RAMU_WORKERS=4 \
-KVPIM_PREFILL_SIDE_LOG=$KVPIM_SCRATCH/C1.sides.jsonl \
-bash experiments/run_dag_ladder.sh workload/probe/sweep/C1_turns.json LLAMA3-8B $KVPIM_SCRATCH/out_C1
+KVPIM_PREFILL_SIDE_LOG=$KVPIM_SCRATCH/W1.sides.jsonl \
+bash experiments/run_dag_ladder.sh workload/probe/sweep/W1_turns.json LLAMA3-8B $KVPIM_SCRATCH/out_W1
 ```
 
 `--cpus-per-task` 按"一档一核 + 暖机余量"给，不按 `档数 × (W+1)`。大模型（GPT-175B / LLAMA-65B）一个作业只跑一档：
@@ -91,8 +91,8 @@ bash experiments/run_dag_ladder.sh workload/probe/sweep/C1_turns.json LLAMA3-8B 
 
 ```bash
 squeue -u $USER
-grep -h "done\|FAILED" kvpim_C1_*.out
-scancel <jobid>            # 或 scancel -u $USER -n kvpim_C1
+grep -h "done\|FAILED" kvpim_W1_*.out
+scancel <jobid>            # 或 scancel -u $USER -n kvpim_W1
 ```
 
 续跑：`run_dag_ladder.sh` 不跳过已有的档；只补缺档时用 `RUNGS="A5 A6"` 再提一次，`SKIP_COLLECT=1`，收数时再合。
@@ -107,7 +107,7 @@ export PYTHONPATH=$PWD KVPIM_CPPCORE=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 
 export KVPIM_SCRATCH=/localdata/kvpim_$USER ATTACC_RAMULATOR_DIR=/localdata/kvpim_$USER
 export ATTACC_RAMULATOR_LOG=$ATTACC_RAMULATOR_DIR/ramulator.out
 python3 main.py --system dgx-attacc --model LLAMA3-8B \
-  --workload workload/probe/sweep/C1_turns.json \
+  --workload workload/probe/sweep/W1_turns.json \
   --reuse recompute --epic-prefix-recompute-tokens 8 \
   --ablation A6 --engine dag --pipeopt --gpu-model flash \
   --workload-report out.json --workload-report-events none \

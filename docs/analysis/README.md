@@ -6,8 +6,8 @@
 
 | 比较 | 能省的工作 | 成立条件 |
 |---|---|---|
-| A3b→A4c | 紧凑 diff 减少跨轮零散修正涉及的地址行/行切换 | diff 小且反复读取；普通内容没有淹没它；集中末通道的负担不能抵消收益 |
-| A4c→A4e | 分散共读 master，缩短最慢通道 | 朴素轮转中共读集中，软件表确实能分开；总读取量并未因此减少 |
+| A3b→A4c | 紧凑 diff 减少跨轮零散修正涉及的地址行/行切换；diff 行在 head 的通道上轮转，累计的修正不压在一条通道上 | diff 小且反复读取；普通内容没有淹没它 |
+| A4c→A4e | 分散共读 master、按 agent 分组并放置 diff 行，缩短最慢通道 | 朴素轮转中共读集中，软件表确实能分开；总读取量并未因此减少 |
 | A4e→A5 | prefill attention 留在 PIM，避免驻留 KV 回读；MQ 与已接受的 PE 配置也作用于 decode | 长 KV、少量 query、较少 sweeps；MAC 仍需完成，GPU 线性层仍存在 |
 | A5→A6 | 将 PIM 明显更慢的 prefill 转到 GPU | 混合短复用与长/新 prefill；两侧存在各自擅长的请求 |
 
@@ -88,4 +88,6 @@ chenyi9 裁决：GPU 与 AttAcc/PIM 保持原 NVLink 连接，当前跑法沿用
 
 [Decode scan / TBT 专项](../../audit/2026-09-05/DECODE_SCAN_TBT_PIPELINE.md) 区分 Fig. 3b 的单 K 扫描、C1 的完整 decode scan 和 TBT。给出已有配对结果的降幅，解释“两个百分比的比值”与“省下的微秒传递率”的区别。
 
-GPU 前后处理实际变快可提高 scan 在 TBT 中的占比；提高 FLOPS 不会消除 AttAcc 原有 Norm/激活固定项。已有运行确认 Flash/pipeline 开启，但新 DAG 的按追加顺序预约仍有已就绪工作错过 GPU 空窗的证据。具体候选、上游是否已有和独立检查均在专项中。
+GPU 前后处理实际变快可提高 scan 在 TBT 中的占比；提高 FLOPS 不会消除 AttAcc 原有 Norm/激活固定项。上述专项记录的是 `167fe08` 时点发现的预约空窗问题；后续 `ff6f225` 已加入回填和 head 流水，不能把旧反例直接当成当前未修问题。
+
+最新 `958dd24` 的 S11 记录仍主要扩大了三种布局共同不变的简报扫描。新的 [workload 设计与手算](../../workload/probe/targeted/README.md) 分别构造持续汇总链、按通道周期共读文档、后续低-query复用与新鲜提示混合，并区分几何条件、GPU解析预算和待测TBT。它还保留写流周期和整库owner导致机制失效的反例。
