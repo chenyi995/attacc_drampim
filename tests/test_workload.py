@@ -1859,6 +1859,70 @@ class AgenticHistoryTests(unittest.TestCase):
         self.assertAlmostEqual(bitmap, decode)
         self.assertGreater(gpu.nvlink_latency, 0)
 
+    def test_single_request_decode_books_its_post_attention_as_decode(self):
+        """C6.1: with batch size 1 the projection/FFN after a generated
+        token's attention is a decode event, so prefill_end precedes the
+        first token."""
+        workload = Workload("rag", (
+            Request("r", 0, None, 2, (Segment("sys", "s", 4),), 4),), {})
+        plan = build_reuse_plan(workload, "epic", epic_prefix_recompute_tokens=1)
+        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                   pim_prefill_mode="gpu", cacheblend_batch_size=1)
+        names = {e["name"] for e in report["events"]}
+        self.assertIn("decode_gpu_ff2", names)
+        self.assertNotIn("gpu_ff2", {n for n in names if not n.startswith("decode_")} - {"gpu_ff2"} | set())
+        rec = report["summary"]["requests"]["r"]
+        self.assertLess(rec["prefill_end_s"], rec["first_token_s"])
+        self.assertLess(rec["first_token_s"], rec["end_s"])
+
+    def test_gpu_only_baseline_with_history_reports_its_first_token(self):
+        """C6.2: A2's generated tokens sit at total_length + step, history
+        excluded, so the summary finds the first token."""
+        workload = self._with_history(Workload("rag", (
+            Request("r", 0, None, 2, (Segment("sys", "s", 4),), 4),), {}), 3)
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                   decode_attn="gpu", kv_mapping="none")
+        rec = report["summary"]["requests"]["r"]
+        self.assertGreater(rec["first_token_s"], 0.0)
+        self.assertLessEqual(rec["first_token_s"], rec["end_s"])
+
+    def test_cacheblend_budget_excludes_inherited_rows(self):
+        """C8.5: a turn that inherits a correction AND reuses another chunk
+        for the first time samples its ratio over the new chunk only."""
+        import hashlib
+        doc = hashlib.sha256(b"doc").hexdigest()[:16]
+        doc2 = hashlib.sha256(b"doc2").hexdigest()[:16]
+        owner = Request("a_owner", 0, None, 2, (Segment("sys", "sa", 2), Segment("doc", doc, 8),
+                                                 Segment("doc", doc2, 8)), 18)
+        turn0 = Request("w_t0", 0, None, 2, (Segment("sys", "sw", 4), Segment("doc", doc, 8)), 12)
+        turn1 = Request("w_t1", 1, "w_t0", 2,
+                        (Segment("sys", "sw", 4), Segment("doc", doc, 8),
+                         Segment("parent_out", "w_t0-out", 2), Segment("doc", doc2, 8),
+                         Segment("user", "q1", 2)), 24)
+        workload = Workload("supervisor", (owner, turn0, turn1), {})
+        plan = build_reuse_plan(workload, "cacheblend", 0.3, 0, (), (0, 1), 1)
+        run_reuse_prefill(self._toy_system(), workload, plan, pipe=True, pim_prefill_mode="pim")
+        rows = plan.cacheblend_partial_rows[0]["w_t1"]
+        self.assertEqual(rows[1], plan.cacheblend_partial_rows[0]["w_t0"][1])   # inherited
+        self.assertEqual(len(rows[3]), 3)                                        # ceil(8 x 0.3)
+
+    def test_a_parent_output_keeps_its_producer_even_if_the_fingerprint_repeats(self):
+        """C8.6: a parent_out names its producer; a matching older segment
+        must not re-point it at another request."""
+        # a produced O; w0 read a's O (reused, shifted) and then produced O
+        # itself; w1 declares parent w0 and reads O at the very offset where
+        # w0 read a's O
+        owner = Request("a", 0, None, 2, (Segment("sys", "sa", 6),), 6)
+        w0 = Request("w0", 1, "a", 2, (Segment("sys", "sw", 4), Segment("parent_out", "O", 2)), 6)
+        w1 = Request("w1", 2, "w0", 2, (Segment("sys", "sw", 4), Segment("parent_out", "O", 2),
+                                        Segment("user", "q", 2)), 8)
+        workload = Workload("supervisor", (owner, w0, w1), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        by_key = {(d.request_id, d.segment_index): d for d in plan.reusable}
+        self.assertEqual(by_key[("w1", 1)].owner_request_id, "w0")
+        self.assertIsNone(by_key[("w1", 1)].inherits_from)
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the
