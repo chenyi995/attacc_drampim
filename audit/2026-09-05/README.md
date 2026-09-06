@@ -1,5 +1,7 @@
 # 2026-09-05 Audit：从这里开始
 
+**2026-09-06 新设计与 W1 的复核入口：[当前审计与手算](../2026-09-06/README.md)。** 旋转 diff / 按 agent 分组、W1 的真实行列负载、MQ 条件和论文待同步项在新目录；本页以下结论保留其历史版本范围。
+
 本轮新增：[Decode scan 到 TBT、GPU 速度与 pipeline](DECODE_SCAN_TBT_PIPELINE.md)——当前源码审核至 `167fe08`；相同 C1 输入的已有实跑指标、可填 GPU 空窗及独立 AttAcc 对照。
 
 最新补核：[短输出挤偏后继 diff 的部分列追加](PARTIAL_COLUMN_APPEND_AUDIT.md)——用户所指机制成立；当前行对齐与列命令取整尚未验证这一收益，分别说明 AttAcc 来源及公平性方向。

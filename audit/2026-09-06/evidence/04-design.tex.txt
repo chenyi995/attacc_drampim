@@ -1,0 +1,436 @@
+% =============================================================
+% Section 4: Fugue Architecture. This section follows the
+% 2026-09-03 user framework: data mapping, attention over the
+% mapped representation, and PIM microarchitecture. The
+% execution policy is separated into Section 5.
+% =============================================================
+
+\section{Fugue Architecture}
+\label{sec:design}
+
+\Fugue{} is a heterogeneous GPU--PIM hierarchical memory
+system for serving shared KV.
+The GPU runs most of the linear layers, and the PIM stacks
+hold the KV cache in their DRAM.
+Each agent still appends to a logical KV cache in its own
+context order.
+\Fugue{} keeps reused chunks in a shared physical store and
+stores the repair tokens for those chunks separately.
+
+Three mechanisms build the store and serve shared KV in
+memory.
+\textbf{Sharing-aware data mapping.}
+The mapping keeps shared KV dense and packs per-agent diffs.
+\textbf{Attention computation in PIM.}
+The attention path reads the mapped store directly.
+\textbf{PIM microarchitecture.}
+The hardware adds multi-query execution and the state needed
+to join master and diff.
+
+\subsection{Sharing-Aware Data Mapping}
+\label{sec:layout-dim}
+
+To keep shared chunks dense while giving each agent a
+repaired context, the mapping represents one agent's logical
+KV cache with two physical parts.
+The master side holds the chunks reused across agents.
+The diff side holds the tokens that the upstream sharing
+policy recomputes for one agent, packed compactly for that
+agent's reuse step.
+The metadata maps each packed diff token back to its logical
+position, so later attention can read a continuous logical
+cache even when the reused chunks were produced earlier.
+A placement table records where each master chunk is stored,
+and per-agent metadata records which logical positions a
+diff segment overrides.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig/ver1/fig4channelsplit.pdf}
+  \figexpl{(a)~Each agent appends its KV to the cache in
+  turn. (b)~The \Fugue{} physical layout: a head's shared
+  chunks spread over the channels that head owns by the
+  placement table, and that head's recomputed tokens packed
+  into diff rows that rotate over those same channels,
+  grouped per agent by the table.}
+  \caption{The KV cache position and the \Fugue{} physical
+  layout of master rows, per-head diff rows, and the
+  placement table.}
+  \label{fig:chanlayout}
+  \Description{Two panels: each agent's logical KV cache
+  positions, and the \Fugue{} physical layout with a head's
+  shared chunks spread over its channels by the placement
+  table and its recomputed tokens packed into per-agent diff
+  rows that rotate over those channels.}
+  % TODO(2026-09-06): redraw fig/ver1/fig4channelsplit.pdf -- panel (b)
+  % still shows a dedicated diff channel; the diff rows now rotate over the
+  % head's own channels and are grouped per agent by the table (A4c/A4e).
+\end{figure}
+
+\subsubsection{Master and Per-Agent Diff}
+\label{sec:provision-ratio}
+
+A stack's $16$ channels are divided among the KV heads it
+holds, and a head's KV cache is split across the channels
+that head owns.
+The shared KV is stored in $256$-token chunks; each chunk
+spans all the banks of one channel and occupies one row of
+that channel, so one activation opens one chunk.
+No channel is set aside for diffs.
+A diff is small, $k$ tokens of a $256$-token chunk, so the
+recomputed tokens for one head are packed contiguously into
+dedicated diff rows that sit on that head's own channels,
+alongside master rows, with their metadata on the logic die.
+The diff rows rotate over the head's channels exactly as the
+master chunks do: the $j$-th diff row of a head lives on the
+head's channel $j \bmod s$ for a head striped over $s$
+channels.
+Two things follow.
+The master rows keep every channel the head owns, so a sweep
+that reads no diff, the common case for the shared corpus,
+pays nothing for the diff rows.
+And because the diffs for a head are packed together, the
+repairs of different rounds share rows although the KV
+written in between separates them in the append stream,
+while the few rows they do occupy are spread over the head's
+channels and scanned in parallel rather than serialized on
+one channel.
+Diffs are not merged across heads: each head's diff row
+holds only that head's recomputed keys and values, since the
+MAC of one head's key against its own query cannot be shared
+with another head, and merging would only serialize the
+heads' column reads onto one channel.
+
+\subsubsection{Conflict-Aware Channel Placement}
+\label{sec:table}
+
+Agents can select different chunks from outputs produced by
+earlier agents.
+Append-order storage rotates a head's chunks over the
+channels that head owns in the order they are written, so
+whether two chunks read together by a later request land in
+the same channel is a matter of where the rotation happened
+to be, and two chunks written a stripe apart always collide.
+If those chunks sit in one channel, their row scans serialize
+on that channel and the sweep loses channel-level
+parallelism.
+\Fugue{} therefore uses the shared chunk as the placement
+unit and keeps chunks that are read in the same sweep on
+different channels of the head whenever enough channels are
+available.
+
+A software placement table records the channel and row of
+each chunk.
+Every prefill and decode names the chunks it will read, so
+the driver knows which chunks can be read together before the
+driver places a new chunk.
+The driver appends the new row to a channel of the head that
+is not already used by the rows read alongside the new chunk,
+if a free channel exists, otherwise to the channel those rows
+use least, and then records the chosen row.
+The choice is made once, when the chunk is written, and
+holds for every later sweep.
+The table governs the diff rows as well.
+It groups the recomputed tokens by agent: the repairs an
+agent makes in successive rounds are packed into that
+agent's own diff rows, so the rows of one agent hold no
+other agent's repairs, and a new diff row is placed by the
+same rule as a master chunk, on the head channel least loaded
+by the rows that agent reads, with ties keeping the rotation.
+During attention, each sweep consults the table and issues
+the scans to the recorded channels
+(Figure~\ref{fig:chanlayout}b).
+The table is managed in software.
+
+\subsubsection{Agent Attachment and Diff Metadata}
+\label{sec:diff-metadata}
+
+An agent attaches to chunks that are already stored, and the
+upstream policy names the tokens it recomputes in those
+chunks.
+The agent's prefill computes that set together with the
+new tokens the agent adds.
+The two kinds are written to different places.
+The recomputed tokens go to the head's diff rows as this
+agent's segment and are packed contiguously.
+The added tokens go to master rows as any other new content,
+in the channel the placement table assigns to them.
+A chunk reused whole adds nothing to the diff rows.
+
+The master and the diff are joined logically on the logic
+die.
+The per-agent metadata gives each compacted diff token's
+logical position, the context slot that token overrides
+for this agent.
+The driver keeps one entry per agent and token beside the
+segment and loads those entries when the agent attaches.
+An agent that leaves frees its segment, and the hole stays
+until every sweep of that channel has finished.
+Compaction closes the hole after those sweeps finish.
+
+\subsection{Attention Computation in PIM}
+\label{sec:attention-pim}
+
+To compute attention on the mapped representation, \Fugue{}
+keeps the master bytes fixed and changes only the query and
+the merge path around the master bytes.
+
+
+\subsubsection{Position-Decoupled Query--Key Computation}
+\label{sec:c1}
+\label{sec:c1-inv}
+\label{sec:c1-where}
+
+Reuse needs each shared key at an agent's own position, but
+RoPE has encoded the producing position into the stored
+key.
+\Fugue{} decomposes that position into two rotations.
+The stored key carries the token's relative rotation inside
+its chunk.
+The query variant carries the query position minus the
+chunk's base position in the agent's context.
+The GPU produces one query variant per chunk scan because it
+already produces the query and holds each agent's segment
+offsets.
+The link carries the rotated variants, as a decode kernel on
+a GPU does within one device~\cite{lazyattn}.
+The same stored copy can answer every agent.
+Diff tokens are written under the same alignment, so the two
+sides of the store meet at the same token-wise positions.
+
+\subsubsection{Master--Diff Score and Context Merge}
+\label{sec:diemerge}
+
+Write $\Qprime_i$ for rotated query $i$, $k_t$ for the
+master key at position $t$, $\tilde{k}_{i,t}$ for the key
+recomputed at $t$ in query $i$'s context, and
+$\mathcal{D}_i$ for the positions recomputed in that
+context.
+On the way in, the die assembles one score per position of
+query $i$'s context,
+\begin{equation}
+s_{i,t}=
+\begin{cases}
+\Qprime_i{}^{\!\top}\tilde{k}_{i,t}, & t\in\mathcal{D}_i,\\
+\Qprime_i{}^{\!\top}k_t, & t\notin\mathcal{D}_i,
+\end{cases}
+\label{eq:step2}
+\end{equation}
+The master channels supply the scores for positions outside
+$\mathcal{D}_i$, and the diff rows supply the scores for
+the recomputed positions.
+
+On the way back, with $T_j$ the token share of bank group
+$j$ and $p_i=\mathrm{softmax}(s_i)$, the die sends each
+probability to exactly one side.
+The routing rule is
+\begin{equation}
+\mathrm{dst}_{i,t}=
+\begin{cases}
+\mathrm{diff}, & t\in\mathcal{D}_i,\\
+\mathrm{master}\ j, & t\in T_j \land t\notin\mathcal{D}_i.
+\end{cases}
+\label{eq:step4}
+\end{equation}
+The die sends $p_{i,t}$ to $\mathrm{dst}_{i,t}$.
+Every token's score and context contribution therefore comes
+from exactly one side.
+The merged output is the dense computation, term by term and
+up to the order of the sums.
+
+\subsubsection{Multi-Query Shared-Row Dataflow}
+\label{sec:mq-dataflow}
+
+The dataflow has one invariant: a row opened for shared K or
+V is used by all active queries before the next row opens.
+Append attention supplies several active queries from one
+agent during prefill.
+Decode supplies one active query from each of several agents.
+Both cases create multiple active queries for the same opened
+row, so \Fugue{} needs multi-query execution inside the bank.
+The source of the active queries changes, but the row sweep
+does not.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig/ver1/fig6Memoryflow.pdf}
+  \figexpl{(a)~The three levels and the six operand flows:
+  the query and the probabilities descend, the scores and the
+  partial contexts ascend. (b)~$K^{\!\top}$ split across
+  channel, pseudo-channel, bank group, and bank. (c)~$V$
+  split across the same hierarchy, transposed. (d)~One
+  \texttt{MAC\_AB} command opens a row for all active
+  queries before the next row opens.}
+  \caption{Dataflow of one head through the memory system.}
+  \label{fig:memflow}
+  \Description{Four panels: a three-level hierarchy with six
+  operand flows for the descending query and probabilities
+  and the ascending scores and contexts, the $K^{\!\top}$ and
+  $V$ splits across channel, pseudo-channel, bank group, and
+  bank, and one command opening a row for all active queries
+  before the next row opens.}
+\end{figure}
+
+The score and context passes use the same master--diff
+routing as a single query.
+The difference is that one opened row must feed several
+query-side or probability-side operands.
+This extra work changes the per-column arithmetic, not the
+sequence of rows the sweep reads.
+
+\subsection{PIM Microarchitecture}
+\label{sec:microarch}
+\label{sec:die}
+\label{sec:layout}
+
+The microarchitecture spreads the attention across three
+levels: the bank, the bank group, and the logic die
+(Figure~\ref{fig:microarch}).
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{fig/ver1/fig5Microarch.pdf}
+  \figexpl{(a)~The two per-bank GEMVs, the score
+  $Q\,K^{\!\top}$ and the context $P\,V$; the $B$ resident
+  queries share every scanned column of the key slice, while
+  a probability entry is used only
+  $\lceil(\dhead/4)/16\rceil{=}2$ times. (b)~The bank with
+  its row buffer, pipelined GEMV unit, and double-buffered
+  GEMV buffer of resident queries; the bank group with its
+  accumulator; and the per-channel die units, the
+  accumulator, the $\mathcal{D}_i$ map, and the softmax unit
+  with its buffers. (c)~The system: the xPUs, the
+  memory-system controller with its TLB and HBM controllers,
+  and the stacks.}
+  \caption{The microarchitecture at three levels, the bank,
+  the channel, and the system.}
+  \label{fig:microarch}
+  \Description{Three panels: the two per-bank GEMV shapes for
+  score and context; the bank with its row buffer, GEMV unit,
+  and double-buffered query buffer, the bank group with its
+  accumulator, and the per-channel accumulator,
+  $\mathcal{D}_i$ map, and softmax unit; and the system with
+  its xPUs, memory-system controller, TLB, HBM controllers,
+  and stacks.}
+\end{figure*}
+
+\subsubsection{Bank-Level MQ-MAC}
+\label{sec:mq}
+
+\Fugue{} keeps the bank-level PIM command substrate: one PE
+instruction per column command in all-bank mode, with average
+stack power bounded by the original HBM envelope~\cite{hbmpim,attacc}.
+The new bank-level behavior is multi-query use of one column
+read.
+The multi-query MAC (MQ-MAC) command still moves one column
+of the shared K or V from the row buffer into the PE.
+\Fugue{} changes how many query-side or probability-side
+operands consume that column.
+
+The two GEMV shapes determine operand placement.
+On the score side, one query slice is reused across the
+columns of a key row, so queries stay resident.
+On the context side, each probability entry is consumed only
+by the value columns for the output slice the bank holds, so
+probabilities stream over the through-silicon-via (TSV) bus.
+The bank's capacity axis therefore binds only the resident
+queries.
+
+Holding the queries resident reuses the existing in-bank
+GEMV buffer~\cite{attacc}.
+The stock buffer of $S$ bytes, sized for the context phase,
+is far from full on the score side.
+One $64$-B query slice leaves room for
+$n_{\mathrm{cap}}=S/64$ query slices, eight in AttAcc's
+$512$-B buffer, so \Fugue{} holds that many query slices.
+The queries arrive and are stored in the GEMV buffer.
+As MQ-MAC reads one column out of the row buffer,
+the queries multiply that column in round-robin order, and
+the empty slots of the queue are jumped over.
+The multiplies stream one query per cycle, leaving time for
+the products to go through the adder tree and reach the
+accumulator in the bank group.
+
+On the context side the probabilities stream rather than
+reside.
+As MQ-MAC moves a column of V out of the opened
+row, each query's probability slice for that column arrives
+over the TSV bus.
+The probability is used twice, against the slice of the
+output dimension the bank holds
+(Figure~\ref{fig:memflow}d).
+The context pass is therefore bounded by the TSV bus and its
+read-write turnaround rather than by the bank's capacity.
+
+The lever is the PE clock.
+With $n$ queries resident, the $n$ MACs share one column
+read, so the bank does more useful work per read.
+The $n$ MACs must still finish inside the column-command
+interval.
+AttAcc's command interval is $6$ cycles ($t_{CK}$) for its
+single MAC.
+Under \Fugue{}, MQ-MAC carries $n$ operands for the same
+column.
+With $f_{\mathrm{PE}}$ the PE clock,
+$E_{\mathrm{col}}$ a column read, $E_{\mathrm{op}}$ one MAC,
+and $E_6$ the energy budget of AttAcc's $6$-cycle command,
+the interval in whole cycles is
+\begin{equation}
+I(n,f_{\mathrm{PE}})=\max\!\Bigl(6,\ \bigl\lceil n/(f_{\mathrm{PE}}\,t_{CK})\bigr\rceil,\
+\bigl\lceil 6\,(E_{\mathrm{col}}+n\,E_{\mathrm{op}})/E_6\bigr\rceil\Bigr),
+\label{eq:interval}
+\end{equation}
+a compute term that falls with the clock and an energy term
+constrained by the same budget.
+The two meet at the balanced frequency point
+$f_{\mathrm{PE}}^\star$.
+Past $f_{\mathrm{PE}}^\star$, the interval stays flat.
+At $f_{\mathrm{PE}}^\star$, the single-stage multiply-add
+path meets timing, so the PE stays a single stage.
+
+\subsubsection{Bank-Group Accumulation}
+\label{sec:bankgroup}
+
+The bank group joins what its four banks produce.
+The four banks hold complementary slices of the head.
+On the key side, each bank carries a $\dhead/4$ slice of
+every key, and an adder in the group reduces the four
+same-column partial products before they enter the
+per-query accumulator.
+On the value side, each bank carries a slice of the output
+dimension, and the group passes its partials
+through~\cite{attacc}.
+With $n_{\mathrm{cap}}$ queries resident, the group keeps one
+partial score and one partial context per query in its
+accumulator.
+The per-query accumulator is the only growth at this level.
+
+\subsubsection{Logic-Die Merge and Softmax}
+\label{sec:logicdie}
+
+The logic die holds the state that makes the compact
+master--diff store look dense to each query.
+It runs the softmax and realizes the merge from the metadata
+of each context in use, which the driver loads.
+A decoder holds each compacted diff token's logical
+position, and those positions form $\mathcal{D}_i$.
+The $\mathcal{D}_i$ bitmap filters the master banks' writes
+into the softmax buffer, so the result is the same whichever
+side arrives first.
+On the way back, the same bitmap drives the mask gate on the
+recirculation path.
+An adder then sums the partial contexts across the banks,
+the channels, and the two sides into the per-head context
+that leaves the stack~\cite{attacc}.
+
+\subsubsection{Hardware and Command Compatibility}
+\label{sec:compat}
+
+The bank PE keeps its MAC as the only arithmetic, and the
+DRAM command set stays unchanged.
+The additions span the three levels.
+The bank adds the resident-query buffer and per-query state.
+The group adds the per-query accumulator.
+The die adds the decoder, the $\mathcal{D}_i$ bitmap with
+its write filter and mask gate, a causal comparator, and the
+context adder.

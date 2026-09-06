@@ -1,0 +1,143 @@
+% =============================================================
+% Section 7: Evaluation (2026-08-27 order: (1) the balanced
+% frequency point that sets the PE clock (filled from the ASAP7 balance
+% sweep, with fig:balance), (2) area, (3) end-to-end
+% model performance on synthetic AttAcc-style configs, (4) the
+% A1-A6 ablation ladder, (5) real workloads at A1/A2/A6. A1-A6
+% name the ladder as in the attacc_drampim simulator
+% (src/ablation.py). Parts 2-5 are structure only (\TBDnum) until
+% those runs land. Labels sec:eval, sec:eval-area, sec:eval-e2e,
+% sec:eval-balance are referenced from Sections 1 and 4; keep them.
+% =============================================================
+\section{Evaluation}
+\label{sec:eval}
+
+\Fugue{} is evaluated in five parts, the balanced frequency
+point that sets the PE clock, the area of the additions,
+the end-to-end model performance on
+the constructed configurations, an ablation across the
+seven-rung ladder on those configurations, and a confirmation on
+real serving workloads.
+
+\subsection{The Balanced Frequency Point}
+\label{sec:eval-balance}
+
+The bank PE (\texttt{mq\_bank\_pe}, a $16$-lane MAC with its
+operand store and control) is synthesized across a frequency
+sweep in ASAP7~\cite{asap7}, and its per-operation energy is
+the constant of the simulator's energy model.
+In the interval of Equation~(\ref{eq:interval}) the compute
+term meets the energy term at the balanced frequency point
+$f_{\mathrm{PE}}^\star=1.30$\,GHz.
+At that point, one column read serves the resident queries in
+$8$ cycles (Figure~\ref{fig:balance}), gives $2\times$ the
+throughput of the stock PE running the same queries, and
+keeps the SRAM unchanged.
+Past $f_{\mathrm{PE}}^\star$ the budget pins the interval, so
+a faster clock adds only area.
+
+
+\subsection{Area}
+\label{sec:eval-area}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig/ver1/figoverhead.pdf}
+  \figexpl{One DRAM die by area. The storage of its $128$ banks
+  takes almost all of it, and what the two designs put beside
+  the arrays is the rest; \Fugue{}'s two segments are
+  increments over AttAcc's.}
+  \caption{The area composition of one DRAM die.}
+  \label{fig:overhead}
+  \Description{One stacked bar of a DRAM die, almost all of it
+  bank storage, followed by thin segments for AttAcc's bank and
+  bank-group logic, the increments Fugue adds to each, and the
+  unused remainder.}
+\end{figure}
+
+Synthesis rolls the units \Fugue{} adds up to one stack
+(Section~\ref{sec:method-syn}, Figure~\ref{fig:overhead}).
+A DRAM die is $121$\,mm$^2$~\cite{hbm3jssc} and the storage of
+its $128$ banks takes $106.2$ of
+them~\cite{papi,hbm3jssc}, so every unit either design places
+beside the arrays lives in the $14.8$\,mm$^2$ that are left.
+AttAcc spends $8.28$ of that and \Fugue{} $9.93$, so serving
+the shared form costs $1.64$\,mm$^2$ per die and leaves the
+die $96.0\%$ full.
+
+The additions land unevenly.
+The bank PE grows by $18.34\%$, from $6{,}205$ to
+$7{,}343$\,\textmu m$^2$, which is what running the same
+RTL at the balanced frequency point costs, over the same
+operand store and the same SRAM
+(Section~\ref{sec:eval-balance}).
+The bank-group accumulator and its buffer grow by $54.36\%$,
+holding one partial score and one partial context per
+resident query.
+
+The bank and the bank group carry the multiply and the add,
+and both are FP16.
+The softmax is the one unit in FP32, which is why it
+dominates the buffer die.
+
+The two levels on the buffer die are small enough to state
+outright.
+\Fugue{}'s logic die is $1.620$\,mm$^2$, of which $1.578$ is
+the softmax array whose buffer holds one score vector per
+active agent, $0.025$ the diff decoder with the
+$\mathcal{D}_i$ bitmap, its write filter and mask gate,
+$0.016$ the sixteen channel accumulators, and $0.0005$ the
+causal comparator.
+The HBM controller adds a $0.0058$\,mm$^2$ table that
+translates a compacted diff token's logical position.
+Both sit on the buffer die in a logic process, so neither
+carries the DRAM density factor, and together they are
+$1.4\%$ of the die area \Fugue{} occupies.
+The softmax array is synthesized whole, all $16$ channels with
+their buffers, and meets $1.3$\,GHz.
+
+\subsection{End-to-End Model Performance}
+\label{sec:eval-e2e}
+
+The end-to-end experiment runs the fourteen workload
+configurations of Section~\ref{sec:method-workloads} on the
+six models of Section~\ref{sec:method-models}.
+It reports the time to first token per prefill, the per-token
+decode latency, and the served throughput of \Fugue{} (A6)
+against the AttAcc reference (A1) and the GPU-software point
+(A2), with the KV bytes each holds against the no-reuse
+layout.
+
+\subsection{Ablation across the Placement Ladder}
+\label{sec:eval-ladder}
+
+On the same configurations the full ladder isolates one
+change per rung.
+A2 over A1 is software sharing alone, and A3b over A2 is
+decode in the banks with the shared KV resident there,
+appended and rotated as a naive store does.
+A4c over A3b is the packed diff rows rotating over the head's
+own channels, A4e over A4c is the placement table, for the
+master rows in place of the write-order rotation and for the
+diff rows grouped per agent, A5 over A4e is
+prefill attention in the banks with the shared scans it
+enables, and A6 over A5 is the dynamic per-prefill placement
+rule.
+The same metrics are reported at each rung, together with the
+fraction of prefills the rule sends to the banks, so each
+source of the end-to-end result is attributed to one change.
+
+\subsection{Real Workloads}
+\label{sec:eval-real}
+
+The result is confirmed on three production traces, a
+Mooncake~\cite{mooncake} tool-and-agent trace,
+ShareGPT~\cite{sharegpt} multi-turn conversations, and
+MultiHop-RAG~\cite{multihoprag} queries over shared documents
+(Section~\ref{sec:method-traces}), running the three endpoints
+of the ladder, A1, A2, and A6.
+At A6 the upstream policy is swept over
+CacheBlend~\cite{cacheblend}, Cache-Craft~\cite{cachecraft},
+and CacheTune~\cite{cachetune}, each with its own diff
+density, so the placement result is read as a function of the
+software layer rather than at one policy.

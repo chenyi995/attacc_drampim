@@ -1,0 +1,787 @@
+{
+  "method": "Real W1 k8 layer0 full per-query decode physical read set. At output_row127 add already generated output rows0..126; current token remains the GPU-side local attention item, matching runner previous_output. No batching, Ramulator, device or performance simulation.",
+  "results": [
+    {
+      "request": "g00_m_t023",
+      "output_row": 0,
+      "previous_output_tokens": 0,
+      "physical_tokens": 9328,
+      "layouts": {
+        "A3b": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 80,
+              "nominal_rows": 5,
+              "score_rows": 5,
+              "score_MAC_AB": 10
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 2832,
+              "nominal_rows": 23,
+              "score_rows": 23,
+              "score_MAC_AB": 354
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 288,
+              "nominal_rows": 18,
+              "score_rows": 18,
+              "score_MAC_AB": 36
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 96,
+              "nominal_rows": 6,
+              "score_rows": 6,
+              "score_MAC_AB": 12
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 2944,
+              "nominal_rows": 23,
+              "score_rows": 23,
+              "score_MAC_AB": 368
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 272,
+              "nominal_rows": 17,
+              "score_rows": 17,
+              "score_MAC_AB": 34
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            }
+          ],
+          "score_MAC_AB": 1166,
+          "nominal_rows": 114,
+          "score_rows": 114,
+          "max_channel_nominal_rows": 23,
+          "max_channel_score_rows": 23,
+          "max_channel_MAC_AB": 368
+        },
+        "A4c": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 48,
+              "nominal_rows": 1,
+              "score_rows": 1,
+              "score_MAC_AB": 12
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 2896,
+              "nominal_rows": 24,
+              "score_rows": 24,
+              "score_MAC_AB": 370
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 256,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 40
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1472,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 64,
+              "nominal_rows": 1,
+              "score_rows": 1,
+              "score_MAC_AB": 16
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 2992,
+              "nominal_rows": 24,
+              "score_rows": 24,
+              "score_MAC_AB": 380
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 192,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 24
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            }
+          ],
+          "score_MAC_AB": 1210,
+          "nominal_rows": 98,
+          "score_rows": 98,
+          "max_channel_nominal_rows": 24,
+          "max_channel_score_rows": 24,
+          "max_channel_MAC_AB": 380
+        },
+        "A4e": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1392,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 186
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 1296,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 162
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 544,
+              "nominal_rows": 12,
+              "score_rows": 13,
+              "score_MAC_AB": 100
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 1312,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 164
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 304,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 38
+            }
+          ],
+          "score_MAC_AB": 1210,
+          "nominal_rows": 94,
+          "score_rows": 95,
+          "max_channel_nominal_rows": 12,
+          "max_channel_score_rows": 13,
+          "max_channel_MAC_AB": 192
+        }
+      }
+    },
+    {
+      "request": "g00_m_t023",
+      "output_row": 127,
+      "previous_output_tokens": 127,
+      "physical_tokens": 9455,
+      "layouts": {
+        "A3b": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 80,
+              "nominal_rows": 5,
+              "score_rows": 5,
+              "score_MAC_AB": 10
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 2832,
+              "nominal_rows": 23,
+              "score_rows": 23,
+              "score_MAC_AB": 354
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 288,
+              "nominal_rows": 18,
+              "score_rows": 18,
+              "score_MAC_AB": 36
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 223,
+              "nominal_rows": 7,
+              "score_rows": 7,
+              "score_MAC_AB": 28
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 2944,
+              "nominal_rows": 23,
+              "score_rows": 23,
+              "score_MAC_AB": 368
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 272,
+              "nominal_rows": 17,
+              "score_rows": 17,
+              "score_MAC_AB": 34
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            }
+          ],
+          "score_MAC_AB": 1182,
+          "nominal_rows": 115,
+          "score_rows": 115,
+          "max_channel_nominal_rows": 23,
+          "max_channel_score_rows": 23,
+          "max_channel_MAC_AB": 368
+        },
+        "A4c": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 48,
+              "nominal_rows": 1,
+              "score_rows": 1,
+              "score_MAC_AB": 12
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 2896,
+              "nominal_rows": 24,
+              "score_rows": 24,
+              "score_MAC_AB": 370
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 256,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 40
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1472,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 191,
+              "nominal_rows": 2,
+              "score_rows": 2,
+              "score_MAC_AB": 32
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 2992,
+              "nominal_rows": 24,
+              "score_rows": 24,
+              "score_MAC_AB": 380
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 192,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 24
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            }
+          ],
+          "score_MAC_AB": 1226,
+          "nominal_rows": 99,
+          "score_rows": 99,
+          "max_channel_nominal_rows": 24,
+          "max_channel_score_rows": 24,
+          "max_channel_MAC_AB": 380
+        },
+        "A4e": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1392,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 186
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 1296,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 162
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 671,
+              "nominal_rows": 13,
+              "score_rows": 14,
+              "score_MAC_AB": 116
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 1312,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 164
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 304,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 38
+            }
+          ],
+          "score_MAC_AB": 1226,
+          "nominal_rows": 95,
+          "score_rows": 96,
+          "max_channel_nominal_rows": 13,
+          "max_channel_score_rows": 14,
+          "max_channel_MAC_AB": 192
+        }
+      }
+    },
+    {
+      "request": "g01_m_t023",
+      "output_row": 0,
+      "previous_output_tokens": 0,
+      "physical_tokens": 9328,
+      "layouts": {
+        "A3b": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 192,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 24
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1488,
+              "nominal_rows": 16,
+              "score_rows": 16,
+              "score_MAC_AB": 186
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 3040,
+              "nominal_rows": 29,
+              "score_rows": 29,
+              "score_MAC_AB": 380
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 192,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 24
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 1504,
+              "nominal_rows": 17,
+              "score_rows": 17,
+              "score_MAC_AB": 188
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 2912,
+              "nominal_rows": 28,
+              "score_rows": 28,
+              "score_MAC_AB": 364
+            }
+          ],
+          "score_MAC_AB": 1166,
+          "nominal_rows": 114,
+          "score_rows": 114,
+          "max_channel_nominal_rows": 29,
+          "max_channel_score_rows": 29,
+          "max_channel_MAC_AB": 380
+        },
+        "A4c": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 240,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 36
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1472,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 64,
+              "nominal_rows": 1,
+              "score_rows": 1,
+              "score_MAC_AB": 16
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 3008,
+              "nominal_rows": 24,
+              "score_rows": 24,
+              "score_MAC_AB": 384
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 256,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 40
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 1456,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 188
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 2832,
+              "nominal_rows": 23,
+              "score_rows": 23,
+              "score_MAC_AB": 354
+            }
+          ],
+          "score_MAC_AB": 1210,
+          "nominal_rows": 98,
+          "score_rows": 98,
+          "max_channel_nominal_rows": 24,
+          "max_channel_score_rows": 24,
+          "max_channel_MAC_AB": 384
+        },
+        "A4e": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 1296,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 162
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 640,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 124
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 1312,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 164
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 304,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 38
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 1296,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 162
+            }
+          ],
+          "score_MAC_AB": 1210,
+          "nominal_rows": 94,
+          "score_rows": 94,
+          "max_channel_nominal_rows": 13,
+          "max_channel_score_rows": 13,
+          "max_channel_MAC_AB": 192
+        }
+      }
+    },
+    {
+      "request": "g01_m_t023",
+      "output_row": 127,
+      "previous_output_tokens": 127,
+      "physical_tokens": 9455,
+      "layouts": {
+        "A3b": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 192,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 24
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1488,
+              "nominal_rows": 16,
+              "score_rows": 16,
+              "score_MAC_AB": 186
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 3040,
+              "nominal_rows": 29,
+              "score_rows": 29,
+              "score_MAC_AB": 380
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 192,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 24
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 1504,
+              "nominal_rows": 17,
+              "score_rows": 17,
+              "score_MAC_AB": 188
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 3039,
+              "nominal_rows": 29,
+              "score_rows": 29,
+              "score_MAC_AB": 380
+            }
+          ],
+          "score_MAC_AB": 1182,
+          "nominal_rows": 115,
+          "score_rows": 115,
+          "max_channel_nominal_rows": 29,
+          "max_channel_score_rows": 29,
+          "max_channel_MAC_AB": 380
+        },
+        "A4c": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 240,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 36
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1472,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 64,
+              "nominal_rows": 1,
+              "score_rows": 1,
+              "score_MAC_AB": 16
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 3008,
+              "nominal_rows": 24,
+              "score_rows": 24,
+              "score_MAC_AB": 384
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 256,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 40
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 1456,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 188
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 2959,
+              "nominal_rows": 24,
+              "score_rows": 24,
+              "score_MAC_AB": 370
+            }
+          ],
+          "score_MAC_AB": 1226,
+          "nominal_rows": 99,
+          "score_rows": 99,
+          "max_channel_nominal_rows": 24,
+          "max_channel_score_rows": 24,
+          "max_channel_MAC_AB": 384
+        },
+        "A4e": {
+          "channels": [
+            {
+              "channel": 0,
+              "physical_tokens": 1296,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 162
+            },
+            {
+              "channel": 1,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 2,
+              "physical_tokens": 640,
+              "nominal_rows": 13,
+              "score_rows": 13,
+              "score_MAC_AB": 124
+            },
+            {
+              "channel": 3,
+              "physical_tokens": 1408,
+              "nominal_rows": 11,
+              "score_rows": 11,
+              "score_MAC_AB": 176
+            },
+            {
+              "channel": 4,
+              "physical_tokens": 1312,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 164
+            },
+            {
+              "channel": 5,
+              "physical_tokens": 304,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 38
+            },
+            {
+              "channel": 6,
+              "physical_tokens": 1536,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 192
+            },
+            {
+              "channel": 7,
+              "physical_tokens": 1423,
+              "nominal_rows": 12,
+              "score_rows": 12,
+              "score_MAC_AB": 178
+            }
+          ],
+          "score_MAC_AB": 1226,
+          "nominal_rows": 95,
+          "score_rows": 95,
+          "max_channel_nominal_rows": 13,
+          "max_channel_score_rows": 13,
+          "max_channel_MAC_AB": 192
+        }
+      }
+    }
+  ]
+}

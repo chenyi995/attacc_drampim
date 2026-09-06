@@ -1,0 +1,180 @@
+% =============================================================
+% Section 6: Evaluation Methodology. Short bold-led paragraphs
+% (2026-08-25 form): platform and simulator, the Genus/ASAP7
+% synthesis flow behind the area numbers, the seven-rung ladder,
+% the parametric DAG workload family, the six models in three
+% system configurations, the real traces, and the metrics.
+% Rewritten 2026-09-01 from the sweep scripts of
+% attacc_drampim_xinyao (experiments/run_sweep_models.sh,
+% run_dag_ladder.sh, docs/README.md section 3, and
+% docs/README_run_sweep_guide.md): the ladder went from six rungs
+% to nine on 2026-08-29 and the workloads from five hand-set
+% orchestrations to the parametric tiered-DAG family.
+% Labels that other sections point to are kept on the paragraphs.
+% =============================================================
+\section{Evaluation Methodology}
+\label{sec:method}
+\label{sec:integration}
+
+\textbf{Platform and simulator.}
+\label{sec:method-attacc}
+The platform is DGX-AttAcc~\cite{attacc}, eight A100 GPUs
+(the HBM3 variant AttAcc models) each with a PIM-enabled
+HBM3 stack over NVLink, the GPUs
+holding the weights and running the linear layers and the
+stacks holding the KV.
+The evaluation runs on kvpim-sim, an event-stream simulator
+on Ramulator2~\cite{ramulator2,ramulator21} and
+AttAcc~\cite{attacc}.
+Its analytic mode costs each operator and times the bank
+scans on Ramulator2 for the placement ladder.
+Its physical event-DAG mode expands each request layer by
+layer for the mechanism checks.
+\Fugue{} leaves the DRAM command set and the GPU attention
+kernel unchanged, keeps the MAC as the bank PE's only
+arithmetic, and adds the logic-die units of
+Section~\ref{sec:die}.
+The bank efficiency $\eta$, the FFN, and the GPU--PIM
+pipelining follow AttAcc's methodology, and energy is per
+command from its HBM3 model~\cite{attacc,hbmpim}.
+
+\textbf{RTL implementation.}
+Matched AttAcc and \Fugue{} stacks were implemented in RTL at
+the bank, the bank group (BG), the logic die, and the HBM
+controller: $1024$ bank
+GEMV units, $256$ bank-group accumulators with their buffers,
+one logic die of $16$ channels, and one HBM
+controller~\cite{attacc}.
+The storage of the DRAM arrays and
+the die budget it sits in are constants of the HBM3
+part~\cite{hbm3jssc,papi}, accounted separately.
+
+\label{sec:method-syn}
+All designs are synthesized with Cadence Genus against the
+ASAP7 $7$\,nm library~\cite{asap7}, AttAcc's bank GEMV units at its
+$666$\,MHz and \Fugue{}'s at the $1.30$\,GHz balanced
+frequency point of Section~\ref{sec:eval-balance}, and the
+softmax array whole at $1.30$\,GHz for both.
+The bank and bank-group areas are reported at $10\times$ the
+ASAP7 number, the DRAM density penalty AttAcc
+cites~\cite{attacc}, while the logic die and the controller
+sit on the buffer die and are reported as synthesized.
+The energy reported below is the per-command energy of the
+HBM3 model~\cite{attacc,ramulator2}.
+
+\textbf{Comparison points.}
+\label{sec:method-ladder}
+Seven points form a ladder in which each step changes one
+thing, named as in the simulator.
+A1 is AttAcc~\cite{attacc}, the no-reuse reference, one dense
+KV copy per request with decode in the banks and every
+prefill on the GPU.
+A2 adds software sharing and runs every attention on the
+GPU, with the shared KV held in a store used as memory
+only.
+A3b moves decode into the banks with the shared KV resident
+there: a head's chunks and its repairs are appended in one
+stream, rotated over the channels that head owns, so a
+repair sits in a row of its own and the repairs of
+different rounds are separated by whatever was written
+between them.
+A4c adds the per-agent diff of
+Section~\ref{sec:provision-ratio}: a head's repairs are
+packed into diff rows on one of that head's channels, while
+the master rows keep every channel the head owns.
+A4e adds the placement table of Section~\ref{sec:table} for
+the master rows, decided when a chunk is written, in place
+of the write-order rotation.
+A5 places every prefill attention in the banks and drives
+the shared rows by the MQ-MAC command
+(Section~\ref{sec:mq}).
+A6 is \Fugue{}, adding the per-prefill event-based placement
+model.
+
+\textbf{Workloads.}
+\label{sec:method-agentic}
+\label{sec:method-workloads}
+A workload is a tiered directed acyclic graph of agents, one
+node per request, whose tiers are joined by the dataflow
+patterns a multi-agent framework is built from, fan-out,
+fan-in, all-to-all, and pipeline.
+A generator turns four integers into such a graph, the width
+$N$ of a tier, the shared corpus size $C_{\mathrm{blk}}$ in
+$256$-token blocks, the depth $D$, and the number $k$ of
+tokens each agent recomputes in a shifted block.
+Every agent carries its own earlier outputs as history, and
+the shared blocks enter at positions of their own, so a
+block is read at a different position by each agent that
+reads it.
+Fourteen configurations sweep those axes around an
+all-to-all baseline of $N{=}16$, $C_{\mathrm{blk}}{=}32$,
+$D{=}2$, and
+$k{=}8$, one axis at a time to $N\in\{4,64\}$,
+$C_{\mathrm{blk}}\in\{16,64\}$, $D\in\{1,4\}$, and
+$k\in\{2,32\}$, together with the broadcast, reduce,
+supervisor, pipeline, and private-corpus topologies.
+The configurations set the agents and the tokens rather than
+the model, so the same fourteen serve every model and every
+rung.
+
+\textbf{Models.}
+\label{sec:method-models}
+Six models run in three system configurations, LLaMA-7B and
+LLaMA3-8B on one GPU with one stack, GPT-13B and LLaMA-33B
+on two GPUs with ten, and GPT-175B and LLaMA-65B on eight
+GPUs with forty~\cite{llama,llama3,gpt3}.
+The configuration fixes how many KV heads share a stack's
+sixteen channels, and so how many channels a head owns,
+which is what the diff-row and placement-table rungs act on.
+LLaMA3-8B is the grouped-query member, four query heads to
+one KV head, and the rest are multi-head, all served with
+RoPE in BF16.
+Six models over fourteen configurations and seven rungs give
+$588$ runs.
+
+% fig:balance lives here, not in Section 6, so that it floats to the
+% column where Section 6.1 first refers to it (2026-09-02 user).
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig/ver1/figbalance.pdf}
+  \figexpl{Per-bank power against the PE clock, one column read
+  plus $n$ MACs. A faster clock lets the command interval fall a
+  whole $t_{CK}$ at a time, marked along the top, and each step
+  costs power. The balanced frequency point
+  $f_{\mathrm{PE}}^\star=1.30$\,GHz is the last step the DRAM
+  budget admits, since the next one crosses it. The curve is
+  dashed past $f_{\mathrm{PE}}^\star$, where the budget no
+  longer admits the pace the PE could set.}
+  \caption{The balanced frequency point.}
+  \label{fig:balance}
+  \Description{Per-bank power in milliwatts against PE clock
+  frequency: a stepped curve rises past a flat line for the DRAM
+  power budget, with the command interval of each step named
+  along the top axis; the marked point at 1.3 GHz is the last
+  step under the budget, and the curve is dashed beyond it.}
+\end{figure}
+
+\textbf{Real workloads.}
+\label{sec:method-traces}
+\label{sec:method-policies}
+The real-workload experiment uses three public datasets,
+converted to the simulator's request schema in which equal
+segment fingerprints across requests mark shareable KV: a
+Mooncake~\cite{mooncake} production tool-and-agent trace,
+ShareGPT~\cite{sharegpt} multi-turn conversations, and
+MultiHop-RAG~\cite{multihoprag} queries over shared
+documents, all under multi-turn serving.
+The ladder uses the EPIC~\cite{epic} policy at $k{=}8$, and
+at \Fugue{} the policy is swept over
+CacheBlend~\cite{cacheblend}, Cache-Craft~\cite{cachecraft},
+and CacheTune~\cite{cachetune} so the placement result is
+read against the software layer rather than at one policy.
+\textbf{Metrics.}
+The reported metrics are the time to first token per
+prefill, the per-token decode latency weighted by the steps
+each tier takes, the KV bytes against the no-reuse layout,
+the fraction of prefills the rule sends to the banks, and
+the area of the additions.
+The physical event engine, which expands each request layer
+by layer, is the mode every reported number comes from.
+The analytic mode serves as a coarse check on it.

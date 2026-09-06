@@ -1,0 +1,132 @@
+{
+  "CACHEBLEND-TINY": {
+    "layers": 4,
+    "gqa": 1,
+    "prefill_query_cap": 8,
+    "batches": {
+      "1": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 2.487401375824793,
+          "proj": 1.244509335953952,
+          "norm1": 6.874560343675419,
+          "ff1": 3.108999017268005,
+          "gelu": 8.293397456038186,
+          "ff2": 4.974398427628808,
+          "norm2": 6.874560343675419
+        },
+        "gpu_work_us_per_layer": 33.85782630006458,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 16.92891315003229,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 67.71565260012916
+      },
+      "3": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 2.4938705601572373,
+          "proj": 1.2493612242032852,
+          "norm1": 6.883681031026253,
+          "ff1": 3.116580092657588,
+          "gelu": 8.300192368114558,
+          "ff2": 4.986528148252141,
+          "norm2": 6.883681031026253
+        },
+        "gpu_work_us_per_layer": 33.913894455437315,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 16.956947227718658,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 67.82778891087463
+      },
+      "8": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 2.5100435209883476,
+          "proj": 1.261490944826618,
+          "norm1": 6.906482749403342,
+          "ff1": 3.135532781131546,
+          "gelu": 8.317179648305489,
+          "ff2": 5.016852449810473,
+          "norm2": 6.906482749403342
+        },
+        "gpu_work_us_per_layer": 34.054064843869156,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 17.027032421934578,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 68.10812968773831
+      },
+      "32": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 2.5876737329776778,
+          "proj": 1.3197136038186157,
+          "norm1": 7.015930997613365,
+          "ff1": 5.162409097290468,
+          "gelu": 8.398718593221954,
+          "ff2": 5.162409097290468,
+          "norm2": 7.015930997613365
+        },
+        "gpu_work_us_per_layer": 36.66278611982592,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 18.33139305991296,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 73.32557223965183
+      }
+    }
+  },
+  "LLAMA3-8B": {
+    "layers": 32,
+    "gqa": 4,
+    "prefill_query_cap": 2,
+    "batches": {
+      "1": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 19.88142074968412,
+          "proj": 12.42689877860452,
+          "norm1": 6.88824137470167,
+          "ff1": 42.244091374019774,
+          "ff2": 42.244091374019774,
+          "glu": 8.307836644200476,
+          "ff3": 43.48656464972624,
+          "norm2": 6.88824137470167
+        },
+        "gpu_work_us_per_layer": 182.36738631965824,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 91.18369315982912,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 364.7347726393165
+      },
+      "3": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 19.89759371051523,
+          "proj": 12.439028499227854,
+          "norm1": 6.924724124105013,
+          "ff1": 44.757109564589555,
+          "ff2": 44.757109564589555,
+          "glu": 8.343509932601432,
+          "ff3": 43.51385652112874,
+          "norm2": 6.924724124105013
+        },
+        "gpu_work_us_per_layer": 187.55765604086235,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 93.77882802043118,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 375.1153120817247
+      },
+      "8": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 19.938026112593008,
+          "proj": 12.469352800786186,
+          "norm1": 7.015930997613365,
+          "ff1": 44.8272886624817,
+          "ff2": 44.8272886624817,
+          "glu": 8.432693153603818,
+          "ff3": 43.582086199634986,
+          "norm2": 7.015930997613365
+        },
+        "gpu_work_us_per_layer": 188.10859758680814,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 94.05429879340407,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 376.2171951736163
+      },
+      "32": {
+        "gpu_linear_norm_activation_us_per_layer": {
+          "qkv": 20.132101642566337,
+          "proj": 20.18385511722589,
+          "norm1": 7.453723990453461,
+          "ff1": 59.95122504562684,
+          "ff2": 59.95122504562684,
+          "glu": 8.860772614415273,
+          "ff3": 70.25534185034395,
+          "norm2": 7.453723990453461
+        },
+        "gpu_work_us_per_layer": 254.24196929671206,
+        "required_exposed_scan_us_for_5pct_if_scan_gain_15pct": 127.12098464835603,
+        "required_exposed_scan_us_for_10pct_if_scan_gain_15pct": 508.4839385934241
+      }
+    }
+  }
+}

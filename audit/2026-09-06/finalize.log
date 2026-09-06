@@ -1,0 +1,64 @@
+{
+  "A3b": {
+    "last_tier_six_query_QK_load_per_channel": [
+      490,
+      1316,
+      490,
+      1318,
+      496,
+      1332,
+      488,
+      1338
+    ],
+    "max": 1338,
+    "sum": 7268
+  },
+  "A4c": {
+    "last_tier_six_query_QK_load_per_channel": [
+      520,
+      1348,
+      520,
+      1348,
+      520,
+      1346,
+      456,
+      1298
+    ],
+    "max": 1348,
+    "sum": 7356
+  },
+  "A4e": {
+    "last_tier_six_query_QK_load_per_channel": [
+      1004,
+      1140,
+      712,
+      996,
+      834,
+      700,
+      1150,
+      820
+    ],
+    "max": 1150,
+    "sum": 7356
+  },
+  "bounds": {
+    "diff_K_row_min": 2,
+    "A3b_A4c_diff_row_reduction_pct": 72.72727272727273,
+    "A3b_ideal_diff_row_reduction_pct": 90.9090909090909,
+    "A4c_fraction_of_diff_row_headroom_pct": 80.0,
+    "A4c_A4e_busiest_QK_reduction_pct": 49.473684210526315,
+    "ideal_busiest_QK_for_fixed_commands": 152,
+    "fraction_of_QK_balance_headroom_pct": 82.45614035087719,
+    "six_query_busiest_total_QK_reduction_pct": 14.688427299703266
+  },
+  "illustrative_TBT_budget": {
+    "batch": 6,
+    "GPU_work_us_per_layer": 187.88822096842983,
+    "scan_gain_15pct_TBT_gain_5pct_required_S_us": 93.94411048421493,
+    "meaning": "Serial T=G+S illustration; G is all GPU work, not measured exposed critical path."
+  },
+  "closing_revision": {
+    "git": "074cbeb40e10b02fcb5a81815d6d03126cd86921",
+    "implementation_still_matches_snapshot": true
+  }
+}

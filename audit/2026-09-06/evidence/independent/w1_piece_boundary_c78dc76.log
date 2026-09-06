@@ -1,0 +1,720 @@
+{
+  "control": {
+    "master-diff-local-append": {
+      "target_tokens": [
+        {
+          "owner_row": 0,
+          "channel": 0,
+          "local_address": 4195296,
+          "piece": 0
+        },
+        {
+          "owner_row": 1,
+          "channel": 0,
+          "local_address": 4195300,
+          "piece": 0
+        },
+        {
+          "owner_row": 2,
+          "channel": 0,
+          "local_address": 4195304,
+          "piece": 0
+        },
+        {
+          "owner_row": 3,
+          "channel": 0,
+          "local_address": 4195308,
+          "piece": 0
+        },
+        {
+          "owner_row": 4,
+          "channel": 0,
+          "local_address": 4195312,
+          "piece": 0
+        },
+        {
+          "owner_row": 5,
+          "channel": 0,
+          "local_address": 4195316,
+          "piece": 0
+        },
+        {
+          "owner_row": 6,
+          "channel": 0,
+          "local_address": 4195320,
+          "piece": 0
+        },
+        {
+          "owner_row": 7,
+          "channel": 0,
+          "local_address": 4195324,
+          "piece": 0
+        },
+        {
+          "owner_row": 8,
+          "channel": 1,
+          "local_address": 4194304,
+          "piece": 1
+        },
+        {
+          "owner_row": 9,
+          "channel": 1,
+          "local_address": 4194308,
+          "piece": 1
+        },
+        {
+          "owner_row": 10,
+          "channel": 1,
+          "local_address": 4194312,
+          "piece": 1
+        },
+        {
+          "owner_row": 11,
+          "channel": 1,
+          "local_address": 4194316,
+          "piece": 1
+        },
+        {
+          "owner_row": 12,
+          "channel": 1,
+          "local_address": 4194320,
+          "piece": 1
+        },
+        {
+          "owner_row": 13,
+          "channel": 1,
+          "local_address": 4194324,
+          "piece": 1
+        },
+        {
+          "owner_row": 14,
+          "channel": 1,
+          "local_address": 4194328,
+          "piece": 1
+        },
+        {
+          "owner_row": 15,
+          "channel": 1,
+          "local_address": 4194332,
+          "piece": 1
+        }
+      ],
+      "target_extent_groups": [
+        [
+          0,
+          [
+            [
+              4195296,
+              12583904,
+              8
+            ]
+          ]
+        ],
+        [
+          1,
+          [
+            [
+              1077936128,
+              1086324736,
+              8
+            ]
+          ]
+        ]
+      ],
+      "generated_target_MACs": [
+        {
+          "channel": 0,
+          "row": 4096,
+          "col": 31,
+          "raw_local": 4195296
+        },
+        {
+          "channel": 0,
+          "row": 4097,
+          "col": 0,
+          "raw_local": 4195328
+        },
+        {
+          "channel": 1,
+          "row": 4096,
+          "col": 0,
+          "raw_local": 4194304
+        },
+        {
+          "channel": 1,
+          "row": 4096,
+          "col": 1,
+          "raw_local": 4194336
+        }
+      ]
+    },
+    "master-diff-table-local-append": {
+      "target_tokens": [
+        {
+          "owner_row": 0,
+          "channel": 0,
+          "local_address": 4195296,
+          "piece": 0
+        },
+        {
+          "owner_row": 1,
+          "channel": 0,
+          "local_address": 4195300,
+          "piece": 0
+        },
+        {
+          "owner_row": 2,
+          "channel": 0,
+          "local_address": 4195304,
+          "piece": 0
+        },
+        {
+          "owner_row": 3,
+          "channel": 0,
+          "local_address": 4195308,
+          "piece": 0
+        },
+        {
+          "owner_row": 4,
+          "channel": 0,
+          "local_address": 4195312,
+          "piece": 0
+        },
+        {
+          "owner_row": 5,
+          "channel": 0,
+          "local_address": 4195316,
+          "piece": 0
+        },
+        {
+          "owner_row": 6,
+          "channel": 0,
+          "local_address": 4195320,
+          "piece": 0
+        },
+        {
+          "owner_row": 7,
+          "channel": 0,
+          "local_address": 4195324,
+          "piece": 0
+        },
+        {
+          "owner_row": 8,
+          "channel": 1,
+          "local_address": 4194304,
+          "piece": 1
+        },
+        {
+          "owner_row": 9,
+          "channel": 1,
+          "local_address": 4194308,
+          "piece": 1
+        },
+        {
+          "owner_row": 10,
+          "channel": 1,
+          "local_address": 4194312,
+          "piece": 1
+        },
+        {
+          "owner_row": 11,
+          "channel": 1,
+          "local_address": 4194316,
+          "piece": 1
+        },
+        {
+          "owner_row": 12,
+          "channel": 1,
+          "local_address": 4194320,
+          "piece": 1
+        },
+        {
+          "owner_row": 13,
+          "channel": 1,
+          "local_address": 4194324,
+          "piece": 1
+        },
+        {
+          "owner_row": 14,
+          "channel": 1,
+          "local_address": 4194328,
+          "piece": 1
+        },
+        {
+          "owner_row": 15,
+          "channel": 1,
+          "local_address": 4194332,
+          "piece": 1
+        }
+      ],
+      "target_extent_groups": [
+        [
+          0,
+          [
+            [
+              4195296,
+              12583904,
+              8
+            ]
+          ]
+        ],
+        [
+          1,
+          [
+            [
+              1077936128,
+              1086324736,
+              8
+            ]
+          ]
+        ]
+      ],
+      "generated_target_MACs": [
+        {
+          "channel": 0,
+          "row": 4096,
+          "col": 31,
+          "raw_local": 4195296
+        },
+        {
+          "channel": 0,
+          "row": 4097,
+          "col": 0,
+          "raw_local": 4195328
+        },
+        {
+          "channel": 1,
+          "row": 4096,
+          "col": 0,
+          "raw_local": 4194304
+        },
+        {
+          "channel": 1,
+          "row": 4096,
+          "col": 1,
+          "raw_local": 4194336
+        }
+      ]
+    }
+  },
+  "real": {
+    "1": {
+      "layout_info": {
+        "A3b": {
+          "rows_shared_across_layers": []
+        },
+        "A4c": {
+          "rows_shared_across_layers": []
+        },
+        "A4e": {
+          "rows_shared_across_layers": []
+        }
+      },
+      "A4e_actual_boundaries": [
+        {
+          "request": "g00_m_t023",
+          "layer": 0,
+          "boundary": {
+            "channel": 4,
+            "key_address": 4299162592,
+            "start_local": 4195296,
+            "tokens": 8,
+            "nominal_rows": [
+              4096
+            ],
+            "actual_score_rows": [
+              4096,
+              4097
+            ],
+            "raw_MAC_addresses": [
+              4299162592,
+              4299162624
+            ],
+            "extra_score_rows_unallocated_to_any_diff": [
+              4097
+            ]
+          },
+          "object": {
+            "key": [
+              0,
+              "g00_m_t017",
+              "be2c8cc68b3e5143",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g00_m_t000",
+            "channel": 4,
+            "start": 4195296,
+            "token_count": 8,
+            "start_col": 31,
+            "start_offset": 0
+          },
+          "next_agent_diff_object": {
+            "key": [
+              0,
+              "g00_m_t018",
+              "842489e1cfd6f7a2",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g00_m_t000",
+            "channel": 1,
+            "start": 4194304,
+            "token_count": 8,
+            "start_col": 0,
+            "start_offset": 0
+          }
+        },
+        {
+          "request": "g01_m_t023",
+          "layer": 0,
+          "boundary": {
+            "channel": 2,
+            "key_address": 2151678944,
+            "start_local": 4195296,
+            "tokens": 8,
+            "nominal_rows": [
+              4096
+            ],
+            "actual_score_rows": [
+              4096,
+              4097
+            ],
+            "raw_MAC_addresses": [
+              2151678944,
+              2151678976
+            ],
+            "extra_score_rows_unallocated_to_any_diff": []
+          },
+          "object": {
+            "key": [
+              0,
+              "g01_m_t017",
+              "5e7499f60718a3b7",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g01_m_t000",
+            "channel": 2,
+            "start": 4195296,
+            "token_count": 8,
+            "start_col": 31,
+            "start_offset": 0
+          },
+          "next_agent_diff_object": {
+            "key": [
+              0,
+              "g01_m_t018",
+              "9ddb1bdfedd4dbda",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g01_m_t000",
+            "channel": 2,
+            "start": 4195328,
+            "token_count": 8,
+            "start_col": 0,
+            "start_offset": 0
+          }
+        }
+      ]
+    },
+    "2": {
+      "layout_info": {
+        "A3b": {
+          "rows_shared_across_layers": []
+        },
+        "A4c": {
+          "rows_shared_across_layers": [
+            {
+              "channel": 5,
+              "row": 4096,
+              "layers": [
+                0,
+                1
+              ]
+            }
+          ]
+        },
+        "A4e": {
+          "rows_shared_across_layers": [
+            {
+              "channel": 7,
+              "row": 4096,
+              "layers": [
+                0,
+                1
+              ]
+            },
+            {
+              "channel": 0,
+              "row": 4096,
+              "layers": [
+                0,
+                1
+              ]
+            },
+            {
+              "channel": 5,
+              "row": 4096,
+              "layers": [
+                0,
+                1
+              ]
+            },
+            {
+              "channel": 6,
+              "row": 4096,
+              "layers": [
+                0,
+                1
+              ]
+            },
+            {
+              "channel": 1,
+              "row": 4096,
+              "layers": [
+                0,
+                1
+              ]
+            },
+            {
+              "channel": 2,
+              "row": 4097,
+              "layers": [
+                0,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      "A4e_actual_boundaries": [
+        {
+          "request": "g00_m_t023",
+          "layer": 0,
+          "boundary": {
+            "channel": 4,
+            "key_address": 4299162592,
+            "start_local": 4195296,
+            "tokens": 8,
+            "nominal_rows": [
+              4096
+            ],
+            "actual_score_rows": [
+              4096,
+              4097
+            ],
+            "raw_MAC_addresses": [
+              4299162592,
+              4299162624
+            ],
+            "extra_score_rows_unallocated_to_any_diff": []
+          },
+          "object": {
+            "key": [
+              0,
+              "g00_m_t017",
+              "be2c8cc68b3e5143",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g00_m_t000",
+            "channel": 4,
+            "start": 4195296,
+            "token_count": 8,
+            "start_col": 31,
+            "start_offset": 0
+          },
+          "next_agent_diff_object": {
+            "key": [
+              0,
+              "g00_m_t018",
+              "842489e1cfd6f7a2",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g00_m_t000",
+            "channel": 1,
+            "start": 4194304,
+            "token_count": 8,
+            "start_col": 0,
+            "start_offset": 0
+          }
+        },
+        {
+          "request": "g01_m_t023",
+          "layer": 0,
+          "boundary": {
+            "channel": 2,
+            "key_address": 2151678944,
+            "start_local": 4195296,
+            "tokens": 8,
+            "nominal_rows": [
+              4096
+            ],
+            "actual_score_rows": [
+              4096,
+              4097
+            ],
+            "raw_MAC_addresses": [
+              2151678944,
+              2151678976
+            ],
+            "extra_score_rows_unallocated_to_any_diff": []
+          },
+          "object": {
+            "key": [
+              0,
+              "g01_m_t017",
+              "5e7499f60718a3b7",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g01_m_t000",
+            "channel": 2,
+            "start": 4195296,
+            "token_count": 8,
+            "start_col": 31,
+            "start_offset": 0
+          },
+          "next_agent_diff_object": {
+            "key": [
+              0,
+              "g01_m_t018",
+              "9ddb1bdfedd4dbda",
+              "diff",
+              0
+            ],
+            "layer": 0,
+            "root": "g01_m_t000",
+            "channel": 2,
+            "start": 4195328,
+            "token_count": 8,
+            "start_col": 0,
+            "start_offset": 0
+          }
+        },
+        {
+          "request": "g00_m_t023",
+          "layer": 1,
+          "boundary": {
+            "channel": 1,
+            "key_address": 1077937120,
+            "start_local": 4195296,
+            "tokens": 8,
+            "nominal_rows": [
+              4096
+            ],
+            "actual_score_rows": [
+              4096,
+              4097
+            ],
+            "raw_MAC_addresses": [
+              1077937120,
+              1077937152
+            ],
+            "extra_score_rows_unallocated_to_any_diff": [
+              4097
+            ]
+          },
+          "object": {
+            "key": [
+              1,
+              "g00_m_t011",
+              "f7a838fd39114664",
+              "diff",
+              0
+            ],
+            "layer": 1,
+            "root": "g00_m_t000",
+            "channel": 1,
+            "start": 4195296,
+            "token_count": 8,
+            "start_col": 31,
+            "start_offset": 0
+          },
+          "next_agent_diff_object": {
+            "key": [
+              1,
+              "g00_m_t012",
+              "61fb7d73f83f49d3",
+              "diff",
+              0
+            ],
+            "layer": 1,
+            "root": "g00_m_t000",
+            "channel": 4,
+            "start": 4195328,
+            "token_count": 8,
+            "start_col": 0,
+            "start_offset": 0
+          }
+        },
+        {
+          "request": "g01_m_t023",
+          "layer": 1,
+          "boundary": {
+            "channel": 2,
+            "key_address": 2151679968,
+            "start_local": 4196320,
+            "tokens": 8,
+            "nominal_rows": [
+              4097
+            ],
+            "actual_score_rows": [
+              4097,
+              4098
+            ],
+            "raw_MAC_addresses": [
+              2151679968,
+              2151680000
+            ],
+            "extra_score_rows_unallocated_to_any_diff": [
+              4098
+            ]
+          },
+          "object": {
+            "key": [
+              1,
+              "g01_m_t011",
+              "6a7ac7e0a58ad06a",
+              "diff",
+              0
+            ],
+            "layer": 1,
+            "root": "g01_m_t000",
+            "channel": 2,
+            "start": 4196320,
+            "token_count": 8,
+            "start_col": 31,
+            "start_offset": 0
+          },
+          "next_agent_diff_object": {
+            "key": [
+              1,
+              "g01_m_t012",
+              "8c753f184fae41de",
+              "diff",
+              0
+            ],
+            "layer": 1,
+            "root": "g01_m_t000",
+            "channel": 7,
+            "start": 4197376,
+            "token_count": 8,
+            "start_col": 0,
+            "start_offset": 0
+          }
+        }
+      ]
+    }
+  }
+}

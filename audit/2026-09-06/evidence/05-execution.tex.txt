@@ -1,0 +1,121 @@
+% =============================================================
+% Section 5: Fugue Execution Model. This section is separated
+% from the architecture per the 2026-09-03 user framework.
+% It covers adaptive prefill placement and decode pipelining.
+% =============================================================
+
+\section{Fugue Execution Model}
+\label{sec:exec}
+\label{sec:exec-model}
+\label{sec:events}
+
+The physical store fixes where the KV lives, but the runtime
+still decides where each prefill attention runs and when each
+shared-row scan issues.
+A prefill with few queries behaves differently from a prefill
+with many queries, and decode requests become ready at their
+own times.
+\Fugue{} handles these choices with one event stream over the
+channels of each head, their master and diff rows alike, the
+die units, the link, and the GPU.
+The event stream schedules work at query granularity.
+Decode contributes one query per agent and query head at a
+decode step, and prefill contributes $\nr$ queries.
+A diff is made once, in the prefill where an agent reuses a
+stored chunk, and read by every query of that context at the
+decode steps that follow.
+
+\subsection{Adaptive GPU/PIM Prefill Placement}
+\label{sec:prefill-placement}
+
+The placement decision has two inputs, the context length
+and the number of tokens the prefill computes.
+The linear layers of those $\nr$ tokens run on the GPU
+either way, and only the attention of the $\nr$ queries has a
+choice.
+On the GPU the cached KV crosses the link once and the
+attention runs at GPU speed.
+On the banks the cached KV stays in the stack, and the
+rotated queries cross the link instead.
+
+The runtime decides per request with a simple estimate of the
+attention service time on each side, made once at the first
+layer and kept for the request's remaining layers.
+For $q$ new queries over a context of $N$ rows, of which $R$
+are cached in the stack and not recomputed,
+\begin{align*}
+T_{\mathrm{GPU}} &= \mathrm{Link}(B_{\mathrm{hist}}) +
+  \mathrm{Attn}_{\mathrm{GPU}}(q, N), \\
+T_{\mathrm{PIM}} &= \sum_{s} \max_{c}
+  \mathrm{Scan}(c, s) + \mathrm{Link}(B_{\mathrm{ctx}}),
+\end{align*}
+where $B_{\mathrm{hist}}$ is the size of the $R$ cached KV
+rows the GPU would read back over the link (zero when nothing
+is cached), $\mathrm{Attn}_{\mathrm{GPU}}$ is the GPU's
+attention kernel over $q \times N$, the sum runs over the
+sweeps of at most one buffer of resident queries each, the
+max over the channels a sweep occupies, $\mathrm{Scan}$ is
+the bank time of that channel's stored extents under the same
+multi-query command the executed scan would issue, and
+$B_{\mathrm{ctx}}$ is the context returned to the GPU.
+The query transfer to the stack is small and is left out of
+the estimate.
+The prefill attention runs on the PIM when
+$T_{\mathrm{PIM}} \le T_{\mathrm{GPU}}$ and on the GPU
+otherwise; a tie goes to PIM because PIM placement keeps the
+cached KV off the link.
+In the PIM placement, the GPU still produces the linear-layer
+outputs and writes the produced K and V into the stack, and
+the banks start a scan once the queries and the KV it needs
+have arrived, while the GPU continues linear work for later
+tokens.
+
+A PIM-placed prefill produces its keys and values on the
+GPU.
+After the prefill keys and values land in the stack, each
+query scans the stored context and the earlier tokens in the
+same prefill.
+The causal mask removes keys that follow the query, but the
+masked scores still incur scan cost.
+The event stream can overlap later segment transfers with
+scans whose inputs have already arrived.
+
+\subsection{Multi-Agent Decode and Pipelining}
+\label{sec:decode-pipeline}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig/ver1/fig7reusetime.pdf}
+  \figexpl{Three agents become ready together, share one
+  decode attention interval in the banks, and return their
+  context vectors.}
+  \caption{Timing of one multi-query decode step over the shared
+  store.}
+  \label{fig:reusetime}
+  \Description{A timing diagram in which three agents'
+  queries become ready, share one bank attention interval,
+  and return their context vectors.}
+\end{figure}
+
+Decode is $\nr=1$, one query per agent and query head, and
+runs in the banks for every resident row; the newest token's
+own key and value are produced on the GPU that same step, so its
+single-key score is taken there and merged with the bank partial
+by log-sum-exp before the new K/V lands in the store.
+Once the diff is in place, every query of that context is
+served from the master--diff store at each decode step
+(Figure~\ref{fig:reusetime}).
+The runtime groups ready decode queries that read the same
+shared rows into one bank attention interval.
+Each query still reads its own master--diff view of the
+context from the shared physical store.
+
+The same event stream handles phase overlap.
+A prefill can become ready while another agent decodes, and a
+decode step can become ready while a PIM-placed prefill is
+scanning.
+The event stream starts an operation after the operation's
+inputs and target resource are ready.
+Input and resource dependencies let the GPU linear layers,
+link transfers, and bank attention scans overlap across
+agents.

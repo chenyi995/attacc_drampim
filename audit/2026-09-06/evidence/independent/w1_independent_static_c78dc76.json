@@ -1,0 +1,401 @@
+{
+  "scope": "Real W1 k8, ndec1, heads_per_HBM2; static plan and PhysicalLedger only. No DAG/device/Ramulator timing. Current row vector is unique nominal row footprint at prompt scan, excluding not-yet-allocated diff rows. It is not MAC command/time estimate.",
+  "a4e_diff_new_row_count": 8,
+  "chosen_not_current_minimum_count": 2,
+  "examples": [
+    {
+      "request": "g00_m_t018",
+      "root": "g00_m_t000",
+      "new_diff_row": [
+        1,
+        4096
+      ],
+      "weighted_score_before_row": [
+        153,
+        134,
+        144,
+        143,
+        135,
+        136,
+        144,
+        142
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        10,
+        9,
+        9,
+        9,
+        10,
+        8,
+        9,
+        9
+      ],
+      "chosen_channel": 1,
+      "current_minimum_channels": [
+        5
+      ],
+      "chosen_excess_current_rows": 1
+    },
+    {
+      "request": "g01_m_t018",
+      "root": "g01_m_t000",
+      "new_diff_row": [
+        2,
+        4097
+      ],
+      "weighted_score_before_row": [
+        144,
+        143,
+        134,
+        136,
+        144,
+        142,
+        153,
+        135
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        9,
+        9,
+        10,
+        8,
+        9,
+        9,
+        10,
+        9
+      ],
+      "chosen_channel": 2,
+      "current_minimum_channels": [
+        3
+      ],
+      "chosen_excess_current_rows": 2
+    }
+  ],
+  "all_row_allocations": [
+    {
+      "request": "g00_w0_t000",
+      "root": "g00_w0_t000",
+      "new_diff_row": [
+        7,
+        4096
+      ],
+      "weighted_score_before_row": [
+        177,
+        101,
+        121,
+        87,
+        132,
+        86,
+        144,
+        76
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      "chosen_channel": 7,
+      "current_minimum_channels": [
+        0,
+        2,
+        3,
+        5,
+        7
+      ],
+      "chosen_excess_current_rows": 0
+    },
+    {
+      "request": "g00_w1_t000",
+      "root": "g00_w1_t000",
+      "new_diff_row": [
+        0,
+        4096
+      ],
+      "weighted_score_before_row": [
+        76,
+        153,
+        101,
+        167,
+        91,
+        118,
+        90,
+        128
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1
+      ],
+      "chosen_channel": 0,
+      "current_minimum_channels": [
+        0,
+        1,
+        3,
+        4,
+        6
+      ],
+      "chosen_excess_current_rows": 0
+    },
+    {
+      "request": "g01_w0_t000",
+      "root": "g01_w0_t000",
+      "new_diff_row": [
+        5,
+        4096
+      ],
+      "weighted_score_before_row": [
+        120,
+        93,
+        132,
+        92,
+        144,
+        83,
+        177,
+        83
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "chosen_channel": 5,
+      "current_minimum_channels": [
+        0,
+        3,
+        5,
+        6,
+        7
+      ],
+      "chosen_excess_current_rows": 0
+    },
+    {
+      "request": "g01_w1_t000",
+      "root": "g01_w1_t000",
+      "new_diff_row": [
+        6,
+        4096
+      ],
+      "weighted_score_before_row": [
+        83,
+        167,
+        96,
+        118,
+        96,
+        128,
+        83,
+        153
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "chosen_channel": 6,
+      "current_minimum_channels": [
+        0,
+        1,
+        4,
+        6,
+        7
+      ],
+      "chosen_excess_current_rows": 0
+    },
+    {
+      "request": "g00_m_t002",
+      "root": "g00_m_t000",
+      "new_diff_row": [
+        4,
+        4096
+      ],
+      "weighted_score_before_row": [
+        153,
+        134,
+        144,
+        143,
+        134,
+        136,
+        144,
+        142
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "chosen_channel": 4,
+      "current_minimum_channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "chosen_excess_current_rows": 0
+    },
+    {
+      "request": "g01_m_t002",
+      "root": "g01_m_t000",
+      "new_diff_row": [
+        2,
+        4096
+      ],
+      "weighted_score_before_row": [
+        144,
+        143,
+        133,
+        136,
+        144,
+        142,
+        153,
+        135
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "chosen_channel": 2,
+      "current_minimum_channels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "chosen_excess_current_rows": 0
+    },
+    {
+      "request": "g00_m_t018",
+      "root": "g00_m_t000",
+      "new_diff_row": [
+        1,
+        4096
+      ],
+      "weighted_score_before_row": [
+        153,
+        134,
+        144,
+        143,
+        135,
+        136,
+        144,
+        142
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        10,
+        9,
+        9,
+        9,
+        10,
+        8,
+        9,
+        9
+      ],
+      "chosen_channel": 1,
+      "current_minimum_channels": [
+        5
+      ],
+      "chosen_excess_current_rows": 1
+    },
+    {
+      "request": "g01_m_t018",
+      "root": "g01_m_t000",
+      "new_diff_row": [
+        2,
+        4097
+      ],
+      "weighted_score_before_row": [
+        144,
+        143,
+        134,
+        136,
+        144,
+        142,
+        153,
+        135
+      ],
+      "current_prompt_master_plus_prior_diff_unique_rows": [
+        9,
+        9,
+        10,
+        8,
+        9,
+        9,
+        10,
+        9
+      ],
+      "chosen_channel": 2,
+      "current_minimum_channels": [
+        3
+      ],
+      "chosen_excess_current_rows": 2
+    }
+  ],
+  "batch_default8": [
+    {
+      "tier": 0,
+      "decode_output_row": 0,
+      "active_requests": 7,
+      "whole_group_common_segment_fingerprints": 0
+    },
+    {
+      "tier": 0,
+      "decode_output_row": 1,
+      "active_requests": 6,
+      "whole_group_common_segment_fingerprints": 0
+    },
+    {
+      "tier": 1,
+      "decode_output_row": 0,
+      "active_requests": 6,
+      "whole_group_common_segment_fingerprints": 0
+    },
+    {
+      "tier": 2,
+      "decode_output_row": 0,
+      "active_requests": 6,
+      "whole_group_common_segment_fingerprints": 0
+    },
+    {
+      "tier": 23,
+      "decode_output_row": 0,
+      "active_requests": 6,
+      "whole_group_common_segment_fingerprints": 0
+    }
+  ]
+}

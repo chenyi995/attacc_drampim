@@ -1,0 +1,8138 @@
+{
+ "meta": {
+  "format": "v2-dag",
+  "kind": "main agent summarizing its workers (gen_main_workers.py, 2026-09-06)",
+  "block_tokens": 256,
+  "rounds": 12,
+  "workers": 2,
+  "sessions": 2,
+  "worker_lout": 128,
+  "main_lout": 128,
+  "doc_tokens": 256,
+  "note_tokens": 16
+ },
+ "agents": [
+  {
+   "id": "a0_corpus",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 1,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "51688ba0452bfd1e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "dd3daebfe41c1263",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "3aab02194690ed55",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0d7657081372776e",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "0f7112a6d702028a",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "b1ad729041f0e3b1",
+     "len": 256
+    },
+    {
+     "role": "doc",
+     "sha": "1757cb7b375709fa",
+     "len": 256
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t000",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t000",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t000",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t000",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t000",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t000",
+   "tier": 0,
+   "parent": null,
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t001",
+   "tier": 1,
+   "parent": "g00_w0_t000",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t001",
+   "tier": 1,
+   "parent": "g00_w1_t000",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t001",
+   "tier": 1,
+   "parent": "g00_m_t000",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t001",
+   "tier": 1,
+   "parent": "g01_w0_t000",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t001",
+   "tier": 1,
+   "parent": "g01_w1_t000",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t001",
+   "tier": 1,
+   "parent": "g01_m_t000",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t002",
+   "tier": 2,
+   "parent": "g00_w0_t001",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t002",
+   "tier": 2,
+   "parent": "g00_w1_t001",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t002",
+   "tier": 2,
+   "parent": "g00_m_t001",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t002",
+   "tier": 2,
+   "parent": "g01_w0_t001",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t002",
+   "tier": 2,
+   "parent": "g01_w1_t001",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t002",
+   "tier": 2,
+   "parent": "g01_m_t001",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t003",
+   "tier": 3,
+   "parent": "g00_w0_t002",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t003",
+   "tier": 3,
+   "parent": "g00_w1_t002",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t003",
+   "tier": 3,
+   "parent": "g00_m_t002",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t003",
+   "tier": 3,
+   "parent": "g01_w0_t002",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t003",
+   "tier": 3,
+   "parent": "g01_w1_t002",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t003",
+   "tier": 3,
+   "parent": "g01_m_t002",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t004",
+   "tier": 4,
+   "parent": "g00_w0_t003",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t004",
+   "tier": 4,
+   "parent": "g00_w1_t003",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t004",
+   "tier": 4,
+   "parent": "g00_m_t003",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t004",
+   "tier": 4,
+   "parent": "g01_w0_t003",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t004",
+   "tier": 4,
+   "parent": "g01_w1_t003",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t004",
+   "tier": 4,
+   "parent": "g01_m_t003",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t005",
+   "tier": 5,
+   "parent": "g00_w0_t004",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6177af85f0f50639",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t005",
+   "tier": 5,
+   "parent": "g00_w1_t004",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "18067ada7c0f8673",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t005",
+   "tier": 5,
+   "parent": "g00_m_t004",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "e2bfea93cae23a68",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "50016a48c11fb015",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t005",
+   "tier": 5,
+   "parent": "g01_w0_t004",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "34466b07bc3e049f",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t005",
+   "tier": 5,
+   "parent": "g01_w1_t004",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a6b0274ba8c6429",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t005",
+   "tier": 5,
+   "parent": "g01_m_t004",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "ac32483b81541578",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e7123923ee41acd",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t006",
+   "tier": 6,
+   "parent": "g00_w0_t005",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6177af85f0f50639",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1daeea5d44a397f",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t006",
+   "tier": 6,
+   "parent": "g00_w1_t005",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "18067ada7c0f8673",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c9169e9d275735bc",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t006",
+   "tier": 6,
+   "parent": "g00_m_t005",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e2bfea93cae23a68",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "50016a48c11fb015",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "a398131da6d6e537",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "59e9b9f439148148",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t006",
+   "tier": 6,
+   "parent": "g01_w0_t005",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "34466b07bc3e049f",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "70d914075bf93248",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t006",
+   "tier": 6,
+   "parent": "g01_w1_t005",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a6b0274ba8c6429",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c7ffa8616d83bbb",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t006",
+   "tier": 6,
+   "parent": "g01_m_t005",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ac32483b81541578",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e7123923ee41acd",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "802088091f292d53",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8151a80ab01e1f9e",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t007",
+   "tier": 7,
+   "parent": "g00_w0_t006",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6177af85f0f50639",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1daeea5d44a397f",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e8f099f1a0d31ede",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t007",
+   "tier": 7,
+   "parent": "g00_w1_t006",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "18067ada7c0f8673",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c9169e9d275735bc",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "240e4aadee116bc2",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t007",
+   "tier": 7,
+   "parent": "g00_m_t006",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e2bfea93cae23a68",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "50016a48c11fb015",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "a398131da6d6e537",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "59e9b9f439148148",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "08f636547864d201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "20db9def0091fb77",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t007",
+   "tier": 7,
+   "parent": "g01_w0_t006",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "34466b07bc3e049f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "70d914075bf93248",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a35672af766f6019",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t007",
+   "tier": 7,
+   "parent": "g01_w1_t006",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a6b0274ba8c6429",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c7ffa8616d83bbb",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6fee4e30c81c54c7",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t007",
+   "tier": 7,
+   "parent": "g01_m_t006",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ac32483b81541578",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e7123923ee41acd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "802088091f292d53",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8151a80ab01e1f9e",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "5c112326575b6891",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0ce225c9ff459987",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t008",
+   "tier": 8,
+   "parent": "g00_w0_t007",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6177af85f0f50639",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1daeea5d44a397f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e8f099f1a0d31ede",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "684ab0937c76797f",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a87d511e7eeeb635",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t008",
+   "tier": 8,
+   "parent": "g00_w1_t007",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "18067ada7c0f8673",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c9169e9d275735bc",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "240e4aadee116bc2",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "3749506f63c03f32",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c67d465b1832c52",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t008",
+   "tier": 8,
+   "parent": "g00_m_t007",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e2bfea93cae23a68",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "50016a48c11fb015",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "a398131da6d6e537",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "59e9b9f439148148",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "08f636547864d201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "20db9def0091fb77",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "793d2b2e2d687685",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "825e29625d0b73c1",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t008",
+   "tier": 8,
+   "parent": "g01_w0_t007",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "34466b07bc3e049f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "70d914075bf93248",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a35672af766f6019",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "4e0ee6d56e137b18",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "9c3e829b60e400ff",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t008",
+   "tier": 8,
+   "parent": "g01_w1_t007",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a6b0274ba8c6429",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c7ffa8616d83bbb",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6fee4e30c81c54c7",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "03e407a865679aa3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e95f8a2a7ee0e866",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t008",
+   "tier": 8,
+   "parent": "g01_m_t007",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ac32483b81541578",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e7123923ee41acd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "802088091f292d53",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8151a80ab01e1f9e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "5c112326575b6891",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0ce225c9ff459987",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "3d3e78436d078d0c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ef9d09244c5af84f",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t009",
+   "tier": 9,
+   "parent": "g00_w0_t008",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6177af85f0f50639",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1daeea5d44a397f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e8f099f1a0d31ede",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "684ab0937c76797f",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a87d511e7eeeb635",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "4aa1f763f7a8bac3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "dd3daebfe41c1263",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b5049e2f53dc6665",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t009",
+   "tier": 9,
+   "parent": "g00_w1_t008",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "18067ada7c0f8673",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c9169e9d275735bc",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "240e4aadee116bc2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3749506f63c03f32",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c67d465b1832c52",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "d5b8635c021923eb",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3aab02194690ed55",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6c102bb93d0e6966",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t009",
+   "tier": 9,
+   "parent": "g00_m_t008",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e2bfea93cae23a68",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "50016a48c11fb015",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "a398131da6d6e537",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "59e9b9f439148148",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "08f636547864d201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "20db9def0091fb77",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "793d2b2e2d687685",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "825e29625d0b73c1",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "fb7873b12c65081d",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "684ab0937c76797f",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3749506f63c03f32",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "57024108c1e8e7ea",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t009",
+   "tier": 9,
+   "parent": "g01_w0_t008",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "34466b07bc3e049f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "70d914075bf93248",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a35672af766f6019",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4e0ee6d56e137b18",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "9c3e829b60e400ff",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "e7603963ba52bfe6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "dd3daebfe41c1263",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4795ac08a245ed9a",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t009",
+   "tier": 9,
+   "parent": "g01_w1_t008",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a6b0274ba8c6429",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c7ffa8616d83bbb",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6fee4e30c81c54c7",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "03e407a865679aa3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e95f8a2a7ee0e866",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "32fc3a75551c9171",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3aab02194690ed55",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61ee44822e183210",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t009",
+   "tier": 9,
+   "parent": "g01_m_t008",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ac32483b81541578",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e7123923ee41acd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "802088091f292d53",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8151a80ab01e1f9e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "5c112326575b6891",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0ce225c9ff459987",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3d3e78436d078d0c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ef9d09244c5af84f",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "f13abead5b5dc924",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4e0ee6d56e137b18",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "03e407a865679aa3",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8d1817ad8e758ae7",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t010",
+   "tier": 10,
+   "parent": "g00_w0_t009",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6177af85f0f50639",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1daeea5d44a397f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e8f099f1a0d31ede",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "684ab0937c76797f",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a87d511e7eeeb635",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4aa1f763f7a8bac3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "dd3daebfe41c1263",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b5049e2f53dc6665",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "f622b40a53bd902a",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0d7657081372776e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f77d4b5427b44d59",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t010",
+   "tier": 10,
+   "parent": "g00_w1_t009",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "18067ada7c0f8673",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c9169e9d275735bc",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "240e4aadee116bc2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3749506f63c03f32",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c67d465b1832c52",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d5b8635c021923eb",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3aab02194690ed55",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6c102bb93d0e6966",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "f7a838fd39114664",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0f7112a6d702028a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "332fe62db47bab8e",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t010",
+   "tier": 10,
+   "parent": "g00_m_t009",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e2bfea93cae23a68",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "50016a48c11fb015",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "a398131da6d6e537",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "59e9b9f439148148",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "08f636547864d201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "20db9def0091fb77",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "793d2b2e2d687685",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "825e29625d0b73c1",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fb7873b12c65081d",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "684ab0937c76797f",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3749506f63c03f32",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "57024108c1e8e7ea",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "5ecbff9252c3ef02",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4aa1f763f7a8bac3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d5b8635c021923eb",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "df4e7b1ac20964d0",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t010",
+   "tier": 10,
+   "parent": "g01_w0_t009",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "34466b07bc3e049f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "70d914075bf93248",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a35672af766f6019",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4e0ee6d56e137b18",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "9c3e829b60e400ff",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e7603963ba52bfe6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "dd3daebfe41c1263",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4795ac08a245ed9a",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "7a55a8b6fe42d4be",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0d7657081372776e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "0273c2b28f6d2302",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t010",
+   "tier": 10,
+   "parent": "g01_w1_t009",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a6b0274ba8c6429",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c7ffa8616d83bbb",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6fee4e30c81c54c7",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "03e407a865679aa3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e95f8a2a7ee0e866",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "32fc3a75551c9171",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3aab02194690ed55",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61ee44822e183210",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "6a7ac7e0a58ad06a",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0f7112a6d702028a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "55a699a03b7e5918",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t010",
+   "tier": 10,
+   "parent": "g01_m_t009",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ac32483b81541578",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e7123923ee41acd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "802088091f292d53",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8151a80ab01e1f9e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "5c112326575b6891",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0ce225c9ff459987",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3d3e78436d078d0c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ef9d09244c5af84f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "f13abead5b5dc924",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4e0ee6d56e137b18",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "03e407a865679aa3",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8d1817ad8e758ae7",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "252164dbb292122e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e7603963ba52bfe6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "32fc3a75551c9171",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3004b40b0d92a665",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w0_t011",
+   "tier": 11,
+   "parent": "g00_w0_t010",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a101d62cfd5d75fd",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4e64822cf8167973",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a69aaa119b3caf9b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f51552ac0b29b2a2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c2659ae7f8c8c106",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98f686710fb87ddd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6177af85f0f50639",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f1daeea5d44a397f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e8f099f1a0d31ede",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "684ab0937c76797f",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a87d511e7eeeb635",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4aa1f763f7a8bac3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "dd3daebfe41c1263",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b5049e2f53dc6665",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "f622b40a53bd902a",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0d7657081372776e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "f77d4b5427b44d59",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "61fb7d73f83f49d3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b1ad729041f0e3b1",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "0752ea290a7ed7c9",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_w1_t011",
+   "tier": 11,
+   "parent": "g00_w1_t010",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "86f081f8bc03f27e",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "352b13e17fdcd51e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a9f3ebb3599a5fe4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c90716b1da92277d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "67cd352514a47b4a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61d1803dd78c73e4",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "18067ada7c0f8673",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "c9169e9d275735bc",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "240e4aadee116bc2",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3749506f63c03f32",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c67d465b1832c52",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d5b8635c021923eb",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3aab02194690ed55",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6c102bb93d0e6966",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "f7a838fd39114664",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0f7112a6d702028a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "332fe62db47bab8e",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "a746a599716c1b17",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1757cb7b375709fa",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "63ef58a317710eb8",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g00_m_t011",
+   "tier": 11,
+   "parent": "g00_m_t010",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "489cef44e954e0e6",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "b419d74b8cfbd480",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7fa67a00692180c5",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0277d438bfaf270c",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "45e6a9c20c6a8cca",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "29e3b60a2b35fec0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "87d28d7edb68e5a4",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "48f3321263170aaf",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "858ac8b3d8f4f5c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "45690875ce26b608",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b77554d5532368ed",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "4e7c774ac6a11b35",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8687504c9c684b31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0dc6493e13c6f666",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "343bc992fd436e56",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "788c8bb69322c37a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e2bfea93cae23a68",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6c88ea070dad7418",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "395282f2807f24f6",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "50016a48c11fb015",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "a398131da6d6e537",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "cb9cce4e3062fdc0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e6bfebbad574f201",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "59e9b9f439148148",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "08f636547864d201",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4eebc56706c9b718",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "440934fb8403b9cd",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "20db9def0091fb77",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "793d2b2e2d687685",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e813394d2316c9c4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "7b63cda7d020cd2b",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "825e29625d0b73c1",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fb7873b12c65081d",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "684ab0937c76797f",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3749506f63c03f32",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "57024108c1e8e7ea",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "5ecbff9252c3ef02",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4aa1f763f7a8bac3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d5b8635c021923eb",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "df4e7b1ac20964d0",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "1ee999938d80ca31",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "f622b40a53bd902a",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "f7a838fd39114664",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8c4644a1fbc985bb",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w0_t011",
+   "tier": 11,
+   "parent": "g01_w0_t010",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "a01674b4707f70ea",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "ba073f4d496b20a8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23b35bc735293ee3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "ef479f3cf1339ddb",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98541d95ae7ce8ce",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01d546e2a81c1813",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "be6225d13f65080b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "516ec44dbcaeba00",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "b68c004b18113659",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3ec68f81e4e5c179",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "98d9246565ec1101",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e5b9ad0d0dc99575",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "34466b07bc3e049f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "638e19854ab1192b",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "70d914075bf93248",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "804ce93606ce87e0",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a35672af766f6019",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "4e0ee6d56e137b18",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "01cbf9fc7a009bec",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "9c3e829b60e400ff",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e7603963ba52bfe6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "dd3daebfe41c1263",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "4795ac08a245ed9a",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "7a55a8b6fe42d4be",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0d7657081372776e",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "0273c2b28f6d2302",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "8c753f184fae41de",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "b1ad729041f0e3b1",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "9c0f9caf69ef0773",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_w1_t011",
+   "tier": 11,
+   "parent": "g01_w1_t010",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "edfec6e3bbcd1bc0",
+     "len": 16
+    },
+    {
+     "role": "doc",
+     "sha": "f0b7ad367f73a578",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "23c06ed26accac99",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "c029e13db70bd7ce",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5354891da101001b",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "497b41b8b11dafa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "781e103b7c4bacbe",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3841bfc720dba6b8",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "a0195a6e1b36b6ee",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bd65bce1b0e0bfa4",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "7a3cafcd9c5d4a78",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1df1787943c0729c",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "5a6b0274ba8c6429",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "2e9caa416d103346",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8c7ffa8616d83bbb",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "85c95629560d5d76",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "6fee4e30c81c54c7",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "03e407a865679aa3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "bbeccb10b4a22f90",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "e95f8a2a7ee0e866",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "32fc3a75551c9171",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3aab02194690ed55",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "61ee44822e183210",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "6a7ac7e0a58ad06a",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0f7112a6d702028a",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "55a699a03b7e5918",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "3ea3f95419ae11c1",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "1757cb7b375709fa",
+     "len": 256
+    },
+    {
+     "role": "user",
+     "sha": "8ce87a46e3476f1d",
+     "len": 16
+    }
+   ]
+  },
+  {
+   "id": "g01_m_t011",
+   "tier": 11,
+   "parent": "g01_m_t010",
+   "history_len": 0,
+   "lout": 128,
+   "segs": [
+    {
+     "role": "sys",
+     "sha": "35f6937db8f53cf3",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "10f759409f7df7b0",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "c2a9a4a39f9dabc0",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3cd25331e49cfa4d",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "8a385a6f261b5b4c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "838ea09d4d1b2cf3",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "63da5525b4abe4a7",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "23ab09d7ea9e8636",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "dd7ec760f34802b4",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d20d77318b37063e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "46e185a72fdf445c",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "a6e92d311188ebd5",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ef7354e4999b6146",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "68fa434b424a6732",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "fe286e80d1ffc28e",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "f1b1a01f47da2c3f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "ac32483b81541578",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "0905e468e397926c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d98855eab8af2335",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "1e7123923ee41acd",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "802088091f292d53",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "264ce98d851d87b0",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "26d3daadd79dcd80",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8151a80ab01e1f9e",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "5c112326575b6891",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "d089f2f8afc1c1db",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e9b6114310d27825",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "0ce225c9ff459987",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "3d3e78436d078d0c",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3fa59a333b19f37e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "3d2479e380cb8892",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "ef9d09244c5af84f",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "f13abead5b5dc924",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "4e0ee6d56e137b18",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "03e407a865679aa3",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "8d1817ad8e758ae7",
+     "len": 16
+    },
+    {
+     "role": "user",
+     "sha": "252164dbb292122e",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "e7603963ba52bfe6",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "32fc3a75551c9171",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "3004b40b0d92a665",
+     "len": 16
+    },
+    {
+     "role": "parent_out",
+     "sha": "041d7548328e01c5",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "7a55a8b6fe42d4be",
+     "len": 128
+    },
+    {
+     "role": "doc",
+     "sha": "6a7ac7e0a58ad06a",
+     "len": 128
+    },
+    {
+     "role": "user",
+     "sha": "bcf51f74af360b9d",
+     "len": 16
+    }
+   ]
+  }
+ ]
+}

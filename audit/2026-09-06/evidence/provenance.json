@@ -1,0 +1,25 @@
+{
+  "scope": "static, layer 0 head 0 (8 channels); no new simulated latency",
+  "git": "074cbeb40e10b02fcb5a81815d6d03126cd86921",
+  "sources": {
+    "src/workload_runner.py": "5c0502a7c8054166733afa842eb8c55a9c9a9daaae8cc7261c7cf1e1848f339f",
+    "src/workload.py": "b9dbabacdac34712aa78898f10cad3d24b4332f0b1daa5a83056d592e19780ea",
+    "src/model.py": "97d1fb38916404ab164b576b686794cc7e636be9d3b66012f92c15e97abd0939",
+    "src/devices.py": "5307cbef94c87a66ddf303cac9040e81ed859e9f5ed9c0a93d21504681c0c271",
+    "src/config.py": "28ee9b707c22b35a80d77ea38d5211cff19bb09092c8323396d6e14eef1fc571",
+    "src/ramulator_wrapper.py": "6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00",
+    "pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py": "e92eed2ad4e92376ae7fa9143ebabc878e68c5d28b5546b47d536915511310c0",
+    "workload/probe/gen_main_workers.py": "f709da1f21afc389ab183f9002dfa2ae1cf7dc2a4b0ca266657ecd3c94306094",
+    "workload/probe/targeted/handcheck.py": "b47ef8ed5653e7205caa512010505056bb07589d927605ae894e65df2a29d3d1",
+    "experiments/run_sweep.sh": "9430da20f09d94c6da3959f8ed285deb6add27e109dce16e3d368cf9d1c721ee",
+    "docs/README_contributions.md": "2e4e06d7ccc75ef48d3dbdcca745a0be109cb728bb0a1f0ab62cb5a9e0bd6456",
+    "docs/README_run_protocol.md": "a7fe0d7f015ab78e7da5d5bc79e1cdcacfb8b7dc177450822f15eb4930fb8933",
+    "workload/probe/README.md": "ac1ee84482512760c7d458268a33f75d5384b67b2b8b604996bb0603f248ee17",
+    "output/analysis/b1_levers.py": "7818245514a2bdeada34eff18d62f85908e482aad07c607bf86eb8b73d37f64b",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/04-design.tex": "447a9817bee74987b8d4154abdeca2f2b8cbc4c78dacc6f540b15fe6957a4cd1",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/05-execution.tex": "dfcab6d4d6fe44987b8c2d32b1df19bd32271b63795c3cc4810c40a7e990ca08",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/06-methodology.tex": "f7ec3b43ebe27baf2d9b515d0a613209ead606816a033363fbda94e08120cf1d",
+    "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/07-evaluation.tex": "6eace2c9eace8077c72a726ad4170f7cb18101e5208a44f666152bd2a8a3d4ed"
+  },
+  "paper_git": "8fe2022db0fc9d90909f52661841dc414f5ae2d3"
+}
