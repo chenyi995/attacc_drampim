@@ -487,6 +487,8 @@ def main():
         parser.error("--num-hbm must be at least 1")
 
     workload = None
+    full_workload = None
+    sampling = None
     reuse_plan = None
     if args.workload or args.validate_workload or args.workload_plan:
         if not args.workload:
@@ -499,6 +501,13 @@ def main():
                 workload = Workload(workload.kind, tuple(
                     replace(request, history_len=args.history_len)
                     for request in workload.requests), workload.raw)
+            # The JSON is the full request workload. Sample BEFORE reuse
+            # planning, physical allocation, Ramulator scans or event build.
+            from src.workload_extrapolation import sample_workload
+            full_workload = workload
+            workload, sampling = sample_workload(full_workload)
+            if sampling and (args.engine != 'dag' or not args.pipeopt or not args.ablation):
+                raise WorkloadValidationError('simulation_sample requires --engine dag --pipeopt --ablation')
             # ONE correction plan for every rung (ruling chenyi9 2026-09-05,
             # re-audit R02): the recomputed rows of a shifted segment are the
             # policy's random k rows (--reuse-seed) whatever the layout.  The
@@ -516,6 +525,9 @@ def main():
         except WorkloadValidationError as exc:
             parser.error(str(exc))
         summary = workload_summary(workload, reuse_plan)
+        if sampling:
+            summary['sampling'] = sampling
+            summary['full_workload'] = workload_summary(full_workload)
         print(json.dumps(summary, indent=2, sort_keys=True))
         if args.workload_plan:
             with open(args.workload_plan, "w") as plan_file:
@@ -622,7 +634,7 @@ def main():
                         system, workload, reuse_plan, pipe=args.pipeopt,
                         cacheblend_batch_size=args.cacheblend_batch_size,
                         cacheblend_rotate_mode=args.cacheblend_rotate_mode,
-                        include_events=(args.workload_report_events == "full"),
+                        include_events=(args.workload_report_events == "full" or sampling is not None),
                         pim_prefill_mode=ablation.prefill_attn,
                         pim_batch_command=(args.pim_batch_command or
                                            ablation.pim_batch_command),
@@ -645,6 +657,16 @@ def main():
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)
             report["run_config"] = provenance
+            if sampling:
+                from src.workload_extrapolation import extrapolate_report
+                report['sampling'] = sampling
+                report['full_workload'] = workload_summary(full_workload)
+                report['measured_scope'] = 'representative requests only'
+                report['extrapolation'] = extrapolate_report(
+                    report, workload, system.devices['GPU'], sampling, pipe=args.pipeopt)
+                if args.workload_report_events != 'full':
+                    report['events'] = None
+                    report['extrapolation']['events'] = None
             with open(args.workload_report, "w") as report_file:
                 json.dump(report, report_file, indent=2, sort_keys=True)
                 report_file.write("\n")

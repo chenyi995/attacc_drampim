@@ -1,5 +1,7 @@
 # 运行指南入口
 
+完整 workload 只抽取代表请求建图、scan 再外推的入口和报告字段，见 [Fugue-asplos 抽样仿真方法](Fugue-asplos-sampling-method.md)。完整输入保留全部请求和依赖；抽样发生在建图之前。
+
 当前跑法统一到 [运行协议](README_run_protocol.md)：model × workload × combo，每 GPU 5 个 HBM 栈、flash、pipeopt、k=8、batch 8，
 baseline 跑七个 combo、sweep 只跑 A3b 与 A6。指标定义与 full events 见 [实验指导](experiments/README.md)。
 

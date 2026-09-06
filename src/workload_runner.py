@@ -55,6 +55,9 @@ class SplitEvent:
     masked_rows: int = 0
     start_s: float = 0.0
     end_s: float = 0.0
+    # Operator shapes let representative-workload replay reprice GPU batches
+    # without rebuilding the request graph or guessing a shape from latency.
+    gpu_pricing: Tuple[Mapping[str, Any], ...] = ()
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -76,6 +79,7 @@ class SplitEvent:
             "masked_rows": self.masked_rows,
             "start_s": self.start_s,
             "end_s": self.end_s,
+            "gpu_pricing": list(self.gpu_pricing),
         }
 
 
@@ -2290,7 +2294,8 @@ def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                       positions: Sequence[int] = (),
                       addresses: Sequence[int] = (),
                       batch_members: Sequence[str] = (),
-                      masked_rows: int = 0) -> str:
+                      masked_rows: int = 0,
+                      gpu_ops: Sequence[Layer] = (), gpu_repeat: int = 1) -> str:
     if device in DEPENDENCY_ONLY_DEVICES:
         time_s, energy = 0.0, ()
     event_id = "cb-{}".format(len(events))
@@ -2304,7 +2309,14 @@ def _cacheblend_event(events: List[SplitEvent], *, layer: int, tier: int,
                              tuple(positions),
                              array("Q", addresses if _RETAIN_EVENT_ADDRESSES
                                    else ()),
-                             tuple(batch_members), masked_rows))
+                             tuple(batch_members), masked_rows,
+                             gpu_pricing=tuple({
+                                 "stage": op.stage, "name": op.name,
+                                 "type": op.type.name, "dtype": op.dtype.name,
+                                 "has_weight": op.has_weight, "m": op.m,
+                                 "n": op.n, "k": op.k, "numOp": op.numOp,
+                                 "request_id": getattr(op, "sample_request_id", None),
+                                 "repeat": gpu_repeat} for op in gpu_ops)))
     if _EC is not None:
         _EC.add(device, time_s, deps, name=name)
     return event_id
@@ -3153,7 +3165,7 @@ def _gpu_layer_event(system, events, template, *, layer, tier, request, name,
     return _cacheblend_event(events, layer=layer, tier=tier, request=request,
                              name=name, device="GPU", rows=rows, time_s=time_s,
                              energy=energy, deps=deps, positions=positions,
-                             batch_members=batch_members)
+                             batch_members=batch_members, gpu_ops=(op,))
 
 
 def _post_attention_gpu(system, events, templates, *, layer, tier, request,
@@ -4146,7 +4158,7 @@ def _append_cacheblend_decode_batched(
                         name="decode_batch_gpu_" + template.name, device="GPU", rows=len(group),
                         time_s=time_s, energy=energy,
                         deps=tuple(context_links.values()) if post_last is None else (post_last,),
-                        positions=positions, batch_members=members)
+                        positions=positions, batch_members=members, gpu_ops=(op,))
                 if post_last is None:
                     raise WorkloadValidationError("CacheBlend post-attention GPU sequence is empty")
                 for request in group:
@@ -4237,7 +4249,7 @@ def _append_gpu_prefill_layer(
         gpu_last = _cacheblend_event(
             events, layer=layer, tier=tier, request=request.request_id,
             name=name, device="GPU", rows=rows, time_s=time_s, energy=energy,
-            deps=(gpu_last,), positions=positions)
+            deps=(gpu_last,), positions=positions, gpu_ops=(op,))
     post_last = _post_attention_gpu(
         system, events, post, layer=layer, tier=tier, request=request.request_id,
         rows=rows, dependency=gpu_last, positions=positions)
@@ -4823,7 +4835,7 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                         request=request.request_id, name=name, device="GPU",
                         rows=len(compute), time_s=time_s, energy=energy,
                         deps=(attn_deps if gpu_last is None else (gpu_last,)),
-                        positions=compute)
+                        positions=compute, gpu_ops=(op,))
                 # Fresh/corrected K/V leaves for the remote store as soon as
                 # QKV produced it; the write overlaps the attention block and
                 # is joined before decode first reads the completed cache.
@@ -4869,6 +4881,7 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                         rows=context_rows, deps=last[request.request_id]))
                 step_time = 0.0
                 step_energy = 0.0
+                step_ops = []
                 for template in system.model.sum_decoder:
                     if template.name == "comm_x2g":
                         continue  # the remote link is modeled by the explicit
@@ -4884,6 +4897,8 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                             else:
                                 op.m, op.n, op.numOp = 1, context_rows, heads
                             time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                            op.sample_request_id = request.request_id
+                            step_ops.append(op)
                             step_time += time_s
                             step_energy += sum(energy)
                     else:
@@ -4891,6 +4906,7 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                         op = deepcopy(template)
                         op.m = len(group)
                         time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                        step_ops.append(op)
                         step_time += time_s
                         step_energy += sum(energy)
                 compute_event = _cacheblend_event(
@@ -4901,7 +4917,8 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
                     rows=len(group), time_s=step_time * ndec,
                     energy=(step_energy * ndec,),
                     deps=tuple(dict.fromkeys(tuple(reads))),
-                    positions=positions, batch_members=members)
+                    positions=positions, batch_members=members,
+                    gpu_ops=step_ops, gpu_repeat=ndec)
                 for request in group:
                     last[request.request_id] = (compute_event,)
                     last_write[request.request_id] = link_event(
@@ -4939,6 +4956,7 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
         "events": ([event.to_dict() for event in scheduled] if include_events
                    else None),
         "event_count": len(scheduled),
+        "request_release_dependencies": {k: list(v) for k, v in release_deps.items()},
         "summary": summarize_cacheblend_schedule(scheduled, workload,
                                                  release_deps=release_deps),
         "link_bytes": sum(event.link_bytes for event in scheduled),
@@ -5444,7 +5462,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                         request=request.request_id, name=name, device="GPU",
                         rows=len(compute_positions), time_s=time_s,
                         energy=energy, deps=(gpu_last,),
-                        positions=compute_positions)
+                        positions=compute_positions, gpu_ops=(op,))
                 post_last = _post_attention_gpu(
                     system, events, post, layer=layer_index, tier=tier,
                     request=request.request_id, rows=len(compute_positions),
@@ -5591,6 +5609,7 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
                    else None),
         "event_count": len(scheduled),
         "dag_build_s": ctx.get("dag_build_s", 0.0),
+        "request_release_dependencies": {k: list(v) for k, v in ctx.get("release_deps", {}).items()},
         "summary": summarize_cacheblend_schedule(scheduled, workload,
                                                  release_deps=ctx.get("release_deps")),
         "tlb": tlb_report,
