@@ -478,6 +478,9 @@ def main():
              "none: keep only the summary (per-request/tier times, energy, blocks)")
 
     args = parser.parse_args()
+    # Capture the code revision NOW: a run that outlives a commit would
+    # otherwise report the revision current when its report is written.
+    provenance = run_provenance(args, getattr(args, "workload", None))
     if args.ramulator_workers < 1:
         parser.error("--ramulator-workers must be at least 1")
     if args.num_hbm < 1:
@@ -637,7 +640,7 @@ def main():
             except WorkloadValidationError as exc:
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)
-            report["run_config"] = run_provenance(args, args.workload)
+            report["run_config"] = provenance
             with open(args.workload_report, "w") as report_file:
                 json.dump(report, report_file, indent=2, sort_keys=True)
                 report_file.write("\n")
