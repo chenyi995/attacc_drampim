@@ -71,10 +71,26 @@ def main():
             report = json.load(handle)
         share, share_str = pim_prefill_share(report)
         energy_classes = report.get("energy_breakdown_nj", {}).get("by_class", {})
+        run_config = report.get("run_config", {}) or {}
+        summary = report.get("summary", {}) or {}
+        ttft = [rec["ttft_s"] for rec in (summary.get("requests", {}) or {}).values()
+                if rec.get("ttft_s") is not None]
+        scans = summary.get("decode_scans", {}) or {}
         row = {
             "workload": os.path.basename(workload_path),
             "model": model,
             "ablation": rung,
+            # provenance (audit 2026-09-05): which code / GPU model / geometry
+            "git_rev": (run_config.get("git_rev") or "")[:12],
+            "gpu_model": run_config.get("gpu_model"),
+            "num_hbm": run_config.get("num_hbm"),
+            "ngpu": run_config.get("ngpu"),
+            "epic_k": run_config.get("epic_prefix_recompute_tokens"),
+            # the four metrics' request-side inputs (audit METRICS 2026-09-05)
+            "ttft_mean_s": (sum(ttft) / len(ttft)) if ttft else None,
+            "decode_scan_private_service_us_mean": (scans.get("private_service", {}) or {}).get("mean_us"),
+            "decode_scan_shared_service_us_mean": (scans.get("shared_service", {}) or {}).get("mean_us"),
+            "decode_scan_per_step_elapsed_us_mean": (scans.get("per_step_elapsed", {}) or {}).get("mean_us"),
             "policy": report.get("policy"),
             "engine": report.get("engine", "dag"),
             "kv_mapping": report.get("kv_mapping"),

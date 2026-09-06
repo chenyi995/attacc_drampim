@@ -34,6 +34,11 @@ mkdir -p "$OUT"
 # workers + 7 construction processes = 91 <= 96.  Override per-rung width with RAMU_WORKERS if the budget
 # changes.
 RAMU_WORKERS=${RAMU_WORKERS:-14}
+# EVENTS=full keeps every scheduled event in dag_A*.json (audit METRICS
+# 2026-09-05: needed to re-derive per-scan latencies offline); the summary
+# already carries release/TTFT and the decode scan latency statistics, so
+# the default stays the compact "none".
+EVENTS=${EVENTS:-none}
 # GPU model (chenyi9 ruling 2026-09-05, re-audit C1): FlashAttention-2 is
 # the common GPU model of every rung.  Default flash here so no entry point
 # silently runs the legacy AttAcc xPU formulas; GPU_MODEL=legacy opts out.
@@ -69,7 +74,7 @@ for A in $RUNGS; do
         --workload "$WL" --reuse "$REUSE" ${EXTRA[@]+"${EXTRA[@]}"} \
         --ablation "$A" --engine dag --pipeopt \
         --workload-report "$OUT/dag_${A}.json" \
-        --workload-report-events none \
+        --workload-report-events "${EVENTS:-none}" \
         --cacheblend-batch-size 8 \
         ${NUM_HBM:+--num-hbm "$NUM_HBM"} \
         ${NGPU:+--ngpu "$NGPU"} \
