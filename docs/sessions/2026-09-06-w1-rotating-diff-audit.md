@@ -48,3 +48,13 @@ chenyi9 指出：A4c 已把 diff 单独连续存放，同轮能合并，跨越�
 新增 [coalescing_check.py](../../audit/2026-09-06/coalescing_check.py)，从上一轮保存的 W1 地址提取 diff，仅合并 K/V 均连续且同通道的描述符；断言 token 地址集合与数量不变，再调用真实生成器统计 QK/PV。结果、差别及合并条件见 [更正说明](../../audit/2026-09-06/COALESCING_CLARIFICATION.md)。A4c 的全局流仍可能混有其他 agent 的未读修正，不能跨过这些空洞硬连；A4e 的按 agent 分组则能形成更长的跨轮连续段。
 
 已更新主报告及其生成脚本：本项改列为“低估已声明布局收益的实现遗漏，应交执行 agent 修复并重算”。修复前原始数据保留；模拟器、workload 和论文未改，没有运行性能仿真。
+
+## 追加：审阅执行agent修复及“不改”回复
+
+chenyi9 表示已修复，并要求判断md里“不改”的回复有无道理。本轮读取主报告第8节、工作区 `extent_groups` 合并改动、相关测试以及论文/指南diff。
+
+新增 [review_execution_reply.py](../../audit/2026-09-06/review_execution_reply.py)：按真实W1计划检查当前输出恰好等于旧地址按共同物理连续规则合并，token读集和重算量不变；同时由真实生成器检查修复后残留的额外尾行。新证据保存在 `execution_reply_review/`，未覆盖修复前原始数据。执行已有 `PhysicalLedgerTest`，12个测试通过；没有再次运行全量测试或性能仿真。
+
+审阅结论见 [EXECUTION_REPLY_REVIEW.md](../../audit/2026-09-06/EXECUTION_REPLY_REVIEW.md)。A4e保留有明确定义的累计评分是合理启发式；MQ与r−2语义文案已收窄，不要求另加机制。尾列取整的上游来源成立，可以作为保留近似，但当前默认W1仍触发布局相关的额外整行，不能声称各档误差相同。这里区分“保留简化的范围决定”和“实现已严格对应存储”的正确性结论，没有替chenyi9追加修法或推翻此前省略半列case的决定。
+
+主报告追加第9节链接，保留执行agent第8节原回复。论文尚余的图TODO与少数方法措辞仅记录，没有修改论文。模拟器与测试文件均保持执行agent的原改动。
