@@ -642,8 +642,12 @@ def validate_reuse_plan(workload: Workload, plan: ReusePlan,
         for layer, by_request in plan.cacheblend_partial_rows.items():
             for request_id, decisions in decisions_by_request.items():
                 segment_rows = by_request.get(request_id, {})
-                total_rows = sum(decision.length for decision in decisions.values())
-                selected_rows = [row for rows in segment_rows.values() for row in rows]
+                # inherited corrections keep their writer's rows and are not
+                # part of this request's sampling budget (re-audit C8.5)
+                own = {index: d for index, d in decisions.items() if d.inherits_from is None}
+                total_rows = sum(decision.length for decision in own.values())
+                selected_rows = [row for index, rows in segment_rows.items()
+                                 if index in own for row in rows]
                 expected_count = math.ceil(total_rows * plan.config.cacheblend_recompute_ratio)
                 if len(selected_rows) != expected_count:
                     raise WorkloadValidationError(
