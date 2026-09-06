@@ -2965,11 +2965,61 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
     def named(event_id: str) -> str:
         return by_id[event_id].name
 
+    def decode_scopes(event):
+        members = event.batch_members or (event.request_id,)
+        positions = event.query_positions
+        if event.batch_members and len(positions) == len(members):
+            return {(member, event.transformer_layer, position)
+                    for member, position in zip(members, positions)}
+        return {(member, event.transformer_layer, position)
+                for member in members for position in positions}
+
+    # Validate data readiness, not just the graph's declared edge ordering.
+    # A zero-time per-request QKV alias points to a complete GPU batch.
+    producers, contexts = {}, {}
+    for event in events:
+        if event.name == "decode_ctx_pim_to_gpu":
+            contexts.update((scope, event.event_id) for scope in decode_scopes(event))
+        if event.name not in ("decode_qkv", "decode_batch_qkv"):
+            continue
+        if event.name == "decode_qkv" and any(
+                named(dep) == "decode_batch_qkv" for dep in event.depends_on):
+            continue
+        producers.update((scope, event.event_id) for scope in decode_scopes(event))
+    query_ready = {}
+
     q_bytes_per_row = local_hidden * dbyte
     # K/V rows are KV-head wide (GQA), Q rows are Q-head wide (re-audit C2)
     kv_bytes_per_row = 2 * max(1, local_hidden // gqa_group) * dbyte
     tuple_bytes = heads * (dhead + 2) * dbyte
     for event in events:
+        if event.name in ("decode_qkv_rest", "decode_batch_qkv_rest",
+                          "decode_gpu_proj_overlapped", "decode_batch_gpu_proj_overlapped"):
+            raise WorkloadValidationError("decode requires complete QKV and context readiness")
+        if event.name in ("decode_q_gpu_to_pim", "decode_kv_gpu_to_pim"):
+            required = {producers.get(scope) for scope in decode_scopes(event)}
+            supplied = set(event.depends_on)
+            for dep in event.depends_on:
+                if named(dep) == "decode_qkv":
+                    supplied.update(by_id[dep].depends_on)
+            if not required or None in required or not required.issubset(supplied):
+                raise WorkloadValidationError("decode Q/KV transfer must wait for complete QKV")
+        if event.name == "decode_q_gpu_to_pim":
+            query_ready[event.event_id] = decode_scopes(event)
+        elif (event.name.startswith("decode_") and
+              event.name not in ("decode_qkv", "decode_batch_qkv")):
+            query_ready[event.event_id] = set().union(
+                *(query_ready.get(dep, set()) for dep in event.depends_on))
+        if event.name.startswith("decode_") and "pim_kv_scan" in event.name:
+            if not decode_scopes(event).issubset(query_ready.get(event.event_id, set())):
+                raise WorkloadValidationError("decode scan must wait for every member's Q arrival")
+        if event.name in ("decode_gpu_proj", "decode_batch_gpu_proj"):
+            required = {contexts.get(scope) for scope in decode_scopes(event)}
+            if not required or None in required or not required.issubset(event.depends_on):
+                raise WorkloadValidationError("decode projection must wait for every member's context")
+        if (event.name.startswith(("decode_gpu_local_", "decode_batch_gpu_local_")) or
+                event.name == "decode_gpu_partial_lse_to_pim"):
+            raise WorkloadValidationError("decode attention must execute entirely on PIM")
         if event.name in ("q_gpu_to_pim", "ctx_pim_to_gpu",
                           "decode_q_gpu_to_pim", "decode_ctx_pim_to_gpu"):
             if event.link_bytes != event.rows * q_bytes_per_row:
@@ -2991,7 +3041,35 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
                                            "decode_contiguous_address_plan"))
                     for dependency in event.depends_on):
                 raise WorkloadValidationError("PIM scan must depend on an address plan")
-        if "die_lse_merge" in event.name:
+        if event.name == "decode_pim_new_token_qk_pv":
+            # Ignore the current token's tiny vector compute cost, while
+            # retaining its Q/K/V arrival dependencies.
+            if event.device != "PIM" or event.time_s != 0.0 or event.rows != 1:
+                raise WorkloadValidationError("current-token QK/PV must be a zero-time PIM contribution")
+            parents = [by_id[dependency] for dependency in event.depends_on]
+            stores = [parent for parent in parents if parent.name == "decode_dram_store_master"]
+            if not any(store.request_id == event.request_id and
+                       store.transformer_layer == event.transformer_layer and
+                       store.query_positions == event.query_positions for store in stores):
+                raise WorkloadValidationError("current-token QK/PV must wait for its own KV store")
+            if not any(parent.name == "decode_q_gpu_to_pim" and
+                       parent.request_id == event.request_id and
+                       parent.transformer_layer == event.transformer_layer and
+                       parent.query_positions == event.query_positions for parent in parents):
+                raise WorkloadValidationError("current-token QK/PV must wait for its own Q")
+        if event.name == "decode_die_lse_merge":
+            contributions = [by_id[dependency] for dependency in event.depends_on]
+            if (not contributions or
+                    not all(("pim_kv_scan" in item.name and item.device.startswith("PIM:")) or
+                            (item.name == "decode_pim_new_token_qk_pv" and item.device == "PIM")
+                            for item in contributions) or
+                    sum(item.name == "decode_pim_new_token_qk_pv" and
+                        item.request_id == event.request_id and
+                        item.transformer_layer == event.transformer_layer and
+                        item.query_positions == event.query_positions
+                        for item in contributions) != 1):
+                raise WorkloadValidationError("decode merge needs PIM contributions including the new KV")
+        elif "die_lse_merge" in event.name:
             dependency_names = {named(dependency) for dependency in event.depends_on}
             if not any("pim_kv_scan" in name for name in dependency_names) or not any(
                     "partial_lse_to_pim" in name for name in dependency_names):
@@ -3024,10 +3102,8 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
                             if event.name in merge_names}
             scan_events = {event.event_id for event in relevant
                            if "pim_kv_scan" in event.name}
-            # A DIE merge already depends on its GPU tuple.  If no old KV was
-            # scanned, context waits for the local GPU tuple.  Physical
-            # no-reuse instead has one full contiguous PIM scan and therefore
-            # waits directly for that scan.
+            # Decode merges only PIM contributions, including the current KV.
+            # Prefill retains its independently selected attention path.
             required = (merge_events or
                         {event.event_id for event in relevant
                          if event.name == tuple_name} or scan_events)
@@ -3070,96 +3146,27 @@ def validate_cacheblend_events(events: Sequence[SplitEvent], workload: Workload,
 
 
 def _gpu_layer_event(system, events, template, *, layer, tier, request, name,
-                     rows, deps=(), positions=()):
+                     rows, deps=(), positions=(), batch_members=()):
     op = deepcopy(template)
     op.m = rows
     time_s, energy = system.devices["GPU"].get_time_and_energy(op)
     return _cacheblend_event(events, layer=layer, tier=tier, request=request,
                              name=name, device="GPU", rows=rows, time_s=time_s,
-                             energy=energy, deps=deps, positions=positions)
-
-
-def _gpu_layer_event_head_sliced(system, events, template, *, layer, tier, request,
-                                 name, rows, heads_local, deps=(), positions=(),
-                                 batch_members=(), first_share=None):
-    """One GPU operation as two events: the slice of ONE KV head first (so a
-    consumer that only needs that head's output -- the bank scan of the
-    resident context, which needs Q -- can start), then the remaining
-    ``heads_local - 1`` heads.  Time and energy are split pro rata; the sum
-    is the whole operation.  This is the AttAcc head pipeline (original
-    ``System.simulate``: ``minimum_ratio = 1 / (heads / xpu)`` leaves only
-    one head's share of QKV / projection exposed next to attention) expressed
-    in the event DAG (audit DECODE_SCAN_TBT_PIPELINE 2026-09-05).  Returns
-    ``(first_id, rest_id)``; with one local head both are the same event.
-    ``first_share`` overrides the exposed fraction (the projection exposes
-    its LAST head, so its "first" event is the (H-1)/H part)."""
-    op = deepcopy(template)
-    op.m = rows
-    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-    energy = tuple(energy)
-    heads_local = max(1, int(heads_local))
-    if heads_local == 1:
-        event = _cacheblend_event(events, layer=layer, tier=tier, request=request,
-                                  name=name, device="GPU", rows=rows, time_s=time_s,
-                                  energy=energy, deps=deps, positions=positions,
-                                  batch_members=batch_members)
-        return event, event
-    share = (1.0 / heads_local) if first_share is None else first_share
-    first = _cacheblend_event(events, layer=layer, tier=tier, request=request,
-                              name=name, device="GPU", rows=rows, time_s=time_s * share,
-                              energy=tuple(e * share for e in energy), deps=deps,
-                              positions=positions, batch_members=batch_members)
-    rest = _cacheblend_event(events, layer=layer, tier=tier, request=request,
-                             name=name + "_rest", device="GPU", rows=rows,
-                             time_s=time_s * (1.0 - share),
-                             energy=tuple(e * (1.0 - share) for e in energy),
-                             deps=(first,), positions=positions, batch_members=batch_members)
-    return first, rest
+                             energy=energy, deps=deps, positions=positions,
+                             batch_members=batch_members)
 
 
 def _post_attention_gpu(system, events, templates, *, layer, tier, request,
-                        rows, dependency, positions, name_prefix: str = "",
-                        overlap_dependency=None, heads_local: int = 1,
-                        batch_members=()):
-    """The GPU work after attention (projection, FFN, norms).  ``name_prefix``
-    is ``decode_`` for a generated token so the summary counts it as decode
-    (re-audit C6.1, 2026-09-05: batch-size-1 decode used to book it as
-    prefill).
+                        rows, dependency, positions, name_prefix: str = ""):
+    """GPU projection, FFN and norms after the complete attention output.
 
-    ``overlap_dependency`` (decode only): the projection is head-sliced like
-    QKV -- the projection of the heads whose context is already back runs
-    while the bank scan is still serving the others, so only ONE head's
-    share of it stays exposed after the context return (AttAcc
-    ``minimum_ratio``).  The ``(H-1)/H`` part depends on
-    ``overlap_dependency`` (the GPU-side attention chain, i.e. after this
-    layer's QKV), the exposed ``1/H`` part on the attention ``dependency``.
+    Attention/context events cover all heads, so projection must wait for
+    that complete context. Other ready requests can still overlap on the
+    independent GPU, PIM and link timelines.
     """
     last = dependency
     for template in templates:
         if template.name in ("qkv", "score", "softmax", "context", "comm_x2g"):
-            continue
-        if (template.name == "proj" and overlap_dependency is not None
-                and max(1, int(heads_local)) > 1):
-            op = deepcopy(template)
-            op.m = rows
-            time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-            energy = tuple(energy)
-            exposed_share = 1.0 / max(1, int(heads_local))
-            overlapped = _cacheblend_event(
-                events, layer=layer, tier=tier, request=request,
-                name=name_prefix + "gpu_proj_overlapped", device="GPU", rows=rows,
-                time_s=time_s * (1.0 - exposed_share),
-                energy=tuple(e * (1.0 - exposed_share) for e in energy),
-                deps=(overlap_dependency,), positions=positions,
-                batch_members=batch_members)
-            # the last head's projection needs the merged attention output
-            last = _cacheblend_event(
-                events, layer=layer, tier=tier, request=request,
-                name=name_prefix + "gpu_proj", device="GPU", rows=rows,
-                time_s=time_s * exposed_share,
-                energy=tuple(e * exposed_share for e in energy),
-                deps=tuple(dict.fromkeys((overlapped, dependency))),
-                positions=positions, batch_members=batch_members)
             continue
         last = _gpu_layer_event(system, events, template, layer=layer, tier=tier,
                                 request=request, name=name_prefix + "gpu_" + template.name,
@@ -3598,6 +3605,29 @@ def _parent_output_fingerprints(workload: Workload) -> Dict[str, str]:
     return fingerprints
 
 
+def _append_decode_new_kv_contribution(events, *, layer, tier, request, position,
+                                       location, q_dependency, kv_dependency):
+    """Land this step's GPU-produced KV; its own QK/PV costs zero time.
+
+    chenyi9 decision (2026-09-06): ignore only this one token's vector
+    contribution, without issuing a separate DRAM scan.  It still waits
+    for Q and the small KV transfer before joining the resident PIM results.
+    This KV is scanned normally as history starting with the next step.
+    """
+    store = _cacheblend_event(
+        events, layer=layer, tier=tier, request=request,
+        name="decode_dram_store_master", device="STORE", rows=1,
+        time_s=0.0, energy=(), deps=(kv_dependency,), positions=(position,),
+        addresses=(location.key_address, location.value_address))
+    contribution = _cacheblend_event(
+        events, layer=layer, tier=tier, request=request,
+        name="decode_pim_new_token_qk_pv", device="PIM", rows=1,
+        time_s=0.0, energy=(),
+        deps=(q_dependency, store), positions=(position,),
+        addresses=(location.key_address, location.value_address))
+    return store, contribution
+
+
 def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendTLB,
                               templates: Mapping[str, Layer], post: Sequence[Layer],
                               *, request, tier: int,
@@ -3613,9 +3643,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
     token writes K/V to the same ``(parent, fingerprint, output row, layer)``
     location subsequently resolved by a child's ``parent_out`` TLB entry.
     """
-    qkv, score, softmax, context, x2g = (templates[name] for name in
-                                         ("qkv", "score", "softmax", "context",
-                                          "comm_x2g"))
+    qkv, score, x2g = (templates[name] for name in ("qkv", "score", "comm_x2g"))
     dbyte = qkv.dbyte
     local_hidden = system.model.hdim // system.model.tp
     heads = max(1, system.model.num_heads // system.model.tp)
@@ -3634,15 +3662,11 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             # Positions continue directly after the request prefill context.
             tlb.bind(request.request_id, layer_index,
                      request.total_length + output_row, output_location, 0, False)
-            # AttAcc head pipeline (audit DECODE_SCAN_TBT_PIPELINE 2026-09-05):
-            # the bank scan of the resident context needs one head's Q, so it
-            # waits for the first head slice only; the other heads' QKV
-            # overlaps the scan.  K/V of the new token and the GPU-side local
-            # attention need every head.
-            q, q_rest = _gpu_layer_event_head_sliced(
+            # The Q transfer and scan cover all heads; wait for full QKV.
+            q = _gpu_layer_event(
                 system, events, qkv, layer=layer_index, tier=tier,
                 request=request.request_id, name="decode_qkv", rows=1,
-                heads_local=_gqa_kv_heads_local(system, heads), deps=layer_deps,
+                deps=layer_deps,
                 positions=(request.total_length + output_row,))
             q_bytes = local_hidden * dbyte
             q_transfer = _link_layer(x2g, "decode_q_gpu_to_pim", q_bytes)
@@ -3653,45 +3677,17 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                 energy=energy, deps=(q,), link_bytes=q_bytes,
                 positions=(request.total_length + output_row,))
             # K/V is a QKV output, not an attention output.  Send it after
-            # the critical Q transfer and allow it to overlap the local/PIM
-            # attention path below.  The PIM write remains ordered after the
-            # scan in event construction, but only depends on this transfer.
+            # the critical Q transfer and allow it to overlap the resident
+            # PIM scan. The current-token contribution waits for this store.
             kv_bytes = 2 * _kv_hidden(system, local_hidden) * dbyte
             kv_transfer = _link_layer(x2g, "decode_kv_gpu_to_pim", kv_bytes)
             time_s, energy = system.devices["GPU"].get_time_and_energy(kv_transfer)
             kv_link = _cacheblend_event(
                 events, layer=layer_index, tier=tier, request=request.request_id,
                 name="decode_kv_gpu_to_pim", device="LINK", rows=1, time_s=time_s,
-                energy=energy, deps=tuple(dict.fromkeys((q, q_rest))), link_bytes=kv_bytes,
+                energy=energy, deps=(q,), link_bytes=kv_bytes,
                 positions=(request.total_length + output_row,),
                 addresses=(output_location.key_address, output_location.value_address))
-
-            local_last = q_rest
-            for template, name in ((score, "decode_gpu_local_score"),
-                                   (softmax, "decode_gpu_local_softmax"),
-                                   (context, "decode_gpu_local_context")):
-                op = deepcopy(template)
-                # one key: score/softmax are (1 x 1), context is (1 x dhead)
-                # over that one key (re-audit R13: it was (1,1,1))
-                op.m, op.numOp = 1, heads
-                if name.endswith("context"):
-                    op.n, op.k = system.model.dhead, 1
-                else:
-                    op.n = 1
-                time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-                local_last = _cacheblend_event(
-                    events, layer=layer_index, tier=tier, request=request.request_id,
-                    name=name, device="GPU", rows=1, time_s=time_s, energy=energy,
-                    deps=(local_last,), positions=(request.total_length + output_row,))
-            tuple_bytes = heads * (system.model.dhead + 2) * dbyte
-            tuple_transfer = _link_layer(x2g, "decode_gpu_partial_lse_to_pim",
-                                          tuple_bytes)
-            time_s, energy = system.devices["GPU"].get_time_and_energy(tuple_transfer)
-            tuple_link = _cacheblend_event(
-                events, layer=layer_index, tier=tier, request=request.request_id,
-                name="decode_gpu_partial_lse_to_pim", device="LINK", rows=1,
-                time_s=time_s, energy=energy, deps=(local_last,), link_bytes=tuple_bytes,
-                positions=(request.total_length + output_row,))
 
             old = [location for _, _, _, location in prefill_bindings[layer_index]]
             old.extend(previous_output[layer_index])
@@ -3699,7 +3695,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             # ``reads`` is what the master/diff pools physically stream, with
             # shadowed master rows masked rather than skipped.
             reads, masked_keys, plan_reads = _pool_reads(tlb, old)
-            context_ready = local_last
+            scan = ()
             if old:
                 rotate_ready = _append_q_rotate_distribution(
                     system, events, x2g, layer=layer_index, tier=tier,
@@ -3740,34 +3736,28 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
                         getattr(system.devices["Acc"], "num_hbm", 1),
                                 getattr(system.model, "tp", 1)),
                     tlb=tlb)
-                # Every active channel yields one local softmax tuple; the DIE
-                # merges those with the GPU tuple.
-                die_merge = _cacheblend_event(
-                    events, layer=layer_index, tier=tier, request=request.request_id,
-                    name="decode_die_lse_merge", device="DIE", rows=1,
-                    time_s=0.0, energy=(),
-                    deps=tuple(scan) + (tuple_link,),
-                    positions=(request.total_length + output_row,))
-                ctx_transfer = _link_layer(x2g, "decode_ctx_pim_to_gpu", q_bytes)
-                time_s, energy = system.devices["GPU"].get_time_and_energy(ctx_transfer)
-                context_ready = _cacheblend_event(
-                    events, layer=layer_index, tier=tier, request=request.request_id,
-                    name="decode_ctx_pim_to_gpu", device="LINK", rows=1,
-                    time_s=time_s, energy=energy, deps=(die_merge,), link_bytes=q_bytes,
-                    positions=(request.total_length + output_row,))
+            store, new_contribution = _append_decode_new_kv_contribution(
+                events, layer=layer_index, tier=tier,
+                request=request.request_id, position=request.total_length + output_row,
+                location=output_location, q_dependency=q_link, kv_dependency=kv_link)
+            # All contributions, including the current token, come from PIM.
+            die_merge = _cacheblend_event(
+                events, layer=layer_index, tier=tier, request=request.request_id,
+                name="decode_die_lse_merge", device="DIE", rows=1,
+                time_s=0.0, energy=(), deps=tuple(scan) + (new_contribution,),
+                positions=(request.total_length + output_row,))
+            ctx_transfer = _link_layer(x2g, "decode_ctx_pim_to_gpu", q_bytes)
+            time_s, energy = system.devices["GPU"].get_time_and_energy(ctx_transfer)
+            context_ready = _cacheblend_event(
+                events, layer=layer_index, tier=tier, request=request.request_id,
+                name="decode_ctx_pim_to_gpu", device="LINK", rows=1,
+                time_s=time_s, energy=energy, deps=(die_merge,), link_bytes=q_bytes,
+                positions=(request.total_length + output_row,))
 
             post_last = _post_attention_gpu(
                 system, events, post, layer=layer_index, tier=tier,
                 request=request.request_id, rows=1, dependency=context_ready,
-                positions=(request.total_length + output_row,), name_prefix="decode_",
-                overlap_dependency=local_last,
-                heads_local=_gqa_kv_heads_local(system, heads))
-            store = _cacheblend_event(
-                events, layer=layer_index, tier=tier, request=request.request_id,
-                name="decode_dram_store_master", device="STORE", rows=1,
-                time_s=0.0, energy=(),
-                deps=(kv_link,), positions=(request.total_length + output_row,),
-                addresses=(output_location.key_address, output_location.value_address))
+                positions=(request.total_length + output_row,), name_prefix="decode_")
             previous_output[layer_index].append(output_location)
             layer_deps = (post_last, store)
         token_deps = layer_deps
@@ -3795,15 +3785,12 @@ def _append_cacheblend_decode_batched(
     """
     if batch_size < 2:
         raise WorkloadValidationError("batched CacheBlend decode requires batch_size >= 2")
-    qkv, score, softmax, context, x2g = (templates[name] for name in
-                                         ("qkv", "score", "softmax", "context",
-                                          "comm_x2g"))
+    qkv, score, x2g = (templates[name] for name in ("qkv", "score", "comm_x2g"))
     dbyte = qkv.dbyte
     local_hidden = system.model.hdim // system.model.tp
     heads = max(1, system.model.num_heads // system.model.tp)
     q_bytes = local_hidden * dbyte
     kv_bytes = 2 * _kv_hidden(system, local_hidden) * dbyte      # KV heads (C2)
-    tuple_bytes = heads * (system.model.dhead + 2) * dbyte
     requests = [item[0] for item in inputs]
     bindings = {item[0].request_id: item[1] for item in inputs}
     fingerprints = {item[0].request_id: item[2] for item in inputs}
@@ -3889,7 +3876,6 @@ def _append_cacheblend_decode_batched(
             # the preceding hidden-state readiness.  It emits every Q/KV link
             # before any PIM attention is admitted.
             qkv_aliases: Dict[str, str] = {}
-            qkv_rest_by_request: Dict[str, str] = {}
             q_links: Dict[str, str] = {}
             kv_links: Dict[str, str] = {}
             output_locations: Dict[str, KVLocation] = {}
@@ -3900,15 +3886,10 @@ def _append_cacheblend_decode_batched(
                 gpu_label = "gpu-" + batch_request_label(
                     output_row, layer_index, group_index // batch_size)
                 positions = tuple(request.total_length + output_row for request in group)
-                # AttAcc head pipeline (audit DECODE_SCAN_TBT_PIPELINE
-                # 2026-09-05): the Q links (and so the bank scans) wait for
-                # the first head slice of the batch QKV; the remaining heads
-                # overlap the scans and gate only the K/V links and the
-                # GPU-side local attention.
-                batch_qkv, batch_qkv_rest = _gpu_layer_event_head_sliced(
+                # Full-width Q/KV links require the complete batch QKV.
+                batch_qkv = _gpu_layer_event(
                     system, events, qkv, layer=layer_index, tier=tier, request=gpu_label,
                     name="decode_batch_qkv", rows=len(group),
-                    heads_local=_gqa_kv_heads_local(system, heads),
                     deps=tuple(dep for request in group
                                for dep in layer_deps[request.request_id]),
                     positions=positions, batch_members=members)
@@ -3916,7 +3897,6 @@ def _append_cacheblend_decode_batched(
                     request_id = request.request_id
                     position = request.total_length + output_row
                     qkv_batch_members[request_id] = members
-                    qkv_rest_by_request[request_id] = batch_qkv_rest
                     qkv_aliases[request_id] = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=request_id,
                         name="decode_qkv", device="GPU", rows=1, time_s=0.0,
@@ -3939,7 +3919,7 @@ def _append_cacheblend_decode_batched(
                         events, layer=layer_index, tier=tier, request=request_id,
                         name="decode_kv_gpu_to_pim", device="LINK", rows=1,
                         time_s=time_s, energy=energy,
-                        deps=tuple(dict.fromkeys((qkv_aliases[request_id], batch_qkv_rest))),
+                        deps=(qkv_aliases[request_id],),
                         link_bytes=kv_bytes, positions=(position,),
                         addresses=(location.key_address, location.value_address))
 
@@ -4016,37 +3996,6 @@ def _append_cacheblend_decode_batched(
                                           list(qkv_batch_members[request.request_id])
                                           for request in group},
                 })
-
-                tuple_links: Dict[str, str] = {}
-                local_last = None
-                for template, name in ((score, "decode_batch_gpu_local_score"),
-                                       (softmax, "decode_batch_gpu_local_softmax"),
-                                       (context, "decode_batch_gpu_local_context")):
-                    op = deepcopy(template)
-                    op.m, op.numOp = len(group), heads
-                    if name.endswith("context"):
-                        op.n, op.k = system.model.dhead, 1       # (m x dhead) over one key
-                    else:
-                        op.n = 1
-                    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-                    local_last = _cacheblend_event(
-                        events, layer=layer_index, tier=tier, request=label,
-                        name=name, device="GPU", rows=len(group), time_s=time_s,
-                        energy=energy,
-                        deps=(tuple(dict.fromkeys(qkv_rest_by_request[request.request_id]
-                                                  for request in group))
-                              if local_last is None else (local_last,)), positions=positions,
-                        batch_members=members)
-                for request in group:
-                    request_id = request.request_id
-                    position = request.total_length + output_row
-                    transfer = _link_layer(x2g, "decode_gpu_partial_lse_to_pim", tuple_bytes)
-                    time_s, energy = system.devices["GPU"].get_time_and_energy(transfer)
-                    tuple_links[request_id] = _cacheblend_event(
-                        events, layer=layer_index, tier=tier, request=request_id,
-                        name="decode_gpu_partial_lse_to_pim", device="LINK", rows=1,
-                        time_s=time_s, energy=energy, deps=(local_last,),
-                        link_bytes=tuple_bytes, positions=(position,))
 
                 # A shared master stream is common to the group when every
                 # member reads the same physical master rows; each member's
@@ -4160,59 +4109,38 @@ def _append_cacheblend_decode_batched(
                             tlb=tlb))
 
                 context_links: Dict[str, str] = {}
+                output_stores: Dict[str, str] = {}
                 for request in group:
                     request_id = request.request_id
                     position = request.total_length + output_row
+                    store, new_contribution = _append_decode_new_kv_contribution(
+                        events, layer=layer_index, tier=tier,
+                        request=request_id, position=position,
+                        location=output_locations[request_id],
+                        q_dependency=q_links[request_id], kv_dependency=kv_links[request_id])
+                    output_stores[request_id] = store
+                    scan_deps[request_id].append(new_contribution)
                     contribution = scan_deps[request_id]
-                    if contribution:
-                        # One local softmax tuple per physical run plus the
-                        # GPU tuple.
-                        merge = _cacheblend_event(
-                            events, layer=layer_index, tier=tier, request=request_id,
-                            name="decode_die_lse_merge", device="DIE", rows=1,
-                            time_s=0.0, energy=(),
-                            deps=tuple(contribution + [tuple_links[request_id]]),
-                            positions=(position,))
-                        context_deps = (merge,)
-                    else:
-                        context_deps = (tuple_links[request_id],)
+                    merge = _cacheblend_event(
+                        events, layer=layer_index, tier=tier, request=request_id,
+                        name="decode_die_lse_merge", device="DIE", rows=1,
+                        time_s=0.0, energy=(), deps=tuple(contribution),
+                        positions=(position,))
                     transfer = _link_layer(x2g, "decode_ctx_pim_to_gpu", q_bytes)
                     time_s, energy = system.devices["GPU"].get_time_and_energy(transfer)
                     context_links[request_id] = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=request_id,
                         name="decode_ctx_pim_to_gpu", device="LINK", rows=1,
-                        time_s=time_s, energy=energy, deps=context_deps,
+                        time_s=time_s, energy=energy, deps=(merge,),
                         link_bytes=q_bytes, positions=(position,))
 
                 post_last = None
-                kv_heads_local = _gqa_kv_heads_local(system, heads)
                 for template in post:
                     if template.name in ("qkv", "score", "softmax", "context", "comm_x2g"):
                         continue
                     op = deepcopy(template)
                     op.m = len(group)
                     time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-                    if template.name == "proj" and kv_heads_local > 1:
-                        # AttAcc head pipeline: the projection of the heads
-                        # whose context is already back overlaps the scans
-                        # of the others; one head's share stays exposed
-                        # after the last context return.
-                        energy = tuple(energy)
-                        exposed = 1.0 / kv_heads_local
-                        overlapped = _cacheblend_event(
-                            events, layer=layer_index, tier=tier, request=label,
-                            name="decode_batch_gpu_proj_overlapped", device="GPU",
-                            rows=len(group), time_s=time_s * (1.0 - exposed),
-                            energy=tuple(e * (1.0 - exposed) for e in energy),
-                            deps=(local_last,), positions=positions, batch_members=members)
-                        post_last = _cacheblend_event(
-                            events, layer=layer_index, tier=tier, request=label,
-                            name="decode_batch_gpu_proj", device="GPU", rows=len(group),
-                            time_s=time_s * exposed,
-                            energy=tuple(e * exposed for e in energy),
-                            deps=tuple(context_links.values()) + (overlapped,),
-                            positions=positions, batch_members=members)
-                        continue
                     post_last = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=label,
                         name="decode_batch_gpu_" + template.name, device="GPU", rows=len(group),
@@ -4225,15 +4153,9 @@ def _append_cacheblend_decode_batched(
                     request_id = request.request_id
                     position = request.total_length + output_row
                     location = output_locations[request_id]
-                    store = _cacheblend_event(
-                        events, layer=layer_index, tier=tier, request=request_id,
-                        name="decode_dram_store_master", device="STORE", rows=1,
-                        time_s=0.0, energy=(),
-                        deps=(kv_links[request_id],), positions=(position,),
-                        addresses=(location.key_address, location.value_address))
                     previous_output[request_id][layer_index].append(location)
                     _decode_state_append(request_id, layer_index, location)
-                    next_layer_deps[request_id] = (post_last, store)
+                    next_layer_deps[request_id] = (post_last, output_stores[request_id])
             layer_deps = next_layer_deps
         token_deps.update(layer_deps)
     return {request.request_id: token_deps[request.request_id] for request in requests}
@@ -5642,6 +5564,9 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
         "pim_prefill_mode": pim_prefill_mode,
         "kv_mapping": "private" if physical_no_reuse else kv_mapping,
         "decode_attn": "pim",
+        "decode_new_kv_attn": "pim",
+        "decode_new_kv_time_model": "zero_current_token_qk_pv",
+        "decode_pipeline_granularity": "whole_operation",
         "pim_prefill_sides": dict(sorted(dynamic_prefill_sides.items())),
         # Fingerprint of the correction plan the run executed: every rung of
         # a ladder must report the same value (ruling chenyi9 2026-09-05).

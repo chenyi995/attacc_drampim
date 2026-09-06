@@ -1023,15 +1023,16 @@ class WorkloadTests(unittest.TestCase):
         _, _, _, baseline = decode_scans(0.0)
         base_master, _ = split_pools(baseline)
         self.assertEqual(len(master), len(base_master))
-        # Every event's rows and masks are consistent and the DIE merge is
-        # priced per physical run (one local softmax tuple each) plus the GPU
-        # tuple, not per K/V row.
+        # The decode merge joins resident and current-token PIM results.
         merge = next(event for event in report["events"]
                      if event["request"] == "r1" and event["transformer_layer"] == 1
                      and event["name"] == "decode_die_lse_merge")
-        tuple_bytes = 4 * (4 + 2) * 2
-        self.assertAlmostEqual(merge["time_s"],
-                               (len(scans) + 1) * tuple_bytes / 10**12)
+        events_by_id = {event["id"]: event for event in report["events"]}
+        contributions = [events_by_id[dep] for dep in merge["depends_on"]]
+        self.assertTrue(all(event["device"].startswith("PIM") for event in contributions))
+        self.assertTrue(any(event["name"] == "decode_pim_new_token_qk_pv"
+                            for event in contributions))
+        self.assertEqual(merge["time_s"], 0.0)
         # A producer's master rows are exactly the rows a consumer resolves,
         # so the shadowed master row of a diff entry is the owner's row.
         entries = report["tlb"]["entries"]
@@ -1674,42 +1675,184 @@ class AgenticHistoryTests(unittest.TestCase):
                          len({e["transformer_layer"] for e in prefill_rotate}))
         self.assertTrue(all(len(e["query_positions"]) > 1 for e in prefill_rotate))
 
-    def test_decode_qkv_and_projection_are_head_pipelined(self):
-        """AttAcc head pipeline in the decode DAG (audit DECODE_SCAN_TBT_PIPELINE,
-        2026-09-05): the bank scan's Q link waits for one head's slice of the
-        batch QKV, the K/V link and the GPU local attention wait for all of
-        it, and only one head's share of the projection stays after the
-        context return.  Times and energies of the slices add up to the
-        whole operation."""
-        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
-        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=4)
-        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
-                                   cacheblend_batch_size=2)
-        events = {e["id"]: e for e in report["events"]}
-        by_name = {}
-        for e in report["events"]:
-            by_name.setdefault(e["name"], []).append(e)
-        self.assertTrue(by_name.get("decode_batch_qkv") and by_name.get("decode_batch_qkv_rest"))
-        heads = max(1, self._toy_system().model.num_heads // max(1, getattr(self._toy_system().model, "gqa_size", 1)))
-        first, rest = by_name["decode_batch_qkv"][0], by_name["decode_batch_qkv_rest"][0]
-        self.assertEqual(rest["depends_on"], [first["id"]])
-        self.assertAlmostEqual(first["time_s"] * (heads - 1), rest["time_s"], places=15)
-        self.assertAlmostEqual(first["energy_nj"] * (heads - 1), rest["energy_nj"], places=9)
-        # Q link -> first slice (through the per-request alias); K/V link -> the rest too
-        alias = next(e for e in by_name["decode_qkv"] if e["depends_on"] == [first["id"]])
-        q_link = next(e for e in by_name["decode_q_gpu_to_pim"] if alias["id"] in e["depends_on"])
-        self.assertNotIn(rest["id"], q_link["depends_on"])
-        kv_link = next(e for e in by_name["decode_kv_gpu_to_pim"] if alias["id"] in e["depends_on"])
-        self.assertIn(rest["id"], kv_link["depends_on"])
-        local = next(e for e in by_name["decode_batch_gpu_local_score"]
-                     if rest["id"] in e["depends_on"])
-        self.assertTrue(local)
-        # projection: overlapped (H-1)/H part after the GPU local chain, exposed 1/H after the context return
-        overlapped = by_name["decode_batch_gpu_proj_overlapped"][0]
-        exposed = next(e for e in by_name["decode_batch_gpu_proj"] if overlapped["id"] in e["depends_on"])
-        self.assertAlmostEqual(exposed["time_s"] * (heads - 1), overlapped["time_s"], places=15)
-        self.assertTrue(any(events[d]["name"] == "decode_ctx_pim_to_gpu" for d in exposed["depends_on"]))
-        self.assertTrue(all(events[d]["device"] == "GPU" for d in overlapped["depends_on"]))
+    def test_decode_scan_projection_chain_waits_for_complete_inputs(self):
+        """All-head scans and projections consume complete Q and context."""
+        workload = Workload("supervisor", (
+            Request("a", 0, None, 2, (Segment("doc", "shared", 8),), 8),
+            Request("b", 0, None, 2, (Segment("doc", "shared", 8),
+                                      Segment("user", "private", 2)), 10)), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        for batch_size in (1, 2):
+            for gqa in (1, 4):
+                with self.subTest(batch_size=batch_size, gqa=gqa):
+                    system = self._toy_system()
+                    system.model.gqa_size = gqa
+                    report = run_reuse_prefill(system, workload, plan, pipe=True,
+                                               cacheblend_batch_size=batch_size)
+                    self.assertEqual(report["decode_pipeline_granularity"], "whole_operation")
+                    decode = [e for e in report["events"] if e["name"].startswith("decode_")]
+                    self.assertFalse(any(e["name"].endswith(("_qkv_rest", "_proj_overlapped"))
+                                         for e in decode))
+                    for request in workload.requests:
+                        for position in range(request.total_length, request.total_length + request.lout):
+                            previous_layer_end = None
+                            for layer in range(system.model.ndec):
+                                scoped = []
+                                for e in decode:
+                                    members = e["batch_members"] or [e["request"]]
+                                    if request.request_id not in members or e["transformer_layer"] != layer:
+                                        continue
+                                    positions = e["query_positions"]
+                                    pos = (positions[members.index(request.request_id)]
+                                           if len(positions) == len(members) else positions[0])
+                                    if pos == position:
+                                        scoped.append(e)
+                                qkv = next(e for e in scoped if e["name"] in
+                                           ("decode_qkv", "decode_batch_qkv") and e["time_s"] > 0)
+                                q_link = next(e for e in scoped if e["name"] == "decode_q_gpu_to_pim")
+                                kv_link = next(e for e in scoped if e["name"] == "decode_kv_gpu_to_pim")
+                                scans = [e for e in scoped if "pim_kv_scan" in e["name"]]
+                                context = next(e for e in scoped if e["name"] == "decode_ctx_pim_to_gpu")
+                                projection = next(e for e in scoped if e["name"] in
+                                                  ("decode_gpu_proj", "decode_batch_gpu_proj"))
+                                self.assertAlmostEqual(qkv["time_s"], .001)
+                                self.assertAlmostEqual(projection["time_s"], .001)
+                                self.assertGreaterEqual(q_link["start_s"], qkv["end_s"])
+                                self.assertGreaterEqual(kv_link["start_s"], qkv["end_s"])
+                                self.assertTrue(scans)
+                                self.assertGreaterEqual(min(e["start_s"] for e in scans), q_link["end_s"])
+                                self.assertGreaterEqual(context["start_s"], max(e["end_s"] for e in scans))
+                                self.assertGreaterEqual(projection["start_s"], context["end_s"])
+                                if previous_layer_end is not None:
+                                    self.assertGreaterEqual(qkv["start_s"], previous_layer_end)
+                                previous_layer_end = max(e["end_s"] for e in scoped if e["device"] == "GPU")
+
+    def test_decode_scan_savings_reach_tbt_even_when_gpu_work_is_longer(self):
+        """An isolated request exposes each layer's scan, without changing GPU costs."""
+        from src.type import LayerType
+        workload = Workload("rag", (Request("r", 0, None, 3,
+                                           (Segment("doc", "prefix", 8),), 8),), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        class GPU:
+            def get_time_and_energy(self, op):
+                return (1e-9 if op.type == LayerType.X2G else .001), [1, 0, 0, 0, 0, 0]
+        for batch_size in (1, 2):
+            for gqa in (1, 4):
+                with self.subTest(batch_size=batch_size, gqa=gqa):
+                    results = []
+                    for scan_time in (2e-5, 1e-5):
+                        system = self._toy_system()
+                        system.model.gqa_size = gqa
+                        system.devices = dict(system.devices, GPU=GPU())
+                        system.devices["Acc"].get_time_and_energy = lambda op, t=scan_time: (t, [2, 0, 0, 0, 0, 0])
+                        report = run_reuse_prefill(system, workload, plan, pipe=True,
+                                                   cacheblend_batch_size=batch_size)
+                        r = report["summary"]["requests"]["r"]
+                        tbt = (r["end_s"] - r["first_token_s"]) / (workload.requests[0].lout - 1)
+                        gpu_cost = sum(e["time_s"] for e in report["events"]
+                                       if e["name"].startswith("decode_") and e["device"] == "GPU")
+                        results.append((tbt, gpu_cost))
+                    self.assertAlmostEqual(results[0][1], results[1][1], places=12)
+                    self.assertAlmostEqual(results[0][0] - results[1][0],
+                                           system.model.ndec * (2e-5 - 1e-5), places=12)
+
+    def test_decode_validator_rejects_missing_data_dependencies(self):
+        from dataclasses import replace
+        from unittest.mock import patch
+        import src.workload_runner as runner
+        workload = Workload("rag", (Request("r", 0, None, 2,
+                                           (Segment("doc", "prefix", 8),), 8),), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        for batch_size in (1, 2):
+            system = self._toy_system()
+            validate = runner.validate_cacheblend_events
+            captured = []
+            def record(events, *args, **kwargs):
+                captured.append((list(events), args, kwargs))
+                return validate(events, *args, **kwargs)
+            with patch.object(runner, "validate_cacheblend_events", side_effect=record):
+                run_reuse_prefill(system, workload, plan, pipe=True, cacheblend_batch_size=batch_size)
+            events, args, kwargs = captured[-1]
+            for name, error in (
+                    ("decode_q_gpu_to_pim", "complete QKV"),
+                    ("decode_kv_gpu_to_pim", "complete QKV"),
+                    ("decode_batch_tlb_lookup_and_bank_plan" if batch_size > 1
+                     else "decode_tlb_lookup_and_bank_plan", "every member's Q"),
+                    ("decode_batch_gpu_proj" if batch_size > 1
+                     else "decode_gpu_proj", "every member's context")):
+                with self.subTest(batch_size=batch_size, event=name):
+                    index = next(i for i, e in enumerate(events) if e.name == name)
+                    broken = list(events)
+                    broken[index] = replace(events[index], depends_on=())
+                    with self.assertRaisesRegex(WorkloadValidationError, error):
+                        validate(broken, *args, **kwargs)
+
+    def test_decode_attends_current_kv_on_pim_only_after_its_store(self):
+        """The query must include its own GPU-produced KV exactly once on PIM,
+        for both singleton/batched decode and ordinary/GQA attention."""
+        from src.workload_runner import _link_layer
+        workload = Workload("supervisor", (
+            Request("a", 0, None, 2, (Segment("doc", "shared", 8),), 8),
+            Request("b", 0, None, 2, (Segment("doc", "shared", 8),
+                                      Segment("user", "private", 2)), 10)), {})
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=1)
+        for batch_size in (1, 2):
+            for gqa in (1, 4):
+                for pipe in (False, True):
+                    with self.subTest(batch_size=batch_size, gqa=gqa, pipe=pipe):
+                        system = self._toy_system()
+                        system.model.gqa_size = gqa
+                        report = run_reuse_prefill(system, workload, plan, pipe=pipe,
+                            cacheblend_batch_size=batch_size, pim_prefill_mode="dynamic")
+                        self.assertEqual(report["pim_prefill_mode"], "dynamic")
+                        self.assertEqual(report["decode_new_kv_attn"], "pim")
+                        self.assertEqual(report["decode_new_kv_time_model"], "zero_current_token_qk_pv")
+                        events = {e["id"]: e for e in report["events"]}
+                        decode = [e for e in events.values() if e["name"].startswith("decode_")]
+                        self.assertFalse(any("gpu_local_" in e["name"] or
+                                             "gpu_partial_lse" in e["name"] for e in decode))
+                        self.assertFalse(any("pim_kv_scan_new_token" in e["name"] for e in decode))
+                        history_scans = [e for e in decode if "pim_kv_scan" in e["name"]]
+                        self.assertTrue(history_scans)
+                        self.assertTrue(all(e["time_s"] > 0 for e in history_scans))
+                        new_contributions = [e for e in decode if e["name"] ==
+                                             "decode_pim_new_token_qk_pv"]
+                        self.assertTrue(new_contributions)
+                        scans_by_step = {}
+                        for scan in new_contributions:
+                            self.assertEqual(scan["time_s"], 0.0)
+                            self.assertEqual(scan["start_s"], scan["end_s"])
+                            store = next(events[d] for d in scan["depends_on"]
+                                         if events[d]["name"] == "decode_dram_store_master")
+                            query = next(events[d] for d in scan["depends_on"]
+                                         if events[d]["name"] == "decode_q_gpu_to_pim")
+                            link = events[store["depends_on"][0]]
+                            self.assertEqual(link["name"], "decode_kv_gpu_to_pim")
+                            self.assertEqual(link["link_bytes"], 2*(system.model.hdim//gqa)*2)
+                            for event in (query, store, link):
+                                self.assertEqual(event["request"], scan["request"])
+                                self.assertEqual(event["query_positions"], scan["query_positions"])
+                                self.assertEqual(event["transformer_layer"], scan["transformer_layer"])
+                            self.assertEqual(scan["dram_addresses"], store["dram_addresses"])
+                            self.assertGreaterEqual(scan["start_s"], link["end_s"])
+                            self.assertGreaterEqual(scan["start_s"], query["end_s"])
+                            key = (scan["request"], scan["transformer_layer"], tuple(scan["query_positions"]))
+                            scans_by_step.setdefault(key, []).append(scan)
+                        self.assertEqual(len(scans_by_step),
+                                         sum(q.lout for q in workload.requests)*system.model.ndec)
+                        for scans in scans_by_step.values():
+                            self.assertEqual(len(scans), 1)
+                            self.assertEqual(scans[0]["rows"], 1)
+                        merges = [e for e in decode if e["name"] == "decode_die_lse_merge"]
+                        self.assertEqual(len(merges), len(scans_by_step))
+                        for merge in merges:
+                            contributions = [events[d] for d in merge["depends_on"]]
+                            self.assertTrue(all(e["device"].startswith("PIM") for e in contributions))
+                            key = (merge["request"], merge["transformer_layer"], tuple(merge["query_positions"]))
+                            self.assertTrue({e["id"] for e in scans_by_step[key]}.issubset(merge["depends_on"]))
+                        template = next(op for op in system.model.sum_decoder if op.name == "comm_x2g")
+                        self.assertFalse(_link_layer(template, "decode_kv_gpu_to_pim",
+                                                     2*(system.model.hdim//gqa)*2).link_latency)
 
     def test_gqa_model_builds_every_rung_with_kv_head_wide_links(self):
         """C2 (2026-09-05): a GQA model (4 Q heads per KV head) must build on
