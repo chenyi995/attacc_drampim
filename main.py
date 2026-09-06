@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import gc as _gc
 import csv
+import hashlib
 import json
 import os
+import subprocess
 from dataclasses import replace
 from src.ablation import (DECODE_ATTN_MODES, KV_MAPPINGS,
                           PREFILL_ATTN_MODES, PRESETS)
@@ -102,6 +104,38 @@ def run(system: System,
                     power_constraint=power_constraint)
     if output_file is not None:
         write_csv(output_file, perfs)
+
+
+def run_provenance(args, workload_path):
+    """What produced a report (audit LAYOUT/METRICS 2026-09-05: results
+    carried no code revision, GPU model or HBM count, so they could not be
+    tied to a model version).  Written into every report as ``run_config``."""
+    root = os.path.dirname(os.path.abspath(__file__))
+
+    def git(*cmd):
+        try:
+            done = subprocess.run(["git", "-C", root] + list(cmd), capture_output=True,
+                                  text=True, timeout=10)
+            return done.stdout.strip() if done.returncode == 0 else ""
+        except (OSError, subprocess.SubprocessError):
+            return ""
+    digest = ""
+    if workload_path and os.path.exists(workload_path):
+        with open(workload_path, "rb") as handle:
+            digest = hashlib.sha256(handle.read()).hexdigest()
+    return {
+        "git_rev": git("rev-parse", "HEAD"),
+        "git_dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
+        "model": args.model, "gpu": args.gpu, "gpu_model": args.gpu_model,
+        "ngpu": args.ngpu, "num_hbm": args.num_hbm, "pim_link": args.pim_link,
+        "powerlimit": args.powerlimit, "word": args.word, "engine": args.engine,
+        "pipeopt": args.pipeopt, "reuse": args.reuse,
+        "epic_prefix_recompute_tokens": args.epic_prefix_recompute_tokens,
+        "cacheblend_batch_size": args.cacheblend_batch_size,
+        "workload": os.path.abspath(workload_path) if workload_path else None,
+        "workload_sha256": digest,
+        "ramulator_dir": os.environ.get("ATTACC_RAMULATOR_DIR", ""),
+    }
 
 
 def main():
@@ -603,6 +637,7 @@ def main():
             except WorkloadValidationError as exc:
                 parser.error(str(exc))
             report["workload"] = workload_summary(workload, reuse_plan)
+            report["run_config"] = run_provenance(args, args.workload)
             with open(args.workload_report, "w") as report_file:
                 json.dump(report, report_file, indent=2, sort_keys=True)
                 report_file.write("\n")
@@ -614,6 +649,9 @@ def main():
                              "pim_prefill_mode")}
                 headline["ablation"] = report["ablation"]["preset"]
                 headline["engine"] = "dag"
+                headline["gpu_model"] = args.gpu_model
+                headline["num_hbm"] = args.num_hbm
+                headline["git_rev"] = report["run_config"]["git_rev"][:12]
             else:
                 headline = {key: report.get(key) for key in
                             ("policy", "makespan_s", "prefill_s", "decode_s",
