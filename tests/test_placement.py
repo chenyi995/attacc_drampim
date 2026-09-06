@@ -464,11 +464,28 @@ class ConflictAwareSlotTableTest(unittest.TestCase):
         from src.workload_runner import TableLocalDiffKVLayout
         tlb = TableLocalDiffKVLayout(256, "slice")
         tlb.chunk_order = ["a", "b", "c", "d", "e"]
-        tlb.chunk_coread = [frozenset({"a", "e"}), frozenset({"b", "c", "d", "e"})]
+        tlb.chunk_coread = [frozenset({"a", "e"}), frozenset({"b", "c", "e"})]
         first = {f: tlb.chunk_slot(f, 4, "table") for f in tlb.chunk_order}
         again = {f: tlb.chunk_slot(f, 4, "table") for f in reversed(tlb.chunk_order)}
         self.assertEqual(first, again)
         self.assertNotEqual(first["a"], first["e"])
+        self.assertNotIn(first["e"], (first["b"], first["c"]))
+
+    def test_table_equals_the_naive_rotation_without_conflicts(self):
+        """chenyi9 2026-09-05: a conflict-aware table that sees no conflict
+        must place exactly like the append store (it used to pile every
+        chunk on slot 0)."""
+        from src.workload_runner import _chunk_slot_table, _block_slot_table
+        order = ["c%d" % i for i in range(16)]
+        alone = [frozenset({c}) for c in order]
+        self.assertEqual(_chunk_slot_table(order, alone, 8, "table"),
+                         _chunk_slot_table(order, alone, 8, "append"))
+        blocks = [(c, 0) for c in order]
+        self.assertEqual(_block_slot_table(blocks, alone, 8, "table"),
+                         _block_slot_table(blocks, alone, 8, "append"))
+        # one reader of everything: the table rotates too (no better slot exists)
+        self.assertEqual(_chunk_slot_table(order, [frozenset(order)], 8, "table"),
+                         _chunk_slot_table(order, [frozenset(order)], 8, "append"))
 
     def test_a_chunk_the_record_never_saw_is_appended(self):
         from src.workload_runner import TableLocalDiffKVLayout
@@ -769,6 +786,43 @@ class PhysicalLedgerTest(unittest.TestCase):
         self.assertEqual(len({key // _GEN_ROW_BYTES for key, _v, _r in a4c}), 1)
         self.assertEqual(sum(r for _k, _v, r in a3b), 32)
         self.assertEqual(len({key // _GEN_ROW_BYTES for key, _v, _r in a3b}), 4)
+
+    def test_diff_rows_rotate_over_the_heads_channels(self):
+        """chenyi9 2026-09-06: A4c packs the repairs but its diff ROWS rotate
+        over the head's stripe like master chunks, so 3 rows' worth of
+        repairs land on 3 different channels instead of one."""
+        reservations = [("owner", "c%d" % r, range(256), "master") for r in range(4)]
+        for r in range(3):
+            reservations.append(("consumer", "c%d" % r, range(256), "diff"))   # a full row each
+        tlb = self._store(reservations)
+        repairs = [x for x in reservations if x[3] == "diff"]
+        reads = self._reads(tlb, repairs)
+        groups = self._groups(tlb, reads, "master-diff-local-append", heads=4)   # stripe 4
+        from src.workload_runner import _HBM_CHANNEL_BYTES, _DIFF_REGION_BYTES
+        # head 0 owns channels 0..3; every head repeats the pattern in its own stripe
+        diff_channels = {channel for channel, _n, placed in groups if channel < 4
+                         and any(key % _HBM_CHANNEL_BYTES >= _DIFF_REGION_BYTES for key, _v, _r in placed)}
+        self.assertEqual(len(diff_channels), 3)
+        self.assertEqual(sum(r for c, _n, p in groups if c < 4 for _k, _v, r in p), 3 * 256)
+
+    def test_table_groups_diff_rows_per_agent(self):
+        """A4e: two consumers' repairs never share a diff row; A4c (write
+        order) packs them into one."""
+        reservations = [("owner", "c0", range(256), "master")]
+        reservations += [("alice", "c0", range(8), "diff"), ("bob", "c0", range(8), "diff"),
+                         ("alice", "c0", range(8, 16), "diff"), ("bob", "c0", range(8, 16), "diff")]
+        tlb = self._store(reservations)
+        repairs = [x for x in reservations if x[3] == "diff"]
+        reads = self._reads(tlb, repairs)
+
+        from src.workload_runner import _HBM_CHANNEL_BYTES, _DIFF_REGION_BYTES
+
+        def diff_rows(policy):
+            groups = self._groups(tlb, reads, policy, heads=4)
+            return {(channel, key // _GEN_ROW_BYTES) for channel, _n, placed in groups if channel < 4
+                    for key, _v, _r in placed if key % _HBM_CHANNEL_BYTES >= _DIFF_REGION_BYTES}
+        self.assertEqual(len(diff_rows("master-diff-local-append")), 1)         # one packed row
+        self.assertEqual(len(diff_rows("master-diff-table-local-append")), 2)   # one row per agent
 
     def test_sub_range_read_geometry_matches_across_rungs(self):
         # R03's second counter-example: reading [128, 384) of a 512-token master

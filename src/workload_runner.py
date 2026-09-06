@@ -734,15 +734,17 @@ def _striped_append_channel_rows(master_rows: int, diff_rows: int, *,
     m_rows, d_rows = max(0, int(master_rows)), max(0, int(diff_rows))
 
     if policy in ("master-diff-local-append", "master-diff-table-local-append"):
-        # A4c / A4e: master as A3b; the head's corrections gathered on one of its
-        # own channels (see _striped_append_channel_extents).
+        # A4c / A4e: master as A3b; the head's corrections packed into diff
+        # rows that rotate over its own channels (chenyi9 2026-09-06).
         stripe = max(1, _HBM_CHANNELS // heads)
         units = _stream_unit_rows(m_rows)
+        diff_units = _stream_unit_rows(d_rows)
         for head in range(heads):
             base = (head * stripe) % _HBM_CHANNELS
             for unit, rows in enumerate(units):
                 loads[(base + (unit % stripe)) % _HBM_CHANNELS] += rows
-            loads[(base + stripe - 1) % _HBM_CHANNELS] += d_rows
+            for unit, rows in enumerate(diff_units):
+                loads[(base + (unit % stripe)) % _HBM_CHANNELS] += rows
         return loads
 
     if policy == "slice-append":
@@ -870,7 +872,7 @@ def _block_slot_table(order: Sequence[Tuple[str, int]], coread: Sequence[frozens
         for fingerprint in members:
             readers.setdefault(fingerprint, []).append(index)
     placed_by_fingerprint: Dict[str, List[int]] = {}
-    for key in order:
+    for index, key in enumerate(order):
         fingerprint, _block = key
         used = [0] * stripe
         seen_partners: set = set()
@@ -884,7 +886,10 @@ def _block_slot_table(order: Sequence[Tuple[str, int]], coread: Sequence[frozens
         # sibling blocks of the same fingerprint are read together too
         for other_slot in placed_by_fingerprint.get(fingerprint, ()):
             used[other_slot] += 1
-        chosen = min(range(stripe), key=lambda k: (used[k], k))
+        # Ties keep the naive rotation (fix chenyi9 2026-09-05): a block with
+        # no conflict lands where the append store would put it.
+        naive = index % stripe
+        chosen = min(range(stripe), key=lambda k: (used[k], (k - naive) % stripe))
         slot[key] = chosen
         placed_by_fingerprint.setdefault(fingerprint, []).append(chosen)
     return slot
@@ -913,8 +918,17 @@ class PhysicalLedger:
       * A3b repairs: the naive store has no diff region -- a burst is just
         the next object of the single append stream, so it takes the slot of
         the rotation over ALL objects written so far and its own row(s).
-      * A4c/A4e repairs: the head's last stripe channel, packed contiguously
-        in the diff region, so repairs of different rounds share rows.
+      * A4c repairs: packed contiguously in write order into the head's
+        diff rows; the diff ROWS rotate over the head's stripe channels
+        exactly as master chunks do (row j on slot j mod stripe), so the
+        few rows the repairs occupy are scanned in parallel (chenyi9
+        2026-09-06; until then every repair sat on the head's last channel).
+      * A4e repairs: the table groups them per agent (the root of the
+        consumer's parent chain) -- an agent's rounds pack into its own
+        diff rows, no other agent's repairs interleave -- and places each
+        new diff row on the head slot least loaded by the rows that agent
+        reads (masters it co-reads plus its own diff rows), ties keeping the
+        rotation.
 
     ``extent_groups(reads)`` turns a scan's read list into per-channel
     ``(key, value, rows)`` extents at the ledger's addresses -- gaps and all.
@@ -951,7 +965,42 @@ class PhysicalLedger:
                     block_order.append(key)
         slots = _block_slot_table(block_order, coread, stripe, mode)
         cursor: Dict[int, int] = {}          # channel slot -> next free byte (master rows)
-        diff_cursor = _DIFF_REGION_BYTES      # A4c/A4e diff region, shared by the heads' diff channels
+        # A4c/A4e diff region: one per stripe slot (the channel's bytes from
+        # _DIFF_REGION_BYTES up), rows handed out by rotation (A4c) or by the
+        # table's per-agent rule (A4e).
+        diff_cursor: Dict[int, int] = {}      # slot -> next free byte in its diff region
+        diff_rows_out = 0                     # diff rows handed out so far (rotation index)
+        open_row: Dict[Any, Tuple[int, int, int]] = {}   # group -> (slot, row start, bytes used)
+        chain_root = getattr(tlb, "chain_root", {}) or {}
+        group_of = ((lambda owner: chain_root.get(owner, owner)) if mode == "table"
+                    else (lambda owner: "all"))
+        # A4e: an agent's master load per slot (blocks its requests read), the
+        # table's tie-breaker for where its diff rows go
+        agent_load: Dict[Any, List[int]] = {}
+        if mode == "table":
+            roots = list(getattr(tlb, "chunk_coread_roots", ()) or ())
+            blocks_of: Dict[str, List[int]] = {}
+            for (fingerprint, block), slot in slots.items():
+                blocks_of.setdefault(fingerprint, []).append(slot)
+            for index, members in enumerate(coread):
+                root = roots[index] if index < len(roots) else None
+                if root is None:
+                    continue
+                load = agent_load.setdefault(root, [0] * stripe)
+                for fingerprint in members:
+                    for slot in blocks_of.get(fingerprint, ()):
+                        load[slot] += 1
+
+        def diff_slot_for(group):
+            """The stripe slot of the next diff row of ``group``."""
+            rotation = diff_rows_out % stripe
+            if mode != "table":
+                return rotation
+            load = agent_load.get(group)
+            if load is None:
+                load = agent_load[group] = [0] * stripe
+            return min(range(stripe), key=lambda k: (load[k], (k - rotation) % stripe))
+
         naive_index = 0                       # A3b: rotation over ALL objects
         previous_diff_owner = None            # burst detection
         burst_key = None
@@ -1005,17 +1054,38 @@ class PhysicalLedger:
                 previous_diff_owner = (layer, owner)
                 self.index.setdefault(key, {}).update({row: burst_key for row in rows})
             else:
-                # A4c / A4e: packed into the head's diff region, no alignment
-                object_key = (layer, owner, fingerprint, kind, 0)
-                self.objects[object_key] = (rows, {row: i for i, row in enumerate(rows)},
-                                            None, diff_cursor)
-                diff_cursor += len(rows) * _GEN_BYTES_PER_TOKEN
-                if diff_cursor > _ORIGINAL_KV_GAP_BYTES:
-                    # the K side of the diff region would run into the V side
-                    raise WorkloadValidationError(
-                        "diff rows exceed the diff region ({} B); the workload does "
-                        "not fit the ledger".format(_ORIGINAL_KV_GAP_BYTES - _DIFF_REGION_BYTES))
-                self.index.setdefault(key, {}).update({row: object_key for row in rows})
+                # A4c / A4e: packed into the group's open diff row, spilling
+                # into new rows that rotate over (A4c) or are placed by the
+                # table on (A4e) the head's stripe slots; one ledger object
+                # per row piece so a burst that crosses a row boundary lands
+                # on two channels.
+                group = group_of(owner)
+                remaining = list(rows)
+                piece = 0
+                while remaining:
+                    state = open_row.get(group)
+                    if state is None or state[2] >= _GEN_ROW_BYTES:
+                        slot = diff_slot_for(group)
+                        row_start = diff_cursor.get(slot, _DIFF_REGION_BYTES)
+                        diff_cursor[slot] = row_start + _GEN_ROW_BYTES
+                        diff_rows_out += 1
+                        if mode == "table":
+                            agent_load.setdefault(group, [0] * stripe)[slot] += 1
+                        if diff_cursor[slot] > _ORIGINAL_KV_GAP_BYTES:
+                            # the K side of the diff region would run into the V side
+                            raise WorkloadValidationError(
+                                "diff rows exceed the diff region ({} B); the workload does "
+                                "not fit the ledger".format(_ORIGINAL_KV_GAP_BYTES - _DIFF_REGION_BYTES))
+                        state = (slot, row_start, 0)
+                    slot, row_start, used = state
+                    fit = (_GEN_ROW_BYTES - used) // _GEN_BYTES_PER_TOKEN
+                    take, remaining = remaining[:fit], remaining[fit:]
+                    object_key = (layer, owner, fingerprint, kind, piece)
+                    self.objects[object_key] = (tuple(take), {row: i for i, row in enumerate(take)},
+                                                slot, row_start + used)
+                    self.index.setdefault(key, {}).update({row: object_key for row in take})
+                    open_row[group] = (slot, row_start, used + len(take) * _GEN_BYTES_PER_TOKEN)
+                    piece += 1
                 previous_diff_owner = None
         return self
 
@@ -1092,8 +1162,10 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
     * ``slice-append`` (A3b) has no diff pool, so each repair group is its own
       row-aligned extent on the head's channels -- k rows in a row that holds
       256, and one such row per repair.
-    * the master-diff policies gather every head's repairs onto the diff
-      channel, packed, so they share rows and cost a handful of ACTs in total.
+    * the master-diff policies pack the head's repairs into diff rows that
+      rotate over the head's own channels (A4e: grouped per agent by the
+      table), so they share rows, cost a handful of ACTs in total, and the
+      rows they do occupy are read in parallel.
     """
     if policy not in _APPEND_POLICIES:
         raise WorkloadValidationError(
@@ -1166,22 +1238,24 @@ def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,
                     add((base + slot) % _HBM_CHANNELS, rows)
         return stripe
 
-    if policy == "master-diff-table-local-append":
-        # A4e: master by the conflict-aware table, diff as A4c
-        stripe = _place_master_by_slot("table")
+    if policy in ("master-diff-table-local-append", "master-diff-local-append"):
+        # A4e: master by the conflict-aware table; A4c: master by the naive
+        # write-order rotation.  Either way the head's corrections are packed
+        # into diff rows that rotate over its own channels (chenyi9
+        # 2026-09-06): one extent per diff row.
+        stripe = _place_master_by_slot("table" if policy == "master-diff-table-local-append"
+                                       else "append")
         if repairs:
+            packed = sum(repairs)
+            row_rows = _GEN_ROW_BYTES // _GEN_BYTES_PER_TOKEN
             for head in range(heads):
                 base = (head * stripe) % _HBM_CHANNELS
-                add((base + stripe - 1) % _HBM_CHANNELS, sum(repairs))
-    elif policy == "master-diff-local-append":
-        # A4c: master by the naive write-order rotation (persistent, the same
-        # slot in every scan), the head's corrections gathered into dedicated
-        # rows of one of its own channels as a single contiguous extent.
-        stripe = _place_master_by_slot("append")
-        if repairs:
-            for head in range(heads):
-                base = (head * stripe) % _HBM_CHANNELS
-                add((base + stripe - 1) % _HBM_CHANNELS, sum(repairs))
+                unit = 0
+                left = packed
+                while left > 0:
+                    add((base + (unit % stripe)) % _HBM_CHANNELS, min(row_rows, left))
+                    left -= row_rows
+                    unit += 1
     elif policy == "slice-append":
         # A3b: ONE append stream, chunks and repairs alike, each object on
         # the persistent write-order slot of the head's stripe (F02 fix,
@@ -1860,13 +1934,17 @@ def _chunk_slot_table(order: Sequence[str], coread: Sequence[frozenset],
     for index, members in enumerate(coread):
         for fingerprint in members:
             readers.setdefault(fingerprint, []).append(index)
-    for fingerprint in order:
+    for index, fingerprint in enumerate(order):
         used = [0] * stripe
         for reader in readers.get(fingerprint, ()):
             for other in coread[reader]:
                 if other != fingerprint and other in slot:
                     used[slot[other]] += 1
-        slot[fingerprint] = min(range(stripe), key=lambda k: (used[k], k))
+        # Ties keep the naive rotation (fix chenyi9 2026-09-05): with no
+        # conflict the table must equal the append store, not pile every
+        # chunk on slot 0.
+        naive = index % stripe
+        slot[fingerprint] = min(range(stripe), key=lambda k: (used[k], (k - naive) % stripe))
     return slot
 
 
@@ -1886,8 +1964,8 @@ class LocalDiffKVLayout(CacheBlendTLB):
     def report(self) -> Dict[str, Any]:
         report = super().report()
         report["layout"] = ("A4c: master striped over the head's own channels "
-                            "(as A3b); the head's corrections gathered into "
-                            "dedicated rows of one of those same channels")
+                            "(as A3b); the head's corrections packed into diff "
+                            "rows that rotate over those same channels")
         return report
 
 
@@ -1898,9 +1976,9 @@ class TableLocalDiffKVLayout(LocalDiffKVLayout):
 
     def report(self) -> Dict[str, Any]:
         report = super().report()
-        report["layout"] = ("A4e: per-head diff row as A4c; master chunks on "
-                            "a persistent conflict-aware slot table (Fugue "
-                            "sec. 4), decided at write time")
+        report["layout"] = ("A4e: master chunks on a persistent conflict-aware "
+                            "slot table (Fugue sec. 4), decided at write time; "
+                            "diff rows grouped per agent and placed by the same table")
         return report
 
 
@@ -3431,6 +3509,19 @@ def _prepare_cacheblend_tlb(workload: Workload, plan: ReusePlan, ndec: int,
                              request.request_id,
                              "{}::output".format(request.request_id))])
             for request in workload.requests]
+        # The agent behind each request: the root of its parent chain.  The
+        # table policy (A4e) groups the diff rows per agent (chenyi9
+        # 2026-09-06) and places them by that agent's read load.
+        parents = {request.request_id: request.parent_id for request in workload.requests}
+
+        def _root(request_id):
+            while parents.get(request_id):
+                request_id = parents[request_id]
+            return request_id
+        tlb.chain_root = {request.request_id: _root(request.request_id)
+                          for request in workload.requests}
+        tlb.chunk_coread_roots = [tlb.chain_root[request.request_id]
+                                  for request in workload.requests]
     tlb.finalize()
 
 
