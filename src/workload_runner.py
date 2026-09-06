@@ -2906,13 +2906,17 @@ def _gpu_layer_event(system, events, template, *, layer, tier, request, name,
 
 
 def _post_attention_gpu(system, events, templates, *, layer, tier, request,
-                        rows, dependency, positions):
+                        rows, dependency, positions, name_prefix: str = ""):
+    """The GPU work after attention (projection, FFN, norms).  ``name_prefix``
+    is ``decode_`` for a generated token so the summary counts it as decode
+    (re-audit C6.1, 2026-09-05: batch-size-1 decode used to book it as
+    prefill)."""
     last = dependency
     for template in templates:
         if template.name in ("qkv", "score", "softmax", "context", "comm_x2g"):
             continue
         last = _gpu_layer_event(system, events, template, layer=layer, tier=tier,
-                                request=request, name="gpu_" + template.name,
+                                request=request, name=name_prefix + "gpu_" + template.name,
                                 rows=rows, deps=(last,), positions=positions)
     return last
 
@@ -3490,7 +3494,7 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             post_last = _post_attention_gpu(
                 system, events, post, layer=layer_index, tier=tier,
                 request=request.request_id, rows=1, dependency=context_ready,
-                positions=(request.total_length + output_row,))
+                positions=(request.total_length + output_row,), name_prefix="decode_")
             store = _cacheblend_event(
                 events, layer=layer_index, tier=tier, request=request.request_id,
                 name="decode_dram_store_master", device="STORE", rows=1,
