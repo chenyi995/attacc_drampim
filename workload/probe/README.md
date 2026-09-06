@@ -17,6 +17,5 @@
 跑法见 `experiments/run_queue.sh`、`experiments/run_after_queue.sh`（≤ 64 核），
 内存监视 `experiments/mem_guard.sh`，汇总 `experiments/summarize_ladder.py <outdir> <wl.json> [ref]`。
 `sweep/*_turns.json` 自 2026-09-05 起每轮重新列出该 agent 的全部早期上下文（无 `history_len`），后一轮继承前一轮写过的修正（C8）。
-`sweep/B1_turns.json` 与 `T*_turns.json` 是为分开 A4c/A4e/A5/A6 构造的矩阵（散取检索、每轮 2 chunk、话少/话多 agent 各半），见 `docs/experiments/README.md` §2；`output/analysis/b1_levers.py` 是它的结构探针（`LEVERS_HEADS_PER_HBM=2` 对应 4 HBM 八通道几何）。
-`sweep/C1_turns.json` 是 2026-09-05 的经典 workload：6 agent × 6 轮、每轮 1 个散取 chunk、话少/话多各半（答 32/128 token）、语料 owner 加 4 个独立新鲜提示，41 个请求；`gen_sweep.py` 的 `C1` 预设，`--preset B1` 可在命令行生成同族变体。
+`sweep/` 是 2026-09-05 的运行协议（`docs/README_run_protocol.md`）：baseline `C1_turns.json`（混合型 agent 会话，41 个请求）与 `C2_turns.json`（纯对话型，65 个请求）跑全部七个 combo，`C1_S*_turns.json` 各动 C1 的一个变量、只跑 A3b 与 A6。`gen_sweep.py --all <dir>` 生成整套，`--preset C1|C2|B1 --agents ...` 生成单个变体；旧的 B0/S/B1/T 集合用 `LEGACY_MATRIX=1` 复现。`output/analysis/b1_levers.py` 是结构探针（`LEVERS_HEADS_PER_HBM=2` 对应每头 8 通道）。
 结果目录在 /data2 的 scratch 里，不进仓库。
