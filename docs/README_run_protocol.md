@@ -106,6 +106,10 @@ setsid nohup bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B '.' LL
 每个点的目录里：`dag_<combo>.json`（报告，含 `run_config`：git 版本、gpu_model、ngpu、num_hbm、k、batch、workload sha256）、
 `dag_ladder.csv`（collector）、`summary.md`（`summarize_ladder.py`，参考档 A3b）、`<点>.sides.jsonl`（A6 每个请求的 t_xpu / t_bank / side）。
 
+整个 outroot 一次出表：`python3 experiments/extract_protocol.py <outroot> --ref A3b` 写 `protocol.csv`（每 (workload, combo) 一行）和
+`protocol.md`（baseline 全表与相对表、每条 sweep 轴的 A6 对 A3b 比值、A3b–A6 的修正计划 sha 是否一致）。要 full events 时见
+`experiments/README.md` §4。
+
 `summary.md` 的列：E2E（makespan）、TTFT（首 token 完成 − 请求 release，含排队）、TBT 均值 / 按 step 加权（论文用加权）/ 最大、
 scan_private / scan_shared（一次 decode scan 最慢 lane 的服务时长，共读与私有分开）、scan_step（一个请求一层一步内所有 scan 的
 首尾跨度）、能量与平均功率、prefill 行 PIM/GPU、代码版本。相对表是 参考档 / 本档，大于 1 为变好。

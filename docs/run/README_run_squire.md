@@ -1,5 +1,7 @@
 # 怎么跑：squire（本机直跑，无 Slurm）—— `chenyi-0905` 分支
 
+跑什么、怎么跑以 [运行协议](../README_run_protocol.md) 为准（每 GPU 5 个 HBM 栈、C1/C2 baseline、C1_S* sweep）；指标定义见 [实验指导](../experiments/README.md)。本页只讲这台机器的环境、预算和起停。
+
 squire（`squire.ece.uw.edu`）是 128 核、754 GB、带 `/data2`、**没有 Slurm** 的机器。
 本页只讲这台机器上的跑法；athena 集群（Slurm，`node1`–`node6`）见同目录的
 `README_run_athena.md`。两台机器的 scratch、编译器、并行度都不同，不要交叉套用。
@@ -64,31 +66,38 @@ tail -2 $KVPIM_SCRATCH/guard.log      # 每 30 s 一行：整机占用、本批 
 
 **规则：没有明确指令不跑（`agent.md` §1.7）。** 以下命令都要用户说"跑"才执行。
 
-单点七档（B0 一类）：
+一个 baseline（七个 combo 并行；6 个 PIM combo × 8 worker + 7 个构建进程 = 55 核）：
 
 ```bash
 export ATTACC_RAMULATOR_DIR=$KVPIM_SCRATCH ATTACC_RAMULATOR_LOG=$KVPIM_SCRATCH/ramulator.out
 export PYTHONPATH=$PWD KVPIM_CPPCORE=1
-RUNGS="A1 A2 A3b A4c A4e A5 A6" NUM_HBM=1 NGPU=1 RAMU_WORKERS=9 \
-KVPIM_PREFILL_SIDE_LOG=$KVPIM_SCRATCH/sides.jsonl \
-setsid nohup bash experiments/run_dag_ladder.sh workload/probe/sweep/B0_interleaved.json \
-    CACHEBLEND-TINY $KVPIM_SCRATCH/out_B0 > $KVPIM_SCRATCH/out_B0.log 2>&1 < /dev/null &
+setsid nohup bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B '^C1_turns' LLAMA3-8B \
+    > $KVPIM_SCRATCH/proto_LLAMA3-8B.out 2>&1 < /dev/null &
 ```
 
-核数 = 6 个 PIM 档 × 9 worker + 7 个构建进程 = 61。`run_dag_ladder.sh` 默认 `GPU_MODEL=flash`、`--pipeopt`、k=8、batch 8。
+`run_sweep.sh` 按 model 自动设 `NGPU`/`NUM_HBM`（协议 §1 的表），默认 flash、pipeopt、k=8、batch 8、`EVENTS=none`。
 `setsid nohup … < /dev/null &` 是必须的：会话的超时会连带杀掉子进程。
 
-矩阵（B0 七档两两并行 62 核；其余点只跑 A3b + A6，四点并行 64 核）：
+一条 sweep 轴（每点 A3b + A6，三点并行 54 核）或整套协议（按 manifest 顺序分批）：
 
 ```bash
-bash experiments/run_sweep.sh $KVPIM_SCRATCH/sweep '^B0_'
-bash experiments/run_sweep.sh $KVPIM_SCRATCH/sweep '^S5_.*interleaved'      # 以此类推，见 run guide §6
+bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B 'C1_S3_' LLAMA3-8B
+bash experiments/run_sweep.sh $KVPIM_SCRATCH/proto_LLAMA3-8B '.' LLAMA3-8B
+```
+
+单档手跑（调试）：
+
+```bash
+python3 main.py --system dgx-attacc --model LLAMA3-8B --workload workload/probe/sweep/C1_turns.json \
+  --reuse recompute --epic-prefix-recompute-tokens 8 --ablation A6 --engine dag --pipeopt --gpu-model flash \
+  --workload-report out.json --workload-report-events none --cacheblend-batch-size 8 --num-hbm 5 --ngpu 1 --ramulator-workers 8
 ```
 
 看进度：
 
 ```bash
-grep -h "done\|FAILED" $KVPIM_SCRATCH/out_B0.log
+tail $KVPIM_SCRATCH/proto_LLAMA3-8B/sweep.log
+grep -h "done\|FAILED" $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns.log
 ps -eo args --no-headers | grep 'python3 main.py' | grep -c scratch_0905     # 还在跑的档
 tail -1 $KVPIM_SCRATCH/guard.log
 ```
@@ -103,10 +112,11 @@ for p in $(ps -eo pid,args --no-headers | grep -E "run_dag_ladder.sh|run_sweep.s
 ## 4. 出数
 
 ```bash
-python3 experiments/summarize_ladder.py $KVPIM_SCRATCH/out_B0 workload/probe/sweep/B0_interleaved.json A3b
-#   E2E = makespan；TBT 两种口径（每请求均值、按 step 加权，论文用加权）；能量与平均功率；相对某档的比值
-cat $KVPIM_SCRATCH/out_B0/dag_ladder.csv          # collect_dag_ladder.py 自动生成
-cat $KVPIM_SCRATCH/sides.jsonl                    # A6 每个请求的 t_xpu / t_bank / side
+python3 experiments/extract_protocol.py $KVPIM_SCRATCH/proto_LLAMA3-8B --ref A3b     # protocol.csv + protocol.md：baseline 全表、sweep 的 A6/A3b
+python3 experiments/summarize_ladder.py $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns workload/probe/sweep/C1_turns.json A3b
+#   E2E = makespan；TTFT = 首 token − release；TBT 两种口径（论文用加权）；scan 三列；能量与平均功率；相对某档的比值
+cat $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns/dag_ladder.csv     # collect_dag_ladder.py 自动生成
+cat $KVPIM_SCRATCH/proto_LLAMA3-8B/C1_turns.sides.jsonl        # A6 每个请求的 t_xpu / t_bank / side
 ```
 
 结果目录不进仓库；汇总表进 `output/analysis/`，数字只能由脚本复制和计算（`agent.md` §3）。
@@ -115,10 +125,11 @@ cat $KVPIM_SCRATCH/sides.jsonl                    # A6 每个请求的 t_xpu / t
 
 | 模型 | `--ngpu` | `--num-hbm` | 备注 |
 |---|---:|---:|---|
-| CACHEBLEND-TINY | 1 | 1 | 4 层 8 头，形状探针，几分钟一档 |
-| LLAMA-7B / LLAMA3-8B | 1 | 1 | LLAMA3-8B 是 GQA（8 KV 头） |
-| GPT-13B / LLAMA-33B | 2 | 10 | |
-| LLAMA-65B / GPT-175B | 8 | 40 | 大模型每档内存 300–460 GB（9-02 实测，旧引擎），本机预算下一次只能跑一档 |
+| CACHEBLEND-TINY | 1 | 5 | 4 层 8 头，只证明流程能跑通；C1 七档 20 分钟 |
+| LLAMA-7B / LLAMA3-8B | 1 | 5 | LLAMA3-8B 是 GQA（8 KV 头，每头 8 通道）；LLAMA-7B 每头 2 通道 |
+| GPT-13B | 2 | 10 | 每头 4 通道 |
+| LLAMA-33B | 4 | 20 | 每头 5 通道 |
+| LLAMA-65B / GPT-175B | 8 | 40 | 每头 8 / 5 通道；大模型每档内存 300–460 GB（9-02 实测，旧引擎），本机预算下一次只能跑一档 |
 
 ## 6. 排错
 

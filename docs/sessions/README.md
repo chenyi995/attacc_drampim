@@ -4,6 +4,10 @@
 
 | 日期 | Session | 内容 |
 |---|---|---|
+| 2026-09-05（Fig. 3b） | [跨轮 diff 扫描图与复现](2026-09-05-fig3b-row-scan-revision.md) | 论文与图从未对齐 case 改为真实 allocator 的行分散；原始 trace/日志/数据、独立审查和复现指南 |
+| 2026-09-05（分类、k4、最慢通道） | [文档用途与 k4/scan 核验](2026-09-05-docs-roles-k4-scan-max.md) | 实验指导/性能分析/audit 分开；真实 k4 工作量、A5/A6 条件、max(channel time) 独立通过；最终裁决沿用原 NVLink、两级方案不采用；仅 docs/audit |
+| 2026-09-05（指标与八通道） | [四项指标与八通道比较口径](2026-09-05-metrics-eight-channels.md) | decode scan/TBT/TTFT/E2E 定义、旧结果补 TTFT、八通道配置与集中访问上限；仅 audit |
+| 2026-09-05（布局收益） | [布局上限、当前收益与扩大条件](2026-09-05-layout-benefit-ceiling.md) | B1/T9 静态几何、A4c 逐 agent 上限、A4e 相邻档与乐观下界、既有小跑 E2E；三个独立 agent，只 audit |
 | 2026-09-05（bb19f31→ff5b91e 复核） | [上轮修复验收与条件性边界](2026-09-05-bb19f31-fix-verification.md) | 旧C8读集/来源、collector与能量诊断通过；补查batch1/A2 history的summary、CacheBlend取整和重复parent输出来源；只audit，默认配置影响分开说明 |
 | 2026-09-05（fbe6756 复核） | [新一轮修复验收](2026-09-05-fbe6756-fix-verification.md) | GQA/diff地址/flash/A6指定估价通过；三轮继承、prefill漏旧diff、A2工作量、tier口径与能量诊断仍需处理；主审+三个独立agent，仅audit |
 | 2026-09-05（口径确定与交接） | [已定原则、待执行和验收](2026-09-05-audit-decisions-finalized.md) | C8 按 a/c 原址继续引用要求对齐；本轮无待重复裁决口径；明确不代表代码已修 |
@@ -17,7 +21,7 @@
 | 2026-09-05（存储专项） | [存储与扫描对应性、A6 逐 request 口径](2026-09-05-storage-scan-and-request-choice.md) | 主审与独立 agent 复现五档 store/scan 通道错位与非持久 row；补查 A1/A2；撤回候选 DAG 强制要求；仅修改文档与审计证据 |
 | 2026-09-05（cdd89db 复审） | [七档公平性只读复审与独立 agent audit](2026-09-05-cdd89db-fairness-reaudit.md) | 覆盖相对 AttAcc 的 110 个变更文件；小 workload/42 输入结构检查；两名 agent 复核；更新已修状态和剩余问题；未修改实现 |
 | 2026-09-05 | [AttAcc 计量口径与 GPU query 旋转](2026-09-05-attacc-accounting-and-rotation.md) | 仓库/论文审计；确认七档设计口径；核查 PIM 时间来源；排除新增 DIE/TLB 成本与排队；删除 DIE 旋转；验证和剩余问题 |
-| 2026-09-05（晚） | [审阅计量改动并修复 F01 / F02 / F04](2026-09-05-ladder-fixes-f01-f02-f04.md) | 判定上一会话改动对错并按小 commit 提交；A1 prefill 回到 GPU；A3b 按持久写入序 slot 放置；fresh prefill 按档选边；回归测试；未重跑阶梯 |
+| 2026-09-05（晚，持续到 9-06） | [审阅计量改动、修复 F01/F02/F04，直至运行协议](2026-09-05-ladder-fixes-f01-f02-f04.md) | §1–17 各轮审计的判断与修复；§18 B1 矩阵；§19 指标报表（release/TTFT、scan latency、run_config）；§20 C1 暴露的旋转 Q 与链路阈值两项修复、TINY 七档结果；§21–22 运行协议（model/workload/combo、几何表、C1/C2、sweep）、`extract_protocol.py`、docs 整理 |
 
 每份记录应包含以下信息：
 
