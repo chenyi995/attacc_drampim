@@ -1,0 +1,387 @@
+{
+  "scope": "static, W1 final main, layer0 head0 eight channels; no Ramulator timing",
+  "runner_sha256": "e620fcaba429870b86f0305efc97d2bef445c20a9fa28b62207f2ec7ae89e540",
+  "results": {
+    "A3b": {
+      "consumer": "g00_m_t023",
+      "answers": [
+        {
+          "producer": "g00_w0_t000",
+          "master_write_index": 63,
+          "channel": 7,
+          "row": 9,
+          "column": 0,
+          "tokens": 128,
+          "key": 7516201984,
+          "value": 7524590592
+        },
+        {
+          "producer": "g00_w0_t001",
+          "master_write_index": 75,
+          "channel": 3,
+          "row": 9,
+          "column": 0,
+          "tokens": 128,
+          "key": 3221234688,
+          "value": 3229623296
+        },
+        {
+          "producer": "g00_w0_t002",
+          "master_write_index": 87,
+          "channel": 7,
+          "row": 14,
+          "column": 0,
+          "tokens": 128,
+          "key": 7516207104,
+          "value": 7524595712
+        },
+        {
+          "producer": "g00_w0_t003",
+          "master_write_index": 99,
+          "channel": 3,
+          "row": 14,
+          "column": 0,
+          "tokens": 128,
+          "key": 3221239808,
+          "value": 3229628416
+        },
+        {
+          "producer": "g00_w0_t004",
+          "master_write_index": 111,
+          "channel": 7,
+          "row": 19,
+          "column": 0,
+          "tokens": 128,
+          "key": 7516212224,
+          "value": 7524600832
+        },
+        {
+          "producer": "g00_w0_t005",
+          "master_write_index": 123,
+          "channel": 3,
+          "row": 18,
+          "column": 0,
+          "tokens": 128,
+          "key": 3221243904,
+          "value": 3229632512
+        },
+        {
+          "producer": "g00_m_t000",
+          "master_write_index": 61,
+          "channel": 5,
+          "row": 7,
+          "column": 0,
+          "tokens": 128,
+          "key": 5368716288,
+          "value": 5377104896
+        },
+        {
+          "producer": "g00_w1_t001",
+          "master_write_index": 77,
+          "channel": 5,
+          "row": 10,
+          "column": 0,
+          "tokens": 128,
+          "key": 5368719360,
+          "value": 5377107968
+        }
+      ],
+      "all_44_answer_K_rows_per_channel": [
+        0,
+        11,
+        0,
+        11,
+        0,
+        11,
+        0,
+        11
+      ],
+      "load_by_kind": {
+        "worker_answer_tokens": [
+          0,
+          1408,
+          0,
+          1408,
+          0,
+          1408,
+          0,
+          1408
+        ],
+        "own_history_and_instructions_tokens": [
+          0,
+          1424,
+          192,
+          0,
+          0,
+          1536,
+          192,
+          0
+        ],
+        "diff_tokens": [
+          80,
+          0,
+          96,
+          0,
+          96,
+          0,
+          80,
+          0
+        ]
+      }
+    },
+    "A4c": {
+      "consumer": "g00_m_t023",
+      "answers": [
+        {
+          "producer": "g00_w0_t000",
+          "master_write_index": 63,
+          "channel": 7,
+          "row": 7,
+          "column": 0,
+          "tokens": 128,
+          "key": 7516199936,
+          "value": 7524588544
+        },
+        {
+          "producer": "g00_w0_t001",
+          "master_write_index": 75,
+          "channel": 3,
+          "row": 9,
+          "column": 0,
+          "tokens": 128,
+          "key": 3221234688,
+          "value": 3229623296
+        },
+        {
+          "producer": "g00_w0_t002",
+          "master_write_index": 87,
+          "channel": 7,
+          "row": 10,
+          "column": 0,
+          "tokens": 128,
+          "key": 7516203008,
+          "value": 7524591616
+        },
+        {
+          "producer": "g00_w0_t003",
+          "master_write_index": 99,
+          "channel": 3,
+          "row": 12,
+          "column": 0,
+          "tokens": 128,
+          "key": 3221237760,
+          "value": 3229626368
+        },
+        {
+          "producer": "g00_w0_t004",
+          "master_write_index": 111,
+          "channel": 7,
+          "row": 13,
+          "column": 0,
+          "tokens": 128,
+          "key": 7516206080,
+          "value": 7524594688
+        },
+        {
+          "producer": "g00_w0_t005",
+          "master_write_index": 123,
+          "channel": 3,
+          "row": 15,
+          "column": 0,
+          "tokens": 128,
+          "key": 3221240832,
+          "value": 3229629440
+        },
+        {
+          "producer": "g00_m_t000",
+          "master_write_index": 61,
+          "channel": 5,
+          "row": 7,
+          "column": 0,
+          "tokens": 128,
+          "key": 5368716288,
+          "value": 5377104896
+        },
+        {
+          "producer": "g00_w1_t001",
+          "master_write_index": 77,
+          "channel": 5,
+          "row": 9,
+          "column": 0,
+          "tokens": 128,
+          "key": 5368718336,
+          "value": 5377106944
+        }
+      ],
+      "all_44_answer_K_rows_per_channel": [
+        0,
+        11,
+        0,
+        11,
+        0,
+        11,
+        0,
+        11
+      ],
+      "load_by_kind": {
+        "worker_answer_tokens": [
+          0,
+          1408,
+          0,
+          1408,
+          0,
+          1408,
+          0,
+          1408
+        ],
+        "own_history_and_instructions_tokens": [
+          0,
+          1424,
+          192,
+          0,
+          0,
+          1536,
+          192,
+          0
+        ],
+        "diff_tokens": [
+          48,
+          64,
+          64,
+          64,
+          64,
+          48,
+          0,
+          0
+        ]
+      }
+    },
+    "A4e": {
+      "consumer": "g00_m_t023",
+      "answers": [
+        {
+          "producer": "g00_w0_t000",
+          "master_write_index": 63,
+          "channel": 0,
+          "row": 8,
+          "column": 0,
+          "tokens": 128,
+          "key": 8192,
+          "value": 8396800
+        },
+        {
+          "producer": "g00_w0_t001",
+          "master_write_index": 75,
+          "channel": 0,
+          "row": 10,
+          "column": 0,
+          "tokens": 128,
+          "key": 10240,
+          "value": 8398848
+        },
+        {
+          "producer": "g00_w0_t002",
+          "master_write_index": 87,
+          "channel": 0,
+          "row": 11,
+          "column": 0,
+          "tokens": 128,
+          "key": 11264,
+          "value": 8399872
+        },
+        {
+          "producer": "g00_w0_t003",
+          "master_write_index": 99,
+          "channel": 6,
+          "row": 12,
+          "column": 0,
+          "tokens": 128,
+          "key": 6442463232,
+          "value": 6450851840
+        },
+        {
+          "producer": "g00_w0_t004",
+          "master_write_index": 111,
+          "channel": 0,
+          "row": 14,
+          "column": 0,
+          "tokens": 128,
+          "key": 14336,
+          "value": 8402944
+        },
+        {
+          "producer": "g00_w0_t005",
+          "master_write_index": 123,
+          "channel": 6,
+          "row": 14,
+          "column": 0,
+          "tokens": 128,
+          "key": 6442465280,
+          "value": 6450853888
+        },
+        {
+          "producer": "g00_m_t000",
+          "master_write_index": 61,
+          "channel": 5,
+          "row": 8,
+          "column": 0,
+          "tokens": 128,
+          "key": 5368717312,
+          "value": 5377105920
+        },
+        {
+          "producer": "g00_w1_t001",
+          "master_write_index": 77,
+          "channel": 3,
+          "row": 9,
+          "column": 0,
+          "tokens": 128,
+          "key": 3221234688,
+          "value": 3229623296
+        }
+      ],
+      "all_44_answer_K_rows_per_channel": [
+        12,
+        10,
+        0,
+        12,
+        0,
+        0,
+        10,
+        0
+      ],
+      "load_by_kind": {
+        "worker_answer_tokens": [
+          1536,
+          1280,
+          0,
+          1536,
+          0,
+          0,
+          1280,
+          0
+        ],
+        "own_history_and_instructions_tokens": [
+          0,
+          16,
+          1296,
+          0,
+          288,
+          1408,
+          32,
+          304
+        ],
+        "diff_tokens": [
+          0,
+          96,
+          0,
+          0,
+          256,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  }
+}

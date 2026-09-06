@@ -4,6 +4,8 @@
 本页保留四项指标的定义与取数、`--workload-report-events full` 的用法和 A6 side log 的读法。机制解释见 [性能分析](../analysis/README.md)，
 实现核查见 [审计入口](../audit/README.md)。本页 2026-09-05 整理时没有启动性能任务。
 
+需要能手算的小 workload，并比较更快 GPU 是否减少 TBT 中对 scan 收益的遮蔽，见 [最小布局与 GPU 对照指南](minimal_layout_gpu.md)。含三个输入的生成、当前账本与 GPU 预算、异机运行和出表命令；当前支持 B200，尚无 H200 选项。
+
 针对最新 S11 中“private scan 改善、TBT 改善较小”的问题，新增 [持续汇总、周期共读与低-query复用实验](../../workload/probe/targeted/README.md)。输入 JSON、闭式手算、真实账本核验、PIM/GPU 分界预算及运行/分组出表命令均已提供；其新输入尚未进行性能模拟。
 
 ## 1. 固定条件

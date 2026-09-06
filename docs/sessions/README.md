@@ -4,6 +4,7 @@
 
 | 日期 | Session | 内容 |
 |---|---|---|
+| 2026-09-06（最小例子与更快 GPU） | [布局/GPU 对照指南与静态核验](2026-09-06-minimal-layout-gpu-guide.md) | D4/E2/P4 小例子；B200 预算、真实路径/热点图与原始数据；异机出图、A4e–A6 TTFT 与 bank 有效吞吐口径，无性能仿真 |
 | 2026-09-06（W1、新 diff 布局） | [设计、workload与手算复审](2026-09-06-w1-rotating-diff-audit.md) | 新旋转/按agent分组的论文对齐；W1继承、实际行列数、全组MQ与评分定义；三个独立agent，仅audit和静态计算 |
 | 2026-09-05（持续汇总与TBT） | [Workload设计、手算和静态核验](2026-09-05-targeted-workload-design.md) | 按最新commit解释S11稀释；持续汇总diff、周期共读冲突、低query与选边；输入/反例/手算/运行指南和独立审查，无新性能模拟 |
 | 2026-09-05（Fig. 3b 固定工作量） | [八列分布到一至八行](2026-09-05-fig3b-fixed-columns-revision.md) | 按用户方法替换轮数曲线；真实 Ramulator 四点、均匀行分布、原始数据、新目录复现、独立审查与正文同步 |

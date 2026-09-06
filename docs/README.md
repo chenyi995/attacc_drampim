@@ -7,6 +7,7 @@
 | 你要做什么 | 主文档 | 内容 |
 |---|---|---|
 | 跑实验：选 model 几何、baseline 与 sweep、命令、出数 | [运行协议](README_run_protocol.md) | 用词、每个 model 的 GPU/HBM、W1 baseline、六条 sweep 轴、squire 命令、`extract_protocol.py` |
+| 用小例子检查 GPU 加速后 scan 收益如何进入 TBT | [最小布局与 GPU 对照](experiments/minimal_layout_gpu.md) | 路径/热点图、四轮 diff 和两文档对照；B200、异机执行出图、A4e–A6 TTFT 与 bank 有效吞吐 |
 | 指标怎么定义、要 full events 怎么跑 | [实验指导（指标与事件）](experiments/README.md) | 四项指标的定义与取数、`--workload-report-events full`、A6 side log |
 | 理解为什么能节省时间 | [性能分析](analysis/README.md) | 布局、MQ、低 AI 与选边的收益、上限和限制 |
 | 检查实现与论文、公平性 | [审计入口](audit/README.md) | 最慢 channel、既有问题与用户裁决、原始证据 |
