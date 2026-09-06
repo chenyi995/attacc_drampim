@@ -72,7 +72,8 @@ BASELINE = dict(agents=8, rounds=8, chunks=2, own=128, lout=256, corpus=64,
 #     already fills a row and gathering changes nothing (lever probe,
 #     output/analysis/b1_levers.py).
 B1 = dict(agents=8, rounds=8, chunks=2, corpus=64, lout=128, retrieval="scattered",
-          own_chatty=16, own_writer=256, chatty_share=0.5, fresh_share=0.0, lout_chatty=None)
+          own_chatty=16, own_writer=256, chatty_share=0.5, fresh_share=0.0, lout_chatty=None,
+          shared=0)
 # C1 "classic" (chenyi9 2026-09-05: one workload that gives every rung its
 # lever, small enough to run the seven-rung ladder on a real model):
 #   * 6 worker agents x 6 turns, ONE retrieved chunk per turn -- 6 x 8 = 48
@@ -87,7 +88,13 @@ B1 = dict(agents=8, rounds=8, chunks=2, corpus=64, lout=128, retrieval="scattere
 #   * fresh_share 0.1 -> four standalone fresh chats (2k/4k/8k/2k tokens, no
 #     reuse): the long fresh prefill that under flash belongs on the GPU,
 #     so A6 separates from A5 even when every reuse turn favours the banks.
-C1 = dict(B1, agents=6, rounds=6, chunks=1, lout_chatty=32, fresh_share=0.1)
+#   * shared=8 (added after the first C1 ladder, 2026-09-05): the workers
+#     share ONE system prompt and re-read the same 8 corpus chunks (a 2k
+#     "project brief") in every turn.  The first C1 had no KV row read by two
+#     requests of the same decode batch, so the MQ command of A5/A6 had
+#     nothing to share and their decode was identical to A4e's; a batch
+#     that co-reads the brief is what one MQ sweep serves at once.
+C1 = dict(B1, agents=6, rounds=6, chunks=1, lout_chatty=32, fresh_share=0.1, shared=8)
 B1_SWEEPS = {
     "T1_agents": ("agents", (4, 16)),
     "T2_rounds": ("rounds", (4, 16)),
@@ -126,14 +133,21 @@ def _chunk(index):
     return {"role": "doc", "sha": sha("corpus-%d" % index), "len": BLOCK}
 
 
+def _shared_chunks(p):
+    """The corpus chunks every worker re-reads in every turn (``shared``)."""
+    return list(range(min(int(p.get("shared") or 0), p["corpus"])))
+
+
 def _retrieved(agent, round_index, p):
-    """Chunk indices agent ``agent`` reads in round ``round_index``."""
+    """Chunk indices agent ``agent`` reads in round ``round_index`` (the
+    shared brief excluded: it is listed once, before the retrieved ones)."""
+    pool = [index for index in range(p["corpus"]) if index not in set(_shared_chunks(p))]
     if p.get("retrieval", "consecutive") == "scattered":
         import random
         rng = random.Random(1000003 * agent + 7919 * round_index + 17)
-        return sorted(rng.sample(range(p["corpus"]), min(p["chunks"], p["corpus"])))
+        return sorted(rng.sample(pool, min(p["chunks"], len(pool))))
     base = agent * p["chunks"] + round_index * p["chunks"]
-    return [(base + offset) % p["corpus"] for offset in range(p["chunks"])]
+    return [pool[(base + offset) % len(pool)] for offset in range(p["chunks"])]
 
 
 def _own_tokens(agent, p):
@@ -174,8 +188,11 @@ def build(p, form):
     agents = [owner]
     for agent in range(p["agents"]):
         wid = "w%02d" % agent
+        # shared > 0: one system prompt for every worker, then the brief
+        sys_sha = sha("workers-sys") if _shared_chunks(p) else sha(wid + "-sys")
+        brief = [_chunk(index) for index in _shared_chunks(p)]
         if form == "interleaved":
-            segs = [{"role": "sys", "sha": sha(wid + "-sys"), "len": SYS}]
+            segs = [{"role": "sys", "sha": sys_sha, "len": SYS}] + [dict(c) for c in brief]
             for round_index in range(p["rounds"]):
                 segs += [_chunk(index) for index in _retrieved(agent, round_index, p)]
                 segs.append({"role": "user", "sha": sha("%s-own-%d" % (wid, round_index)),
@@ -183,7 +200,7 @@ def build(p, form):
             agents.append({"id": wid, "tier": 0, "parent": None, "history_len": 0,
                            "lout": _lout(agent, p), "segs": segs})
         else:
-            context = [{"role": "sys", "sha": sha(wid + "-sys"), "len": SYS}]
+            context = [{"role": "sys", "sha": sys_sha, "len": SYS}] + [dict(c) for c in brief]
             for round_index in range(p["rounds"]):
                 rid = "%s_t%02d" % (wid, round_index)
                 parent = None if round_index == 0 else "%s_t%02d" % (wid, round_index - 1)
@@ -234,6 +251,7 @@ def write_all(outdir):
                      "own": p.get("own", "%s/%s" % (p.get("own_chatty"), p.get("own_writer"))),
                      "chatty_share": p.get("chatty_share", ""), "retrieval": p.get("retrieval", "consecutive"),
                      "lout_chatty": p.get("lout_chatty") or "",
+                     "shared": p.get("shared") or 0,
                      "corpus": p["corpus"], "lout": p["lout"], "fresh_share": p["fresh_share"],
                      "requests": n, "prefill_tokens": prefill, "decode_tokens": decode})
 

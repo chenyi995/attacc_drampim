@@ -15,7 +15,8 @@
   "own_writer": 256,
   "chatty_share": 0.5,
   "fresh_share": 0.0,
-  "lout_chatty": 8
+  "lout_chatty": 8,
+  "shared": 0
  },
  "agents": [
   {
