@@ -1,0 +1,28 @@
+from pathlib import Path
+import json,shutil
+root=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/targeted')
+stage=root/'checks_final'
+base=json.loads((stage/'all.json').read_text())
+extra=json.loads((root/'checks_prefill/all.json').read_text())
+assert base['revision']==extra['revision']
+assert base['head_runner_sha256']==extra['head_runner_sha256']
+base['source_notes']={'D_E_working_runner_sha256':base['working_runner_sha256'],
+                      'P_working_runner_sha256':extra['working_runner_sha256'],
+                      'P_source_file':'working_prefill_runner.py.txt',
+                      'primary_HEAD_identical_for_all_cases':True,
+                      'price_review':'Small-context transfer now uses HEAD _link_layer; batch limit explicitly 8. No simulator implementation changed.'}
+for name,case in extra['inputs'].items():
+    base['inputs'][name]=case
+    (stage/(name+'.json')).write_text(json.dumps(case,indent=2)+'\n')
+(stage/'working_prefill_runner.py.txt').write_bytes((root/'checks_prefill/working_workload_runner.py.txt').read_bytes())
+(stage/'all.json').write_text(json.dumps(base,indent=2)+'\n')
+archive=Path('/tmp/targeted_design_initial')
+archive.mkdir(exist_ok=True)
+for name in ('checks','checks_sessions7','checks_prefill'):
+    assert not (archive/name).exists()
+    shutil.move(str(root/name),str(archive/name))
+shutil.move(str(stage),str(root/'checks'))
+shutil.copyfile('/tmp/targeted_handcheck.log',root/'checks/handcheck_initial.stdout')
+shutil.copyfile('/tmp/targeted_prefill_check.log',root/'checks/handcheck_prefill.stdout')
+shutil.copyfile('/tmp/finalize_targeted_checks.py',root/'checks/finalize_targeted_checks.py.txt')
+print('Merged 13 checked inputs; earlier design intermediates retained under /tmp/targeted_design_initial')

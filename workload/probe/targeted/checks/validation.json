@@ -1,0 +1,8 @@
+{
+  "python_sources_parse": true,
+  "documented_bash_syntax": true,
+  "workload_manifest_and_check_hashes": 13,
+  "existing_report_weighted_TBT_matches_protocol": true,
+  "existing_S11_recorded_configs_equal": true,
+  "performance_simulation_started": false
+}

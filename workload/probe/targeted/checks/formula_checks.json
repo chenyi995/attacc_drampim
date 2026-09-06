@@ -1,0 +1,10 @@
+{
+  "rolling_formula_R16": true,
+  "rolling_formula_R32": true,
+  "rolling_formula_R64": true,
+  "rolling_formula_R128": true,
+  "coread_formula_stride1": true,
+  "coread_formula_stride4": true,
+  "coread_formula_stride8": true,
+  "real_generator_QK_address_lists_matched": 285
+}
