@@ -46,6 +46,55 @@ class AttaccMetadataTests(unittest.TestCase):
                     self.assertNotIn("DIE", available)
                     self.assertNotIn("TLB", available)
 
+    def _backfill_graph(self):
+        """Audit 2026-09-05 P1: a GPU event constructed first but waiting on
+        a PIM scan must not block a later-constructed, already-ready GPU
+        event from using the idle window in front of it."""
+        events = []
+        def add(device, duration, deps=()):
+            return wr._cacheblend_event(events, layer=0, tier=0, request="r",
+                name="accounting", device=device, rows=1,
+                time_s=duration, energy=(1.,), deps=deps)
+        scan = add("PIM", 5.)              # 0..5
+        waiting = add("GPU", 10., (scan,)) # ready at 5 -> 5..15
+        early = add("GPU", 1.)             # ready at 0 -> must run 0..1, not 15..16
+        late = add("GPU", 3.)              # 1..4 fits before the waiting event too
+        tail = add("GPU", 2.)              # 4..6 does not fit (window ends at 5) -> 15..17
+        return events, (scan, waiting, early, late, tail)
+
+    def test_ready_events_back_fill_idle_windows(self):
+        with patch.object(wr, "_EC", None):
+            events, _ids = self._backfill_graph()
+            scheduled = wr._schedule_cacheblend(events, pipe=True)
+            self.assertEqual([(e.start_s, e.end_s) for e in scheduled],
+                             [(0., 5.), (5., 15.), (0., 1.), (1., 4.), (15., 17.)])
+            wr.validate_cacheblend_attacc_overlap_contract(scheduled, pipe=True)
+            finish, _available = wr._schedule_cacheblend_incremental(
+                events, pipe=True, start_index=0, finish={}, availability={})
+            self.assertEqual(finish, {e.event_id: e.end_s for e in scheduled})
+            # without pipelining everything shares one timeline: the scan
+            # 0..5, then the ready GPU events fill in before the waiting one
+            serial = wr._schedule_cacheblend(events, pipe=False)
+            self.assertEqual([(e.start_s, e.end_s) for e in serial],
+                             [(0., 5.), (5., 15.), (15., 16.), (16., 19.), (19., 21.)])
+            wr.validate_cacheblend_attacc_overlap_contract(serial, pipe=False)
+
+    def test_native_back_fill_matches_python(self):
+        for pipe in (False, True):
+            core = new_core(pipe)
+            if core is None:
+                self.skipTest("native event core unavailable")
+            try:
+                with patch.object(wr, "_EC", core):
+                    events, _ids = self._backfill_graph()
+                    native = wr._schedule_cacheblend(events, pipe=pipe)
+                with patch.object(wr, "_EC", None):
+                    python = wr._schedule_cacheblend(events, pipe=pipe)
+                self.assertEqual([(e.start_s, e.end_s) for e in native],
+                                 [(e.start_s, e.end_s) for e in python])
+            finally:
+                core.close()
+
     def test_native_metadata_matches_python_without_reserving_resources(self):
         for pipe in (False, True):
             core = new_core(pipe)

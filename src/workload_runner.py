@@ -14,6 +14,7 @@ import os
 import sys
 import time
 from array import array
+import bisect
 from bisect import bisect_left
 from copy import deepcopy
 from dataclasses import dataclass, replace
@@ -2536,7 +2537,7 @@ def _schedule_cacheblend(events: Sequence[SplitEvent], *, pipe: bool) -> List[Sp
         return [replace(event, start_s=start_arr[index], end_s=end_arr[index])
                 for index, event in enumerate(events)]
     finish: Dict[str, float] = {}
-    availability: Dict[str, float] = {}
+    availability: Dict[str, Any] = {}
     scheduled: List[SplitEvent] = []
     index = 0
     while index < len(events):
@@ -2564,30 +2565,81 @@ def _schedule_cacheblend(events: Sequence[SplitEvent], *, pipe: bool) -> List[Sp
                    events[next_index].batch_members == event.batch_members):
                 group.append(events[next_index])
                 next_index += 1
-            start = max([availability.get("SERIAL", 0.0)] +
-                        [finish[dep] for dep in event.depends_on])
-            group_end = start
+            ready = _deps_ready(finish, event.depends_on)
+            start = _place_on_resource(availability, "SERIAL", ready,
+                                       max(lane.time_s for lane in group))
             for lane in group:
                 end = start + lane.time_s
                 finish[lane.event_id] = end
                 scheduled.append(replace(lane, start_s=start, end_s=end))
-                group_end = max(group_end, end)
-            availability["SERIAL"] = group_end
             index = next_index
             continue
         # Hardware operations reserve resources (one serial timeline without
         # --pipeopt). DIE/TLB metadata only joins its own dependencies.
         resource = (None if event.device in DEPENDENCY_ONLY_DEVICES
                     else event.device if pipe else "SERIAL")
-        start = max([availability.get(resource, 0.0)] +
-                    [finish[dep] for dep in event.depends_on])
+        ready = _deps_ready(finish, event.depends_on)
+        start = (ready if resource is None
+                 else _place_on_resource(availability, resource, ready, event.time_s))
         end = start + event.time_s
-        if resource is not None:
-            availability[resource] = end
         finish[event.event_id] = end
         scheduled.append(replace(event, start_s=start, end_s=end))
         index += 1
     return scheduled
+
+
+def _deps_ready(finish: Dict[str, float], deps: Sequence[str]) -> float:
+    ready = 0.0
+    for dep in deps:
+        value = finish[dep]
+        if value > ready:
+            ready = value
+    return ready
+
+
+def _place_on_resource(availability: Dict[str, Any], resource: str,
+                       ready: float, duration: float) -> float:
+    """Earliest start >= ``ready`` at which ``duration`` fits into a gap of
+    ``resource``'s busy timeline, and reserve it (audit 2026-09-05 P1: a
+    ready event may fill an idle window left by an earlier-constructed
+    event that is still waiting on its dependencies; the old rule
+    ``start = max(resource_end, ready)`` reserved the future and never
+    back-filled).  ``availability[resource]`` holds the busy intervals as
+    two parallel sorted lists (starts, ends); a zero-length event reserves
+    nothing.  Mirrors ``eventcore.cpp::place`` exactly."""
+    if duration <= 0.0:
+        return ready
+    busy = availability.get(resource)
+    if busy is None:
+        busy = availability[resource] = ([], [])
+    starts, ends = busy
+    start = ready
+    if not starts or ready >= ends[-1]:
+        if starts and ends[-1] == ready:
+            ends[-1] = ready + duration
+        else:
+            starts.append(ready)
+            ends.append(ready + duration)
+        return start
+    position = bisect.bisect_right(starts, start)
+    if position > 0 and ends[position - 1] > start:
+        start = ends[position - 1]
+    while position < len(starts) and starts[position] < start + duration:
+        start = ends[position]
+        position += 1
+    end = start + duration
+    if position > 0 and ends[position - 1] == start:
+        ends[position - 1] = end
+        if position < len(starts) and starts[position] == end:
+            ends[position - 1] = ends[position]
+            del starts[position]
+            del ends[position]
+    elif position < len(starts) and starts[position] == end:
+        starts[position] = start
+    else:
+        starts.insert(position, start)
+        ends.insert(position, end)
+    return start
 
 
 def _schedule_cacheblend_incremental(events: Sequence[SplitEvent], *, pipe: bool,
@@ -2602,16 +2654,16 @@ def _schedule_cacheblend_incremental(events: Sequence[SplitEvent], *, pipe: bool
     later call to :func:`_schedule_cacheblend`.
     """
     finish = dict(finish)
-    availability = dict(availability)
+    availability = {key: (list(value[0]), list(value[1]))
+                    for key, value in availability.items()}
     for event in events[start_index:]:
         if any(dep not in finish for dep in event.depends_on):
             raise WorkloadValidationError("CacheBlend event depends on a future event")
         resource = (None if event.device in DEPENDENCY_ONLY_DEVICES
                     else event.device if pipe else "SERIAL")
-        start = max([availability.get(resource, 0.0)] +
-                    [finish[dep] for dep in event.depends_on])
-        if resource is not None:
-            availability[resource] = start + event.time_s
+        ready = _deps_ready(finish, event.depends_on)
+        start = (ready if resource is None
+                 else _place_on_resource(availability, resource, ready, event.time_s))
         finish[event.event_id] = start + event.time_s
     return finish, availability
 
@@ -2704,7 +2756,7 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
     trusting the scheduling function that produced it.
     """
     finish: Dict[str, float] = {}
-    available: Dict[str, float] = {}
+    reserved: Dict[str, List[Tuple[float, float, str]]] = {}
     tolerance = 1e-18
     index = 0
     while index < len(scheduled):
@@ -2724,11 +2776,14 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
                    scheduled[next_index].batch_members == event.batch_members):
                 group.append(scheduled[next_index])
                 next_index += 1
-            expected = max([available.get("SERIAL", 0.0)] +
-                           [finish[dependency] for dependency in event.depends_on])
-            phase_end = expected
+            ready = max([0.0] + [finish[dependency] for dependency in event.depends_on])
+            if event.start_s + tolerance < ready:
+                raise WorkloadValidationError(
+                    "CacheBlend PIM pool phase starts before its dependencies at {}".format(
+                        event.event_id))
+            phase_end = event.start_s
             for lane in group:
-                if abs(lane.start_s - expected) > tolerance:
+                if abs(lane.start_s - event.start_s) > tolerance:
                     raise WorkloadValidationError(
                         "CacheBlend PIM pool phase starts inconsistently at {}".format(
                             lane.event_id))
@@ -2737,26 +2792,39 @@ def validate_cacheblend_attacc_overlap_contract(scheduled: Sequence[SplitEvent],
                         "CacheBlend event duration is inconsistent with the AttAcc timeline")
                 finish[lane.event_id] = lane.end_s
                 phase_end = max(phase_end, lane.end_s)
-            available["SERIAL"] = phase_end
+            if phase_end > event.start_s:
+                reserved.setdefault("SERIAL", []).append((event.start_s, phase_end, event.event_id))
             index = next_index
             continue
         resource = (None if event.device in DEPENDENCY_ONLY_DEVICES
                     else event.device if pipe else "SERIAL")
         if resource is None and (event.time_s != 0.0 or event.energy_nj != 0.0):
             raise WorkloadValidationError("DIE/TLB metadata must have zero modeled cost")
-        expected = max([available.get(resource, 0.0)] +
-                       [finish[dependency] for dependency in event.depends_on])
-        if abs(event.start_s - expected) > tolerance:
+        ready = max([0.0] + [finish[dependency] for dependency in event.depends_on])
+        if event.start_s + tolerance < ready:
             raise WorkloadValidationError(
-                "CacheBlend overlap diverges from AttAcc {} timeline at {}: {} != {}".format(
-                    resource, event.event_id, event.start_s, expected))
+                "CacheBlend event {} starts at {} before its dependencies finish at {}".format(
+                    event.event_id, event.start_s, ready))
+        if resource is None and abs(event.start_s - ready) > tolerance:
+            raise WorkloadValidationError(
+                "CacheBlend metadata {} waits on nothing but starts late".format(event.event_id))
         if abs(event.end_s - (event.start_s + event.time_s)) > tolerance:
             raise WorkloadValidationError(
                 "CacheBlend event duration is inconsistent with the AttAcc timeline")
-        if resource is not None:
-            available[resource] = event.end_s
+        if resource is not None and event.time_s > 0.0:
+            reserved.setdefault(resource, []).append((event.start_s, event.end_s, event.event_id))
         finish[event.event_id] = event.end_s
         index += 1
+    # One resource never runs two reservations at once (audit 2026-09-05 P1:
+    # the scheduler may back-fill idle windows, so the check is on
+    # intervals, not on append order).
+    for resource, intervals in reserved.items():
+        intervals.sort()
+        for (a_start, a_end, a_id), (b_start, _b_end, b_id) in zip(intervals, intervals[1:]):
+            if b_start + tolerance < a_end:
+                raise WorkloadValidationError(
+                    "CacheBlend {} overlap: {} [{}, {}) and {} starting {}".format(
+                        resource, a_id, a_start, a_end, b_id, b_start))
     report = {
         "passed": True,
         "pipe": pipe,
@@ -2916,15 +2984,87 @@ def _gpu_layer_event(system, events, template, *, layer, tier, request, name,
                              energy=energy, deps=deps, positions=positions)
 
 
+def _gpu_layer_event_head_sliced(system, events, template, *, layer, tier, request,
+                                 name, rows, heads_local, deps=(), positions=(),
+                                 batch_members=(), first_share=None):
+    """One GPU operation as two events: the slice of ONE KV head first (so a
+    consumer that only needs that head's output -- the bank scan of the
+    resident context, which needs Q -- can start), then the remaining
+    ``heads_local - 1`` heads.  Time and energy are split pro rata; the sum
+    is the whole operation.  This is the AttAcc head pipeline (original
+    ``System.simulate``: ``minimum_ratio = 1 / (heads / xpu)`` leaves only
+    one head's share of QKV / projection exposed next to attention) expressed
+    in the event DAG (audit DECODE_SCAN_TBT_PIPELINE 2026-09-05).  Returns
+    ``(first_id, rest_id)``; with one local head both are the same event.
+    ``first_share`` overrides the exposed fraction (the projection exposes
+    its LAST head, so its "first" event is the (H-1)/H part)."""
+    op = deepcopy(template)
+    op.m = rows
+    time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+    energy = tuple(energy)
+    heads_local = max(1, int(heads_local))
+    if heads_local == 1:
+        event = _cacheblend_event(events, layer=layer, tier=tier, request=request,
+                                  name=name, device="GPU", rows=rows, time_s=time_s,
+                                  energy=energy, deps=deps, positions=positions,
+                                  batch_members=batch_members)
+        return event, event
+    share = (1.0 / heads_local) if first_share is None else first_share
+    first = _cacheblend_event(events, layer=layer, tier=tier, request=request,
+                              name=name, device="GPU", rows=rows, time_s=time_s * share,
+                              energy=tuple(e * share for e in energy), deps=deps,
+                              positions=positions, batch_members=batch_members)
+    rest = _cacheblend_event(events, layer=layer, tier=tier, request=request,
+                             name=name + "_rest", device="GPU", rows=rows,
+                             time_s=time_s * (1.0 - share),
+                             energy=tuple(e * (1.0 - share) for e in energy),
+                             deps=(first,), positions=positions, batch_members=batch_members)
+    return first, rest
+
+
 def _post_attention_gpu(system, events, templates, *, layer, tier, request,
-                        rows, dependency, positions, name_prefix: str = ""):
+                        rows, dependency, positions, name_prefix: str = "",
+                        overlap_dependency=None, heads_local: int = 1,
+                        batch_members=()):
     """The GPU work after attention (projection, FFN, norms).  ``name_prefix``
     is ``decode_`` for a generated token so the summary counts it as decode
     (re-audit C6.1, 2026-09-05: batch-size-1 decode used to book it as
-    prefill)."""
+    prefill).
+
+    ``overlap_dependency`` (decode only): the projection is head-sliced like
+    QKV -- the projection of the heads whose context is already back runs
+    while the bank scan is still serving the others, so only ONE head's
+    share of it stays exposed after the context return (AttAcc
+    ``minimum_ratio``).  The ``(H-1)/H`` part depends on
+    ``overlap_dependency`` (the GPU-side attention chain, i.e. after this
+    layer's QKV), the exposed ``1/H`` part on the attention ``dependency``.
+    """
     last = dependency
     for template in templates:
         if template.name in ("qkv", "score", "softmax", "context", "comm_x2g"):
+            continue
+        if (template.name == "proj" and overlap_dependency is not None
+                and max(1, int(heads_local)) > 1):
+            op = deepcopy(template)
+            op.m = rows
+            time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+            energy = tuple(energy)
+            exposed_share = 1.0 / max(1, int(heads_local))
+            overlapped = _cacheblend_event(
+                events, layer=layer, tier=tier, request=request,
+                name=name_prefix + "gpu_proj_overlapped", device="GPU", rows=rows,
+                time_s=time_s * (1.0 - exposed_share),
+                energy=tuple(e * (1.0 - exposed_share) for e in energy),
+                deps=(overlap_dependency,), positions=positions,
+                batch_members=batch_members)
+            # the last head's projection needs the merged attention output
+            last = _cacheblend_event(
+                events, layer=layer, tier=tier, request=request,
+                name=name_prefix + "gpu_proj", device="GPU", rows=rows,
+                time_s=time_s * exposed_share,
+                energy=tuple(e * exposed_share for e in energy),
+                deps=tuple(dict.fromkeys((overlapped, dependency))),
+                positions=positions, batch_members=batch_members)
             continue
         last = _gpu_layer_event(system, events, template, layer=layer, tier=tier,
                                 request=request, name=name_prefix + "gpu_" + template.name,
@@ -3386,10 +3526,16 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             # Positions continue directly after the request prefill context.
             tlb.bind(request.request_id, layer_index,
                      request.total_length + output_row, output_location, 0, False)
-            q = _gpu_layer_event(system, events, qkv, layer=layer_index, tier=tier,
-                                 request=request.request_id, name="decode_qkv", rows=1,
-                                 deps=layer_deps,
-                                 positions=(request.total_length + output_row,))
+            # AttAcc head pipeline (audit DECODE_SCAN_TBT_PIPELINE 2026-09-05):
+            # the bank scan of the resident context needs one head's Q, so it
+            # waits for the first head slice only; the other heads' QKV
+            # overlaps the scan.  K/V of the new token and the GPU-side local
+            # attention need every head.
+            q, q_rest = _gpu_layer_event_head_sliced(
+                system, events, qkv, layer=layer_index, tier=tier,
+                request=request.request_id, name="decode_qkv", rows=1,
+                heads_local=_gqa_kv_heads_local(system, heads), deps=layer_deps,
+                positions=(request.total_length + output_row,))
             q_bytes = local_hidden * dbyte
             q_transfer = _link_layer(x2g, "decode_q_gpu_to_pim", q_bytes)
             time_s, energy = system.devices["GPU"].get_time_and_energy(q_transfer)
@@ -3408,11 +3554,11 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             kv_link = _cacheblend_event(
                 events, layer=layer_index, tier=tier, request=request.request_id,
                 name="decode_kv_gpu_to_pim", device="LINK", rows=1, time_s=time_s,
-                energy=energy, deps=(q,), link_bytes=kv_bytes,
+                energy=energy, deps=tuple(dict.fromkeys((q, q_rest))), link_bytes=kv_bytes,
                 positions=(request.total_length + output_row,),
                 addresses=(output_location.key_address, output_location.value_address))
 
-            local_last = q
+            local_last = q_rest
             for template, name in ((score, "decode_gpu_local_score"),
                                    (softmax, "decode_gpu_local_softmax"),
                                    (context, "decode_gpu_local_context")):
@@ -3505,7 +3651,9 @@ def _append_cacheblend_decode(system, events: List[SplitEvent], tlb: CacheBlendT
             post_last = _post_attention_gpu(
                 system, events, post, layer=layer_index, tier=tier,
                 request=request.request_id, rows=1, dependency=context_ready,
-                positions=(request.total_length + output_row,), name_prefix="decode_")
+                positions=(request.total_length + output_row,), name_prefix="decode_",
+                overlap_dependency=local_last,
+                heads_local=_gqa_kv_heads_local(system, heads))
             store = _cacheblend_event(
                 events, layer=layer_index, tier=tier, request=request.request_id,
                 name="decode_dram_store_master", device="STORE", rows=1,
@@ -3633,6 +3781,7 @@ def _append_cacheblend_decode_batched(
             # the preceding hidden-state readiness.  It emits every Q/KV link
             # before any PIM attention is admitted.
             qkv_aliases: Dict[str, str] = {}
+            qkv_rest_by_request: Dict[str, str] = {}
             q_links: Dict[str, str] = {}
             kv_links: Dict[str, str] = {}
             output_locations: Dict[str, KVLocation] = {}
@@ -3643,13 +3792,15 @@ def _append_cacheblend_decode_batched(
                 gpu_label = "gpu-" + batch_request_label(
                     output_row, layer_index, group_index // batch_size)
                 positions = tuple(request.total_length + output_row for request in group)
-                op = deepcopy(qkv)
-                op.m = len(group)
-                time_s, energy = system.devices["GPU"].get_time_and_energy(op)
-                batch_qkv = _cacheblend_event(
-                    events, layer=layer_index, tier=tier, request=gpu_label,
-                    name="decode_batch_qkv", device="GPU", rows=len(group),
-                    time_s=time_s, energy=energy,
+                # AttAcc head pipeline (audit DECODE_SCAN_TBT_PIPELINE
+                # 2026-09-05): the Q links (and so the bank scans) wait for
+                # the first head slice of the batch QKV; the remaining heads
+                # overlap the scans and gate only the K/V links and the
+                # GPU-side local attention.
+                batch_qkv, batch_qkv_rest = _gpu_layer_event_head_sliced(
+                    system, events, qkv, layer=layer_index, tier=tier, request=gpu_label,
+                    name="decode_batch_qkv", rows=len(group),
+                    heads_local=_gqa_kv_heads_local(system, heads),
                     deps=tuple(dep for request in group
                                for dep in layer_deps[request.request_id]),
                     positions=positions, batch_members=members)
@@ -3657,6 +3808,7 @@ def _append_cacheblend_decode_batched(
                     request_id = request.request_id
                     position = request.total_length + output_row
                     qkv_batch_members[request_id] = members
+                    qkv_rest_by_request[request_id] = batch_qkv_rest
                     qkv_aliases[request_id] = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=request_id,
                         name="decode_qkv", device="GPU", rows=1, time_s=0.0,
@@ -3678,7 +3830,8 @@ def _append_cacheblend_decode_batched(
                     kv_links[request_id] = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=request_id,
                         name="decode_kv_gpu_to_pim", device="LINK", rows=1,
-                        time_s=time_s, energy=energy, deps=(qkv_aliases[request_id],),
+                        time_s=time_s, energy=energy,
+                        deps=tuple(dict.fromkeys((qkv_aliases[request_id], batch_qkv_rest))),
                         link_bytes=kv_bytes, positions=(position,),
                         addresses=(location.key_address, location.value_address))
 
@@ -3772,7 +3925,8 @@ def _append_cacheblend_decode_batched(
                         events, layer=layer_index, tier=tier, request=label,
                         name=name, device="GPU", rows=len(group), time_s=time_s,
                         energy=energy,
-                        deps=(tuple(qkv_aliases[request.request_id] for request in group)
+                        deps=(tuple(dict.fromkeys(qkv_rest_by_request[request.request_id]
+                                                  for request in group))
                               if local_last is None else (local_last,)), positions=positions,
                         batch_members=members)
                 for request in group:
@@ -3923,12 +4077,34 @@ def _append_cacheblend_decode_batched(
                         link_bytes=q_bytes, positions=(position,))
 
                 post_last = None
+                kv_heads_local = _gqa_kv_heads_local(system, heads)
                 for template in post:
                     if template.name in ("qkv", "score", "softmax", "context", "comm_x2g"):
                         continue
                     op = deepcopy(template)
                     op.m = len(group)
                     time_s, energy = system.devices["GPU"].get_time_and_energy(op)
+                    if template.name == "proj" and kv_heads_local > 1:
+                        # AttAcc head pipeline: the projection of the heads
+                        # whose context is already back overlaps the scans
+                        # of the others; one head's share stays exposed
+                        # after the last context return.
+                        energy = tuple(energy)
+                        exposed = 1.0 / kv_heads_local
+                        overlapped = _cacheblend_event(
+                            events, layer=layer_index, tier=tier, request=label,
+                            name="decode_batch_gpu_proj_overlapped", device="GPU",
+                            rows=len(group), time_s=time_s * (1.0 - exposed),
+                            energy=tuple(e * (1.0 - exposed) for e in energy),
+                            deps=(local_last,), positions=positions, batch_members=members)
+                        post_last = _cacheblend_event(
+                            events, layer=layer_index, tier=tier, request=label,
+                            name="decode_batch_gpu_proj", device="GPU", rows=len(group),
+                            time_s=time_s * exposed,
+                            energy=tuple(e * exposed for e in energy),
+                            deps=tuple(context_links.values()) + (overlapped,),
+                            positions=positions, batch_members=members)
+                        continue
                     post_last = _cacheblend_event(
                         events, layer=layer_index, tier=tier, request=label,
                         name="decode_batch_gpu_" + template.name, device="GPU", rows=len(group),

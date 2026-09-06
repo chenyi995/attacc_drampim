@@ -1674,6 +1674,43 @@ class AgenticHistoryTests(unittest.TestCase):
                          len({e["transformer_layer"] for e in prefill_rotate}))
         self.assertTrue(all(len(e["query_positions"]) > 1 for e in prefill_rotate))
 
+    def test_decode_qkv_and_projection_are_head_pipelined(self):
+        """AttAcc head pipeline in the decode DAG (audit DECODE_SCAN_TBT_PIPELINE,
+        2026-09-05): the bank scan's Q link waits for one head's slice of the
+        batch QKV, the K/V link and the GPU local attention wait for all of
+        it, and only one head's share of the projection stays after the
+        context return.  Times and energies of the slices add up to the
+        whole operation."""
+        workload = load_workload(ROOT / "tests/fixtures/workload_relay_s400w4t1.json")
+        plan = build_reuse_plan(workload, "recompute", epic_prefix_recompute_tokens=4)
+        report = run_reuse_prefill(self._toy_system(), workload, plan, pipe=True,
+                                   cacheblend_batch_size=2)
+        events = {e["id"]: e for e in report["events"]}
+        by_name = {}
+        for e in report["events"]:
+            by_name.setdefault(e["name"], []).append(e)
+        self.assertTrue(by_name.get("decode_batch_qkv") and by_name.get("decode_batch_qkv_rest"))
+        heads = max(1, self._toy_system().model.num_heads // max(1, getattr(self._toy_system().model, "gqa_size", 1)))
+        first, rest = by_name["decode_batch_qkv"][0], by_name["decode_batch_qkv_rest"][0]
+        self.assertEqual(rest["depends_on"], [first["id"]])
+        self.assertAlmostEqual(first["time_s"] * (heads - 1), rest["time_s"], places=15)
+        self.assertAlmostEqual(first["energy_nj"] * (heads - 1), rest["energy_nj"], places=9)
+        # Q link -> first slice (through the per-request alias); K/V link -> the rest too
+        alias = next(e for e in by_name["decode_qkv"] if e["depends_on"] == [first["id"]])
+        q_link = next(e for e in by_name["decode_q_gpu_to_pim"] if alias["id"] in e["depends_on"])
+        self.assertNotIn(rest["id"], q_link["depends_on"])
+        kv_link = next(e for e in by_name["decode_kv_gpu_to_pim"] if alias["id"] in e["depends_on"])
+        self.assertIn(rest["id"], kv_link["depends_on"])
+        local = next(e for e in by_name["decode_batch_gpu_local_score"]
+                     if rest["id"] in e["depends_on"])
+        self.assertTrue(local)
+        # projection: overlapped (H-1)/H part after the GPU local chain, exposed 1/H after the context return
+        overlapped = by_name["decode_batch_gpu_proj_overlapped"][0]
+        exposed = next(e for e in by_name["decode_batch_gpu_proj"] if overlapped["id"] in e["depends_on"])
+        self.assertAlmostEqual(exposed["time_s"] * (heads - 1), overlapped["time_s"], places=15)
+        self.assertTrue(any(events[d]["name"] == "decode_ctx_pim_to_gpu" for d in exposed["depends_on"]))
+        self.assertTrue(all(events[d]["device"] == "GPU" for d in overlapped["depends_on"]))
+
     def test_gqa_model_builds_every_rung_with_kv_head_wide_links(self):
         """C2 (2026-09-05): a GQA model (4 Q heads per KV head) must build on
         every rung, and its K/V links must carry KV-head-wide rows."""

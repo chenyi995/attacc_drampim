@@ -9,13 +9,19 @@
 // scheduler.  Semantics replicate _schedule_cacheblend exactly:
 //   resource   = device (pipe) | one serial macro resource (no pipe)
 //   no-pipe PIM pool scans emitted together form one parallel channel phase
-//   start      = max(avail[resource], end[dep] for dep in deps)  (left fold)
-//   end        = start + duration; avail[resource] = end
+//   ready      = max(end[dep] for dep in deps)
+//   start      = earliest t >= ready where [t, t+duration) fits a gap of the
+//                resource's busy timeline (gap back-filling, audit 2026-09-05
+//                P1: a ready event no longer waits behind an earlier-constructed
+//                event that is itself waiting on its dependencies); the
+//                interval is reserved, adjacent intervals merge
+//   end        = start + duration
 //   device < 0 = dependency-only metadata: duration 0, no resource reservation
-// Floats are IEEE doubles with the same fold order as the Python max(),
-// so results are bit-identical.
+// Starts are always existing interval ends or the ready time itself, so the
+// doubles equal the Python fallback's bit for bit.
 #include <cstddef>   // std::size_t (unqualified size_t below needs this on gcc 11)
 #include <cstdint>
+#include <map>
 #include <vector>
 
 namespace {
@@ -28,25 +34,65 @@ struct Core {
     std::vector<int32_t> deps;
     std::vector<double> start_s;
     std::vector<double> end_s;
-    std::vector<double> avail;         // by device id (or [0] when !pipe)
+    // busy intervals per resource (device id, or [0] when !pipe): start -> end
+    std::vector<std::map<double, double>> busy;
     int64_t advanced = 0;              // events scheduled so far
 };
-inline double res_avail(Core* c, int32_t dev) {
-    if (dev < 0) return 0.0;  // dependency-only metadata, no hardware resource
-    size_t r = c->pipe ? static_cast<size_t>(dev) : 0;
-    if (r >= c->avail.size()) c->avail.resize(r + 1, 0.0);
-    return c->avail[r];
+inline double deps_ready(Core* c, int64_t i) {
+    double ready = 0.0;
+    for (int32_t k = c->dep_offset[i]; k < c->dep_offset[i + 1]; ++k) {
+        double e = c->end_s[c->deps[k]];
+        if (e > ready) ready = e;
+    }
+    return ready;
 }
-inline void res_set(Core* c, int32_t dev, double v) {
-    if (dev < 0) return;
+// Earliest start >= ready where duration fits a gap of the resource, and
+// reserve it.  Mirrors _place_on_resource in workload_runner.py.
+inline double place(Core* c, int32_t dev, double ready, double duration) {
+    if (dev < 0 || duration <= 0.0) return ready;
     size_t r = c->pipe ? static_cast<size_t>(dev) : 0;
-    c->avail[r] = v;
+    if (r >= c->busy.size()) c->busy.resize(r + 1);
+    std::map<double, double>& m = c->busy[r];
+    double start = ready;
+    if (m.empty() || ready >= m.rbegin()->second) {
+        if (!m.empty() && m.rbegin()->second == ready) {
+            m.rbegin()->second = ready + duration;
+        } else {
+            m.emplace(ready, ready + duration);
+        }
+        return start;
+    }
+    auto it = m.upper_bound(start);                 // first interval starting after `start`
+    if (it != m.begin()) {
+        auto prev = std::prev(it);
+        if (prev->second > start) start = prev->second;
+    }
+    while (it != m.end() && it->first < start + duration) {
+        start = it->second;
+        ++it;
+    }
+    double end = start + duration;
+    auto prev = (it == m.begin()) ? m.end() : std::prev(it);
+    if (prev != m.end() && prev->second == start) {
+        prev->second = end;
+        if (it != m.end() && it->first == end) {
+            prev->second = it->second;
+            m.erase(it);
+        }
+    } else if (it != m.end() && it->first == end) {
+        double next_end = it->second;
+        m.erase(it);
+        m.emplace(start, next_end);
+    } else {
+        m.emplace(start, end);
+    }
+    return start;
 }
 }  // namespace
 
 extern "C" {
 
-int ec_abi_version() { return 2; }
+int ec_abi_version() { return 3; }
 
 void* ec_new(int pipe) {
     Core* c = new Core();
@@ -89,7 +135,7 @@ void ec_reset(void* h) {
     Core* c = static_cast<Core*>(h);
     c->start_s.clear();
     c->end_s.clear();
-    c->avail.assign(c->avail.size(), 0.0);
+    for (auto& m : c->busy) m.clear();
     c->advanced = 0;
 }
 
@@ -123,33 +169,22 @@ int64_t ec_advance(void* h) {
                 if (!same_deps) break;
                 ++last;
             }
-            double start = res_avail(c, c->device[first]);
-            for (int32_t k = c->dep_offset[first];
-                 k < c->dep_offset[first + 1]; ++k) {
-                double e = c->end_s[c->deps[k]];
-                if (e > start) start = e;
-            }
-            double phase_end = start;
+            double longest = 0.0;
             for (int64_t lane = first; lane < last; ++lane) {
-                double end = start + c->duration[lane];
-                c->start_s[lane] = start;
-                c->end_s[lane] = end;
-                if (end > phase_end) phase_end = end;
+                if (c->duration[lane] > longest) longest = c->duration[lane];
             }
-            res_set(c, c->device[first], phase_end);
+            double start = place(c, c->device[first], deps_ready(c, first), longest);
+            for (int64_t lane = first; lane < last; ++lane) {
+                c->start_s[lane] = start;
+                c->end_s[lane] = start + c->duration[lane];
+            }
             done += last - first - 1;
             i = last - 1;
             continue;
         }
-        double start = res_avail(c, c->device[i]);
-        for (int32_t k = c->dep_offset[i]; k < c->dep_offset[i + 1]; ++k) {
-            double e = c->end_s[c->deps[k]];
-            if (e > start) start = e;
-        }
-        double end = start + c->duration[i];
+        double start = place(c, c->device[i], deps_ready(c, i), c->duration[i]);
         c->start_s[i] = start;
-        c->end_s[i] = end;
-        res_set(c, c->device[i], end);
+        c->end_s[i] = start + c->duration[i];
     }
     c->advanced = n;
     return done;

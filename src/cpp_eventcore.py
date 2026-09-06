@@ -25,13 +25,15 @@ def _load_library() -> Optional[ctypes.CDLL]:
         lib = ctypes.CDLL(_LIB_PATH)
     except OSError:
         return None
-    # Older binaries cannot handle resource-free metadata nodes. Fall back
-    # to Python until the local core is rebuilt instead of using stale rules.
+    # Older binaries cannot handle resource-free metadata nodes (ABI 2) or
+    # still reserve the future instead of back-filling idle windows (ABI 3,
+    # audit 2026-09-05 P1).  Fall back to Python until the local core is
+    # rebuilt instead of using stale rules.
     if not hasattr(lib, "ec_abi_version"):
         return None
     lib.ec_abi_version.restype = ctypes.c_int
     lib.ec_abi_version.argtypes = []
-    if lib.ec_abi_version() != 2:
+    if lib.ec_abi_version() != 3:
         return None
     lib.ec_new.restype = ctypes.c_void_p
     lib.ec_new.argtypes = [ctypes.c_int]
