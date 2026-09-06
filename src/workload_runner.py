@@ -4303,18 +4303,91 @@ def _energy_breakdown(scheduled: Sequence[SplitEvent],
                          for layer in range(top)}}
 
 
+def _latency_stats(values: Sequence[float]) -> Dict[str, Any]:
+    """count / mean / p50 / p95 / max of a list of seconds, in microseconds."""
+    ordered = sorted(values)
+    if not ordered:
+        return {"count": 0, "mean_us": None, "p50_us": None, "p95_us": None, "max_us": None}
+    pick = lambda q: ordered[min(len(ordered) - 1, int(q * (len(ordered) - 1) + 0.5))]
+    return {"count": len(ordered), "mean_us": sum(ordered) / len(ordered) * 1e6,
+            "p50_us": pick(0.5) * 1e6, "p95_us": pick(0.95) * 1e6, "max_us": ordered[-1] * 1e6}
+
+
+def summarize_decode_scans(scheduled: Sequence[SplitEvent]) -> Dict[str, Any]:
+    """Decode PIM scan latency (audit METRICS 2026-09-05, chenyi9's four metrics).
+
+    One logical scan = the lane events that share (request or batch label,
+    layer, name, query positions); its SERVICE latency is the slowest lane's
+    own duration (max over lanes, never the sum and never the lane average),
+    its ELAPSED latency is last lane end minus first lane start (includes
+    queueing on the lanes).  Shared (MQ, several members) and private scans
+    are kept apart.  ``per_step_elapsed`` is, per (member, layer, decode
+    position), first start to last end over every scan that serves it --
+    the scan-side critical path of that member's step.
+    """
+    scans: Dict[Tuple[Any, ...], Dict[str, Any]] = {}
+    for event in scheduled:
+        if not (event.name.startswith("decode_") and "pim_kv_scan" in event.name):
+            continue
+        key = (event.request_id, event.transformer_layer, event.name,
+               tuple(event.query_positions))
+        slot = scans.get(key)
+        if slot is None:
+            slot = scans[key] = {"service": 0.0, "start": event.start_s, "end": event.end_s,
+                                 "lanes": 0, "shared": bool(event.batch_members),
+                                 "members": tuple(event.batch_members) or (event.request_id,)}
+        slot["service"] = max(slot["service"], event.time_s)
+        slot["start"] = min(slot["start"], event.start_s)
+        slot["end"] = max(slot["end"], event.end_s)
+        slot["lanes"] += 1
+    steps: Dict[Tuple[Any, ...], List[float]] = {}
+    for key, slot in scans.items():
+        positions = key[3]
+        for index, member in enumerate(slot["members"]):
+            if slot["shared"] and len(positions) == len(slot["members"]):
+                position = positions[index]
+            else:
+                position = positions[0] if positions else None
+            span = steps.setdefault((member, key[1], position), [slot["start"], slot["end"]])
+            span[0] = min(span[0], slot["start"])
+            span[1] = max(span[1], slot["end"])
+    private = [v for v in scans.values() if not v["shared"]]
+    shared = [v for v in scans.values() if v["shared"]]
+    return {
+        "definition": "service = max over the scan's lanes of the lane duration; "
+                      "elapsed = last lane end - first lane start (queueing included); "
+                      "per_step_elapsed = per (member, layer, position) over every "
+                      "scan serving it.  Shared (MQ) and private scans are not added.",
+        "private_service": _latency_stats([v["service"] for v in private]),
+        "private_elapsed": _latency_stats([v["end"] - v["start"] for v in private]),
+        "shared_service": _latency_stats([v["service"] for v in shared]),
+        "shared_elapsed": _latency_stats([v["end"] - v["start"] for v in shared]),
+        "per_step_elapsed": _latency_stats([e - s for s, e in steps.values()]),
+    }
+
+
 def summarize_cacheblend_schedule(scheduled: Sequence[SplitEvent],
-                                  workload: Workload) -> Dict[str, Any]:
+                                  workload: Workload,
+                                  release_deps: Optional[Dict[str, Sequence[str]]] = None
+                                  ) -> Dict[str, Any]:
     """Compact per-request / per-tier completion times of a scheduled DAG.
 
     ``prefill_end_s`` is the last non-decode event of the request,
     ``first_token_s`` the completion of its first generated token (last event
     at query position ``total_length``), and ``end_s`` its final event.  Batch
     events are attributed to every member.
+
+    ``release_s`` (audit METRICS 2026-09-05) is when the request's business
+    dependencies were satisfied -- the completion of the events in
+    ``release_deps[request_id]`` (previous tier / parent turn done, owners'
+    stores); 0 for a request with none.  ``ttft_s = first_token_s -
+    release_s`` therefore INCLUDES queueing; ``None`` when the request
+    generated no token.  ``decode_scans`` see :func:`summarize_decode_scans`.
     """
-    per_request: Dict[str, Dict[str, float]] = {
+    per_request: Dict[str, Dict[str, Any]] = {
         request.request_id: {"tier": request.tier, "prefill_end_s": 0.0,
-                             "first_token_s": 0.0, "end_s": 0.0}
+                             "first_token_s": 0.0, "end_s": 0.0,
+                             "release_s": 0.0, "ttft_s": None}
         for request in workload.requests}
     first_position = {request.request_id: request.total_length
                       for request in workload.requests}
@@ -4348,7 +4421,17 @@ def summarize_cacheblend_schedule(scheduled: Sequence[SplitEvent],
         if tier is not None:
             tier["start_s"] = (event.start_s if tier["start_s"] is None
                                else min(tier["start_s"], event.start_s))
-    return {"requests": per_request, "tiers": tiers}
+    end_by_id = {event.event_id: event.end_s for event in scheduled}
+    for request_id, deps in (release_deps or {}).items():
+        record = per_request.get(request_id)
+        if record is not None:
+            record["release_s"] = max((end_by_id[d] for d in deps if d in end_by_id),
+                                      default=0.0)
+    for record in per_request.values():
+        if record["first_token_s"] > 0.0:
+            record["ttft_s"] = record["first_token_s"] - record["release_s"]
+    return {"requests": per_request, "tiers": tiers,
+            "decode_scans": summarize_decode_scans(scheduled)}
 
 
 def _software_reuse_rows(plan: ReusePlan, layer: int, request):
@@ -4468,12 +4551,14 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
     events: List[SplitEvent] = []
     prefill_attn_rows: Dict[str, Dict[str, int]] = {}
     previous_tier_done: Tuple[str, ...] = ()
+    release_deps: Dict[str, Tuple[str, ...]] = {}
     for tier, requests, _, _ in _tier_shapes(workload):
         tier_done: List[str] = []
         decode_ready: Dict[str, Tuple[str, ...]] = {}
         decode_totals: Dict[str, int] = {}
         for request in requests:
             request_ready: Tuple[str, ...] = previous_tier_done
+            release_deps[request.request_id] = request_ready
             total_rows = request.total_length + request.history_len
             prefill_store_events: List[str] = []
             for layer_index in range(ndec):
@@ -4637,7 +4722,8 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
         "events": ([event.to_dict() for event in scheduled] if include_events
                    else None),
         "event_count": len(scheduled),
-        "summary": summarize_cacheblend_schedule(scheduled, workload),
+        "summary": summarize_cacheblend_schedule(scheduled, workload,
+                                                 release_deps=release_deps),
         "link_bytes": sum(event.link_bytes for event in scheduled),
         "makespan_s": max((event.end_s for event in scheduled), default=0.0),
         "gpu_time_s_unoverlapped": sum(event.time_s for event in scheduled
@@ -4752,6 +4838,10 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
     di_bitmap_bytes_total = 0
 
     store_registry: Dict[Tuple[int, str, str], List[str]] = {}
+    # request id -> the events whose completion releases the request into
+    # the scheduler (previous tier done + the owners' stores its first layer
+    # reads); TTFT is measured from there (audit METRICS 2026-09-05).
+    release_deps: Dict[str, Tuple[str, ...]] = {}
     for tier, requests, _, _ in _tier_shapes(workload):
         tier_done: List[str] = []
         decode_inputs = []
@@ -4760,6 +4850,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         # on the owner's store can be expressed when it is built.
         for request in sorted(requests, key=lambda item: item.request_id):
             request_ready: Tuple[str, ...] = previous_tier_done
+            release_deps[request.request_id] = request_ready
             # A layer's K/V writeback is not an input to the next layer's GPU
             # QKV.  Keep it pending so it can overlap that compute exactly as
             # in the CacheBlend trace, then join it before decode first reads
@@ -4778,6 +4869,8 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                                                request.request_id)
                 if owner_deps:
                     request_ready = tuple(dict.fromkeys(request_ready + owner_deps))
+                    if layer_index == 0:
+                        release_deps[request.request_id] = request_ready
                 side_rows = prefill_attn_rows.setdefault(
                     request.request_id, {"pim": 0, "gpu": 0})
                 if physical_no_reuse:
@@ -5181,6 +5274,7 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
         "pim_prefill_mode": pim_prefill_mode, "kv_mapping": kv_mapping,
         "pim_pe_freq_ghz": pim_pe_freq_ghz,
         "gemv_buffer_bytes": gemv_buffer_bytes,
+        "release_deps": release_deps,
         # Includes layout preparation, event construction and PIM pricing,
         # but excludes DAG validation/scheduling/report assembly below.
         "dag_build_s": time.perf_counter() - build_started,
@@ -5269,7 +5363,8 @@ def _finalize_cacheblend_report(system, workload: Workload, plan: ReusePlan,
                    else None),
         "event_count": len(scheduled),
         "dag_build_s": ctx.get("dag_build_s", 0.0),
-        "summary": summarize_cacheblend_schedule(scheduled, workload),
+        "summary": summarize_cacheblend_schedule(scheduled, workload,
+                                                 release_deps=ctx.get("release_deps")),
         "tlb": tlb_report,
         "link_bytes": sum(event.link_bytes for event in scheduled),
         "makespan_s": max((event.end_s for event in scheduled), default=0.0),
