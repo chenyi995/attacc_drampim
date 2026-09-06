@@ -4552,8 +4552,10 @@ def _run_gpu_software_only(system, workload: Workload, plan: ReusePlan,
             for start in range(0, len(active), _DECODE_SERVE_WAVE):
                 group = active[start:start + _DECODE_SERVE_WAVE]
                 members = tuple(request.request_id for request in group)
-                positions = tuple(decode_totals[request.request_id] + step
-                                  for request in group)
+                # query positions count from the prompt end, history excluded,
+                # as in every other rung (re-audit C6.2: with history the
+                # summary never matched A2's first token)
+                positions = tuple(request.total_length + step for request in group)
                 reads = []
                 for request in group:
                     # resident rows only: this step's token is produced on
