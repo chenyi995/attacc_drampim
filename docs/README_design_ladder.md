@@ -8,7 +8,7 @@ A1/A2 是独立 baseline，不要求彼此只差一步；A3b 起按已声明机�
 | A2 | 软件复用、KV 回 GPU 计算 | GPU | 独立基线 |
 | A3b | 朴素软件复用与 PIM | GPU | 持久写入序放置；同轮 diff 可合并 |
 | A4c | diff 紧凑区域 | GPU | master 同 A3b；diff 按写入序紧凑追加进本 head 的 diff 行，diff 行像 master 块一样在该 head 的通道上轮转（第 j 行在通道 j mod 条带宽） |
-| A4e | 软件放置表 | GPU | 表管 master 也管 diff：master 块分散共读；diff 按 agent 分组紧凑（一个 agent 各轮的修正共用它自己的 diff 行，别的 agent 不穿插），每个新 diff 行放到该 agent 所读行最少的通道 |
+| A4e | 软件放置表 | GPU | 表管 master 也管 diff：master 块分散共读；diff 按 agent 分组紧凑（一个 agent 各轮的修正共用它自己的 diff 行，别的 agent 不穿插），每个新 diff 行放到该 agent 得分最低的通道（各轮请求读取该通道 master 块的累计次数 + 已分配 diff 行数，并列沿用轮转） |
 | A5 | PIM prefill 与 MQ | PIM | 继承布局，采用已接受的 MQ/PE/buffer 配置；线性层仍 GPU |
 | A6 | 逐请求选边 | GPU/PIM | 两侧服务价格比较，首层决定后复用；平局 PIM |
 

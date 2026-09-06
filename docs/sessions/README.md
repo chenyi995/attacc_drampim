@@ -4,6 +4,7 @@
 
 | 日期 | Session | 内容 |
 |---|---|---|
+| 2026-09-06（W1、新 diff 布局） | [设计、workload与手算复审](2026-09-06-w1-rotating-diff-audit.md) | 新旋转/按agent分组的论文对齐；W1继承、实际行列数、全组MQ与评分定义；三个独立agent，仅audit和静态计算 |
 | 2026-09-05（持续汇总与TBT） | [Workload设计、手算和静态核验](2026-09-05-targeted-workload-design.md) | 按最新commit解释S11稀释；持续汇总diff、周期共读冲突、低query与选边；输入/反例/手算/运行指南和独立审查，无新性能模拟 |
 | 2026-09-05（Fig. 3b 固定工作量） | [八列分布到一至八行](2026-09-05-fig3b-fixed-columns-revision.md) | 按用户方法替换轮数曲线；真实 Ramulator 四点、均匀行分布、原始数据、新目录复现、独立审查与正文同步 |
 | 2026-09-05（decode scan / TBT） | [GPU 与流水审查](2026-09-05-decode-scan-tbt-pipeline-audit.md) | 单 scan 与 TBT 降幅、百分比保留口径、真实 GPU 空窗、AttAcc 固定成本与独立审计；仅 audit |

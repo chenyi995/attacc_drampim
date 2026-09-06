@@ -12,18 +12,18 @@
   上下文每轮重列它之前读过、写过的一切，所以早先轮次的修正被继承，不重算。
 - main 第 r 轮（r ≥ 2）：总结 worker 第 r−2 轮的回答——`workers` 个回答块作为复用段进入 main 的上下文（偏移不同，每轮新增 `workers × k` 个修正），
   加 16 token 指令，答 `main_lout` token。早先轮次的修正全部继承。
-- 两个会话的同号 worker 每轮读同一篇文档：decode batch 里有共读行（MQ 的材料），放置表看到跨会话共读。
+- 两个会话的同号 worker 每轮读同一篇文档：放置表看到跨会话共读。注意 decode 的整批 MQ 要求 batch 里**所有**成员有共同的 master 行，W1 的一个 batch 是 2 个 main + 4 个 worker，交集为空，所以 W1 上没有跨会话的 decode MQ；A5/A6 在 W1 上的 MQ 来自 prefill 的多 query sweep，GQA 模型上还有同一 KV head 的多个 Q head 共享（审计 2026-09-06 §5）。
 
 为什么是 r−2：loader 把 (tier, id) 排序中第一个列出某指纹的请求当作 owner；worker 自己的下一轮（tier r−1）以 `parent_out` 列出它的回答，
-main 必须在更晚的 tier 引用，否则会被当成写者、得不到修正。
+main 必须在更晚的 tier 引用，否则会被当成写者、得不到修正。语义上 main 是延迟两轮的流水汇总：前两轮只有指令和自己的历史，最后两轮 worker 的回答没有被 main 消费。
 
 每一档拿到什么（结构探针 `output/analysis/b1_levers.py`，`LEVERS_HEADS_PER_HBM=2` = 每 KV head 8 通道）：
 
 | 相邻档 | 机制 | W1 上的结构杠杆 |
 |---|---|---|
 | A3b → A4c | main 每轮的修正落在朴素写入流的不同行（断开的 diff），紧凑的 diff 行把它们收拢，diff 行在 head 的通道上轮转 | 修正行 3412 → 940（少 72%）；最忙 lane 的 DRAM 行 A3b 1704 → A4c 1569 |
-| A4c → A4e | worker 的回答被 main 共读，表把它们分到不同通道；main 的修正被表分成一组、放到 main 所读行最少的通道 | 最忙 lane 行数少 34%；最忙 lane 的 DRAM 行 1569 → 957 |
-| A4e → A5 | 每一轮都是 decode 形状（m 为几十、上下文几千）；MQ 合并 batch 里两个会话的共读 sweep | 两会话同号 worker 的文档历史相同 |
+| A4c → A4e | worker 的回答被 main 共读，表把它们分到不同通道；main 的修正被表分成一组，新 diff 行放到得分最低的通道（得分 = 该 agent 各轮请求读取该通道 master 块的累计次数 + 已分配给它的 diff 行数，并列沿用轮转） | 最忙 lane 行数少 34%；最忙 lane 的 DRAM 行 1569 → 957 |
+| A4e → A5 | 每一轮都是 decode 形状（m 为几十、上下文几千），prefill 的多 query 用 MQ 一次 sweep；decode 的整批 MQ 在 W1 上不触发（见上） | 末轮 main 16 次 sweep、worker 12 次 |
 | A5 → A6 | 语料导入是唯一的大 fresh prefill，A6 留在 GPU | owner 12288 token 的导入 |
 
 参数：`rounds=24 workers=2 sessions=2 worker_lout=128 main_lout=128 doc_tokens=256`，145 个请求，main 末轮上下文 9k。

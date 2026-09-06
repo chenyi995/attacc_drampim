@@ -44,7 +44,7 @@ batch 8。所有 combo 同一 model、同一 workload、同一几何、同一修
 
 一个会话 = 一个 main agent + 2 个 worker，两个会话并排。语料 owner 一次导入 48 篇 256-token 文档；每轮每个 worker 读一篇**新**文档
 （从 owner 复用、偏移不同，k=8 个修正行）、写 16 token 笔记、答 128 token；main 每轮总结 worker 两轮前的回答（2 个回答块作为复用段
-进入 main 的上下文，每轮新增 2×8 个修正，旧修正逐轮继承）、答 128 token；两个会话的同号 worker 每轮读同一篇文档。24 轮，145 个请求，
+进入 main 的上下文，每轮新增 2×8 个修正，旧修正逐轮继承）、答 128 token；两个会话的同号 worker 每轮读同一篇文档（放置表看到跨会话共读；decode 的整批 MQ 需要 batch 全部成员有共同行，W1 上为空，A5 的 MQ 来自 prefill sweep）。24 轮，145 个请求，
 main 末轮上下文 9k。每一档的杠杆和 r−2 的原因见 `workload/probe/README.md`。
 
 ### 2.2 sweep 轴（围绕 W1，各跑 A3b + A6）

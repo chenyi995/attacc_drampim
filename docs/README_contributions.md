@@ -7,7 +7,7 @@
 ## 四项贡献：每项一句话
 
 1. **diff 紧凑布局（A3b → A4c）：** 把一个 KV head 下跨 chunk、跨轮产生的 diff 按写入序紧凑追加到该 head 的 diff 行里，diff 行和 master 块一样在该 head 的 channel 上轮转，master 仍使用该 head 的全部 channel；累计的修正只占少数几行，而这几行分布在不同 channel 上并行扫描，以减少分散修正带来的额外行激活、又不把修正压到一条 channel 上。
-2. **软件放置表（A4c → A4e）：** 在写入时用软件表决定放置：master 块按会一起被读的关系分散到该 head 的不同 channel；diff 按 agent 分组，一个 agent 各轮的修正共用它自己的 diff 行（别的 agent 的修正不穿插），每个新 diff 行放到该 agent 所读的行最少的 channel；位置记录下来供后续扫描使用，以减少同通道串行。
+2. **软件放置表（A4c → A4e）：** 在写入时用软件表决定放置：master 块按会一起被读的关系分散到该 head 的不同 channel；diff 按 agent 分组，一个 agent 各轮的修正共用它自己的 diff 行（别的 agent 的修正不穿插），每个新 diff 行放到该 agent 得分最低的 channel（得分 = 该 agent 各轮请求读取该 channel 上 master 块的累计次数加已分配给它的 diff 行数，并列沿用轮转）；位置记录下来供后续扫描使用，以减少同通道串行。
 3. **MQ 与 PIM prefill attention（A4e → A5）：** 将 prefill attention 放到 PIM，让多个 query 用 MQ 复用同一次共享列读取、在换行前用完当前行，同时保留 GPU 上的线性计算，以减少重复读数和历史 KV 回读。
 4. **动态选边（A5 → A6）：** 对每个 prefill，按实际计算 token 数、上下文长度和链路成本比较两侧估价，选择 GPU 或 PIM 执行注意力，使不同计算量的请求采用各自更合适的执行侧。
 
