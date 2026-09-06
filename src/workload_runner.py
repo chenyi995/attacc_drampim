@@ -1137,11 +1137,28 @@ class PhysicalLedger:
                     key_address = base + start + first * _GEN_BYTES_PER_TOKEN
                     per_channel.setdefault(channel, []).append(
                         (key_address, key_address + _ORIGINAL_KV_GAP_BYTES, count))
-        # One extent per object run, in address order.  Adjacent extents are
-        # NOT merged here: Ramulator's row buffer merges what really shares a
-        # row, and keeping object identity is what makes the trace auditable.
-        return [(channel, 1, sorted(per_channel[channel]))
-                for channel in sorted(per_channel)]
+        # One extent per object run, in address order, then physically
+        # contiguous extents on a channel are merged (chenyi9 2026-09-06,
+        # audit COALESCING_CLARIFICATION): the trace generator rounds its
+        # column commands per extent, so two packed 8-token repairs that sit
+        # back to back cost twice the commands of the same 16 tokens in one
+        # A3b burst unless the scan describes them as one segment.  The
+        # object identity stays in the ledger index; only the scan
+        # descriptor handed to Ramulator is merged.  The same rule serves
+        # every policy.
+        groups = []
+        for channel in sorted(per_channel):
+            merged: List[Tuple[int, int, int]] = []
+            for key, value, count in sorted(per_channel[channel]):
+                if merged:
+                    last_key, last_value, last_count = merged[-1]
+                    if (key == last_key + last_count * _GEN_BYTES_PER_TOKEN and
+                            value == last_value + last_count * _GEN_BYTES_PER_TOKEN):
+                        merged[-1] = (last_key, last_value, last_count + count)
+                        continue
+                merged.append((key, value, count))
+            groups.append((channel, 1, merged))
+        return groups
 
 
 def _striped_append_channel_extents(reads: Sequence[KVLocation], *, policy: str,

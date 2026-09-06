@@ -737,10 +737,16 @@ class PhysicalLedgerTest(unittest.TestCase):
         tlb = self._store(corpus)
         alone = self._groups(tlb, self._reads(tlb, [corpus[16]]), "slice-append")
         both = self._groups(tlb, self._reads(tlb, [corpus[0], corpus[16]]), "slice-append")
-        addr_alone = {placed[0][0] for _c, _n, placed in alone}
-        addr_both = {key for _c, _n, placed in both for key, _v, _r in placed}
+        # compare the token addresses the scans cover, not the segment
+        # starts: c0 and c16 share channel 0 back to back, so read together
+        # they are one merged segment (coalescing, 2026-09-06)
+        def covered(groups):
+            return {key + i * _GEN_BYTES_PER_TOKEN for _c, _n, placed in groups
+                    for key, _v, rows in placed for i in range(rows)}
+        addr_alone, addr_both = covered(alone), covered(both)
         self.assertTrue(addr_alone <= addr_both)
-        self.assertEqual(len(addr_alone), 1)
+        self.assertEqual(len(addr_alone), 256)
+        self.assertEqual(len({placed[0][0] for _c, _n, placed in alone}), 1)
 
     def test_zero_diff_master_geometry_is_identical_for_a3b_and_a4c(self):
         # R01's control group: nothing to gather, so the two rungs must hand
@@ -823,6 +829,21 @@ class PhysicalLedgerTest(unittest.TestCase):
                     for key, _v, _r in placed if key % _HBM_CHANNEL_BYTES >= _DIFF_REGION_BYTES}
         self.assertEqual(len(diff_rows("master-diff-local-append")), 1)         # one packed row
         self.assertEqual(len(diff_rows("master-diff-table-local-append")), 2)   # one row per agent
+
+    def test_contiguous_packed_repairs_form_one_scan_segment(self):
+        """chenyi9 2026-09-06 (audit COALESCING_CLARIFICATION): two repairs
+        packed back to back in the diff row are ONE scan segment, as the
+        same 16 tokens are in an A3b burst -- the generator rounds column
+        commands per segment, so separate segments would double them."""
+        reservations = [("owner", "c0", range(256), "master"), ("owner", "c1", range(256), "master"),
+                        ("consumer", "c0", range(8), "diff"), ("consumer", "c1", range(8), "diff")]
+        tlb = self._store(reservations)
+        repairs = [x for x in reservations if x[3] == "diff"]
+        reads = self._reads(tlb, repairs)
+        for policy in ("master-diff-local-append", "master-diff-table-local-append", "slice-append"):
+            segments = [e for c, _n, p in self._groups(tlb, reads, policy, heads=4) if c < 4 for e in p]
+            self.assertEqual(len(segments), 1, policy)
+            self.assertEqual(segments[0][2], 16, policy)
 
     def test_sub_range_read_geometry_matches_across_rungs(self):
         # R03's second counter-example: reading [128, 384) of a 512-token master
