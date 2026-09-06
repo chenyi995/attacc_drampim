@@ -68,6 +68,7 @@ C2 把 A5 也放到赢的一侧：全是 decode 形状的轮次，PIM 侧 prefil
 | S8 新鲜提示占比 | `C1_S8_fresh_share_*` | 0, 0.25 | A6 留在 GPU 的份额 |
 | S9 语料大小 | `C1_S9_corpus_*` | 32, 128 chunk | 导入长度、散取的分散度 |
 | S10 检索方式 | `C1_S10_retrieval_consecutive` | 连续 | 表的负对照（连续块本来就均衡） |
+| S11 长驻留上下文 | `C1_S11_brief_*` | 简报 64 / 128 chunk（16k / 32k token，语料随之 128 / 192） | 扫描在一步里的占比（§5） |
 
 结构探针（不跑 Ramulator）：`LEVERS_HEADS_PER_HBM=2 python3 output/analysis/b1_levers.py workload/probe/sweep/C1_turns.json`，
 给出 A4c 修正行、A4e 最忙 lane、最忙 lane 相对平均 lane 的余量。
@@ -120,3 +121,23 @@ A5→A6 1.210 / 1.000（选边）；A6 对 A3b E2E 1.106、TTFT 1.239、TBT 1.03
 数据在 `scratch_0905/out_C1v2_CACHEBLEND-TINY_hbm4_k8/summary_ref_A3b.md`，不进仓库。
 
 数字只能由脚本复制和计算（`agent.md` §3）；结果目录不进仓库，汇总表进 `output/analysis/`。
+
+## 5. 扫描收益在哪个区间才看得见（审计 DECODE_SCAN_TBT_PIPELINE 的结论）
+
+布局与 MQ 改的是 decode 的 PIM 扫描；一步 decode 的时间是 GPU 的线性层（权重读取、AttAcc 原有的 norm/激活固定项）加扫描加链路。
+扫描占一步的份额 ≈ batch × 驻留上下文 × KV 字节 对 权重字节的比：batch 8、上下文 2–5k 时，即使在真实 model 上扫描也只占一步的几个百分点，
+布局把扫描降 30% 只能在 TBT 上体现 1–2%（TINY 上实测 A3b→A4e 扫描 −29%、TBT −1.75%）。这不是调度 bug，是工作点。
+
+用设备模型加 TINY 的扫描标定推导（`LLAMA3-8B`、flash、每头 8 通道；推导值，不是实测）：
+
+| batch | 上下文 4k | 上下文 16k | 上下文 64k |
+|---|---|---|---|
+| 8 | 扫描占一步 7% | 24% | 56% |
+| 32 | 20% | 50% | 80% |
+| 64 | 29% | 62% | 87% |
+
+所以要让扫描收益在 TBT 上"正确体现"，要把 decode 放进 KV 主导的区间：S11 的长简报（16k / 32k 驻留上下文）是 workload 侧的杠杆，
+batch 是运行侧的杠杆（`BATCH=32 bash experiments/run_sweep.sh <outroot> '^C1_turns' LLAMA3-8B`，同一 workload，只改 batch）。
+两者都是 AttAcc 论文自己的评测区间（长上下文、大 batch）。调度器已改为回填空窗（审计 P1），不再让已就绪的 GPU 工作等在
+一个仍在等 PIM 的事件后面；decode 的 QKV 与投影按 KV head 切片（AttAcc 原版 `minimum_ratio` 的 head 流水），扫描只等第一个 head 的 Q，
+投影只有最后一个 head 留在扫描之后。两项对所有 combo 一致，见 session §23–24。
