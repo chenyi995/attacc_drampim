@@ -144,7 +144,7 @@ def analyse(path):
         turns.append((request.request_id, m, n, resident, t_xpu, t_bank))
     pim = [t for t in turns if t[5] <= t[4]]
     gpu = [t for t in turns if t[5] > t[4]]
-    owner = next(t for t in turns if t[0] == "a0_owner")
+    owner = next((t for t in turns if t[0] in ("a0_owner", "a0_corpus")), turns[0])
     print("%s  (heads/HBM %d, stripe %d)" % (os.path.basename(path), HEADS_PER_HBM, STRIPE))
     print("  A4e lever  busiest-lane rows over all turns: naive %d  table %d  (%.1f%% fewer); mean lane naive %.0f -> imbalance headroom naive %.1f%%, table %.1f%%" % (
         conflict["A3b"], conflict["A4e"], 100 * (1 - conflict["A4e"] / max(1, conflict["A3b"])), mean_lane["A3b"],
