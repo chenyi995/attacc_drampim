@@ -316,15 +316,25 @@ def _event(events: List[SplitEvent], transformer_layer: int, request_id: str,
         _EC.add(device, time_s, (), name=name)
 
 
+# A transfer below this size is a "small send" (chenyi9 ruling 2026-09-05,
+# second part): it pays no fixed NVLink latency.  1 MiB moves in 1.7 us at
+# 600 GB/s, well under the 6 us intercept, i.e. it is the kind of message a
+# runtime batches or pipelines rather than launches on its own; a prefill's
+# whole-context KV or Q (tens of MB) is a launch and pays the intercept once.
+_LINK_LATENCY_MIN_BYTES = 1 << 20
+
+
 def _link_layer(template: Layer, name: str, byte_count: int) -> Layer:
     """Represent an exact byte-count transfer with the legacy X2G model.
 
-    ``link_latency`` (chenyi9 ruling 2026-09-05): the per-transfer NVLink
-    latency of the refined/flash link model is charged only on prefill's
-    large transfers.  A decode step's small per-request transfers (Q, LSE
-    tuple, context, one KV row) and metadata loads do not pay it -- they
-    were serializing 80 latencies per step on the single link resource and
-    hid every layout effect.
+    ``link_latency`` (chenyi9 rulings 2026-09-05): the per-transfer NVLink
+    latency of the refined/flash link model is charged only on LARGE
+    prefill transfers (>= ``_LINK_LATENCY_MIN_BYTES``).  A decode step's
+    per-request transfers (Q, LSE tuple, context, one KV row), metadata
+    loads and any small send -- a turn's Q, its rotated Q variants, its
+    context return -- do not pay it: per-step they serialized 80 latencies
+    on the single link resource and hid every layout effect, and per query
+    they priced a PIM-side prefill 30x above its bank sweeps.
     """
     layer = deepcopy(template)
     layer.name = name
@@ -333,7 +343,8 @@ def _link_layer(template: Layer, name: str, byte_count: int) -> Layer:
     layer.n = byte_count // layer.dbyte
     layer.k = 1
     layer.numOp = 1
-    layer.link_latency = not (name.startswith("decode_") or "bitmap" in name)
+    layer.link_latency = (byte_count >= _LINK_LATENCY_MIN_BYTES and
+                          not (name.startswith("decode_") or "bitmap" in name))
     return layer
 
 
@@ -5105,18 +5116,26 @@ def _run_cacheblend_prefill(system, workload: Workload, plan: ReusePlan,
                     sweep_cap = max(1, min(batch_size,
                                            mq_query_capacity(gemv_buffer_bytes) //
                                            _gqa_group(system)))
+                    # The extra rotated Q variants of a PIM-side prefill are
+                    # ONE transfer per layer (fix 2026-09-05, C1 ladder): the
+                    # GPU holds every query of the prefill after qkv, so the
+                    # variants for all m queries leave together -- the same
+                    # bytes as before (extra variants x m x q_bytes), but one
+                    # fixed link latency instead of one per query.  Per-query
+                    # transfers charged 6 us x m per layer, 30x the chooser's
+                    # price of the bank sweeps, and serialized every PIM-side
+                    # turn of a tier behind the single LINK resource.  Decode
+                    # keeps its per-step transfer (one query per step).
+                    rotate_ready = _append_q_rotate_distribution(
+                        system, events, x2g, layer=layer_index, tier=tier,
+                        request=request.request_id, q_dependency=q_link,
+                        q_bytes=local_hidden * dbyte * len(compute_positions),
+                        locations=scan_locations, location_deltas=location_deltas,
+                        rotate_mode=rotate_mode, name_prefix="",
+                        positions=tuple(compute_positions))
                     for first in range(0, len(compute_positions), sweep_cap):
                         grouped_positions = compute_positions[first:first + sweep_cap]
-                        query_ready = []
-                        for position in grouped_positions:
-                            rotate_ready = _append_q_rotate_distribution(
-                                system, events, x2g, layer=layer_index, tier=tier,
-                                request=request.request_id, q_dependency=q_link,
-                                q_bytes=local_hidden * dbyte, locations=scan_locations,
-                                location_deltas=location_deltas,
-                                rotate_mode=rotate_mode, name_prefix="",
-                                positions=(position,))
-                            query_ready.append(rotate_ready)
+                        query_ready = [rotate_ready]
                         op = deepcopy(score)
                         op.m, op.n, op.k, op.numOp = (len(grouped_positions),
                                                       len(scan_locations),

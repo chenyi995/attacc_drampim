@@ -1666,6 +1666,13 @@ class AgenticHistoryTests(unittest.TestCase):
         rotate = [e for e in report["events"] if "rotate_q_extra" in e["name"]
                   and e["request"] == "b_consumer"]
         self.assertTrue(rotate)
+        # A PIM-side prefill sends its extra Q variants ONCE per layer, for
+        # every query of the prefill at once (fix 2026-09-05): per-query
+        # transfers each paid the fixed link latency and serialized the tier.
+        prefill_rotate = [e for e in rotate if not e["name"].startswith("decode_")]
+        self.assertEqual(len(prefill_rotate),
+                         len({e["transformer_layer"] for e in prefill_rotate}))
+        self.assertTrue(all(len(e["query_positions"]) > 1 for e in prefill_rotate))
 
     def test_gqa_model_builds_every_rung_with_kv_head_wide_links(self):
         """C2 (2026-09-05): a GQA model (4 Q heads per KV head) must build on
@@ -1839,12 +1846,14 @@ class AgenticHistoryTests(unittest.TestCase):
         by_key = {(d.request_id, d.segment_index): d for d in plan.reusable}
         self.assertIsNone(by_key[("w_t1", 1)].inherits_from)
 
-    def test_link_latency_is_charged_on_prefill_transfers_only(self):
-        """chenyi9 ruling 2026-09-05: the flash link model's per-transfer
-        NVLink latency applies to prefill's large transfers, not to a decode
-        step's per-request transfers or metadata loads."""
+    def test_link_latency_is_charged_on_large_prefill_transfers_only(self):
+        """chenyi9 rulings 2026-09-05: the flash link model's per-transfer
+        NVLink latency applies to prefill's LARGE transfers only -- not to a
+        decode step's per-request transfers, not to metadata loads, and not
+        to small sends such as a turn's Q (second ruling: 发送Q这种小的就
+        不用固定延迟了，只有发送大的才需要)."""
         from src.config import make_model_config, make_xpu_config
-        from src.workload_runner import _link_layer
+        from src.workload_runner import _link_layer, _LINK_LATENCY_MIN_BYTES
         modelinfos = make_model_config("CACHEBLEND-TINY", DataType.W16A16)
         cfg = make_xpu_config(GPUType.A100a, num_gpu=1, mem_cap=80 << 30, gpu_model="flash",
                               pim_link_bw=600e9, attn_splitk=False)
@@ -1852,12 +1861,19 @@ class AgenticHistoryTests(unittest.TestCase):
         system.model.build(1, 1, 2, True)
         gpu = system.devices["GPU"]
         x2g = next(l for l in system.model.sum_decoder if l.name == "comm_x2g")
-        prefill = gpu.get_time_and_energy(_link_layer(x2g, "q_gpu_to_pim", 4096))[0]
-        decode = gpu.get_time_and_energy(_link_layer(x2g, "decode_q_gpu_to_pim", 4096))[0]
-        bitmap = gpu.get_time_and_energy(_link_layer(x2g, "di_bitmap_gpu_to_die", 4096))[0]
-        self.assertAlmostEqual(prefill - decode, gpu.nvlink_latency)
-        self.assertAlmostEqual(bitmap, decode)
+        big = 16 << 20
+        price = lambda name, nbytes: gpu.get_time_and_energy(_link_layer(x2g, name, nbytes))[0]
         self.assertGreater(gpu.nvlink_latency, 0)
+        # large prefill transfer pays the intercept once; the same bytes in decode do not
+        self.assertAlmostEqual(price("kv_gpu_to_pim", big) - price("decode_kv_gpu_to_pim", big),
+                               gpu.nvlink_latency)
+        # a small prefill send (a turn's Q, 4 KiB) pays nothing extra
+        self.assertAlmostEqual(price("q_gpu_to_pim", 4096), price("decode_q_gpu_to_pim", 4096))
+        self.assertAlmostEqual(price("di_bitmap_gpu_to_die", 4096), price("decode_q_gpu_to_pim", 4096))
+        # the boundary: exactly the threshold pays, one byte less does not
+        self.assertAlmostEqual(price("q_gpu_to_pim", _LINK_LATENCY_MIN_BYTES)
+                               - price("q_gpu_to_pim", _LINK_LATENCY_MIN_BYTES - 2),
+                               gpu.nvlink_latency, delta=gpu.nvlink_latency * 0.01)
 
     def test_single_request_decode_books_its_post_attention_as_decode(self):
         """C6.1: with batch size 1 the projection/FFN after a generated
