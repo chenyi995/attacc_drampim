@@ -53,6 +53,60 @@ FRESH_LENGTHS = (2048, 4096, 8192)
 
 BASELINE = dict(agents=8, rounds=8, chunks=2, own=128, lout=256, corpus=64,
                 fresh_share=0.0)
+
+# B1 (2026-09-05, after the first small run): a session built so that every
+# rung has something to separate it from the previous one.
+#   * retrieval="scattered": a round's chunks are a seeded random subset of
+#     the corpus, so chunks read together often sit an even number of
+#     writes apart -- the same slot under the naive rotation (stripe 2), the
+#     conflict A4e's table removes.  "consecutive" is the old pattern.
+#   * two kinds of agent: CHATTY ones write own_chatty tokens per turn (the
+#     decode-shaped prefill the banks win), WRITER ones write own_writer
+#     (the GPU wins); chatty_share is the chatty fraction.  A6 splits them,
+#     A5 must put every turn (and the corpus ingest) in the banks.
+#   * turns form: every round is a request over the whole earlier context,
+#     so each turn's prefill is m = own + repairs over n = the context.
+#   * chunks=2 per round: a round's repairs (2 x k = 16 tokens = 64 B) are
+#     far below one DRAM row, so A3b's one-row-per-round pages waste most of
+#     each row and A4c's packed diff rows pay off; with 4 chunks a round
+#     already fills a row and gathering changes nothing (lever probe,
+#     output/analysis/b1_levers.py).
+B1 = dict(agents=8, rounds=8, chunks=2, corpus=64, lout=128, retrieval="scattered",
+          own_chatty=16, own_writer=256, chatty_share=0.5, fresh_share=0.0, lout_chatty=None)
+# C1 "classic" (chenyi9 2026-09-05: one workload that gives every rung its
+# lever, small enough to run the seven-rung ladder on a real model):
+#   * 6 worker agents x 6 turns, ONE retrieved chunk per turn -- 6 x 8 = 48
+#     repair tokens per global round, so an agent's diffs of consecutive
+#     turns share rows only under A4c's packed diff region (A3b pays one
+#     row per turn; 68% fewer repair rows in the lever probe);
+#   * scattered retrieval over a 64-chunk corpus -> co-read conflicts for
+#     A4e's table (28% fewer busiest-lane rows at 8 channels per head);
+#   * half chatty agents (16 own tokens, 32-token answers) and half writers
+#     (256 own tokens, 128-token answers) -> the decode-shaped turns A5/A6
+#     put in the banks and the writer turns A6 sends to the GPU;
+#   * fresh_share 0.1 -> four standalone fresh chats (2k/4k/8k/2k tokens, no
+#     reuse): the long fresh prefill that under flash belongs on the GPU,
+#     so A6 separates from A5 even when every reuse turn favours the banks.
+C1 = dict(B1, agents=6, rounds=6, chunks=1, lout_chatty=32, fresh_share=0.1)
+B1_SWEEPS = {
+    "T1_agents": ("agents", (4, 16)),
+    "T2_rounds": ("rounds", (4, 16)),
+    "T3_chunks": ("chunks", (1, 4)),
+    "T4_own_chatty": ("own_chatty", (8, 32, 64)),
+    "T5_chatty_share": ("chatty_share", (0.0, 0.25, 0.75, 1.0)),
+    "T6_retrieval": ("retrieval", ("consecutive",)),
+    "T7_corpus": ("corpus", (16, 32)),
+    "T8_lout": ("lout", (32, 512)),
+    # T9: agents that answer at different lengths -- chatty agents decode
+    # lout_chatty tokens per turn, writers lout_writer -- so the decode
+    # output stream interleaves unevenly and short-answer agents drop out of
+    # later steps (the "a chunk / b others / c diff / d others / e output"
+    # structure chenyi9 asked about, 2026-09-05).  Turn ORDER is still the
+    # round index: the engine starts a tier when the whole previous tier is
+    # done, so a fast agent cannot really run ahead in time; that is a
+    # scheduler property, not a workload one.
+    "T9_lout_mix": ("lout_chatty", (32, 8)),
+}
 # axis -> (parameter, values)  (the baseline value is not repeated)
 SWEEPS = {
     "S1_agents": ("agents", (4, 16, 32)),
@@ -74,8 +128,29 @@ def _chunk(index):
 
 def _retrieved(agent, round_index, p):
     """Chunk indices agent ``agent`` reads in round ``round_index``."""
+    if p.get("retrieval", "consecutive") == "scattered":
+        import random
+        rng = random.Random(1000003 * agent + 7919 * round_index + 17)
+        return sorted(rng.sample(range(p["corpus"]), min(p["chunks"], p["corpus"])))
     base = agent * p["chunks"] + round_index * p["chunks"]
     return [(base + offset) % p["corpus"] for offset in range(p["chunks"])]
+
+
+def _own_tokens(agent, p):
+    """Own tokens an agent writes per round: chatty agents come first."""
+    if "own_chatty" not in p:
+        return p["own"]
+    chatty = int(round(p["chatty_share"] * p["agents"]))
+    return p["own_chatty"] if agent < chatty else p["own_writer"]
+
+
+def _lout(agent, p):
+    """Tokens an agent decodes per turn: ``lout_chatty`` for chatty agents
+    when set (T9), else the workload's ``lout``."""
+    if p.get("lout_chatty") is None or "own_chatty" not in p:
+        return p["lout"]
+    chatty = int(round(p["chatty_share"] * p["agents"]))
+    return p["lout_chatty"] if agent < chatty else p["lout"]
 
 
 def _fresh_prompts(p, n_session):
@@ -104,9 +179,9 @@ def build(p, form):
             for round_index in range(p["rounds"]):
                 segs += [_chunk(index) for index in _retrieved(agent, round_index, p)]
                 segs.append({"role": "user", "sha": sha("%s-own-%d" % (wid, round_index)),
-                             "len": p["own"]})
+                             "len": _own_tokens(agent, p)})
             agents.append({"id": wid, "tier": 0, "parent": None, "history_len": 0,
-                           "lout": p["lout"], "segs": segs})
+                           "lout": _lout(agent, p), "segs": segs})
         else:
             context = [{"role": "sys", "sha": sha(wid + "-sys"), "len": SYS}]
             for round_index in range(p["rounds"]):
@@ -117,12 +192,12 @@ def build(p, form):
                     # the previous round's decoded output, right after the
                     # context it was decoded from
                     segs.append({"role": "parent_out", "sha": sha(parent + "-out"),
-                                 "len": p["lout"]})
+                                 "len": _lout(agent, p)})
                 segs += [_chunk(index) for index in _retrieved(agent, round_index, p)]
                 segs.append({"role": "user", "sha": sha("%s-own-%d" % (wid, round_index)),
-                             "len": p["own"]})
+                             "len": _own_tokens(agent, p)})
                 agents.append({"id": rid, "tier": round_index, "parent": parent,
-                               "history_len": 0, "lout": p["lout"], "segs": segs})
+                               "history_len": 0, "lout": _lout(agent, p), "segs": segs})
                 # the next round re-lists everything above; the output this
                 # round decodes becomes an ordinary reused segment two rounds on
                 context = [dict(seg) for seg in segs]
@@ -156,7 +231,10 @@ def write_all(outdir):
         n, prefill, decode = stats(workload)
         rows.append({"file": os.path.basename(path), "axis": axis, "value": value, "form": form,
                      "agents": p["agents"], "rounds": p["rounds"], "chunks": p["chunks"],
-                     "own": p["own"], "lout": p["lout"], "fresh_share": p["fresh_share"],
+                     "own": p.get("own", "%s/%s" % (p.get("own_chatty"), p.get("own_writer"))),
+                     "chatty_share": p.get("chatty_share", ""), "retrieval": p.get("retrieval", "consecutive"),
+                     "lout_chatty": p.get("lout_chatty") or "",
+                     "corpus": p["corpus"], "lout": p["lout"], "fresh_share": p["fresh_share"],
                      "requests": n, "prefill_tokens": prefill, "decode_tokens": decode})
 
     for form in ("interleaved", "turns"):
@@ -167,6 +245,15 @@ def write_all(outdir):
                 p[param] = value
                 tag = ("%s_%s" % (axis, str(value).replace(".", "p")))
                 emit(tag, axis, value, p, form)
+    if os.environ.get("B1_MATRIX", "1") != "0":
+        emit("B1", "baseline", "-", dict(B1), "turns")
+        emit("C1", "classic", "-", dict(C1), "turns")
+        for axis, (param, values) in B1_SWEEPS.items():
+            for value in values:
+                p = dict(B1)
+                p[param] = value
+                tag = ("%s_%s" % (axis, str(value).replace(".", "p")))
+                emit(tag, axis, value, p, "turns")
     with open(os.path.join(outdir, "manifest.csv"), "w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -178,14 +265,29 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--all", metavar="OUTDIR", help="write the whole matrix + manifest.csv")
     parser.add_argument("--form", choices=("interleaved", "turns"), default="interleaved")
-    for key, value in BASELINE.items():
-        parser.add_argument("--" + key.replace("_", "-"), type=type(value), default=value)
+    parser.add_argument("--preset", choices=("B0", "B1"), default="B0",
+                        help="B0: the plain baseline keys; B1: chatty/writer agents, "
+                             "scattered retrieval, optional lout_chatty")
+    seen = set()
+    for preset in (BASELINE, B1):
+        for key, value in preset.items():
+            if key in seen:
+                continue
+            seen.add(key)
+            kind = str if value is None else type(value)
+            parser.add_argument("--" + key.replace("_", "-"), type=kind, default=None)
     args = parser.parse_args()
     if args.all:
         rows = write_all(args.all)
         print("%d workloads -> %s" % (len(rows), args.all))
         return 0
-    p = {key: getattr(args, key) for key in BASELINE}
+    p = dict(BASELINE if args.preset == "B0" else B1)
+    for key in p:
+        value = getattr(args, key)
+        if value is not None:
+            p[key] = value
+    if p.get("lout_chatty") is not None:
+        p["lout_chatty"] = int(p["lout_chatty"])
     json.dump(build(p, args.form), sys.stdout, indent=1)
     sys.stdout.write("\n")
     return 0
