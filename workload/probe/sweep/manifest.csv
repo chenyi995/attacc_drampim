@@ -1,0 +1,14 @@
+file,axis,value,rounds,workers,sessions,worker_lout,main_lout,doc_tokens,note_tokens,requests,prefill_tokens,decode_tokens
+W1_turns.json,baseline,-,24,2,2,128,128,256,16,145,692352,18433
+W1_S1_rounds_12_turns.json,S1_rounds,12,12,2,2,128,128,256,16,73,173760,9217
+W1_S1_rounds_48_turns.json,S1_rounds,48,48,2,2,128,128,256,16,289,2766336,36865
+W1_S2_workers_1_turns.json,S2_workers,1,24,1,2,128,128,256,16,97,386816,12289
+W1_S2_workers_4_turns.json,S2_workers,4,24,4,2,128,128,256,16,241,1303424,30721
+W1_S3_sessions_1_turns.json,S3_sessions,1,24,2,1,128,128,256,16,73,352448,9217
+W1_S3_sessions_4_turns.json,S3_sessions,4,24,2,4,128,128,256,16,289,1372160,36865
+W1_S4_worker_lout_32_turns.json,S4_worker_lout,32,24,2,2,32,128,256,16,145,489216,9217
+W1_S4_worker_lout_256_turns.json,S4_worker_lout,256,24,2,2,256,128,256,16,145,963200,30721
+W1_S5_main_lout_32_turns.json,S5_main_lout,32,24,2,2,128,32,256,16,145,639360,13825
+W1_S5_main_lout_512_turns.json,S5_main_lout,512,24,2,2,128,512,256,16,145,904320,36865
+W1_S6_doc_tokens_512_turns.json,S6_doc_tokens,512,24,2,2,128,128,512,16,145,1011840,18433
+W1_S6_doc_tokens_1024_turns.json,S6_doc_tokens,1024,24,2,2,128,128,1024,16,145,1650816,18433

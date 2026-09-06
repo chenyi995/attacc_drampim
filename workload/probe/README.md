@@ -1,21 +1,52 @@
-# 探针 workload（2026-09-05，CACHEBLEND-TINY，1 GPU + 1 HBM）
+# workload/probe：运行协议的 workload
 
-都是"多轮多 agent 复用"的最小构造：`a0_owner` 声明共享 chunk（256 token = 1 DRAM 行），
-每个 reuser 的上下文按轮交替"共享 chunk × C | 自己写的 block"，共享 chunk 有位移，每块 k=8 行修正，
-修正 per-agent 私有。没有任何惩罚项。生成器：`gen_multiround.py`（xinyao 分支同名脚本的副本）、
-`gen_a6.py`、`gen_a6_chat_mix.py`。
+**协议只跑一个 workload 家族：`sweep/W1_turns.json`（baseline，七个 combo）和它的一轴 sweep（`sweep/W1_S*_turns.json`，只跑 A3b 与 A6）。**
+怎么跑见 `docs/README_run_protocol.md`。
 
-| 文件 | 构造 | 用途 | 状态（2026-09-05 04:00，legacy GPU 模型） |
+## W1：main agent 每轮总结它的 worker
+
+`gen_main_workers.py` 生成。一个会话 = 一个 main agent + `workers` 个 worker；`sessions` 个会话并排跑，共用设备和 decode batch。
+
+- `a0_corpus`：语料 owner，一次导入全部文档（每篇 256 token = 一个 DRAM 行），是共享的 master。
+- worker w 第 r 轮：读**新**文档 `r*workers + w`（从 owner 复用，偏移不同，产生 k 个修正行），写 16 token 笔记，答 `worker_lout` token。
+  上下文每轮重列它之前读过、写过的一切，所以早先轮次的修正被继承，不重算。
+- main 第 r 轮（r ≥ 2）：总结 worker 第 r−2 轮的回答——`workers` 个回答块作为复用段进入 main 的上下文（偏移不同，每轮新增 `workers × k` 个修正），
+  加 16 token 指令，答 `main_lout` token。早先轮次的修正全部继承。
+- 两个会话的同号 worker 每轮读同一篇文档：decode batch 里有共读行（MQ 的材料），放置表看到跨会话共读。
+
+为什么是 r−2：loader 把 (tier, id) 排序中第一个列出某指纹的请求当作 owner；worker 自己的下一轮（tier r−1）以 `parent_out` 列出它的回答，
+main 必须在更晚的 tier 引用，否则会被当成写者、得不到修正。
+
+每一档拿到什么（结构探针 `output/analysis/b1_levers.py`，`LEVERS_HEADS_PER_HBM=2` = 每 KV head 8 通道）：
+
+| 相邻档 | 机制 | W1 上的结构杠杆 |
+|---|---|---|
+| A3b → A4c | main 每轮的修正落在朴素写入流的不同行（断开的 diff），紧凑的 diff 行把它们收拢，diff 行在 head 的通道上轮转 | 修正行 3412 → 940（少 72%，末通道实现下的探针） |
+| A4c → A4e | worker 的回答被 main 共读，表把它们分到不同通道；main 的修正被表分成一组、放到 main 所读行最少的通道 | 最忙 lane 行数少 35%（同上） |
+| A4e → A5 | 每一轮都是 decode 形状（m 为几十、上下文几千）；MQ 合并 batch 里两个会话的共读 sweep | 两会话同号 worker 的文档历史相同 |
+| A5 → A6 | 语料导入是唯一的大 fresh prefill，A6 留在 GPU | owner 12288 token 的导入 |
+
+参数：`rounds=24 workers=2 sessions=2 worker_lout=128 main_lout=128 doc_tokens=256`，145 个请求，main 末轮上下文 9k。
+
+## sweep 轴（各动一个变量，跑 A3b + A6）
+
+| 轴 | 文件 | 值 | 动什么 |
 |---|---|---|---|
-| `wl_mr_R8C2N8_L128.json` | R=8 轮 × C=2 chunk，8 个 reuser，lout 128 | 基线七档：TBT / E2E / 能量 | 重跑完成 |
-| `wl_mr_R16C2N16_L128.json` | R=16，16 个 reuser | 更多 agent / 更多轮 → 布局收益（A3b→A4c→A4e）是否增长 | 重跑完成 |
-| `wl_mr_R8C2N8_L1024.json` | 同基线，lout 1024 | decode 占比大 → 布局收益进 E2E | 重跑完成 |
-| `wl_a6_R8C2N8_own16_256.json` | reuser 每轮只写 16 / 256 token 两种 | 试探 A6 按"新写多少"分裂（结论：分不开，比例恒为 2） | 已跑 |
-| `wl_a6_crossover.json` | + 8…1024 token 的独立新 prompt | 找选边器交叉点（legacy GPU 模型下 ≤512 GPU、≥1024 PIM） | 已跑（仅 A6） |
-| `wl_a6_split.json` | 4 个长复用 agent + 32 个 512-token 独立短请求（lout 16） | 让 A6 在同一 workload 里两边都选 | 完成（A6 选边 GPU 32 / PIM 5，比 A5 多 1.0% E2E） |
+| S1 轮数 | `W1_S1_rounds_{12,48}` | 12, 48 | 断开的 diff 积累多少 |
+| S2 每 main 的 worker 数 | `W1_S2_workers_{1,4}` | 1, 4 | main 每轮的修正量、共读宽度 |
+| S3 会话数 | `W1_S3_sessions_{1,4}` | 1, 4 | 每 tier 就绪请求数（batch、MQ 共享） |
+| S4 worker 回答长度 | `W1_S4_worker_lout_{32,256}` | 32, 256 | main 共读的块大小 |
+| S5 main 回答长度 | `W1_S5_main_lout_{32,512}` | 32, 512 | decode 在 E2E 里的份额 |
+| S6 文档长度 | `W1_S6_doc_tokens_{512,1024}` | 512, 1024 | 每轮驻留上下文 |
 
-跑法见 `experiments/run_queue.sh`、`experiments/run_after_queue.sh`（≤ 64 核），
-内存监视 `experiments/mem_guard.sh`，汇总 `experiments/summarize_ladder.py <outdir> <wl.json> [ref]`。
-`sweep/*_turns.json` 自 2026-09-05 起每轮重新列出该 agent 的全部早期上下文（无 `history_len`），后一轮继承前一轮写过的修正（C8）。
-`sweep/` 是 2026-09-05 的运行协议（`docs/README_run_protocol.md`）：baseline `C1_turns.json`（混合型 agent 会话，41 个请求）与 `C2_turns.json`（纯对话型，65 个请求）跑全部七个 combo，`C1_S*_turns.json` 各动 C1 的一个变量、只跑 A3b 与 A6。`gen_sweep.py --all <dir>` 生成整套，`--preset C1|C2|B1 --agents ...` 生成单个变体；旧的 B0/S/B1/T 集合用 `LEGACY_MATRIX=1` 复现。`output/analysis/b1_levers.py` 是结构探针（`LEVERS_HEADS_PER_HBM=2` 对应每头 8 通道）。
+`manifest.csv` 列出每个文件的参数、请求数、prefill/decode token 数；`experiments/extract_protocol.py` 按它出表。
+重新生成：`python3 workload/probe/gen_main_workers.py --all workload/probe/sweep`；单个变体：`gen_main_workers.py --rounds 24 --workers 2 --sessions 2 > wl.json`。
+
+## 其他目录
+
+- `archive/2026-09-05-C-protocol/`：9-05 的 C1/C2 baseline 与 C1_S* sweep（多 agent RAG 会话）及其生成器 `gen_sweep.py`，已退役；
+  TINY 上的结果在 session 记录 §20、§25。
+- `targeted/`：另一会话 9-05 的受控设计（D 持续汇总、E 周期共读、P 低 query）与手算，不在协议里。
+- `archive/2026-09-05-probes/`：9-05 之前的探针生成器与 workload（A6 分流、多轮）。
+
 结果目录在 /data2 的 scratch 里，不进仓库。
