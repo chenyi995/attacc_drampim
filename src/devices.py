@@ -383,10 +383,13 @@ class xPU:
                 exec_time = traffic / (self.pim_link_bandwidth / 2)
                 if self.refined:
                     # K/V (or Q / context) moving between the GPU and the
-                    # AttAcc: one NVLink latency per transfer, and the far
-                    # HBM3 has to stream the bytes as well as the link.
-                    exec_time = self.nvlink_latency + max(
-                        exec_time, traffic / self.far_hbm_bandwidth)
+                    # AttAcc: the far HBM3 has to stream the bytes as well as
+                    # the link, and prefill's large transfers pay one NVLink
+                    # latency each (ruling 2026-09-05: decode's per-step
+                    # small transfers do not, see _link_layer).
+                    exec_time = max(exec_time, traffic / self.far_hbm_bandwidth)
+                    if getattr(layer, "link_latency", True):
+                        exec_time += self.nvlink_latency
             else:
                 ## allreduce
                 exec_time = get_nvlink_time(

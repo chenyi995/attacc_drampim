@@ -1839,6 +1839,26 @@ class AgenticHistoryTests(unittest.TestCase):
         by_key = {(d.request_id, d.segment_index): d for d in plan.reusable}
         self.assertIsNone(by_key[("w_t1", 1)].inherits_from)
 
+    def test_link_latency_is_charged_on_prefill_transfers_only(self):
+        """chenyi9 ruling 2026-09-05: the flash link model's per-transfer
+        NVLink latency applies to prefill's large transfers, not to a decode
+        step's per-request transfers or metadata loads."""
+        from src.config import make_model_config, make_xpu_config
+        from src.workload_runner import _link_layer
+        modelinfos = make_model_config("CACHEBLEND-TINY", DataType.W16A16)
+        cfg = make_xpu_config(GPUType.A100a, num_gpu=1, mem_cap=80 << 30, gpu_model="flash",
+                              pim_link_bw=600e9, attn_splitk=False)
+        system = System(cfg["GPU"], modelinfos)
+        system.model.build(1, 1, 2, True)
+        gpu = system.devices["GPU"]
+        x2g = next(l for l in system.model.sum_decoder if l.name == "comm_x2g")
+        prefill = gpu.get_time_and_energy(_link_layer(x2g, "q_gpu_to_pim", 4096))[0]
+        decode = gpu.get_time_and_energy(_link_layer(x2g, "decode_q_gpu_to_pim", 4096))[0]
+        bitmap = gpu.get_time_and_energy(_link_layer(x2g, "di_bitmap_gpu_to_die", 4096))[0]
+        self.assertAlmostEqual(prefill - decode, gpu.nvlink_latency)
+        self.assertAlmostEqual(bitmap, decode)
+        self.assertGreater(gpu.nvlink_latency, 0)
+
     def test_fresh_prefill_follows_the_rung_prefill_side(self):
         """F04 (2026-09-05): a request that reuses nothing used to be sent
         to the GPU whatever the rung, so A5 never put a fresh prefill in the

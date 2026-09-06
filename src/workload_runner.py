@@ -317,7 +317,15 @@ def _event(events: List[SplitEvent], transformer_layer: int, request_id: str,
 
 
 def _link_layer(template: Layer, name: str, byte_count: int) -> Layer:
-    """Represent an exact byte-count transfer with the legacy X2G model."""
+    """Represent an exact byte-count transfer with the legacy X2G model.
+
+    ``link_latency`` (chenyi9 ruling 2026-09-05): the per-transfer NVLink
+    latency of the refined/flash link model is charged only on prefill's
+    large transfers.  A decode step's small per-request transfers (Q, LSE
+    tuple, context, one KV row) and metadata loads do not pay it -- they
+    were serializing 80 latencies per step on the single link resource and
+    hid every layout effect.
+    """
     layer = deepcopy(template)
     layer.name = name
     layer.type = LayerType.X2G
@@ -325,6 +333,7 @@ def _link_layer(template: Layer, name: str, byte_count: int) -> Layer:
     layer.n = byte_count // layer.dbyte
     layer.k = 1
     layer.numOp = 1
+    layer.link_latency = not (name.startswith("decode_") or "bitmap" in name)
     return layer
 
 
