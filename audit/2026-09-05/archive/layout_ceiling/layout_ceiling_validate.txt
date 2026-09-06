@@ -1,0 +1,42 @@
+from pathlib import Path
+import hashlib,json,re,subprocess
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+ARCH=ROOT/'audit/2026-09-05/archive/layout_ceiling'
+report=ROOT/'audit/2026-09-05/LAYOUT_BENEFIT_CEILING.md'
+session=ROOT/'docs/sessions/2026-09-05-layout-benefit-ceiling.md'
+initial=json.loads((ARCH/'layout_ceiling_snapshot.json').read_text())
+changed=[p for p,h in initial['files'].items() if not (ROOT/p).exists() or hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h]
+allowed={'audit/2026-09-05/README.md','docs/sessions/README.md','output/analysis/b1_levers.py'}
+assert set(changed)<=allowed,changed
+concurrent=json.loads((ARCH/'layout_ceiling_concurrent_change.json').read_text())
+assert hashlib.sha256((ROOT/concurrent['path']).read_bytes()).hexdigest()==concurrent['final_observed_sha256']
+assert hashlib.sha256((ARCH/'layout_ceiling_b1_levers_initial.txt').read_bytes()).hexdigest()==concurrent['initial_sha256']
+manifest=json.loads((ARCH/'manifest.json').read_text())
+for p,meta in manifest.items():assert hashlib.sha256((ARCH/p).read_bytes()).hexdigest()==meta['sha256'],p
+missing=[];checked=0
+for doc in (report,session,ROOT/'audit/2026-09-05/README.md',ROOT/'docs/sessions/README.md'):
+    for target in re.findall(r'\]\(([^)]+)\)',doc.read_text()):
+        target=target.strip('<>').split('#',1)[0]
+        if not target or '://' in target:continue
+        checked+=1
+        if not (doc.parent/target).resolve().exists():missing.append((str(doc),target))
+assert not missing,missing
+r=json.loads((ARCH/'layout_ceiling_results_20260905.json').read_text())
+assert all(r['same_configuration_checks'].values())
+assert all(v['pipeline'] for v in r['rows'].values())
+raw={rung:json.loads((ARCH/'existing_run/out'/f'dag_{rung}.json').read_text()) for rung in ('A3b','A4c','A4e')}
+assert raw['A3b']['makespan_s']==r['rows']['A3b']['makespan_s']
+assert raw['A4e']['pim_pool_time_s_unoverlapped']==r['rows']['A4e']['pim_lane_sum_s']
+assert abs(100*(1-raw['A4e']['makespan_s']/raw['A3b']['makespan_s'])-r['adjacent_comparisons'][2]['e2e_reduction_pct'])<1e-10
+for name,e in json.loads((ARCH/'layout_ceiling_a4e_evidence.json').read_text())['cases'].items():
+    assert hashlib.sha256((ARCH/'inputs'/name).read_bytes()).hexdigest()==e['sha256']
+out={'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+     'initial_existing_paths_changed':changed,'unexplained_existing_path_changes':[],
+     'external_analysis_script_update':'detected and archived separately; initial source recovered with exact SHA256',
+     'archive_hashes_verified':len(manifest),'local_document_links_checked':checked,'missing_links':missing,
+     'same_run_common_config_checks':len(r['same_configuration_checks']),
+     'raw_result_spot_checks':'A3b E2E, A4e lane sum, pairwise E2E ratio passed',
+     'implementation_and_workload_initial_hashes':'unchanged','new_performance_simulation':False}
+(ARCH/'validation.json').write_text(json.dumps(out,indent=2)+'\n')
+(ARCH/'layout_ceiling_validate.txt').write_bytes(Path(__file__).read_bytes())
+print(json.dumps(out,indent=2))

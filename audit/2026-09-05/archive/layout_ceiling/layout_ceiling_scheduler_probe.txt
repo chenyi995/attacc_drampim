@@ -1,0 +1,22 @@
+"""Four fixed-duration DAG events: pipeline does not imply ready-first ordering."""
+from pathlib import Path
+import sys,json
+sys.dont_write_bytecode=True
+sys.path.insert(0,'/data2/chenyi9/KV-PIM/attacc_drampim_822')
+from src import workload_runner as wr
+from dataclasses import asdict
+wr._EC=None
+
+def e(name,device,duration,deps=()):
+    return wr.SplitEvent(name,0,0,name,name,device,1,duration,0.0,depends_on=deps)
+p=e('p','PIM:pool0',10)
+g_after=e('gpu_waiting','GPU',1,('p',))
+g_ready=e('gpu_ready','GPU',1)
+link=e('link_ready','LINK',1)
+out={'scope':'Abstract fixed-duration DAG; units arbitrary, no performance simulation or device calls','cases':{}}
+for label,events in [('append_order',[p,g_after,g_ready,link]),('ready_event_earlier',[p,g_ready,g_after,link])]:
+    schedule=wr._schedule_cacheblend(events,pipe=True)
+    check=wr.validate_cacheblend_attacc_overlap_contract(schedule,pipe=True)
+    out['cases'][label]={'events':[{'id':s.event_id,'start':s.start_s,'end':s.end_s} for s in schedule],'makespan':max(s.end_s for s in schedule),'overlap_validation':check}
+Path('/tmp/layout_ceiling_scheduler_probe.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps(out,indent=2))

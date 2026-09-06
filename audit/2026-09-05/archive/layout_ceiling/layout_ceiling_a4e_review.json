@@ -1,0 +1,25 @@
+{
+  "scope": "B1 only; recompute k8 public-plan identity and archived geometry JSON arithmetic; no timing experiment",
+  "checks": {
+    "reused_prefill_ledger_view": {
+      "A4c_sum": 139728,
+      "A4e_sum": 124448,
+      "max_lane_lower_bound": 110824,
+      "actual_proxy_reduction_percent": 10.935531890530173,
+      "optimistic_proxy_reduction_upper_bound_percent": 20.68590404213901,
+      "fraction_of_optimistic_savings_percent": 52.864655411015775,
+      "ledger_total_and_lb_assertions": "pass"
+    },
+    "full_prompt_decode_view": {
+      "A4c_sum": 150504,
+      "A4e_sum": 139888,
+      "max_lane_lower_bound": 124840,
+      "actual_proxy_reduction_percent": 7.053633126029873,
+      "optimistic_proxy_reduction_upper_bound_percent": 17.052038484027,
+      "fraction_of_optimistic_savings_percent": 41.36533665835412,
+      "ledger_total_and_lb_assertions": "pass"
+    }
+  },
+  "within_request_same_fingerprint_multiple_master_owners": [],
+  "identity_note": "Read-row dedup (layer,owner,fingerprint,kind,owner_row) matches ledger physical-object identity. Table slots are keyed by (fingerprint,block), so permitting independently placed owner copies would be a further relaxation in general; no such within-request owner collision in this B1 plan."
+}

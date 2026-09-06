@@ -1,0 +1,14 @@
+# Fugue 文档入口
+
+按用途阅读。当前实验讨论采用每 KV head 八通道，对照 k4/k8，显式启用 FlashAttention 和 pipeline；主指标为 decode scan latency、TBT、TTFT、E2E。
+
+| 你要做什么 | 主文档 | 内容 |
+|---|---|---|
+| 配置并运行实验、保存结果 | [实验指导](experiments/README.md) | 八通道/k4/k8、具体命令、档位与输入、指标取数 |
+| 理解为什么能节省时间 | [性能分析](analysis/README.md) | 布局、MQ、低 AI 与选边的收益、上限和限制 |
+| 检查实现与论文、公平性 | [审计入口](audit/README.md) | 最慢 channel、既有问题与用户裁决、原始证据 |
+| 理解各档声明 | [设计阶梯](README_design_ladder.md)、[贡献例子](README_contributions.md) | 机制映射；条件例子不是实测 |
+| 查机器环境 | [squire](run/README_run_squire.md)、[athena](run/README_run_athena.md) | scratch、编译器、资源、作业提交 |
+| 查修改原因 | [session 索引](sessions/README.md) | 用户决定、实际变更、验证与当时版本 |
+
+实验指导是当前跑法的主入口；性能分析解释结果；audit 判断实现与比较是否符合声明。旧文档原文保存在 [分类前快照](archive/2026-09-05-before-categorization/README.md)，历史数字保持其原配置含义。

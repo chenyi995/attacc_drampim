@@ -1,0 +1,95 @@
+"""Read archived three-rung results; compute metrics only, never simulate.
+
+The filename groups this follow-up with the eight-channel discussion.  These
+numbers come from the old small case and are NOT a new eight-channel experiment.
+"""
+from pathlib import Path
+import hashlib
+import json
+import math
+import subprocess
+
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+BASE=ROOT/'audit/2026-09-05/archive/layout_ceiling/existing_run'
+PREFIX=Path('/tmp/metrics_eight_channels_existing_run')
+sources={}
+def read(path):
+    raw=path.read_bytes()
+    sources[str(path)]={'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)}
+    return raw.decode()
+def percentile_nearest_rank(xs,p):
+    return sorted(xs)[max(0,math.ceil(p*len(xs))-1)]
+wl=json.loads(read(BASE/'wl_small_A4R4.json'))
+agents={a['id']:a for a in wl['agents']}
+rows={}
+for rung in ('A3b','A4c','A4e'):
+    d=json.loads(read(BASE/'out'/f'dag_{rung}.json'))
+    request_metrics=[]
+    for request,rec in d['summary']['requests'].items():
+        a=agents[request]
+        assert a['tier']==0 and a.get('parent') is None and a.get('history_len',0)==0
+        # This root-only workload has no external arrival timestamps; time zero
+        # is the model's common release. Do NOT subtract scheduled service start.
+        ttft=rec['first_token_s']
+        request_metrics.append({'request':request,'modeled_common_release_s':0.0,
+            'request_scheduled_start_s':None,'first_token_completion_s':ttft,
+            'ttft_from_modeled_release_s':ttft,'end_s':rec['end_s'],
+            'prefill_end_s':rec['prefill_end_s'],
+            'post_first_token_intervals':a['lout']-1,
+            'tbt_mean_s':(rec['end_s']-ttft)/(a['lout']-1)})
+    ts=[r['ttft_from_modeled_release_s'] for r in request_metrics]
+    n=sum(r['post_first_token_intervals'] for r in request_metrics)
+    batch_keys=sorted({k for b in d['batches'] for k in b})
+    sweep_keys=sorted({k for b in d['batches'] for sw in b.get('sweeps',[]) for k in sw})
+    rows[rung]={'ttft_mean_ms':sum(ts)/len(ts)*1e3,
+       'ttft_p95_nearest_rank_ms':percentile_nearest_rank(ts,0.95)*1e3,
+       'ttft_request_observations':len(ts),'ttft_all_requests_identical':len(set(ts))==1,
+       'weighted_tbt_us':sum((r['end_s']-r['first_token_completion_s']) for r in request_metrics)/n*1e6,
+       'tbt_interval_count':n,'e2e_makespan_ms':d['makespan_s']*1e3,
+       'decode_pim_lane_service_sum_ms':d['pim_pool_time_s_unoverlapped']*1e3,
+       'true_decode_scan_latency_ms':None,
+       'true_decode_scan_latency_reason':'No per-lane service durations or ends are retained. The report counter is sum across lanes; batch records contain starts only.',
+       'events_retained':d.get('events') is not None,
+       'batch_keys':batch_keys,'sweep_keys':sweep_keys,
+       'tier_summary':d['summary']['tiers'],
+       'request_metrics':request_metrics,'prefill_attention_rows':d['prefill_attention_rows'],
+       'pipeline':d['overlap_validation']['pipe'],'cacheblend_batch_size':d['cacheblend_batch_size'],
+       'policy':d['policy'],'recompute_k':d['workload']['reuse']['epic_prefix_recompute_tokens']}
+    assert not rows[rung]['events_retained']
+    assert d['prefill_attention_rows']['pim']==0
+    assert d['summary']['tiers']['0']['start_s']==0.0
+comparisons=[]
+for old,new in [('A3b','A4c'),('A4c','A4e'),('A3b','A4e')]:
+    a,b=rows[old],rows[new]
+    comparisons.append({'from':old,'to':new,
+       **{k+'_reduction_pct':100*(1-b[k]/a[k]) for k in
+          ['ttft_mean_ms','weighted_tbt_us','e2e_makespan_ms','decode_pim_lane_service_sum_ms']},
+       'ttft_reduction_us':(a['ttft_mean_ms']-b['ttft_mean_ms'])*1000,
+       'true_decode_scan_latency_reduction_pct':None})
+for rel in ('src/workload_runner.py','src/workload.py','experiments/collect_dag_ladder.py'):
+    read(ROOT/rel)
+payload={'scope':'Only archived small-case results, not a new eight-channel/head controlled run; no simulation or code changes.',
+  'audit_checkout':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+  'workload':{'path':str(BASE/'wl_small_A4R4.json'),'sha256':sources[str(BASE/'wl_small_A4R4.json')]['sha256'],
+              'case':(BASE/'wl_small_A4R4.json').name,'metadata':wl['meta'],
+              'requests':len(agents),'all_tier0':True,'all_no_parent':True},
+  'rows':rows,'comparisons':comparisons,
+  'definitions':{
+    'first_token_s':'src/workload_runner.py:4310-4336: last end_s of a decode_ event at first query position total_length, attributed to every batch member. Absolute DAG timestamp; includes post-attention GPU operations under the fixed names.',
+    'ttft_this_case':'first_token_s minus modeled common release 0. All requests are tier0 roots; Request has no external arrival-time field (src/workload.py:75-86). This includes resource and owner-store waiting. It is not first_token_s minus each request scheduled start.',
+    'scheduled_start_limit':'Only tier start=min(event.start_s) is stored (workload_runner.py:4342-4350). Each request actual scheduled start is absent. Therefore post-scheduling service TTFT cannot be recovered.',
+    'higher_tier_limit':'collect_dag_ladder.py:156-166 calls max per-request absolute first_token_s ttft_s. For higher tiers this is a completion timestamp from global time zero, not release-relative request TTFT. The archived small case has only tier0, so this ambiguity does not change its numbers.',
+    'p95':'Nearest-rank empirical p95 across five deterministic request TTFTs. All five are identical within each rung; p95=mean. This is not a repeated-run or production-tail-latency estimate.',
+    'tbt':'sum_request(end_s-first_token_s) / sum_request(lout-1). There are five requests x255 intervals=1275, not 1275 independent repeated-run observations.',
+    'lane_service_sum':'src/workload_runner.py:5281-5282: sum all PIM:* event.time_s. Here prefill PIM rows=0, so these are decode scan lane service totals. Dividing by16 gives average cumulative per-lane work, not busiest-lane latency.',
+    'scan_service_needed':'For each logical scan invocation, max_channel(t_lane). Preserve logical invocation and shared-batch identity within request/layer/output-step; different private/shared scan contributions must not be accidentally collapsed or double-counted.',
+    'scan_elapsed_distinct':'If resource waiting matters, logical scan completion-minus-admission or max(end)-min(start) are elapsed quantities distinct from max lane service duration. Neither is recoverable here.',
+    'why_unrecoverable':'workload_runner.py:2466-2478 creates one event with its measured duration per channel, but JSON events=null. batches contain attention_start_s and sweep.start_s/admission_s, with no durations/ends. 403.582840 ->393.500253ms is lane-sum work reduction, not a measured 2.498269% scan latency reduction.',
+    'version_limit':'Archived reports have no commit or GPU-model fingerprint. Previous launch timestamps followed da220d1, but exact attribution/Flash mode remains documented-context inference.'},
+  'sources':sources}
+PREFIX.with_suffix('.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n')
+print('| Rung | TTFT mean ms | TTFT p95 ms | TBT us | E2E ms | Decode lane-sum ms | True scan latency |')
+print('|---|---:|---:|---:|---:|---:|---|')
+for rung,r in rows.items():
+ print(f"| {rung} | {r['ttft_mean_ms']:.9f} | {r['ttft_p95_nearest_rank_ms']:.9f} | {r['weighted_tbt_us']:.6f} | {r['e2e_makespan_ms']:.6f} | {r['decode_pim_lane_service_sum_ms']:.6f} | unavailable |")
+print(json.dumps(comparisons,indent=2))

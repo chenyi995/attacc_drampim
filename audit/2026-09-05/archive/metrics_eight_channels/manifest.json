@@ -1,0 +1,33 @@
+{
+  "artifacts": {
+    "metrics_eight_channels_geometry.txt": {
+      "source": "/tmp/metrics_eight_channels_geometry.py",
+      "sha256": "504640ab08637ce4f211aa6caeb31ec7289d73cb65e38ef7a07e8ad60c8dffe8"
+    },
+    "metrics_eight_channels_geometry.json": {
+      "source": "/tmp/metrics_eight_channels_geometry.json",
+      "sha256": "3078acabddec1a3dcf9b89389a4d7f6727a657b3cb6b6e3c36cd0f2057348230"
+    },
+    "metrics_eight_channels_existing_run.txt": {
+      "source": "/tmp/metrics_eight_channels_existing_run.py",
+      "sha256": "22ef49fbbb52e05ab72a53d8769387b24c5fb01ec0d7703f0a522f0c92c2a51b"
+    },
+    "metrics_eight_channels_existing_run.json": {
+      "source": "/tmp/metrics_eight_channels_existing_run.json",
+      "sha256": "c18a74d6935d116b49230f2d7bcb5f1530e36c841e04690cd1e097e8ac341e55"
+    },
+    "metrics_eight_channels_document.txt": {
+      "source": "/tmp/metrics_eight_channels_document.py",
+      "sha256": "92584c95fac515fefb86251a975410647f5d80eb3c428d4d515961205aebdee1"
+    }
+  },
+  "implementation_hashes": {
+    "src/config.py": "28ee9b707c22b35a80d77ea38d5211cff19bb09092c8323396d6e14eef1fc571",
+    "src/workload_runner.py": "f2b4bfb57bf728e25576ac6f31239bb1e6a75a7c3b5d9b83d85e2ef0610d68f1",
+    "src/ramulator_wrapper.py": "6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00",
+    "main.py": "3160baaf0dde24351239aa24c3b4ac92b8753f4b61e9820c2f574e58ce06b627",
+    "experiments/run_dag_ladder.sh": "e24e30569a5a8318f3d322e61780872212a4f8ed7c0040383bd9274ab76dfe22",
+    "experiments/collect_dag_ladder.py": "5ed143901e27a0f6914ec5b580fbac2e88b2fbd8960d8e19cd6f3d9bc64ad8f2"
+  },
+  "link_check": "passed"
+}

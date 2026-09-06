@@ -1,0 +1,20 @@
+# NVLink / PCIe 分层：实验假设与当前实现
+
+chenyi9 提出按 context 大小使用快慢链路。当前可以做整次运行固定链路的带宽敏感性；按容量自动溢出到另一层仍是新增实验假设。降低带宽不保证 A5/A6 差距扩大，需按请求复用量与计算量解释。
+
+| 核查项 | 原始 AttAcc | 当前仓库 |
+|---|---|---|
+| 固定 NVLink / PCIe 带宽 | c600051 的 config 有枚举与带宽分支；main 固定 NVLINK3 | main.py:130–134、525–529 提供 --pim-link，整次运行统一 |
+| 按 token / 容量阈值自动分层 | 没有该规则 | 没有该参数、对象级 tier 放置或溢出读取计价 |
+| KV 回读和 PIM context 返回 | 原始无 Fugue 逐请求选边 | runner:4067–4070、4133–4134 均调用同一 GPU X2G 链路；执行分支亦相同 |
+| PCIe latency / energy | 不能从枚举推导完整 PCIe 分层系统 | 固定选项改带宽；Flash 固定延迟和每字节能量仍沿用现有模型，没有新 PCIe 校准 |
+
+源码 `src/devices.py:382–392` 的传输时间取链路与远端 HBM 供数两者较慢值，再按已定规则处理固定项；decode 小传输固定开销仍按 chenyi9 裁决忽略，不在本次重开。GPU↔GPU all-reduce 不随 --pim-link 改动。
+
+独立 agent attacc_model_provenance 核验：只降 GPU 回读带宽时，A6 选择优势 max(P−G,0) 缩小或不变。统一降链路时，回读字节 D_G 大于 context 返回 D_P 的请求也倾向缩小；大量 fresh query 则可能扩大。这是固定请求工作量的局部推导，不能代替 E2E。
+
+公平的分层对照应共用容量、地址放置和传输规则，并确认每层是否支持 PIM。不能仅让 baseline 的整份 KV 在越过阈值后走慢链路，同时让 Fugue 在未说明的存储层免费扫描。按实际快慢层读取字节与可并行资源计费；参数和输出统一保留。
+
+具体容量推导与实验条件见 [性能分析](../../docs/analysis/README.md#8-链路带宽与容量分层)，可执行的固定链路跑法见 [实验指导](../../docs/experiments/README.md#7-nvlink--pcie-带宽与分层)。
+
+证据：[容量计算与源码 SHA256](archive/link_tier/capacity_evidence.json)、[生成脚本](archive/link_tier/link_tier_docs_20260905.txt)、[上游 config](archive/link_tier/attacc_c600051_src_config.py.txt)、[上游 main](archive/link_tier/attacc_c600051_main.py.txt)、[上游 devices](archive/link_tier/attacc_c600051_src_devices.py.txt)。没有运行性能实验或修改实现。

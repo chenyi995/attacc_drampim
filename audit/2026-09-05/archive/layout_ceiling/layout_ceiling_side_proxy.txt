@@ -1,0 +1,22 @@
+"""Planner-only reproduction of b1_levers calibrated side counts; no device calls."""
+from pathlib import Path
+import sys,json,math,hashlib
+sys.dont_write_bytecode=True
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT))
+from src.workload import load_workload, build_reuse_plan
+from src.workload_runner import _software_reuse_rows
+p=ROOT/'workload/probe/sweep/B1_turns.json'
+wl=load_workload(p)
+plan=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8)
+rows=[]
+for request in wl.requests:
+    compute,resident=_software_reuse_rows(plan,0,request)
+    m=len(compute);n=m+resident
+    lane=math.ceil(n/2)
+    bank=math.ceil(m/8)*4.05e-6*lane/1536
+    gpu=(6.06e-6+resident*(2*1024*2)/335e9 if resident else 0)+100e-6*(m*n)/(816*2864)
+    rows.append(dict(request=request.request_id,m=m,n=n,resident=resident,estimated_gpu_s=gpu,estimated_pim_s=bank,estimated_side='pim' if bank<=gpu else 'gpu'))
+out={'revision':'da220d1','input':str(p),'input_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'scope':'Only real workload/plan plus the hard-coded b1_levers formulas, no Ramulator/device/scheduler calls','count':{side:sum(r['estimated_side']==side for r in rows) for side in ('pim','gpu')},'rows':rows}
+Path('/tmp/layout_ceiling_side_proxy.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({k:v for k,v in out.items() if k!='rows'},indent=2))

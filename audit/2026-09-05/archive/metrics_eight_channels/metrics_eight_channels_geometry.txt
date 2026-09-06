@@ -1,0 +1,43 @@
+"""Read local geometry and do bounded placement arithmetic; no simulation."""
+from pathlib import Path
+from collections import Counter
+import sys,json,math,hashlib
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT));sys.dont_write_bytecode=True
+from src.config import make_model_config
+from src.workload_runner import _heads_per_hbm,_block_slot_table,_HBM_CHANNELS
+rows=[]
+for model_name in ('CACHEBLEND-TINY','LLAMA3-8B'):
+    m=make_model_config(model_name,2)
+    kv=m['num_heads']//m['gqa_size']
+    for hbms in (1,2,4):
+        heads=_heads_per_hbm(kv,hbms,1)
+        rows.append({'model':model_name,'query_heads':m['num_heads'],'kv_heads':kv,
+          'ngpu':1,'num_hbm':hbms,'heads_per_hbm':heads,'channels_per_head':max(1,_HBM_CHANNELS//heads)})
+order=[(f'M{i}',0) for i in range(64)]
+cases={'one_channel':list(range(0,64,8)),
+       'two_channels':[0,1,8,9,16,17,24,25],
+       'four_channels':[0,1,2,3,8,9,10,11],
+       'balanced':list(range(8))}
+examples={}
+for label,indices in cases.items():
+    selected=[(f'M{i}',0) for i in indices]
+    coread=frozenset(fp for fp,b in selected)
+    outputs={}
+    for mode,groups in [('append',[coread]),('table',[coread]),
+                        ('table_with_full_corpus_coread',[frozenset(fp for fp,b in order),coread])]:
+        slots=_block_slot_table(order,groups,8,'append' if mode=='append' else 'table')
+        loads=Counter(slots[key] for key in selected)
+        outputs[mode]=[loads[i] for i in range(8)]
+    ideal=math.ceil(len(indices)/8)
+    examples[label]={'write_indices':indices,'blocks':len(indices),'loads':outputs,
+       'optimistic_equal_block_scan_speedup':max(outputs['append'])/ideal,
+       'optimistic_equal_block_scan_latency_reduction':1-ideal/max(outputs['append']),
+       'current_table_equal_block_work_speedup':max(outputs['append'])/max(outputs['table']),
+       'current_table_with_corpus_coread_speedup':max(outputs['append'])/max(outputs['table_with_full_corpus_coread'])}
+sources={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in
+         ('src/config.py','src/workload_runner.py','src/ramulator_wrapper.py','main.py',
+          'experiments/run_dag_ladder.sh','experiments/collect_dag_ladder.py')}
+out={'scope':'Current model metadata and exact block-slot helper; synthetic equal-cost master-only cases with 8 channels/head. Not workload execution, Ramulator, or predicted E2E.','configurations':rows,'examples':examples,'source_hashes':sources}
+Path('/tmp/metrics_eight_channels_geometry.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({'configurations':rows,'examples':examples},indent=2))

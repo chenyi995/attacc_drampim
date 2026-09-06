@@ -1,0 +1,26 @@
+"""Install only reviewed Fig.3 changes after filesystem authorization."""
+from pathlib import Path
+import hashlib,json,shutil
+stage=Path('/tmp/fugue_fig3_revision')
+m=json.loads((stage/'install_manifest.json').read_text())
+paper=Path(m['paper'])
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+# Validate every source and destination before the first mutation.
+for p,original in m['initial'].items():
+    target=paper/p
+    assert (not target.exists()) if original is None else (target.is_file() and sha(target)==original),p
+for p,h in m['changed'].items():assert sha(stage/p)==h,p
+for p in sorted(m['changed']):
+    target=paper/p;target.parent.mkdir(parents=True,exist_ok=True)
+    shutil.copy2(stage/p,target)
+for p in m['deleted_after_archival']:
+    rel=p.split('02_irregular_access/',1)[1]
+    backup=paper/'fig/plots/motiv/experiments/02_irregular_access/archive/2026-09-05-column-boundaries'/rel
+    assert sha(backup)==m['initial'][p],p
+    (paper/p).unlink()
+for p,h in m['changed'].items():assert sha(paper/p)==h,p
+receipt={'installed':True,'changed_files':len(m['changed']),
+         'archived_old_files':len(m['deleted_after_archival']),
+         'paper_pdf_sha256':sha(paper/'main.pdf'),'figure_pdf_sha256':sha(paper/'fig/ver1/fig1_motiv.pdf')}
+(stage/'install_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print(json.dumps(receipt,indent=2))

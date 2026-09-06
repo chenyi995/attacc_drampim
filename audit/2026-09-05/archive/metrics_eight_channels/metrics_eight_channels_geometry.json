@@ -1,0 +1,265 @@
+{
+  "scope": "Current model metadata and exact block-slot helper; synthetic equal-cost master-only cases with 8 channels/head. Not workload execution, Ramulator, or predicted E2E.",
+  "configurations": [
+    {
+      "model": "CACHEBLEND-TINY",
+      "query_heads": 8,
+      "kv_heads": 8,
+      "ngpu": 1,
+      "num_hbm": 1,
+      "heads_per_hbm": 8,
+      "channels_per_head": 2
+    },
+    {
+      "model": "CACHEBLEND-TINY",
+      "query_heads": 8,
+      "kv_heads": 8,
+      "ngpu": 1,
+      "num_hbm": 2,
+      "heads_per_hbm": 4,
+      "channels_per_head": 4
+    },
+    {
+      "model": "CACHEBLEND-TINY",
+      "query_heads": 8,
+      "kv_heads": 8,
+      "ngpu": 1,
+      "num_hbm": 4,
+      "heads_per_hbm": 2,
+      "channels_per_head": 8
+    },
+    {
+      "model": "LLAMA3-8B",
+      "query_heads": 32,
+      "kv_heads": 8,
+      "ngpu": 1,
+      "num_hbm": 1,
+      "heads_per_hbm": 8,
+      "channels_per_head": 2
+    },
+    {
+      "model": "LLAMA3-8B",
+      "query_heads": 32,
+      "kv_heads": 8,
+      "ngpu": 1,
+      "num_hbm": 2,
+      "heads_per_hbm": 4,
+      "channels_per_head": 4
+    },
+    {
+      "model": "LLAMA3-8B",
+      "query_heads": 32,
+      "kv_heads": 8,
+      "ngpu": 1,
+      "num_hbm": 4,
+      "heads_per_hbm": 2,
+      "channels_per_head": 8
+    }
+  ],
+  "examples": {
+    "one_channel": {
+      "write_indices": [
+        0,
+        8,
+        16,
+        24,
+        32,
+        40,
+        48,
+        56
+      ],
+      "blocks": 8,
+      "loads": {
+        "append": [
+          8,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "table": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "table_with_full_corpus_coread": [
+          8,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "optimistic_equal_block_scan_speedup": 8.0,
+      "optimistic_equal_block_scan_latency_reduction": 0.875,
+      "current_table_equal_block_work_speedup": 8.0,
+      "current_table_with_corpus_coread_speedup": 1.0
+    },
+    "two_channels": {
+      "write_indices": [
+        0,
+        1,
+        8,
+        9,
+        16,
+        17,
+        24,
+        25
+      ],
+      "blocks": 8,
+      "loads": {
+        "append": [
+          4,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "table": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "table_with_full_corpus_coread": [
+          4,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "optimistic_equal_block_scan_speedup": 4.0,
+      "optimistic_equal_block_scan_latency_reduction": 0.75,
+      "current_table_equal_block_work_speedup": 4.0,
+      "current_table_with_corpus_coread_speedup": 1.0
+    },
+    "four_channels": {
+      "write_indices": [
+        0,
+        1,
+        2,
+        3,
+        8,
+        9,
+        10,
+        11
+      ],
+      "blocks": 8,
+      "loads": {
+        "append": [
+          2,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        "table": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "table_with_full_corpus_coread": [
+          2,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "optimistic_equal_block_scan_speedup": 2.0,
+      "optimistic_equal_block_scan_latency_reduction": 0.5,
+      "current_table_equal_block_work_speedup": 2.0,
+      "current_table_with_corpus_coread_speedup": 1.0
+    },
+    "balanced": {
+      "write_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "blocks": 8,
+      "loads": {
+        "append": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "table": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "table_with_full_corpus_coread": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "optimistic_equal_block_scan_speedup": 1.0,
+      "optimistic_equal_block_scan_latency_reduction": 0.0,
+      "current_table_equal_block_work_speedup": 1.0,
+      "current_table_with_corpus_coread_speedup": 1.0
+    }
+  },
+  "source_hashes": {
+    "src/config.py": "28ee9b707c22b35a80d77ea38d5211cff19bb09092c8323396d6e14eef1fc571",
+    "src/workload_runner.py": "f2b4bfb57bf728e25576ac6f31239bb1e6a75a7c3b5d9b83d85e2ef0610d68f1",
+    "src/ramulator_wrapper.py": "6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00",
+    "main.py": "3160baaf0dde24351239aa24c3b4ac92b8753f4b61e9820c2f574e58ce06b627",
+    "experiments/run_dag_ladder.sh": "e24e30569a5a8318f3d322e61780872212a4f8ed7c0040383bd9274ab76dfe22",
+    "experiments/collect_dag_ladder.py": "5ed143901e27a0f6914ec5b580fbac2e88b2fbd8960d8e19cd6f3d9bc64ad8f2"
+  }
+}

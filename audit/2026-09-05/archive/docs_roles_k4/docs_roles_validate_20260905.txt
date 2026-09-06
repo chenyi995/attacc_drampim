@@ -1,0 +1,47 @@
+from pathlib import Path
+import hashlib,json,re,subprocess
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+ARCH=ROOT/'audit/2026-09-05/archive/docs_roles_k4'
+initial=json.loads((ARCH/'initial_files.json').read_text())
+changed=[p for p,h in initial.items() if not (ROOT/p).is_file() or hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h]
+unexpected=[p for p in changed if not p.startswith(('docs/','audit/'))]
+assert not unexpected,unexpected
+docs=[ROOT/p for p in ('docs/README.md','docs/experiments/README.md','docs/analysis/README.md',
+ 'docs/audit/README.md','docs/README_run_guide.md','docs/README_design_ladder.md','docs/README_audit_fixes.md',
+ 'docs/sessions/2026-09-05-docs-roles-k4-scan-max.md','audit/2026-09-05/SCAN_MAX_AUDIT.md',
+ 'audit/2026-09-05/PARTIAL_COLUMN_APPEND_AUDIT.md','audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md')]
+missing=[];links=0
+for doc in docs:
+    assert doc.is_file(),doc
+    for target in re.findall(r'\]\(([^)]+)\)',doc.read_text()):
+        path=target.strip('<>').split('#',1)[0]
+        if not path or '://' in path:continue
+        links+=1
+        if not (doc.parent/path).resolve().exists():missing.append((str(doc),target))
+assert not missing,missing
+guide=(ROOT/'docs/experiments/README.md').read_text()
+blocks=re.findall(r'```bash\n(.*?)```',guide,re.S)
+for i,block in enumerate(blocks):
+    script=Path(f'/tmp/docs_guide_syntax_{i}.sh');script.write_text(block)
+    checked=subprocess.run(['bash','-n',str(script)],capture_output=True,text=True)
+    assert checked.returncode==0,checked.stderr
+manifest=json.loads((ARCH/'manifest.json').read_text())
+for name,meta in manifest['artifacts'].items():
+    assert hashlib.sha256((ARCH/name).read_bytes()).hexdigest()==meta['sha256'],name
+history=ROOT/'docs/archive/2026-09-05-before-categorization'
+for name,sha in manifest['history'].items():assert hashlib.sha256((history/name).read_bytes()).hexdigest()==sha,name
+out={'implementation_and_workload_unchanged':True,'changed_existing_files':changed,
+     'local_links_checked':links,'missing_links':missing,'bash_blocks_syntax_passed':len(blocks),
+     'commands_executed':'bash -n syntax only; no simulated workloads',
+     'history_files_hash_verified':len(manifest['history']),'evidence_hash_verified':len(manifest['artifacts'])}
+partial=ROOT/'audit/2026-09-05/archive/partial_column_append'
+pm=json.loads((partial/'manifest.json').read_text())
+for name,meta in pm['artifacts'].items():assert hashlib.sha256((partial/name).read_bytes()).hexdigest()==meta['sha256'],name
+for p,h in pm['source_sha256'].items():assert hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==h,p
+out['partial_column_artifacts_verified']=len(pm['artifacts'])
+link=json.loads((ROOT/'audit/2026-09-05/archive/link_tier/capacity_evidence.json').read_text())
+for p,h in link['source_sha256'].items():assert hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==h,p
+out['link_model_source_hashes_verified']=len(link['source_sha256'])
+(ARCH/'validation.json').write_text(json.dumps(out,indent=2)+'\n')
+(ARCH/'docs_roles_validate_20260905.txt').write_bytes(Path(__file__).read_bytes())
+print(json.dumps(out,indent=2))

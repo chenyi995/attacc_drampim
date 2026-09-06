@@ -1,0 +1,21 @@
+{
+  "implementation_and_workload_unchanged": true,
+  "changed_existing_files": [
+    "audit/2026-09-05/README.md",
+    "docs/README.md",
+    "docs/README_audit_fixes.md",
+    "docs/README_design_ladder.md",
+    "docs/README_run_guide.md",
+    "docs/run/README_run_athena.md",
+    "docs/run/README_run_squire.md",
+    "docs/sessions/README.md"
+  ],
+  "local_links_checked": 72,
+  "missing_links": [],
+  "bash_blocks_syntax_passed": 3,
+  "commands_executed": "bash -n syntax only; no simulated workloads",
+  "history_files_hash_verified": 7,
+  "evidence_hash_verified": 14,
+  "partial_column_artifacts_verified": 28,
+  "link_model_source_hashes_verified": 4
+}

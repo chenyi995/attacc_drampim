@@ -1,0 +1,83 @@
+# 部分列连续追加：短输出是否把后继 diff 挤到跨列
+
+核验 revision：`da220d1ea5c57358fb2f2d26a897a5178d0b7f0c`，另保留源码 SHA256。结论来自实际 allocator/plan 的地址探针与极小 trace 检查，没有运行 Ramulator 或测量性能。
+
+**chenyi9 描述的机制成立：在同一 channel 连续紧排时，普通输出占去半列，后继原本一列大小的 diff 就会横跨两列。当前 A3b 的整行分配和 trace 的长度取整没有验证这项收益。** 这是一项模型覆盖问题；是否改建模由 chenyi9 裁决，本次只记录审计。
+
+## 1. 正确理解这个 case
+
+按用户给定的 all-bank 列容量，四个输出 token 占用全部 bank 的半个 column。随后紧接一个八 token 的 diff：
+
+```text
+连续追加：col 0 [ output 4 | diff 前 4 ]  col 1 [ diff 后 4 | ... ]
+独立 diff 区（对齐起点）：col 0 [ diff 全部 8 ]
+```
+
+问题是前一个对象改变了下一个对象的起点。单独 attention 这个 diff 时，连续追加需要覆盖两个 column；分离普通内容和 diff 可以消除普通输出造成的偏移。这里没有把四个输出 token 当成四个完整 column，也没有将问题换成小 diff 自身向上取整。
+
+几何公式为 `Ncol = ceil((列内起点偏移 + diff 字节数) / 每列字节数)`。当前账本以每 token 4 地址字节、每列 32 地址字节表示，行大小为 1024 地址字节。这是 all-bank 地址空间约定，不能直接当成完整 KV 向量的物理字节数。
+
+本例推导：紧排 diff 的偏移 16 B、跨度 32 B，覆盖 2 列；独立区对齐起点覆盖 1 列。这是该 diff 的列覆盖比较，**不是实测 MAC/ACT 减半或端到端加速**。
+
+术语上，ACT 激活的是行，列访问在打开的行内执行；跨列不一定多一次 ACT，跨到下一行才涉及额外行打开/切换，具体命令和耗时应交给 Ramulator。
+
+## 2. 当前 A3b 提前消除了这个起点偏移
+
+真实 `PhysicalLedger.build` 的普通 master/output 分配在 `src/workload_runner.py:956–958` 将 span 向整行取整，新的 A3b diff burst 在 `987–989` 从这个 cursor 开始。同轮连续 diff 仍可扩展同一 burst，这条既定规则不变。
+
+为排除轮转到不同 channel 的影响，探针额外用每 head 一个 channel 的几何控制，显式预约 output 后接 diff：
+
+| 分配方式 | output 地址 | diff 地址 | diff 名义覆盖列数 |
+|---|---|---|---:|
+| 当前 A3b，同 channel | [0, 16) | [1024, 1056) | 1 |
+| 当前 A4c，独立 diff 区 | [0, 16) | [4194304, 4194336) | 1 |
+| 连续追加假设 | [0, 16) | [16, 48) | 2 |
+| 独立区对齐示意 | 普通输出在另一区 | [0, 32) | 1 |
+
+这个单 channel 控制用于定位分配规则，不是八通道/head 性能实验。多通道下相邻对象也可能轮转到不同 channel；只有落到同一 channel 的对象才可能传递上述尾部偏移。
+
+独立 agent 还用真实生成器建立两轮、短输出的输入，并经过真实 reuse plan/TLB。父请求输出和下一轮 diff 在账本预约顺序中相邻，仍出现整行跳转：
+
+| 真实两轮对象 | tokens | 当前地址 |
+|---|---:|---|
+| 父输出（沿用 parent_out 指纹）：`w00_t00` | 4 | [6144, 6160) |
+| 下一轮新 diff：`w00_t01` | 8 | [7168, 7200) |
+
+
+这证明该分配规则能在真实 plan 中触发；预约账本不是实际运行时逐字节写入时间线，也没有引入异步调度假设。
+
+## 3. 只改 allocator 仍不足以证明列访问收益
+
+`pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py:159–170` 的列命令数由 extent 长度与 head 几何决定。当前 head128/fp16 配置每个 extent 使用 `ceil(length/16) × 2` 个 MAC_AB 列命令；起点的列内偏移只加到地址，没有参与命令数量的取整。context 路径也应一起核查。
+
+所以，不能从当前 trace 直接推出“同样八 token 的 diff，因为前面存在半列 output，就恰好多读一个 column”。即使将 allocator 改为连续紧排，也必须核对实际列覆盖与 trace 命令是否一致，才有依据交给 Ramulator 计时。这是源代码检查，并非新增性能校准公式。
+
+独立极小 trace 核对了上游和当前的基础取整：长度为三个 token 时，原 AttAcc 与当前 K-score 都发出 2 个/2 个 MAC_AB。这个共同近似不能被当成用户跨对象追加问题已被正确模拟的证据。
+
+## 4. AttAcc 是否建模，以及公平性方向
+
+| 项目 | 原始 AttAcc | 当前阶梯与判断 |
+|---|---|---|
+| 连续序列的 MAC 取整 | 上游 `c600051` 有，按长度和 head 几何生成 | 当前沿用基础分组，属于已有依据 |
+| 多对象/多轮短输出推进后继 diff 起点 | 没有 Fugue 的对象账本、修正区和碎片追加对照 | 不能用“AttAcc 也这样”证明新增场景正确；当前结果未验证此收益 |
+| A3b 短对象与新 burst 整行分配 | 上游没有这个对象级分配对照 | 当前规则使 baseline 避免输出引起的半列错位，遗漏这一项潜在布局收益 |
+| A4c–A6 的独立 diff 追加区 | 上游没有 | 可以隔离普通输出，但 diff 自身累计仍可能跨列/行 |
+
+对这一项“输出引起的列错位”而言，当前规则给 A3b 提前提供了对齐，因而没有展示分离 diff 可获得的这部分收益。**总体收益不能据此判定必然低估**：A3b 整行 padding 也可能让短对象更分散、增加扫描行或行切换，另一个方向可能使 A3b 更慢。两种作用要在同一存储规则和实际 trace 中一起核算，不能只给 baseline 加跨列惩罚、保留其原有整行分散成本。
+
+独立 diff 区也不保证任意 diff 永不跨列。真实 helper 中，已有七 token diff 后，新 diff 的列内起点偏移为 28 B；已有 255 token 后，行内起点偏移为 1020 B。插入普通四 token 输出并不改变这些起点。它消除的是普通输出的干扰，diff 自身长度/排列仍须按真实布局扫描。
+
+## 5. 如何验证，如何报结果
+
+使用同一输入、相同逻辑读集，控制同 channel 中的输出尾部偏移及后继 diff 长度，并保留跨行边界的对照。输出长度可以使用三、四等非整列长度；当前 workload 校验并不要求它们是整列倍数。但只改变 lout 而保留现行行对齐 allocator，不能声称已经测到了这个机制。
+
+核对顺序：对象真实起止地址 → 实际需读列集合 → trace 的列命令/行地址 → Ramulator 时延。A3b/A4c 使用各自声明的布局，不能为某档凭空增加列惩罚或手工拟合额外 latency。ACT 数、decode scan latency、TBT、TTFT 与 E2E 分开报告，scan 沿用最慢真实 channel。
+
+## 6. 可复核证据
+
+- [真实 allocator 与两轮 plan 脚本](archive/partial_column_append/partial_columns_output4_diff8_probe.txt)、[结果](archive/partial_column_append/partial_columns_output4_diff8_evidence.json)、[极小输入](archive/partial_column_append/partial_columns_output4_diff8_workload.json)。
+- [独立分配探针](archive/partial_column_append/partial_column_provenance_append_probe.txt)、[结果](archive/partial_column_append/partial_column_provenance_append_evidence.json)。
+- [AttAcc/当前 trace 探针](archive/partial_column_append/partial_column_provenance_probe.txt)、[结果](archive/partial_column_append/partial_column_provenance_evidence.json)。
+- [归档摘要](archive/partial_column_append/manifest.json)。数值和表格由归档的 `partial_column_append_report.txt` 从上述 JSON 生成；保留了上游 generator 和极小 trace。
+
+本次独立复核：ledger_trace_boundary_audit 核真实两轮与地址，independent_fairness_audit 核 allocator、trace 与上游来源。修改仅为文档和审计证据。

@@ -1,0 +1,39 @@
+"""Compare original AttAcc and current generator partial-length command expansion.
+Generates tiny traces only; never runs Ramulator or changes the repository.
+"""
+from pathlib import Path
+import subprocess,sys,json,hashlib
+sys.dont_write_bytecode=True
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+rel='pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py'
+old=subprocess.check_output(['git','show','c600051:'+rel],cwd=ROOT,text=True)
+oldpath=Path('/tmp/partial_column_provenance_attacc_c600051.py');oldpath.write_text(old)
+current=(ROOT/rel).read_text()
+K=1<<22;V=1<<23
+
+def one(name,source,L,extents=None,queries=1,mq=False,original=False):
+    # Fresh namespace avoids the generator's module-global command buffers across invocations.
+    ns={'__name__':'partial_column_probe_'+name};exec(compile(source,name,'exec'),ns)
+    ns['dhead']=128;ns['max_L']=4096;ns['n_mac']=16
+    if not original:
+        ns['n_channel']=1;ns['head_hbm_stripe']=True;ns['n_head_per_hbm']=1;ns['pool_base']=0
+    trace=Path('/tmp')/('partial_column_provenance_'+name+'.trace')
+    if original:ns['run_attention'](128,1,L,str(trace))
+    else:ns['run_attention'](128,1,L,str(trace),shared_kv=queries>1,shared_queries=queries,mq_command=mq,kv_extents=extents)
+    lines=trace.read_text().splitlines();boundary=next((i for i,l in enumerate(lines) if l.startswith('PIM_MV_GB')),len(lines))
+    phases={}
+    for phase,part in [('K_score',lines[:boundary]),('V_context',lines[boundary:])]:
+        addresses=[int(l.split()[1],16) for l in part if l.startswith('PIM_MAC_AB')]
+        phases[phase]={'mac_commands':len(addresses),'raw_addresses':addresses,'column_addresses_32B':[a//32 for a in addresses],'rows_1024B':[a//1024 for a in addresses],'unique_32B_columns':len(set(a//32 for a in addresses))}
+    return {'trace':str(trace),'logical_tokens':L,'extents':extents,'queries':queries,'mq':mq,'phases':phases,'scope':'command counts/addresses, not latency, ACTs, or measured hardware energy'}
+out={'original_revision':'c600051','current_revision':'da220d1','geometry':'one head, dhead128, fp16, n_pch*n_rank*n_bg=16; one MAC_AB is an all-bank column command','cases':{}}
+for L in (3,16,17):
+    out['cases']['attacc_L'+str(L)]=one('attacc_L'+str(L),old,L,original=True)
+    out['cases']['current_L'+str(L)]=one('current_L'+str(L),current,L)
+for name,extents in [('combined_6',[(K,K+V,6)]),('split_3_plus_3_same_columns',[(K,K+V,3),(K+12,K+V+12,3)]),('split_3_plus_3_next_columns',[(K,K+V,3),(K+64,K+V+64,3)]),('single3_near_row_boundary',[(K+1016,K+V+1016,3)])]:
+    L=sum(x[2] for x in extents)
+    for suffix,q,mq in [('decode_q1',1,False),('prefill_q8_mq',8,True),('prefill_q8_replicate',8,False)]:
+        label=name+'_'+suffix
+        out['cases'][label]=one(label,current,L,extents,q,mq)
+Path('/tmp/partial_column_provenance_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({n:{p:{'commands':v['mac_commands'],'unique_columns':v['unique_32B_columns']} for p,v in c['phases'].items()} for n,c in out['cases'].items()},indent=2))

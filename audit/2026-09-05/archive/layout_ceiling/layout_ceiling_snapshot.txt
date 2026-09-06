@@ -1,0 +1,16 @@
+from pathlib import Path
+import hashlib,json,subprocess,sys
+root=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+out=Path('/tmp/layout_ceiling_snapshot.json')
+paths=set(subprocess.check_output(['git','ls-files','-z'],cwd=root).decode().split('\0'))-{''}
+paths.update(str(p.relative_to(root)) for p in (root/'workload').rglob('*') if p.is_file() and '__pycache__' not in str(p))
+paths.add('output/analysis/b1_levers.py')
+def snap():
+    return {str(p):hashlib.sha256((root/p).read_bytes()).hexdigest() for p in sorted(paths) if (root/p).is_file()}
+if len(sys.argv)>1 and sys.argv[1]=='check':
+    old=json.loads(out.read_text()); new=snap()
+    changed=[p for p,v in old['files'].items() if new.get(p)!=v]
+    print(json.dumps({'original_files_changed':changed,'head_now':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root).decode().strip()},indent=2))
+else:
+    out.write_text(json.dumps({'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root).decode().strip(),'files':snap()},indent=2)+'\n')
+    print('snapshotted',len(paths),'paths')

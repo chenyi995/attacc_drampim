@@ -1,0 +1,31 @@
+=== launch A1 (reuse=no-reuse) 17:53:17 ===
+=== launch A2 (reuse=recompute) 17:53:17 ===
+=== launch A3b (reuse=recompute) 17:53:17 ===
+=== launch A4c (reuse=recompute) 17:53:17 ===
+=== launch A4e (reuse=recompute) 17:53:17 ===
+=== launch A5 (reuse=recompute) 17:53:17 ===
+=== launch A6 (reuse=recompute) 17:53:17 ===
+=== done A1 17:54:21 ===
+REPORT_SUMMARY {"ablation": "A1", "decode_attn": "pim", "energy_nj": 4050686234.698624, "engine": "dag", "event_count": 135448, "kv_mapping": "private", "link_bytes": 509771776, "makespan_s": 0.09927151203280107, "pim_prefill_mode": "gpu", "policy": "no-reuse-physical"}
+=== done A2 17:54:21 ===
+REPORT_SUMMARY {"ablation": "A2", "decode_attn": "gpu", "energy_nj": 8160999467.2131815, "engine": "dag", "event_count": 3092, "kv_mapping": "none", "link_bytes": 120189878272, "makespan_s": 0.5143510875716502, "pim_prefill_mode": "gpu", "policy": "recompute"}
+=== done A3b 17:54:40 ===
+REPORT_SUMMARY {"ablation": "A3b", "decode_attn": "pim", "energy_nj": 3558539649.823952, "engine": "dag", "event_count": 157348, "kv_mapping": "naive", "link_bytes": 541230464, "makespan_s": 0.0969919175666528, "pim_prefill_mode": "gpu", "policy": "recompute"}
+=== done A4c 17:54:40 ===
+REPORT_SUMMARY {"ablation": "A4c", "decode_attn": "pim", "energy_nj": 3562972067.0840306, "engine": "dag", "event_count": 157008, "kv_mapping": "master-diff-local", "link_bytes": 541230464, "makespan_s": 0.09673599744264762, "pim_prefill_mode": "gpu", "policy": "recompute"}
+=== done A4e 17:54:40 ===
+REPORT_SUMMARY {"ablation": "A4e", "decode_attn": "pim", "energy_nj": 3562956624.1835294, "engine": "dag", "event_count": 157008, "kv_mapping": "master-diff-table-local", "link_bytes": 541230464, "makespan_s": 0.09649029117664626, "pim_prefill_mode": "gpu", "policy": "recompute"}
+=== done A5 18:01:19 ===
+REPORT_SUMMARY {"ablation": "A5", "decode_attn": "pim", "energy_nj": 5514292042.599128, "engine": "dag", "event_count": 419604, "kv_mapping": "master-diff-table-local", "link_bytes": 839681408, "makespan_s": 0.34858724525071877, "pim_prefill_mode": "pim", "policy": "recompute"}
+=== done A6 18:01:19 ===
+REPORT_SUMMARY {"ablation": "A6", "decode_attn": "pim", "energy_nj": 3525160911.98027, "engine": "dag", "event_count": 157008, "kv_mapping": "master-diff-table-local", "link_bytes": 541230464, "makespan_s": 0.0953295810326431, "pim_prefill_mode": "dynamic", "policy": "recompute"}
+workload,model,ablation,policy,engine,kv_mapping,decode_attn,pim_prefill_mode,pim_prefill_share,prefill_side_census,pim_attn_rows,gpu_attn_rows,makespan_s,link_bytes,event_count,gpu_time_s_unoverlapped,pim_pool_time_s_unoverlapped,die_time_s_unoverlapped,energy_total_nj,energy_gpu_nj,energy_link_nj,energy_pim_nj,energy_die_nj,energy_tlb_nj
+wl_small_A4R4.json,CACHEBLEND-TINY,A1,no-reuse-physical,dag,private,pim,gpu,0.0,"pim=0,gpu=5,mixed=0,none=0/5",0,111616,0.09927151203280107,509771776,135448,0.07691143880108152,0.35372877875222114,0.0,4050686234.698624,3506895422.668799,5301626.47040128,538489185.5665495,0.0,0.0
+wl_small_A4R4.json,CACHEBLEND-TINY,A2,recompute,dag,none,gpu,gpu,0.0,"pim=0,gpu=5,mixed=0,none=0/5",0,79808,0.5143510875716502,120189878272,3092,0.11541073350128274,0.0,0.0,8160999467.2131815,6911024733.183999,1249974734.0287857,0.0,0.0,0.0
+wl_small_A4R4.json,CACHEBLEND-TINY,A3b,recompute,dag,naive,pim,gpu,0.0,"pim=0,gpu=5,mixed=0,none=0/5",0,79808,0.0969919175666528,541230464,157348,0.07077025639892591,0.4035828395839926,0.0,3558539649.823952,3009704902.5740905,5628796.825601174,543205950.423165,0.0,0.0
+wl_small_A4R4.json,CACHEBLEND-TINY,A4c,recompute,dag,master-diff-local,pim,gpu,0.0,"pim=0,gpu=5,mixed=0,none=0/5",0,79808,0.09673599744264762,541230464,157008,0.07077025639892591,0.3936108905278909,0.0,3562972067.0840306,3009704902.5740905,5628796.825601174,547638367.6826549,0.0,0.0
+wl_small_A4R4.json,CACHEBLEND-TINY,A4e,recompute,dag,master-diff-table-local,pim,gpu,0.0,"pim=0,gpu=5,mixed=0,none=0/5",0,79808,0.09649029117664626,541230464,157008,0.07077025639892591,0.39350025295982677,0.0,3562956624.1835294,3009704902.5740905,5628796.825601174,547622924.7797222,0.0,0.0
+wl_small_A4R4.json,CACHEBLEND-TINY,A5,recompute,dag,master-diff-table-local,pim,pim,1.0,"pim=5,gpu=0,mixed=0,none=0/5",79808,0,0.34858724525071877,839681408,419604,0.04631371865409792,3.5335442955167355,0.0,5514292042.599128,1984461229.8344786,8732686.64320008,3521098126.1294403,0.0,0.0
+wl_small_A4R4.json,CACHEBLEND-TINY,A6,recompute,dag,master-diff-table-local,pim,dynamic,0.0,"pim=0,gpu=5,mixed=0,none=0/5",0,79808,0.0953295810326431,541230464,157008,0.07077025639892591,0.3749288906557493,0.0,3525160911.98027,3009704902.5740905,5628796.825601174,509827212.57480055,0.0,0.0
+TIER_CSV: /data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_ladder_tiers.csv
+CSV: /data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_ladder.csv

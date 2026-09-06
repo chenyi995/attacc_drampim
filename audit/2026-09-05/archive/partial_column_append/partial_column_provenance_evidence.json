@@ -1,0 +1,1465 @@
+{
+  "original_revision": "c600051",
+  "current_revision": "da220d1",
+  "geometry": "one head, dhead128, fp16, n_pch*n_rank*n_bg=16; one MAC_AB is an all-bank column command",
+  "cases": {
+    "attacc_L3": {
+      "trace": "/tmp/partial_column_provenance_attacc_L3.trace",
+      "logical_tokens": 3,
+      "extents": null,
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            0,
+            32
+          ],
+          "column_addresses_32B": [
+            0,
+            1
+          ],
+          "rows_1024B": [
+            0,
+            0
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            8388608,
+            8388640
+          ],
+          "column_addresses_32B": [
+            262144,
+            262145
+          ],
+          "rows_1024B": [
+            8192,
+            8192
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "current_L3": {
+      "trace": "/tmp/partial_column_provenance_current_L3.trace",
+      "logical_tokens": 3,
+      "extents": null,
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            0,
+            32
+          ],
+          "column_addresses_32B": [
+            0,
+            1
+          ],
+          "rows_1024B": [
+            0,
+            0
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            8388608,
+            8388640
+          ],
+          "column_addresses_32B": [
+            262144,
+            262145
+          ],
+          "rows_1024B": [
+            8192,
+            8192
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "attacc_L16": {
+      "trace": "/tmp/partial_column_provenance_attacc_L16.trace",
+      "logical_tokens": 16,
+      "extents": null,
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            0,
+            32
+          ],
+          "column_addresses_32B": [
+            0,
+            1
+          ],
+          "rows_1024B": [
+            0,
+            0
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            8388608,
+            8388640
+          ],
+          "column_addresses_32B": [
+            262144,
+            262145
+          ],
+          "rows_1024B": [
+            8192,
+            8192
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "current_L16": {
+      "trace": "/tmp/partial_column_provenance_current_L16.trace",
+      "logical_tokens": 16,
+      "extents": null,
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            0,
+            32
+          ],
+          "column_addresses_32B": [
+            0,
+            1
+          ],
+          "rows_1024B": [
+            0,
+            0
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            8388608,
+            8388640
+          ],
+          "column_addresses_32B": [
+            262144,
+            262145
+          ],
+          "rows_1024B": [
+            8192,
+            8192
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "attacc_L17": {
+      "trace": "/tmp/partial_column_provenance_attacc_L17.trace",
+      "logical_tokens": 17,
+      "extents": null,
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            0,
+            32,
+            64,
+            96
+          ],
+          "column_addresses_32B": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "rows_1024B": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "unique_32B_columns": 4
+        },
+        "V_context": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            8388608,
+            8388640,
+            8388672,
+            8388704
+          ],
+          "column_addresses_32B": [
+            262144,
+            262145,
+            262146,
+            262147
+          ],
+          "rows_1024B": [
+            8192,
+            8192,
+            8192,
+            8192
+          ],
+          "unique_32B_columns": 4
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "current_L17": {
+      "trace": "/tmp/partial_column_provenance_current_L17.trace",
+      "logical_tokens": 17,
+      "extents": null,
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            0,
+            32,
+            64,
+            96
+          ],
+          "column_addresses_32B": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "rows_1024B": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "unique_32B_columns": 4
+        },
+        "V_context": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            8388608,
+            8388640,
+            8388672,
+            8388704
+          ],
+          "column_addresses_32B": [
+            262144,
+            262145,
+            262146,
+            262147
+          ],
+          "rows_1024B": [
+            8192,
+            8192,
+            8192,
+            8192
+          ],
+          "unique_32B_columns": 4
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "combined_6_decode_q1": {
+      "trace": "/tmp/partial_column_provenance_combined_6_decode_q1.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          6
+        ]
+      ],
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            4194304,
+            4194336
+          ],
+          "column_addresses_32B": [
+            131072,
+            131073
+          ],
+          "rows_1024B": [
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            12582912,
+            12582944
+          ],
+          "column_addresses_32B": [
+            393216,
+            393217
+          ],
+          "rows_1024B": [
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "combined_6_prefill_q8_mq": {
+      "trace": "/tmp/partial_column_provenance_combined_6_prefill_q8_mq.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          6
+        ]
+      ],
+      "queries": 8,
+      "mq": true,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            4194304,
+            4194336
+          ],
+          "column_addresses_32B": [
+            131072,
+            131073
+          ],
+          "rows_1024B": [
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            12582912,
+            12582944
+          ],
+          "column_addresses_32B": [
+            393216,
+            393217
+          ],
+          "rows_1024B": [
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "combined_6_prefill_q8_replicate": {
+      "trace": "/tmp/partial_column_provenance_combined_6_prefill_q8_replicate.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          6
+        ]
+      ],
+      "queries": 8,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 16,
+          "raw_addresses": [
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336
+          ],
+          "column_addresses_32B": [
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 16,
+          "raw_addresses": [
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944
+          ],
+          "column_addresses_32B": [
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "split_3_plus_3_same_columns_decode_q1": {
+      "trace": "/tmp/partial_column_provenance_split_3_plus_3_same_columns_decode_q1.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          3
+        ],
+        [
+          4194316,
+          12582924,
+          3
+        ]
+      ],
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            4194304,
+            4194336,
+            4194316,
+            4194348
+          ],
+          "column_addresses_32B": [
+            131072,
+            131073,
+            131072,
+            131073
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            12582912,
+            12582924,
+            12582944,
+            12582956
+          ],
+          "column_addresses_32B": [
+            393216,
+            393216,
+            393217,
+            393217
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "split_3_plus_3_same_columns_prefill_q8_mq": {
+      "trace": "/tmp/partial_column_provenance_split_3_plus_3_same_columns_prefill_q8_mq.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          3
+        ],
+        [
+          4194316,
+          12582924,
+          3
+        ]
+      ],
+      "queries": 8,
+      "mq": true,
+      "phases": {
+        "K_score": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            4194304,
+            4194336,
+            4194316,
+            4194348
+          ],
+          "column_addresses_32B": [
+            131072,
+            131073,
+            131072,
+            131073
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            12582912,
+            12582924,
+            12582944,
+            12582956
+          ],
+          "column_addresses_32B": [
+            393216,
+            393216,
+            393217,
+            393217
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "split_3_plus_3_same_columns_prefill_q8_replicate": {
+      "trace": "/tmp/partial_column_provenance_split_3_plus_3_same_columns_prefill_q8_replicate.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          3
+        ],
+        [
+          4194316,
+          12582924,
+          3
+        ]
+      ],
+      "queries": 8,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 32,
+          "raw_addresses": [
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194316,
+            4194316,
+            4194316,
+            4194316,
+            4194316,
+            4194316,
+            4194316,
+            4194316,
+            4194348,
+            4194348,
+            4194348,
+            4194348,
+            4194348,
+            4194348,
+            4194348,
+            4194348
+          ],
+          "column_addresses_32B": [
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 32,
+          "raw_addresses": [
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582924,
+            12582924,
+            12582924,
+            12582924,
+            12582924,
+            12582924,
+            12582924,
+            12582924,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582956,
+            12582956,
+            12582956,
+            12582956,
+            12582956,
+            12582956,
+            12582956,
+            12582956
+          ],
+          "column_addresses_32B": [
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "split_3_plus_3_next_columns_decode_q1": {
+      "trace": "/tmp/partial_column_provenance_split_3_plus_3_next_columns_decode_q1.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          3
+        ],
+        [
+          4194368,
+          12582976,
+          3
+        ]
+      ],
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            4194304,
+            4194336,
+            4194368,
+            4194400
+          ],
+          "column_addresses_32B": [
+            131072,
+            131073,
+            131074,
+            131075
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 4
+        },
+        "V_context": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            12582912,
+            12582976,
+            12582944,
+            12583008
+          ],
+          "column_addresses_32B": [
+            393216,
+            393218,
+            393217,
+            393219
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 4
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "split_3_plus_3_next_columns_prefill_q8_mq": {
+      "trace": "/tmp/partial_column_provenance_split_3_plus_3_next_columns_prefill_q8_mq.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          3
+        ],
+        [
+          4194368,
+          12582976,
+          3
+        ]
+      ],
+      "queries": 8,
+      "mq": true,
+      "phases": {
+        "K_score": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            4194304,
+            4194336,
+            4194368,
+            4194400
+          ],
+          "column_addresses_32B": [
+            131072,
+            131073,
+            131074,
+            131075
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 4
+        },
+        "V_context": {
+          "mac_commands": 4,
+          "raw_addresses": [
+            12582912,
+            12582976,
+            12582944,
+            12583008
+          ],
+          "column_addresses_32B": [
+            393216,
+            393218,
+            393217,
+            393219
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 4
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "split_3_plus_3_next_columns_prefill_q8_replicate": {
+      "trace": "/tmp/partial_column_provenance_split_3_plus_3_next_columns_prefill_q8_replicate.trace",
+      "logical_tokens": 6,
+      "extents": [
+        [
+          4194304,
+          12582912,
+          3
+        ],
+        [
+          4194368,
+          12582976,
+          3
+        ]
+      ],
+      "queries": 8,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 32,
+          "raw_addresses": [
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194304,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194336,
+            4194368,
+            4194368,
+            4194368,
+            4194368,
+            4194368,
+            4194368,
+            4194368,
+            4194368,
+            4194400,
+            4194400,
+            4194400,
+            4194400,
+            4194400,
+            4194400,
+            4194400,
+            4194400
+          ],
+          "column_addresses_32B": [
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131072,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131073,
+            131074,
+            131074,
+            131074,
+            131074,
+            131074,
+            131074,
+            131074,
+            131074,
+            131075,
+            131075,
+            131075,
+            131075,
+            131075,
+            131075,
+            131075,
+            131075
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096
+          ],
+          "unique_32B_columns": 4
+        },
+        "V_context": {
+          "mac_commands": 32,
+          "raw_addresses": [
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582912,
+            12582976,
+            12582976,
+            12582976,
+            12582976,
+            12582976,
+            12582976,
+            12582976,
+            12582976,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12582944,
+            12583008,
+            12583008,
+            12583008,
+            12583008,
+            12583008,
+            12583008,
+            12583008,
+            12583008
+          ],
+          "column_addresses_32B": [
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393216,
+            393218,
+            393218,
+            393218,
+            393218,
+            393218,
+            393218,
+            393218,
+            393218,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393217,
+            393219,
+            393219,
+            393219,
+            393219,
+            393219,
+            393219,
+            393219,
+            393219
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288
+          ],
+          "unique_32B_columns": 4
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "single3_near_row_boundary_decode_q1": {
+      "trace": "/tmp/partial_column_provenance_single3_near_row_boundary_decode_q1.trace",
+      "logical_tokens": 3,
+      "extents": [
+        [
+          4195320,
+          12583928,
+          3
+        ]
+      ],
+      "queries": 1,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            4195320,
+            4195352
+          ],
+          "column_addresses_32B": [
+            131103,
+            131104
+          ],
+          "rows_1024B": [
+            4096,
+            4097
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            12583928,
+            12583960
+          ],
+          "column_addresses_32B": [
+            393247,
+            393248
+          ],
+          "rows_1024B": [
+            12288,
+            12289
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "single3_near_row_boundary_prefill_q8_mq": {
+      "trace": "/tmp/partial_column_provenance_single3_near_row_boundary_prefill_q8_mq.trace",
+      "logical_tokens": 3,
+      "extents": [
+        [
+          4195320,
+          12583928,
+          3
+        ]
+      ],
+      "queries": 8,
+      "mq": true,
+      "phases": {
+        "K_score": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            4195320,
+            4195352
+          ],
+          "column_addresses_32B": [
+            131103,
+            131104
+          ],
+          "rows_1024B": [
+            4096,
+            4097
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 2,
+          "raw_addresses": [
+            12583928,
+            12583960
+          ],
+          "column_addresses_32B": [
+            393247,
+            393248
+          ],
+          "rows_1024B": [
+            12288,
+            12289
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    },
+    "single3_near_row_boundary_prefill_q8_replicate": {
+      "trace": "/tmp/partial_column_provenance_single3_near_row_boundary_prefill_q8_replicate.trace",
+      "logical_tokens": 3,
+      "extents": [
+        [
+          4195320,
+          12583928,
+          3
+        ]
+      ],
+      "queries": 8,
+      "mq": false,
+      "phases": {
+        "K_score": {
+          "mac_commands": 16,
+          "raw_addresses": [
+            4195320,
+            4195320,
+            4195320,
+            4195320,
+            4195320,
+            4195320,
+            4195320,
+            4195320,
+            4195352,
+            4195352,
+            4195352,
+            4195352,
+            4195352,
+            4195352,
+            4195352,
+            4195352
+          ],
+          "column_addresses_32B": [
+            131103,
+            131103,
+            131103,
+            131103,
+            131103,
+            131103,
+            131103,
+            131103,
+            131104,
+            131104,
+            131104,
+            131104,
+            131104,
+            131104,
+            131104,
+            131104
+          ],
+          "rows_1024B": [
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4096,
+            4097,
+            4097,
+            4097,
+            4097,
+            4097,
+            4097,
+            4097,
+            4097
+          ],
+          "unique_32B_columns": 2
+        },
+        "V_context": {
+          "mac_commands": 16,
+          "raw_addresses": [
+            12583928,
+            12583928,
+            12583928,
+            12583928,
+            12583928,
+            12583928,
+            12583928,
+            12583928,
+            12583960,
+            12583960,
+            12583960,
+            12583960,
+            12583960,
+            12583960,
+            12583960,
+            12583960
+          ],
+          "column_addresses_32B": [
+            393247,
+            393247,
+            393247,
+            393247,
+            393247,
+            393247,
+            393247,
+            393247,
+            393248,
+            393248,
+            393248,
+            393248,
+            393248,
+            393248,
+            393248,
+            393248
+          ],
+          "rows_1024B": [
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12288,
+            12289,
+            12289,
+            12289,
+            12289,
+            12289,
+            12289,
+            12289,
+            12289
+          ],
+          "unique_32B_columns": 2
+        }
+      },
+      "scope": "command counts/addresses, not latency, ACTs, or measured hardware energy"
+    }
+  }
+}

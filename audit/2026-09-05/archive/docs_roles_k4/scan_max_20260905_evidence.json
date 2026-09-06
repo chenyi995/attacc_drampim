@@ -1,0 +1,195 @@
+{
+  "revision": "da220d1",
+  "scope": "No Ramulator/device performance measurement. Injected channel shapes and fixed device costs: channel0=2us, channel1=7us, GPU attention=5us. The PIM converter, placement-event helper, scheduler and A6 reducer are real code.",
+  "lane_inputs": [
+    {
+      "channel": 0,
+      "tokens": 256,
+      "fixed_service_us": 2
+    },
+    {
+      "channel": 1,
+      "tokens": 8,
+      "fixed_service_us": 7
+    }
+  ],
+  "rungs": {
+    "A3b": {
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-0",
+          "service_us": 2.0,
+          "start_us": 0.0,
+          "end_us": 2.0,
+          "deps": []
+        },
+        {
+          "id": "cb-1",
+          "device": "PIM:pool1-1",
+          "service_us": 7.0,
+          "start_us": 0.0,
+          "end_us": 7.0,
+          "deps": []
+        },
+        {
+          "id": "cb-2",
+          "device": "DIE",
+          "service_us": 0.0,
+          "start_us": 7.0,
+          "end_us": 7.0,
+          "deps": [
+            "cb-0",
+            "cb-1"
+          ]
+        }
+      ],
+      "join_us": 7.0,
+      "lane_sum_us": 9.0
+    },
+    "A4c": {
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-0",
+          "service_us": 2.0,
+          "start_us": 0.0,
+          "end_us": 2.0,
+          "deps": []
+        },
+        {
+          "id": "cb-1",
+          "device": "PIM:pool1-1",
+          "service_us": 7.0,
+          "start_us": 0.0,
+          "end_us": 7.0,
+          "deps": []
+        },
+        {
+          "id": "cb-2",
+          "device": "DIE",
+          "service_us": 0.0,
+          "start_us": 7.0,
+          "end_us": 7.0,
+          "deps": [
+            "cb-0",
+            "cb-1"
+          ]
+        }
+      ],
+      "join_us": 7.0,
+      "lane_sum_us": 9.0
+    },
+    "A4e": {
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-0",
+          "service_us": 2.0,
+          "start_us": 0.0,
+          "end_us": 2.0,
+          "deps": []
+        },
+        {
+          "id": "cb-1",
+          "device": "PIM:pool1-1",
+          "service_us": 7.0,
+          "start_us": 0.0,
+          "end_us": 7.0,
+          "deps": []
+        },
+        {
+          "id": "cb-2",
+          "device": "DIE",
+          "service_us": 0.0,
+          "start_us": 7.0,
+          "end_us": 7.0,
+          "deps": [
+            "cb-0",
+            "cb-1"
+          ]
+        }
+      ],
+      "join_us": 7.0,
+      "lane_sum_us": 9.0
+    },
+    "A5": {
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-0",
+          "service_us": 2.0,
+          "start_us": 0.0,
+          "end_us": 2.0,
+          "deps": []
+        },
+        {
+          "id": "cb-1",
+          "device": "PIM:pool1-1",
+          "service_us": 7.0,
+          "start_us": 0.0,
+          "end_us": 7.0,
+          "deps": []
+        },
+        {
+          "id": "cb-2",
+          "device": "DIE",
+          "service_us": 0.0,
+          "start_us": 7.0,
+          "end_us": 7.0,
+          "deps": [
+            "cb-0",
+            "cb-1"
+          ]
+        }
+      ],
+      "join_us": 7.0,
+      "lane_sum_us": 9.0
+    },
+    "A6": {
+      "events": [
+        {
+          "id": "cb-0",
+          "device": "PIM:pool0-0",
+          "service_us": 2.0,
+          "start_us": 0.0,
+          "end_us": 2.0,
+          "deps": []
+        },
+        {
+          "id": "cb-1",
+          "device": "PIM:pool1-1",
+          "service_us": 7.0,
+          "start_us": 0.0,
+          "end_us": 7.0,
+          "deps": []
+        },
+        {
+          "id": "cb-2",
+          "device": "DIE",
+          "service_us": 0.0,
+          "start_us": 7.0,
+          "end_us": 7.0,
+          "deps": [
+            "cb-0",
+            "cb-1"
+          ]
+        }
+      ],
+      "join_us": 7.0,
+      "lane_sum_us": 9.0
+    }
+  },
+  "a6": {
+    "request": "fixed",
+    "compute_rows": 1,
+    "readback_rows": 0,
+    "scan_rows": 0,
+    "sweeps": 1,
+    "busiest_channel_rows": 256,
+    "lanes": 2,
+    "t_xpu_s": 5e-06,
+    "t_bank_s": 7e-06,
+    "side": "gpu"
+  }
+}

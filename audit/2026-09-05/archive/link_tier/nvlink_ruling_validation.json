@@ -1,0 +1,22 @@
+{
+  "decision": "Keep original NVLink connection; reject two-tier proposal",
+  "changed_docs": [
+    "docs/experiments/README.md",
+    "docs/analysis/README.md",
+    "docs/audit/README.md",
+    "audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md",
+    "docs/sessions/2026-09-05-docs-roles-k4-scan-max.md",
+    "docs/sessions/README.md"
+  ],
+  "history_sha256": {
+    "docs__experiments__README.md.before_nvlink_ruling.txt": "48962054cdc32d7af81dfd293df15f216d3d3265b4b1a7aade1e12096808fbb9",
+    "docs__analysis__README.md.before_nvlink_ruling.txt": "7ea9b4c03c18ab405d581010fb260168089c5a77cd18fc14e7f62ac8cba03aea",
+    "docs__audit__README.md.before_nvlink_ruling.txt": "e683e72b741533409bdd2e7e1db7a3f7d5e21e0a51e1eca21af69dbaa71183ea",
+    "audit__2026-09-05__LINK_TIER_ASSUMPTIONS.md.before_nvlink_ruling.txt": "eba75fec2d7ea3e8030b1dd88bbfc581073dcc8a153a84ae9e39ba3e13dbc5e5",
+    "docs__sessions__2026-09-05-docs-roles-k4-scan-max.md.before_nvlink_ruling.txt": "d67df50f5a778ebb921749bc15f43dc43e134aaf05ac160dd7f212eac500c51f",
+    "docs__sessions__README.md.before_nvlink_ruling.txt": "ce97c0820ef8c5e49745a64d35c1f10d52d3730d784692e2ab4254a189f62ef7"
+  },
+  "local_links_checked": 50,
+  "tracked_implementation_and_input_hashes_unchanged": true,
+  "performance_experiments_run": false
+}

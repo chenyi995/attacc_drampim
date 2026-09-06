@@ -1,0 +1,69 @@
+{
+  "artifacts": {
+    "k4_prefill_shape_probe.txt": {
+      "source": "/tmp/k4_prefill_shape_probe.py",
+      "sha256": "994d7745f5ed7be246cd4d7cb07d72322b6bcd85d7946649c5080bc75abe7c44"
+    },
+    "k4_prefill_shape_evidence.json": {
+      "source": "/tmp/k4_prefill_shape_evidence.json",
+      "sha256": "e993ef08bb843f4486298c5407e0dd5f2864f19b62e32c34ccc484d975941897"
+    },
+    "scan_max_20260905_probe.txt": {
+      "source": "/tmp/scan_max_20260905_probe.py",
+      "sha256": "8a4ab116727f9ce00c5e8702896249667e057735f265ef8af4548fb69f472b33"
+    },
+    "scan_max_20260905_evidence.json": {
+      "source": "/tmp/scan_max_20260905_evidence.json",
+      "sha256": "9b49f5efd362cac0ed2709b41c2049be0afa79755bed21c09722926b50f15008"
+    },
+    "scan_max_20260905_dump_probe.txt": {
+      "source": "/tmp/scan_max_20260905_dump_probe.py",
+      "sha256": "183acf4a6ea5afe8e6420001c9988a6083c67af5d41028bed8646e45245b6c80"
+    },
+    "scan_max_20260905_dump_evidence.json": {
+      "source": "/tmp/scan_max_20260905_dump_evidence.json",
+      "sha256": "158c457f2c51badafd81567ca0c5335ab72644cbcf57e4272dab3295ed086b42"
+    },
+    "docs_roles_k4_20260905.txt": {
+      "source": "/tmp/docs_roles_k4_20260905.py",
+      "sha256": "96db8680081102a3f73e075147d562c975a78640c2e65181a8de695f774b6c20"
+    },
+    "fugue_docs_index.txt": {
+      "source": "/tmp/fugue_docs_index.md",
+      "sha256": "991917b74f2674398aff30d3f14f807f370f079df8e8920d55bdb7ae3a2c38f7"
+    },
+    "fugue_experiment_guide.txt": {
+      "source": "/tmp/fugue_experiment_guide.md",
+      "sha256": "48962054cdc32d7af81dfd293df15f216d3d3265b4b1a7aade1e12096808fbb9"
+    },
+    "fugue_performance_analysis.txt": {
+      "source": "/tmp/fugue_performance_analysis.md",
+      "sha256": "1c1401a760322d3d5398a3cc2867b7b4fc0b8d42825bcf44d83432205e613cb0"
+    },
+    "fugue_audit_index.txt": {
+      "source": "/tmp/fugue_audit_index.md",
+      "sha256": "e683e72b741533409bdd2e7e1db7a3f7d5e21e0a51e1eca21af69dbaa71183ea"
+    },
+    "fugue_scan_max_audit.txt": {
+      "source": "/tmp/fugue_scan_max_audit.md",
+      "sha256": "9b52781c208603ba21aaabf5610c9876ce750c85c2ae893371d917f524da43a9"
+    },
+    "fugue_design_ladder.txt": {
+      "source": "/tmp/fugue_design_ladder.md",
+      "sha256": "b4adad877440158cb5a6b18d0344d9fabca7f1bfa85d4ee0932de67e4c2ce245"
+    },
+    "fugue_docs_reorg_session.txt": {
+      "source": "/tmp/fugue_docs_reorg_session.md",
+      "sha256": "b635ebb18ed42e8cc51fc9708f15c14b9355fc2d7759ee14583e7229c860c5dc"
+    }
+  },
+  "history": {
+    "README.md.txt": "9327b8dea8a1aea3b99fa798fab017cb794c6a0d42df777794e732aa9f42e0f1",
+    "README_run_guide.md.txt": "281d3c6006c5a6b5f911a814f0d9680d4a2490d996b53503d39bb9af56991080",
+    "README_design_ladder.md.txt": "8fcd18f921eecd4926a60c815f009f3df81a4391390df3d0558cea0dae9d5250",
+    "README_audit_fixes.md.txt": "b1a6ba88ddd4af4de054cdd663e76f0fb29a8928bf4f9d84b72bff8d3059452c",
+    "run__README_run_squire.md.txt": "837fa1c2b16cd5642d7d3b43e6cc2b429ce4fbb42da0550d32f2dcdf6c5114a4",
+    "run__README_run_athena.md.txt": "c8476a845f46b9e95bd1b80193ee7adfd9fe95ed7bd770c3f75190d71013d5af",
+    "sessions__README.md.txt": "6f35cccab5be01b6c86cd7f390540e54378bce8ef61594e181df7754cccb0e8f"
+  }
+}

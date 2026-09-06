@@ -1,0 +1,20 @@
+{
+  "paper": "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027",
+  "stage": "/tmp/fugue_fig3_revision",
+  "initial": {
+    "fig/plots/motiv/experiments/02_irregular_access/run.py": "eca83201e60604cb133f1865192cc3318c92403a49edcbb1e53d388b2a1aad5c",
+    "fig/plots/motiv/experiments/02_irregular_access/result.csv": "6451dff35c449eb1174625b63f8f2849d59d16b92c6eefe123471c389b9ce25c",
+    "fig/plots/motiv/data_allbank.csv": "6451dff35c449eb1174625b63f8f2849d59d16b92c6eefe123471c389b9ce25c",
+    "fig/plots/motiv/scan_summary.json": "34b5029996890ea587656d1e99825691ab0eeca6863936fe847d3c0aec5edead"
+  },
+  "changed": {
+    "fig/plots/motiv/experiments/02_irregular_access/run.py": "ee15cfb2ae41c293c62cde22aba9a85cc91f66b30e32b190840fc814c1a0fc5d",
+    "fig/plots/motiv/experiments/02_irregular_access/result.csv": "d22aeaf7394181ac0fa81cb557638a465fdd9c17c2c22cc3b19bf81efe773218",
+    "fig/plots/motiv/data_allbank.csv": "d22aeaf7394181ac0fa81cb557638a465fdd9c17c2c22cc3b19bf81efe773218",
+    "fig/plots/motiv/scan_summary.json": "1f42746ab45366733a1794b34121203dd2d0fafb937b270ee7ca70f45d141de7"
+  },
+  "deleted_after_archival": [],
+  "validation": {
+    "purpose": "LF-only CSV formatting; numeric values and figure/PDF unchanged"
+  }
+}

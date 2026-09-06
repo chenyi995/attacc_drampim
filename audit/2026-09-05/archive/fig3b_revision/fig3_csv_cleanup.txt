@@ -1,0 +1,23 @@
+"""Normalize generated CSV newlines without changing any numerical result."""
+from pathlib import Path
+import csv,hashlib,json,subprocess,os
+stage=Path('/tmp/fugue_fig3_revision')
+paper=Path('/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027')
+ex=stage/'fig/plots/motiv/experiments/02_irregular_access'
+p=ex/'result.csv'
+before=p.read_text();p.write_text(before)
+env=dict(os.environ,MPLCONFIGDIR='/tmp/fugue-matplotlib',PYTHONDONTWRITEBYTECODE='1')
+subprocess.run(['python3',str(ex/'export.py')],env=env,check=True,capture_output=True,text=True)
+assert p.read_text()==before
+names=['fig/plots/motiv/experiments/02_irregular_access/run.py',
+       'fig/plots/motiv/experiments/02_irregular_access/result.csv',
+       'fig/plots/motiv/data_allbank.csv','fig/plots/motiv/scan_summary.json']
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+m={'paper':str(paper),'stage':str(stage),'initial':{p:sha(paper/p) for p in names},
+   'changed':{p:sha(stage/p) for p in names},'deleted_after_archival':[],
+   'validation':{'purpose':'LF-only CSV formatting; numeric values and figure/PDF unchanged'}}
+(stage/'install_manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+dest=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/fig3b_revision')
+(dest/'csv_cleanup_manifest.json').write_bytes((stage/'install_manifest.json').read_bytes())
+(dest/'fig3_csv_cleanup.txt').write_bytes(Path(__file__).read_bytes())
+print('Prepared LF-only cleanup; simulation results unchanged.')

@@ -1,0 +1,30 @@
+{
+  "model": "LLAMA3-8B",
+  "word_bytes": 2,
+  "layers": 32,
+  "query_heads": 32,
+  "kv_heads": 8,
+  "head_dim": 128,
+  "full_model_KV_bytes_per_token": 131072,
+  "capacity_examples": [
+    {
+      "hypothetical_fast_KV_GiB": 8,
+      "unique_full_model_KV_tokens": 65536
+    },
+    {
+      "hypothetical_fast_KV_GiB": 16,
+      "unique_full_model_KV_tokens": 131072
+    },
+    {
+      "hypothetical_fast_KV_GiB": 32,
+      "unique_full_model_KV_tokens": 262144
+    }
+  ],
+  "scope": "Derived raw KV capacity examples; no device calibration or performance execution.",
+  "source_sha256": {
+    "src/config.py": "28ee9b707c22b35a80d77ea38d5211cff19bb09092c8323396d6e14eef1fc571",
+    "main.py": "3160baaf0dde24351239aa24c3b4ac92b8753f4b61e9820c2f574e58ce06b627",
+    "src/devices.py": "5307cbef94c87a66ddf303cac9040e81ed859e9f5ed9c0a93d21504681c0c271",
+    "src/workload_runner.py": "f2b4bfb57bf728e25576ac6f31239bb1e6a75a7c3b5d9b83d85e2ef0610d68f1"
+  }
+}

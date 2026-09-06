@@ -1,0 +1,33 @@
+"""Current allocator response to short ordinary KV before a diff: ledger only."""
+from pathlib import Path
+import sys,json
+sys.dont_write_bytecode=True
+sys.path.insert(0,'/data2/chenyi9/KV-PIM/attacc_drampim_822')
+from src import workload_runner as w
+
+def inspect(label,kind,heads,items):
+    cls=w.NaiveKVLayout if kind=='A3b' else w.LocalDiffKVLayout
+    tlb=cls(256,'slice')
+    for fp,t,n in items:
+        for r in range(n):tlb.reserve(0,'agent',fp,r,t)
+    tlb.finalize()
+    ledger=w.PhysicalLedger.build(tlb,tlb.layout_policy,heads)
+    answer={'rung':kind,'heads_per_hbm':heads,'stripe':ledger.stripe,'reservation_order':items,'objects':[]}
+    for fp,t,n in items:
+        key=(0,'agent',fp,t)
+        objectkey=ledger.index[key][0]
+        rows,indices,slot,start=ledger.objects[objectkey]
+        channel=ledger._channel(0,slot)
+        answer['objects'].append({'fingerprint':fp,'kind':t,'tokens':n,'head0_channel':channel,'start_byte_within_channel':start,'byte_in_32B_column':start%32,'byte_in_1024B_row':start%1024,'logical_payload_bytes':n*4,'occupied_32B_column_indices':[start//32,(start+n*4-1)//32],'occupied_1024B_row_indices':[start//1024,(start+n*4-1)//1024]})
+    return answer
+out={'scope':'Hand-reserved objects through real current allocator; demonstrates allocation rule, not observed chronological write order of a public workload. Ordinary objects use master kind exactly as generated outputs; no Ramulator or timing experiment. 32B/1KB occupied ranges are ledger byte spans, not MAC_AB counts.','cases':{}}
+for heads in (8,16):
+    name='A3b_output4_then_diff8_heads'+str(heads)
+    out['cases'][name]=inspect(name,'A3b',heads,[('output4','master',4),('repair8','diff',8)])
+for prefix in (7,255):
+    for middle in (False,True):
+        items=[('old_diff','diff',prefix)]+([('output4','master',4)] if middle else [])+[('new_diff','diff',3)]
+        name='A4c_prefix'+str(prefix)+'_'+('with_output4' if middle else 'without_output')
+        out['cases'][name]=inspect(name,'A4c',8,items)
+Path('/tmp/partial_column_provenance_append_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps(out,indent=2))

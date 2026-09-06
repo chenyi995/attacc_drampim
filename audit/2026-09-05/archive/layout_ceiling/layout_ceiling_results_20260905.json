@@ -1,0 +1,712 @@
+{
+  "scope": "Read-only extraction of the latest existing small-run reports; no new simulation.",
+  "audit_checkout": "da220d1ea5c57358fb2f2d26a897a5178d0b7f0c",
+  "run_scope": {
+    "workload_meta": {
+      "format": "v2-dag",
+      "kind": "ladder sweep point (gen_sweep.py, 2026-09-05)",
+      "form": "interleaved",
+      "block_tokens": 256,
+      "sys_tokens": 256,
+      "agents": 4,
+      "rounds": 4,
+      "chunks": 2,
+      "own": 128,
+      "lout": 256,
+      "corpus": 64,
+      "fresh_share": 0.0
+    },
+    "requests": 5,
+    "tiers": [
+      0
+    ],
+    "launch_lines": [
+      "=== launch A1 (reuse=no-reuse) 17:53:17 ===",
+      "=== launch A2 (reuse=recompute) 17:53:17 ===",
+      "=== launch A3b (reuse=recompute) 17:53:17 ===",
+      "=== launch A4c (reuse=recompute) 17:53:17 ===",
+      "=== launch A4e (reuse=recompute) 17:53:17 ===",
+      "=== launch A5 (reuse=recompute) 17:53:17 ===",
+      "=== launch A6 (reuse=recompute) 17:53:17 ==="
+    ],
+    "version_note": "Run reports contain no commit/GPU-model/config fingerprint. Log launch 17:53:17 follows da220d1 commit 17:51:35; same checkout is an inference, not a pinned provenance guarantee. Session16 documents earlier bb19f31 timing before 9c40891 and is a different run. Model CSV and platform log identify CACHEBLEND-TINY/A100a x1; flash and one-HBM setup follow documented small-run context, not an embedded run manifest.",
+    "case_name": "wl_small_A4R4.json",
+    "workload_path": "/data2/chenyi9/KV-PIM/scratch_0905/small/wl_small_A4R4.json",
+    "workload_sha256": "c1a09ee22da4de0d5aaf4c41f72c4f0df2eb4484fb4b3bdfde47815fe2c742c9",
+    "request_structure": [
+      {
+        "id": "a0_owner",
+        "tier": 0,
+        "parent": null,
+        "history_len": 0,
+        "lout": 256,
+        "prompt_tokens": 16640,
+        "role_counts": {
+          "sys": 1,
+          "doc": 64
+        },
+        "role_sequence": [
+          "sys",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc",
+          "doc"
+        ]
+      },
+      {
+        "id": "w00",
+        "tier": 0,
+        "parent": null,
+        "history_len": 0,
+        "lout": 256,
+        "prompt_tokens": 2816,
+        "role_counts": {
+          "sys": 1,
+          "doc": 8,
+          "user": 4
+        },
+        "role_sequence": [
+          "sys",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user"
+        ]
+      },
+      {
+        "id": "w01",
+        "tier": 0,
+        "parent": null,
+        "history_len": 0,
+        "lout": 256,
+        "prompt_tokens": 2816,
+        "role_counts": {
+          "sys": 1,
+          "doc": 8,
+          "user": 4
+        },
+        "role_sequence": [
+          "sys",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user"
+        ]
+      },
+      {
+        "id": "w02",
+        "tier": 0,
+        "parent": null,
+        "history_len": 0,
+        "lout": 256,
+        "prompt_tokens": 2816,
+        "role_counts": {
+          "sys": 1,
+          "doc": 8,
+          "user": 4
+        },
+        "role_sequence": [
+          "sys",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user"
+        ]
+      },
+      {
+        "id": "w03",
+        "tier": 0,
+        "parent": null,
+        "history_len": 0,
+        "lout": 256,
+        "prompt_tokens": 2816,
+        "role_counts": {
+          "sys": 1,
+          "doc": 8,
+          "user": 4
+        },
+        "role_sequence": [
+          "sys",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user",
+          "doc",
+          "doc",
+          "user"
+        ]
+      }
+    ],
+    "parent_edges": 0,
+    "parent_out_segments": 0,
+    "total_input_tokens": 27904,
+    "total_output_tokens": 1280,
+    "form_meaning": "Four doc/doc/user groups are concatenated inside each of four worker prompts; one prefill and one 256-token decode per worker, plus the cache owner. There are no inter-round parent edges, no parent_out segments and no tier boundaries. This is not B1/T9 turns performance.",
+    "recompute_k_report": 8,
+    "reusable_segment_correction_count_histogram": {
+      "0": 2,
+      "8": 30
+    },
+    "corrected_rows_total_per_layer": 240,
+    "flash_provenance": {
+      "explicit_gpu_model_field_in_reports": false,
+      "report_latency_model_values": {
+        "A3b": null,
+        "A4c": null,
+        "A4e": null
+      },
+      "log_or_csv_flash_literal": {
+        "A3b": false,
+        "A4c": false,
+        "A4e": false
+      },
+      "documented_context": "Session section16 explicitly describes the initial small case as flash; section18 calls the later run its post-section17 rerun.",
+      "source_default": "da220d1:experiments/run_dag_ladder.sh:37-40 defaults GPU_MODEL to flash, forwarded at line77. GPU_MODEL environment can override; no saved invocation/environment manifest.",
+      "conclusion": "Flash is the documented/intended setup and script default, not independently self-certified by these JSON/log/CSV artifacts. Do not turn this inference into a pinned configuration guarantee."
+    },
+    "model_definition_at_audit_source": {
+      "name": "CACHEBLEND-TINY",
+      "ndec": 4,
+      "hidden_width": 1024,
+      "q_heads": 8,
+      "head_width": 128,
+      "ff_scale": 4,
+      "gqa": 1,
+      "source": "src/config.py:318-321"
+    },
+    "version_evidence": {
+      "audit_head_commit_time": "da220d1ea5c57358fb2f2d26a897a5178d0b7f0c 2026-09-05T17:51:35-07:00 Record the bb19f31 re-audit judgement and fixes",
+      "embedded_run_commit": null,
+      "statement": "Launch 17:53:17 follows da220d1 at 17:51:35; source-version attribution remains temporal inference. Current uncommitted B1/T9 generator edits do not establish this old small-run configuration."
+    }
+  },
+  "same_configuration_checks": {
+    "corrected_rows_sha": true,
+    "link_bytes": true,
+    "policy": true,
+    "batch_size": true,
+    "pim_prefill_mode": true,
+    "pim_batch_command": true,
+    "pim_pe_freq_ghz": true,
+    "gemv_buffer_bytes": true,
+    "history_rows": true,
+    "prefill_attention_rows": true,
+    "pipeline": true,
+    "model_label_csv": true,
+    "workload_metadata_sha256": true,
+    "gpu_time_sum_s": true
+  },
+  "rows": {
+    "A3b": {
+      "makespan_s": 0.0969919175666528,
+      "tbt_weighted_us": 235.62226616087526,
+      "tbt_mean_us": 235.62226616087526,
+      "pim_lane_sum_s": 0.4035828395839926,
+      "gpu_time_sum_s": 0.07077025639892591,
+      "pim_energy_j": 0.543205950423165,
+      "total_energy_j": 3.5585396498239525,
+      "first_decode_attention_s": 0.03667756440626423,
+      "first_token_completed_s": 0.03690823969562962,
+      "decode_attention_to_end_span_s": 0.06031435316038857,
+      "first_token_to_end_span_s": 0.060083677871023186,
+      "lane_count_assumption": 16,
+      "average_lane_busy_over_full_e2e": 0.2600621588563363,
+      "average_lane_busy_over_decode_attention_window": 0.418207709314627,
+      "lane_sum_div_16_div_firsttoken_to_end_proxy": 0.41981330650473364,
+      "lane_sum_div_e2e_is_not_utilization": 4.160994541701381,
+      "gpu_busy_over_full_e2e": 0.7296510696398246,
+      "all_pim_removed_e2e_speedup_ceiling_from_unchanged_gpu_work": 1.3705181032539662,
+      "all_pim_removed_e2e_reduction_ceiling_from_unchanged_gpu_work": 0.2703489303601754,
+      "events_retained": false,
+      "corrected_rows_sha": "4f2837158d30b160",
+      "link_bytes": 541230464,
+      "policy": "recompute",
+      "batch_size": 8,
+      "pim_prefill_mode": "gpu",
+      "pim_batch_command": "replicate",
+      "pim_pe_freq_ghz": 0.666,
+      "gemv_buffer_bytes": 512,
+      "history_rows": 0,
+      "prefill_attention_rows": {
+        "gpu": 79808,
+        "pim": 0
+      },
+      "ablation": {
+        "channel_placement": "slice",
+        "decode_attn": "pim",
+        "gemv_buffer_bytes": 512,
+        "kv_mapping": "naive",
+        "label": "A3 + head slicing (a head's chunks spread across its channels)",
+        "master_pool_channels": 15,
+        "master_shadow": "read-mask",
+        "pim_batch_command": "replicate",
+        "pim_pe_freq_ghz": 0.666,
+        "pim_prefill_query_batch": 4,
+        "prefill_attn": "gpu",
+        "prefill_kv_readback": true,
+        "preset": "A3b"
+      },
+      "ramulator_signature_cache": {
+        "enabled": true,
+        "entries": 171731,
+        "hits": 98304,
+        "misses": 0,
+        "ramulator_invocations": 0
+      },
+      "pipeline": true,
+      "model_label_csv": "CACHEBLEND-TINY",
+      "platform_log_match": [
+        "dgx-attacc: (A100a x 1), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]"
+      ],
+      "workload_metadata_sha256": "0adc24933472affcb15db979a0cdceacfe8b653a5abe112fc409e8242e480f4e",
+      "tbt_observations": 1275,
+      "tbt_request_count": 5,
+      "reported_decode_batches": 1024,
+      "reported_distinct_output_rows": 256,
+      "reported_distinct_layers": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "scan_energy_by_event_nj": {
+        "decode_batch_pim_kv_scan_score_softmax_pv": 48397234.99520551,
+        "decode_pim_kv_scan_score_softmax_pv": 494808715.42800474
+      },
+      "direct_w00_tbt_us_crosscheck": 235.62226616087526
+    },
+    "A4c": {
+      "makespan_s": 0.09673599744264762,
+      "tbt_weighted_us": 234.62576881967843,
+      "tbt_mean_us": 234.62576881967843,
+      "pim_lane_sum_s": 0.3936108905278909,
+      "gpu_time_sum_s": 0.07077025639892591,
+      "pim_energy_j": 0.5476383676826548,
+      "total_energy_j": 3.562972067084031,
+      "first_decode_attention_s": 0.03667756440626423,
+      "first_token_completed_s": 0.036906426393629614,
+      "decode_attention_to_end_span_s": 0.060058433036383384,
+      "first_token_to_end_span_s": 0.059829571049018,
+      "lane_count_assumption": 16,
+      "average_lane_busy_over_full_e2e": 0.2543074068428179,
+      "average_lane_busy_over_decode_attention_window": 0.40961242933344755,
+      "lane_sum_div_16_div_firsttoken_to_end_proxy": 0.41117929188959074,
+      "lane_sum_div_e2e_is_not_utilization": 4.068918509485086,
+      "gpu_busy_over_full_e2e": 0.7315813995806871,
+      "all_pim_removed_e2e_speedup_ceiling_from_unchanged_gpu_work": 1.3669018930404184,
+      "all_pim_removed_e2e_reduction_ceiling_from_unchanged_gpu_work": 0.26841860041931287,
+      "events_retained": false,
+      "corrected_rows_sha": "4f2837158d30b160",
+      "link_bytes": 541230464,
+      "policy": "recompute",
+      "batch_size": 8,
+      "pim_prefill_mode": "gpu",
+      "pim_batch_command": "replicate",
+      "pim_pe_freq_ghz": 0.666,
+      "gemv_buffer_bytes": 512,
+      "history_rows": 0,
+      "prefill_attention_rows": {
+        "gpu": 79808,
+        "pim": 0
+      },
+      "ablation": {
+        "channel_placement": "slice",
+        "decode_attn": "pim",
+        "gemv_buffer_bytes": 512,
+        "kv_mapping": "master-diff-local",
+        "label": "A3b master placement + a PER-HEAD diff region (no global channel given up)",
+        "master_pool_channels": 15,
+        "master_shadow": "read-mask",
+        "pim_batch_command": "replicate",
+        "pim_pe_freq_ghz": 0.666,
+        "pim_prefill_query_batch": 4,
+        "prefill_attn": "gpu",
+        "prefill_kv_readback": true,
+        "preset": "A4c"
+      },
+      "ramulator_signature_cache": {
+        "enabled": true,
+        "entries": 171731,
+        "hits": 98304,
+        "misses": 0,
+        "ramulator_invocations": 0
+      },
+      "pipeline": true,
+      "model_label_csv": "CACHEBLEND-TINY",
+      "platform_log_match": [
+        "dgx-attacc: (A100a x 1), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]"
+      ],
+      "workload_metadata_sha256": "0adc24933472affcb15db979a0cdceacfe8b653a5abe112fc409e8242e480f4e",
+      "tbt_observations": 1275,
+      "tbt_request_count": 5,
+      "reported_decode_batches": 1024,
+      "reported_distinct_output_rows": 256,
+      "reported_distinct_layers": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "scan_energy_by_event_nj": {
+        "decode_batch_pim_kv_scan_score_softmax_pv": 48397234.99520551,
+        "decode_pim_kv_scan_score_softmax_pv": 499241132.6875049
+      },
+      "direct_w00_tbt_us_crosscheck": 234.62576881967843
+    },
+    "A4e": {
+      "makespan_s": 0.09649029117664626,
+      "tbt_weighted_us": 233.65997719614379,
+      "tbt_mean_us": 233.65997719614373,
+      "pim_lane_sum_s": 0.39350025295982677,
+      "gpu_time_sum_s": 0.07077025639892591,
+      "pim_energy_j": 0.5476229247797223,
+      "total_energy_j": 3.5629566241835295,
+      "first_decode_attention_s": 0.03667756440626423,
+      "first_token_completed_s": 0.036906996991629595,
+      "decode_attention_to_end_span_s": 0.059812726770382026,
+      "first_token_to_end_span_s": 0.059583294185016664,
+      "lane_count_assumption": 16,
+      "average_lane_busy_over_full_e2e": 0.25488332048832757,
+      "average_lane_busy_over_decode_attention_window": 0.41117947864847176,
+      "lane_sum_div_16_div_firsttoken_to_end_proxy": 0.41276277430417296,
+      "lane_sum_div_e2e_is_not_utilization": 4.078133127813241,
+      "gpu_busy_over_full_e2e": 0.7334443241482784,
+      "all_pim_removed_e2e_speedup_ceiling_from_unchanged_gpu_work": 1.3634300069896412,
+      "all_pim_removed_e2e_reduction_ceiling_from_unchanged_gpu_work": 0.2665556758517216,
+      "events_retained": false,
+      "corrected_rows_sha": "4f2837158d30b160",
+      "link_bytes": 541230464,
+      "policy": "recompute",
+      "batch_size": 8,
+      "pim_prefill_mode": "gpu",
+      "pim_batch_command": "replicate",
+      "pim_pe_freq_ghz": 0.666,
+      "gemv_buffer_bytes": 512,
+      "history_rows": 0,
+      "prefill_attention_rows": {
+        "gpu": 79808,
+        "pim": 0
+      },
+      "ablation": {
+        "channel_placement": "slice",
+        "decode_attn": "pim",
+        "gemv_buffer_bytes": 512,
+        "kv_mapping": "master-diff-table-local",
+        "label": "A4c + conflict-aware placement table for master chunks (persistent, decided at write time)",
+        "master_pool_channels": 15,
+        "master_shadow": "read-mask",
+        "pim_batch_command": "replicate",
+        "pim_pe_freq_ghz": 0.666,
+        "pim_prefill_query_batch": 4,
+        "prefill_attn": "gpu",
+        "prefill_kv_readback": true,
+        "preset": "A4e"
+      },
+      "ramulator_signature_cache": {
+        "enabled": true,
+        "entries": 171731,
+        "hits": 98304,
+        "misses": 0,
+        "ramulator_invocations": 0
+      },
+      "pipeline": true,
+      "model_label_csv": "CACHEBLEND-TINY",
+      "platform_log_match": [
+        "dgx-attacc: (A100a x 1), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]"
+      ],
+      "workload_metadata_sha256": "0adc24933472affcb15db979a0cdceacfe8b653a5abe112fc409e8242e480f4e",
+      "tbt_observations": 1275,
+      "tbt_request_count": 5,
+      "reported_decode_batches": 1024,
+      "reported_distinct_output_rows": 256,
+      "reported_distinct_layers": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "scan_energy_by_event_nj": {
+        "decode_batch_pim_kv_scan_score_softmax_pv": 48397234.99520551,
+        "decode_pim_kv_scan_score_softmax_pv": 499225689.78454554
+      },
+      "direct_w00_tbt_us_crosscheck": 233.65997719614376
+    }
+  },
+  "adjacent_comparisons": [
+    {
+      "base": "A3b",
+      "new": "A4c",
+      "e2e_speedup": 1.0026455521292053,
+      "e2e_reduction_pct": 0.2638571650357524,
+      "weighted_tbt_speedup": 1.0042471777341844,
+      "weighted_tbt_reduction_pct": 0.42292155042615853,
+      "lane_sum_reduction_pct": 2.470855566203123,
+      "pim_energy_reduction_pct": -0.8159736203252166,
+      "total_energy_reduction_pct": -0.12455719750932293
+    },
+    {
+      "base": "A4c",
+      "new": "A4e",
+      "e2e_speedup": 1.0025464351180322,
+      "e2e_reduction_pct": 0.25399672562123055,
+      "weighted_tbt_speedup": 1.0041333207129604,
+      "weighted_tbt_reduction_pct": 0.4116306697227734,
+      "lane_sum_reduction_pct": 0.028108360496770235,
+      "pim_energy_reduction_pct": 0.0028199088748848133,
+      "total_energy_reduction_pct": 0.0004334274928519122
+    },
+    {
+      "base": "A3b",
+      "new": "A4e",
+      "e2e_speedup": 1.0051987239740858,
+      "e2e_reduction_pct": 0.517183702097479,
+      "weighted_tbt_speedup": 1.008398053394845,
+      "weighted_tbt_reduction_pct": 0.8328113453385133,
+      "lane_sum_reduction_pct": 2.4982694097099967,
+      "pim_energy_reduction_pct": -0.8131307017377853,
+      "total_energy_reduction_pct": -0.12412323015131843
+    }
+  ],
+  "older_session16_different_run_document_values": [
+    {
+      "rung": "A3b",
+      "e2e_s_document_rounded": 0.220671,
+      "tbt_us_document_rounded": 718.7,
+      "pim_lane_sum_s_document_rounded": 0.4036
+    },
+    {
+      "rung": "A4c",
+      "e2e_s_document_rounded": 0.220671,
+      "tbt_us_document_rounded": 718.7,
+      "pim_lane_sum_s_document_rounded": 0.3936
+    },
+    {
+      "rung": "A4e",
+      "e2e_s_document_rounded": 0.220671,
+      "tbt_us_document_rounded": 718.7,
+      "pim_lane_sum_s_document_rounded": 0.3935
+    }
+  ],
+  "interpretation": {
+    "lane_counter": "Sum of all PIM:pool event service times, not the duration of the critical path.",
+    "forty_percent": "Around 42% is reproduced only after dividing lane service by 16 channels and the decode observation window. Full-run denominator yields around 26%. No events are retained, so individual lane busy intervals/critical-path fraction cannot be recovered.",
+    "gpu_floor": "With unchanged GPU work and one serial GPU resource, E2E cannot fall below the reported sum of GPU service times. This is a loose ceiling even if PIM service were removed completely, not an achievable layout-only speedup or a measured counterfactual.",
+    "excluded_results": "Older out_R*/out_a6* and experiments/paper_ladder/results use previous modeling/workload snapshots and are not merged into this comparison."
+  },
+  "sources": {
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/wl_small_A4R4.json": {
+      "sha256": "c1a09ee22da4de0d5aaf4c41f72c4f0df2eb4484fb4b3bdfde47815fe2c742c9",
+      "bytes": 10353,
+      "mtime_utc": "2026-09-05T23:04:52.236459+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/ladder.log": {
+      "sha256": "9e3dba86d85b9bcee385308d0435990862833533b9832d0205d596d27f6cca56",
+      "bytes": 4831,
+      "mtime_utc": "2026-09-06T01:01:19.733783+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_ladder.csv": {
+      "sha256": "e27d50f638539a816f6a74596d2f4da3a2a3f3bc603fce9b6d136d5e3e146a6e",
+      "bytes": 2294,
+      "mtime_utc": "2026-09-06T01:01:19.647783+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_A3b.json": {
+      "sha256": "81094efcf57d34c6f29485c343dd512063237cd2c43d7ccaa102048428b294f8",
+      "bytes": 1750395,
+      "mtime_utc": "2026-09-06T00:54:40.272842+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_A4c.json": {
+      "sha256": "bcb8fb9c232ca6b53764f1245f9e8a191af3f2332044d9bcc534c88229d9ca0f",
+      "bytes": 3235344,
+      "mtime_utc": "2026-09-06T00:54:37.327806+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_A4e.json": {
+      "sha256": "b8e026e784a71897e277e3f9b732d89c79387988b4e54e0901de2f730bcbb194",
+      "bytes": 3235359,
+      "mtime_utc": "2026-09-06T00:54:37.517808+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_A3b.log": {
+      "sha256": "8ed06e690ddbeee6751d100e5f15f6bffaed4ca986ffd3170d60bbf3acc0f525",
+      "bytes": 12269,
+      "mtime_utc": "2026-09-06T00:54:40.282842+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_A4c.log": {
+      "sha256": "7b36f787e05cf2fc55efa490385a3ab34e6fa3216fd5c97bac1c98359c0de096",
+      "bytes": 12283,
+      "mtime_utc": "2026-09-06T00:54:37.339806+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_A4e.log": {
+      "sha256": "85eb90853dbe6ea862ad7cadb4f356210cc9253bfe6cadb83d111d02078a2595",
+      "bytes": 12289,
+      "mtime_utc": "2026-09-06T00:54:37.528808+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/docs/sessions/2026-09-05-ladder-fixes-f01-f02-f04.md": {
+      "sha256": "4f1ee7d3c02ab2f3f70b8b6edbc36a869738d75556db3ffd1f580c8e8c3a9c07",
+      "bytes": 32613,
+      "mtime_utc": "2026-09-06T01:23:47.671481+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/workload_runner.py": {
+      "sha256": "f2b4bfb57bf728e25576ac6f31239bb1e6a75a7c3b5d9b83d85e2ef0610d68f1",
+      "bytes": 303049,
+      "mtime_utc": "2026-09-06T01:21:31.206799+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/cpp_eventcore.py": {
+      "sha256": "ab1b3e9d2e9b29959a2ff6eaf6c4e43ecdfb82546403426d5120e338c9370bc9",
+      "bytes": 4955,
+      "mtime_utc": "2026-09-05T19:23:04.516923+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/cppcore/eventcore.cpp": {
+      "sha256": "ca586d6f2cceff30e2654f9f0cfe2562654f681b63ed05c0516cd4b6ca3aab8e",
+      "bytes": 6600,
+      "mtime_utc": "2026-09-05T08:15:12.758330+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/devices.py": {
+      "sha256": "5307cbef94c87a66ddf303cac9040e81ed859e9f5ed9c0a93d21504681c0c271",
+      "bytes": 23551,
+      "mtime_utc": "2026-09-06T00:32:58.108643+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/system.py": {
+      "sha256": "4847e22e78aabea4d55c9b5bb3a18966f31553b8b9ba556d6ca1d272a6420369",
+      "bytes": 20396,
+      "mtime_utc": "2026-09-05T07:06:17.163112+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/config.py": {
+      "sha256": "28ee9b707c22b35a80d77ea38d5211cff19bb09092c8323396d6e14eef1fc571",
+      "bytes": 16668,
+      "mtime_utc": "2026-09-05T07:06:17.162112+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/main.py": {
+      "sha256": "3160baaf0dde24351239aa24c3b4ac92b8753f4b61e9820c2f574e58ce06b627",
+      "bytes": 33274,
+      "mtime_utc": "2026-09-05T19:18:31.740600+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/experiments/run_dag_ladder.sh": {
+      "sha256": "e24e30569a5a8318f3d322e61780872212a4f8ed7c0040383bd9274ab76dfe22",
+      "bytes": 5086,
+      "mtime_utc": "2026-09-05T22:33:49.424379+00:00"
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/gen_sweep.py": {
+      "sha256": "425395fa64d2701137c95b0577d2409ab5cae2cc2c11579e23aaad8ccd39cb52",
+      "bytes": 12792,
+      "mtime_utc": "2026-09-06T01:34:43.252577+00:00"
+    }
+  },
+  "gpu_resource_floor_verification": {
+    "counter_source": "src/workload_runner.py:5276-5277 sums ONLY event.device == GPU, across both prefill and decode; LINK and all PIM resources are excluded.",
+    "included_operations": "QKV, GPU prefill score/softmax/context, local decode attention, projection, FFN/GELU/norms, and G2G template events. Single-GPU G2G time is zero (src/devices.py:395-396).",
+    "python_resource_source": "src/workload_runner.py:2569-2575 uses event.device as one availability key when pipe=True; every GPU event reserves that same key.",
+    "native_resource_source": "src/cpp_eventcore.py:81-88 maps the identical GPU string to one device ID; src/cppcore/eventcore.cpp:34-43,144-152 maintains one availability per ID.",
+    "report_validation_passed": {
+      "A3b": true,
+      "A4c": true,
+      "A4e": true
+    },
+    "platform_log": "A100a x 1 in all three per-rung logs, emitted from args.gpu and args.ngpu at main.py:510.",
+    "tp_source": "src/system.py:99-100 sets tensor_parallel to GPU.num_xpu; src/model.py:98 stores tp. This run has tp=1; there is no multiple-GPU service-time sum requiring division.",
+    "gpu_time_not_energy_multiplier": "src/devices.py:353 multiplies energy by num_xpu, while time returns the modeled layer duration at 337/402-406.",
+    "condition": "With these SAME GPU event durations on this SAME single serial GPU resource, makespan >= gpu_time_s_unoverlapped. Current A3b/A4c/A4e report the exact same sum. Not a lower bound if a hypothetical future layout change also changes GPU work or its batching.",
+    "evidence_limit": "Events were not retained, so we validate the counter/scheduler definition and saved contract pass, not replay original event intervals."
+  },
+  "energy_difference_existing_breakdown": {
+    "common_batched_scan_energy_j": 0.04839723499520551,
+    "batch_scan_equal_all_rungs": true,
+    "single_scan_energy_A4c_minus_A3b_j": 0.004432417259500146,
+    "single_scan_energy_A4e_minus_A4c_j": -1.544290295934677e-05,
+    "other_classes_equal": {
+      "GPU": true,
+      "LINK": true,
+      "STORE": true,
+      "DIE": true,
+      "TLB": true
+    },
+    "limit": "All observed energy deltas are in decode_pim_kv_scan_score_softmax_pv; the saved breakdown does not retain command-level ACT/MAC/MV/SFM terms, so the physical cause cannot be identified from these results alone."
+  }
+}

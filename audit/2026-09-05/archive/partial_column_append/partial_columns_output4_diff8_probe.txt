@@ -1,0 +1,58 @@
+from pathlib import Path
+import hashlib, importlib.util, json, subprocess, sys
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT)); sys.dont_write_bytecode = True
+from src.workload import load_workload, build_reuse_plan
+from src.workload_runner import CacheBlendTLB, TableLocalDiffKVLayout, _prepare_cacheblend_tlb, _parent_output_fingerprints, _GEN_BYTES_PER_TOKEN, _GEN_ROW_BYTES
+
+def nominal(start, tokens):
+    end = start + tokens * _GEN_BYTES_PER_TOKEN
+    return dict(start_bytes=start, end_bytes_exclusive=end, start_row=start//_GEN_ROW_BYTES,
+                start_offset_in_row=start%_GEN_ROW_BYTES, start_offset_in_column=start%32,
+                nominal_column_sites=[(a//32//32,a//32%32) for a in range(start//32*32,end,32)])
+
+def objects(ledger):
+    out=[]
+    for key,(rows,indices,slot,start) in ledger.objects.items():
+        out.append(dict(object=list(key), tokens=len(rows), slot=slot,
+                        head0_channel=ledger._channel(0,slot), **nominal(start,len(rows))))
+    return out
+
+# An intentional same-channel control: 16 heads each have one channel.
+# We explicitly reserve a 4-token output before an 8-token repair to test
+# whether the allocator can propagate the output's partial column offset.
+tlb=CacheBlendTLB(256,'slice')
+for row in range(4):tlb.reserve(0,'r0','r0::output',row,'master')
+for row in range(8):tlb.reserve(0,'r1','D',row,'diff')
+tlb.finalize()
+minimal={str(heads):{rung:objects(tlb.physical_ledger(policy,heads))
+                   for rung,policy in [('A3b','slice-append'),('A4c','master-diff-local-append')]}
+         for heads in [8,16]}
+
+# Independent reachable-plan check, generated only under /tmp. The 2nd
+# request's parent_out is the 1st request's 4-token decoded output.
+spec=importlib.util.spec_from_file_location('partial_output_gen',ROOT/'workload/probe/gen_sweep.py')
+gen=importlib.util.module_from_spec(spec);spec.loader.exec_module(gen)
+params=dict(gen.BASELINE,agents=1,rounds=2,chunks=1,corpus=3,own=4,lout=4)
+raw=gen.build(params,'turns')
+wp=Path('/tmp/partial_columns_output4_diff8_workload.json');wp.write_text(json.dumps(raw,indent=2)+'\n')
+wl=load_workload(wp);plan=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8)
+t=TableLocalDiffKVLayout(256,'slice')
+_prepare_cacheblend_tlb(wl,plan,1,t,_parent_output_fingerprints(wl))
+real={str(heads):{rung:objects(t.physical_ledger(policy,heads))
+                  for rung,policy in [('A3b','slice-append'),('A4c','master-diff-local-append')]}
+      for heads in [8,16]}
+output={
+  'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+  'method':'Read-only real ledger and real 2-turn recompute plan. /tmp-only generated input. No device or Ramulator run. Column sites are nominal address-space geometry, not MAC counts or measured ACTs/latency.',
+  'source_sha256':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in ['src/workload_runner.py','workload/probe/gen_sweep.py']},
+  'units':{'address_space_bytes_per_token':_GEN_BYTES_PER_TOKEN,'row_bytes':_GEN_ROW_BYTES,'column_bytes':32,
+           'note':'4B/token is the current all-bank address-space allocation convention; it is not literal full-vector KV storage size.'},
+  'minimal_reserve_output4_then_diff8':minimal,
+  'counterfactual_tightly_appended_same_channel':{'output':nominal(0,4),'diff':nominal(4*_GEN_BYTES_PER_TOKEN,8)},
+  'counterfactual_separate_aligned_diff':nominal(0,8),
+  'real_two_turn_plan':{'parameters':params,'reservation_order':[dict(key=list(k),tokens=len(v)) for k,v in t._reserved_rows.items()], 'ledger_objects':real},
+  'scope':'Actual allocator row-aligns master/output and each new A3b diff burst. The tight append is an explicit comparison assumption, not an executed implementation. No timing or energy claim.'
+}
+Path('/tmp/partial_columns_output4_diff8_evidence.json').write_text(json.dumps(output,indent=2)+'\n')
+print(json.dumps({'minimal_heads16':minimal['16'],'counterfactual':output['counterfactual_tightly_appended_same_channel'], 'real_A3b_heads16':real['16']['A3b']},indent=2))

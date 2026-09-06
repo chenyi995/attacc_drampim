@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib,json
+sim=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+paper=Path('/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027')
+archive=sim/'audit/2026-09-05/archive/fig3b_revision'
+initial=json.loads((archive/'install_manifest.json').read_text())
+cleanup=json.loads((archive/'csv_cleanup_manifest.json').read_text())
+expected=dict(initial['changed']);expected.update(cleanup['changed'])
+assert all(hashlib.sha256((paper/p).read_bytes()).hexdigest()==h for p,h in expected.items())
+(archive/'csv_cleanup_receipt.json').write_bytes(Path('/tmp/fugue_fig3_revision/install_receipt.json').read_bytes())
+(archive/'final_validation.json').write_text(json.dumps({'all_installed_hashes_match':True,'git_diff_check':'PASS',
+ 'raw_evidence_verification':'PASS','paper_build':'PASS','simulator_implementation_edited_by_this_task':False},indent=2)+'\n')
+(archive/'fig3_post_install.txt').write_bytes(Path(__file__).read_bytes())
+print('Final installed hashes and checks passed.')

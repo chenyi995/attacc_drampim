@@ -1,0 +1,26 @@
+from pathlib import Path
+from types import SimpleNamespace
+from itertools import groupby
+import importlib.util,json,sys
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT));sys.dont_write_bytecode=True
+from src.workload_runner import NaiveKVLayout
+
+def trace(es):
+ s=importlib.util.spec_from_file_location('bank',ROOT/'pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py')
+ g=importlib.util.module_from_spec(s);s.loader.exec_module(g);g.n_channel=1;g.pool_base=0
+ g.Attention(sum(e[2] for e in es),es[0][0],es[0][1],0,valid_channel=1,extents=es)
+ def seq(b):return [((int(c.split()[1],16)>>10)&16383) for bucket in b[0] for c in bucket]
+ kr,vr=seq(g.cmd_score_mac),seq(g.cmd_context_mac)
+ return {'extents':es,'score_row_runs':[r for r,_ in groupby(kr)],'context_row_runs':[r for r,_ in groupby(vr)],
+         'context_distinct_rows':len(set(vr)),'context_row_runs_count':len(list(groupby(vr)))}
+t=NaiveKVLayout(256,'slice')
+for i in range(3):
+ for row in range(256):t.reserve(0,'owner','c%d'%i,row,'master')
+t.finalize()
+reads=[t.locate(0,'owner','c%d'%i,row,'master') for i in (0,2) for row in range(256)]
+es=t.physical_ledger('slice-append',8).extent_groups(reads)[0][2]
+out={'method':'Real A3b ledger for two full master blocks on head0/ch0, plus same-row interface control. Tracked Attention command order only; not Ramulator ACT measurements.',
+     'a3b_two_full_master_rows':trace(es),'two_extents_same_row_control':trace([(0,1<<23,8),(32,(1<<23)+32,8)])}
+Path('/tmp/layout_ceiling_trace_order_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps(out,indent=2))

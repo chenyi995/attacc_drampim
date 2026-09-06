@@ -1,0 +1,80 @@
+from pathlib import Path
+from collections import Counter,defaultdict
+import importlib.util,json,math,sys
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT));sys.dont_write_bytecode=True
+from src.workload import load_workload,build_reuse_plan
+from src.workload_runner import (NaiveKVLayout,LocalDiffKVLayout,_prepare_cacheblend_tlb,
+ _parent_output_fingerprints,_cacheblend_tlb_rows,_pool_reads,_striped_append_channel_extents)
+HEADS=8;ROW=1024;BPT=4
+
+def groups(t,ls):return _striped_append_channel_extents(ls,policy=t.layout_policy,heads_per_hbm=HEADS,tlb=t)
+def rowsets(gs):
+ out=set()
+ for ch,n,es in gs:
+  for k,v,c in es:
+   if c:out.update((ch,row) for row in range(k//ROW,(k+c*BPT-1)//ROW+1))
+ return out
+
+def analyse(path):
+ wl=load_workload(path);p=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8)
+ tlbs={'A3b':NaiveKVLayout(256,'slice'),'A4c':LocalDiffKVLayout(256,'slice')}
+ for t in tlbs.values():_prepare_cacheblend_tlb(wl,p,1,t,_parent_output_fingerprints(wl))
+ requests=[]
+ for request in wl.requests:
+  if request.request_id=='a0_owner':continue
+  entry={'request':request.request_id,'round':request.tier+1,'views':{}}
+  for view in ('reused_prefill_ledger_view','full_prompt_decode_view'):
+   out={}
+   for rung,t in tlbs.items():
+    bs=_cacheblend_tlb_rows(wl,p,0,request,t)
+    ls=[l for _,reused,_,l in bs if view=='full_prompt_decode_view' or reused]
+    reads,masked,_=_pool_reads(t,ls)
+    unique_diff={(l.layer,l.owner,l.fingerprint,l.owner_row):l for l in reads if l.kind=='diff'}
+    unique_master={(l.layer,l.owner,l.fingerprint,l.owner_row):l for l in reads if l.kind!='diff'}
+    drows=rowsets(groups(t,list(unique_diff.values())))
+    mrows=rowsets(groups(t,list(unique_master.values())))
+    # One head (channels0/1); replicated head patterns are identical.
+    ds={v for v in drows if v[0] in (0,1)};ms={v for v in mrows if v[0] in (0,1)}
+    out[rung]={'diff_tokens_per_head':len(unique_diff),'diff_rows_all_heads':len(drows),
+       'diff_rows_per_head':len(ds),'diff_rows_by_head0_channel':{str(c):sum(ch==c for ch,row in ds) for c in (0,1)},'master_rows_per_head':len(ms),
+       'master_rows_all_heads':len(mrows),'master_rows_by_head0_channel':{str(c):sum(ch==c for ch,row in ms) for c in (0,1)},
+       'total_distinct_rows_per_head':len(ms|ds),'diff_head0_row_offsets':sorted(row-(ch*(1<<30)//ROW) for ch,row in ds)}
+   dt=out['A4c']['diff_tokens_per_head'];ideal=math.ceil(dt/256)
+   entry['views'][view]={'observed':out,'ideal_per_agent_diff_rows_per_head':ideal,
+      'ideal_total_rows_per_head':out['A4c']['master_rows_per_head']+ideal,
+      'master_geometry_equal':out['A3b']['master_rows_per_head']==out['A4c']['master_rows_per_head']}
+  requests.append(entry)
+ summaries={}
+ for view in ('reused_prefill_ledger_view','full_prompt_decode_view'):
+  def reduce(rs):
+   a=sum(e['views'][view]['observed']['A3b']['diff_rows_all_heads'] for e in rs)
+   c=sum(e['views'][view]['observed']['A4c']['diff_rows_all_heads'] for e in rs)
+   ideal=sum(e['views'][view]['ideal_per_agent_diff_rows_per_head']*HEADS for e in rs)
+   ma=sum(e['views'][view]['observed']['A3b']['master_rows_all_heads'] for e in rs)
+   mc=sum(e['views'][view]['observed']['A4c']['master_rows_all_heads'] for e in rs)
+   return {'requests':len(rs),'a3b_diff_row_visits':a,'a4c_diff_row_visits':c,'ideal_diff_row_visits':ideal,
+     'master_row_visits':ma,'master_row_visits_a4c':mc,
+     'diff_rows_saved_fraction':1-c/a,'ideal_diff_rows_saved_fraction':1-ideal/a,
+     'fraction_of_ideal_diff_savings_captured':(a-c)/(a-ideal) if a!=ideal else None,
+     'a3b_total_rows':ma+a,'a4c_total_rows':mc+c,'ideal_total_rows':mc+ideal,
+     'actual_total_row_reduction_fraction':1-(mc+c)/(ma+a),
+     'ideal_total_row_reduction_fraction':1-(mc+ideal)/(ma+a),
+     'row_only_speedup_a4c':(ma+a)/(mc+c),'row_only_speedup_ideal':(ma+a)/(mc+ideal),
+     'head0_busiest_row_sum':{rung:sum(max(e['views'][view]['observed'][rung]['master_rows_by_head0_channel'][c]+e['views'][view]['observed'][rung]['diff_rows_by_head0_channel'][c] for c in ('0','1')) for e in rs) for rung in ('A3b','A4c')},
+     'head0_busiest_row_sum_with_ideal_agent_diff':sum(max(e['views'][view]['observed']['A4c']['master_rows_by_head0_channel']['0'], e['views'][view]['observed']['A4c']['master_rows_by_head0_channel']['1']+e['views'][view]['ideal_per_agent_diff_rows_per_head']) for e in rs)}
+  last=max(e['round'] for e in requests)
+  summaries[view]={'all_turns':reduce(requests),'last_turn':reduce([e for e in requests if e['round']==last]),
+      'by_round':{str(r):reduce([e for e in requests if e['round']==r]) for r in sorted({e['round'] for e in requests})}}
+ return {'path':str(path),'metadata':wl.raw.get('meta',{}),'summaries':summaries,'requests':requests}
+
+paths=[ROOT/'workload/probe/sweep/B1_turns.json',ROOT/'workload/probe/sweep/T9_lout_mix_32_turns.json',ROOT/'workload/probe/sweep/T9_lout_mix_8_turns.json',ROOT/'workload/probe/sweep/T3_chunks_4_turns.json',ROOT/'workload/probe/sweep/T1_agents_4_turns.json',ROOT/'workload/probe/sweep/T3_chunks_1_turns.json']
+previous_path=Path('/tmp/layout_ceiling_a4c_evidence.json')
+previous=json.loads(previous_path.read_text()) if previous_path.exists() else {}
+result={'method':'Real reuse plan and persistent PhysicalLedger. Counts are distinct modeled K rows per readset summed over requests, not ACT commands/timing; V is same disjoint-row pattern and would double counts. Head0 norm assumes8heads/stripe2. Ideal uses ceil(agent resident diff tokens/256) independently per agent as counterfactual bound, not current allocator.',
+        'head':'da220d1ea5c57358fb2f2d26a897a5178d0b7f0c','cases':{p.name:(previous.get('cases',{}).get(p.name) or analyse(p)) for p in paths}}
+Path('/tmp/layout_ceiling_a4c_evidence.json').write_text(json.dumps(result,indent=2)+'\n')
+for name,v in result['cases'].items():
+ print(name,json.dumps(v['summaries']['reused_prefill_ledger_view']['all_turns']))
+ print('full_prompt_last',json.dumps(v['summaries']['full_prompt_decode_view']['last_turn']))
+ print('last_individual',[(e['request'],e['views']['full_prompt_decode_view']['observed']['A3b']['master_rows_per_head'],e['views']['full_prompt_decode_view']['observed']['A3b']['diff_rows_per_head'],e['views']['full_prompt_decode_view']['observed']['A4c']['diff_rows_per_head'],e['views']['full_prompt_decode_view']['ideal_per_agent_diff_rows_per_head']) for e in v['requests'] if e['round']==max(q['round'] for q in v['requests'])])

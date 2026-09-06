@@ -1,0 +1,7 @@
+{
+  "path": "output/analysis/b1_levers.py",
+  "initial_sha256": "30b69500168ee42493a191d3b04aed80526066385cd6553094f2649814419d20",
+  "final_observed_sha256": "f41a7921cb3b12711316460396fb84e8d59a922fc9adf8922f9707d0df5cdd32",
+  "initial_recovery_hash_matches": true,
+  "note": "This audit did not write this source path. Final snapshot detected an external concurrent addition of headroom diagnostics. Original comparisons and side proxy formulas remain. Initial text recovered from the previously inspected content and required to match the pre-change SHA256. Implementation/workload snapshot remains unchanged."
+}

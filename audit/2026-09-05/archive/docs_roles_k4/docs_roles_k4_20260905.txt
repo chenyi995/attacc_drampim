@@ -1,0 +1,67 @@
+"""Preserve existing docs and install categorized documents; no simulation."""
+from pathlib import Path
+from collections import Counter
+import hashlib,json,re,subprocess
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+DOCS=ROOT/'docs';AUDIT=ROOT/'audit/2026-09-05'
+ARCH=AUDIT/'archive/docs_roles_k4';ARCH.mkdir(parents=True,exist_ok=True)
+HISTORY=DOCS/'archive/2026-09-05-before-categorization';HISTORY.mkdir(parents=True,exist_ok=True)
+initial_path=ARCH/'initial_files.json'
+if not initial_path.exists():
+    paths=set(subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0'))-{''}
+    paths.update(str(p.relative_to(ROOT)) for p in (ROOT/'workload').rglob('*') if p.is_file() and '__pycache__' not in str(p))
+    initial_path.write_text(json.dumps({p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in sorted(paths) if (ROOT/p).is_file()},indent=2)+'\n')
+old_paths=['README.md','README_run_guide.md','README_design_ladder.md','README_audit_fixes.md',
+           'run/README_run_squire.md','run/README_run_athena.md','sessions/README.md']
+for p in old_paths:
+    dest=HISTORY/(p.replace('/','__')+'.txt')
+    if not dest.exists():dest.write_bytes((DOCS/p).read_bytes())
+(HISTORY/'README.md').write_text('# 文档分类前的原文\n\n原始字节包含当时尚未提交的修改。txt 中参数和比例属于历史内容；当前入口见 [docs README](../../README.md)。\n')
+manifest={}
+for name in ('k4_prefill_shape_probe.py','k4_prefill_shape_evidence.json',
+             'scan_max_20260905_probe.py','scan_max_20260905_evidence.json',
+             'scan_max_20260905_dump_probe.py','scan_max_20260905_dump_evidence.json',
+             'docs_roles_k4_20260905.py'):
+    src=Path('/tmp')/name;dest=ARCH/(src.stem+'.txt' if src.suffix=='.py' else src.name)
+    data=src.read_bytes();dest.write_bytes(data)
+    manifest[dest.name]={'source':str(src),'sha256':hashlib.sha256(data).hexdigest()}
+k=json.loads((ARCH/'k4_prefill_shape_evidence.json').read_text())
+groups=Counter((v['k8']['kind'],v['k8']['stage'],v['k8']['m_compute_tokens'],v['k4']['m_compute_tokens']) for v in k['requests'])
+sample=next(v for v in k['requests'] if v['request']=='w00_t01')
+new8=sum(v['k8']['own_new_diff_tokens'] for v in k['requests'])
+new4=sum(v['k4']['own_new_diff_tokens'] for v in k['requests'])
+
+# Install templates after all draft files are present.
+templates={'/tmp/fugue_docs_index.md':DOCS/'README.md',
+ '/tmp/fugue_experiment_guide.md':DOCS/'experiments/README.md',
+ '/tmp/fugue_performance_analysis.md':DOCS/'analysis/README.md',
+ '/tmp/fugue_audit_index.md':DOCS/'audit/README.md',
+ '/tmp/fugue_scan_max_audit.md':AUDIT/'SCAN_MAX_AUDIT.md',
+ '/tmp/fugue_design_ladder.md':DOCS/'README_design_ladder.md',
+ '/tmp/fugue_docs_reorg_session.md':DOCS/'sessions/2026-09-05-docs-roles-k4-scan-max.md'}
+labels={('owner','owner'):'语料 owner',('chatty','first'):'话少，首轮',('chatty','later'):'话少，后续',('writer','first'):'话多，首轮',('writer','later'):'话多，后续'}
+ktable='| 请求类别 | 数量 | m：k8→k4 | m 减少 |\n|---|---:|---:|---:|\n'
+for (kind,stage,m8,m4),count in groups.items():
+    ktable+=f'| {labels[(kind,stage)]} | {count} | {m8}→{m4} | {(1-m4/m8)*100:.2f}% |\n'
+sample_text=f"实际 w00_t01：prompt 保持 {sample['k8']['prompt_tokens']} token，m {sample['k8']['m_compute_tokens']}→{sample['k4']['m_compute_tokens']}，R {sample['k8']['resident_readback_tokens']}→{sample['k4']['resident_readback_tokens']}；PIM 原始 scan 输入 {sample['k8']['scan_input_token_rows']}→{sample['k4']['scan_input_token_rows']} token rows，包含 shadow/继承修正，不等于 prompt 长度。TINY 的 MQ sweep {sample['k8']['MQ_sweeps']['TINY']}→{sample['k4']['MQ_sweeps']['TINY']}，LLAMA3 GQA4 为 {sample['k8']['MQ_sweeps']['LLAMA3_GQA4']}→{sample['k4']['MQ_sweeps']['LLAMA3_GQA4']}。"
+for src,target in templates.items():
+    content=Path(src).read_text().replace('@@K4_TABLE@@',ktable).replace('@@K4_SAMPLE@@',sample_text).replace('@@DIFF_K8@@',str(new8)).replace('@@DIFF_K4@@',str(new4))
+    assert '@@' not in content
+    target.parent.mkdir(parents=True,exist_ok=True);target.write_text(content)
+    backup=ARCH/(Path(src).stem+'.txt');backup.write_bytes(Path(src).read_bytes())
+    manifest[backup.name]={'source':src,'sha256':hashlib.sha256(backup.read_bytes()).hexdigest()}
+(DOCS/'README_run_guide.md').write_text('# 运行指南入口\n\n当前跑法统一到 [实验指导](experiments/README.md)：八通道/head、k4/k8、FlashAttention/pipeline、具体命令与四项延迟指标。\n\n机制见 [性能分析](analysis/README.md)，实现判断见 [审计入口](audit/README.md)。原指南及未提交内容完整保存在 [分类前原文](archive/2026-09-05-before-categorization/README_run_guide.md.txt)。\n')
+(DOCS/'README_audit_fixes.md').write_text('# Audit 修改建议入口\n\n当前按用途组织的 [审计入口](audit/README.md) 汇集本次核验与既有 case；[CURRENT_ISSUES](../audit/2026-09-05/CURRENT_ISSUES.md) 按其标注 revision 解释。此处不维护第二套问题状态，修改原因见 [session](sessions/README.md)。\n')
+for p in ('run/README_run_squire.md','run/README_run_athena.md'):
+    path=DOCS/p;old=path.read_text()
+    banner='实验参数与指标以 [当前实验指导](../experiments/README.md) 为准；本页保留机器环境与历史例子，旧 NUM_HBM=1、k8、summary 输出不等于本次八通道/k4 完整指标配置。\n\n'
+    if banner not in old:path.write_text(old.replace('\n\n','\n\n'+banner,1))
+layout=AUDIT/'LAYOUT_BENEFIT_CEILING.md';old=layout.read_text()
+note=f'补核说明：真实 B1 有两个新检索 chunk 与 owner 偏移对齐，不需要修正；k8 新增 diff token 总数为 {new8}，不是 1024。下文每 agent 每轮 16 token、全局轮 128 token 是通常形状的解释，不是无例外的计数；表中唯一地址行数来自真实 ledger，仍成立。逐请求 k4/k8 见 [性能分析](../../docs/analysis/README.md)。\n\n'
+if note not in old:layout.write_text(old.replace('\n\n','\n\n'+note,1))
+aread=AUDIT/'README.md';old=aread.read_text();line='新增核验：[scan 取最慢 channel](SCAN_MAX_AUDIT.md)；文档用途分类与当前跑法见 [docs 入口](../../docs/README.md)。\n\n'
+if line not in old:aread.write_text(old.replace('\n\n','\n\n'+line,1))
+si=DOCS/'sessions/README.md';old=si.read_text();line='| 2026-09-05（分类、k4、最慢通道） | [文档用途与 k4/scan 核验](2026-09-05-docs-roles-k4-scan-max.md) | 实验指导/性能分析/audit 分开；真实 k4 工作量、A5/A6 条件、max(channel time) 独立通过；仅 docs/audit |\n'
+if line not in old:si.write_text(old.replace('|---|---|---|\n','|---|---|---|\n'+line,1))
+(ARCH/'manifest.json').write_text(json.dumps({'artifacts':manifest,'history':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in HISTORY.glob('*.txt')}},indent=2)+'\n')
+print(json.dumps({'primary_docs':['docs/experiments/README.md','docs/analysis/README.md','docs/audit/README.md'],'new_diff_tokens':{'k8':new8,'k4':new4}},indent=2))

@@ -1,0 +1,211 @@
+{
+  "revision": "da220d1",
+  "scope": "Fixed-cost helper verification, no Ramulator; two distinct query-position sweeps use same shape. Warm real-entry values are fixed 2us/7us; installed placeholder would return zero.",
+  "placeholder_calls": 0,
+  "scan_times_us": [
+    7.0,
+    7.0
+  ],
+  "two_distinct_sweep_records_identical": true,
+  "missing_identity_fields": [
+    "event_id",
+    "query_positions",
+    "depends_on",
+    "query_count",
+    "sweep_id"
+  ],
+  "records": [
+    {
+      "kind": "scan",
+      "layer": 0,
+      "tier": 0,
+      "request": "same-request",
+      "event_name": "pim_kv_scan_score_softmax_pv",
+      "policy": "master-diff-table-local-append",
+      "heads_per_hbm": 8,
+      "master_channels": 15,
+      "kv_heads": 8,
+      "num_hbm_used": 1,
+      "energy_scale": 1.0,
+      "reads_master": 0,
+      "reads_diff": 0,
+      "read_extents": [],
+      "read_extents_n": 0,
+      "read_extents_master_tokens": 0,
+      "read_extents_diff_runs": [],
+      "loads": [
+        256.0,
+        8.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "active": [
+        0,
+        1
+      ],
+      "extents": {
+        "0": [
+          {
+            "key_address": 0,
+            "value_address": 8388608,
+            "tokens": 256,
+            "acts": 1,
+            "key_decoded": {
+              "channel": 0,
+              "row": 0,
+              "col": 0,
+              "byte_in_row": 0
+            }
+          }
+        ],
+        "1": [
+          {
+            "key_address": 1073741824,
+            "value_address": 1082130432,
+            "tokens": 8,
+            "acts": 1,
+            "key_decoded": {
+              "channel": 1,
+              "row": 0,
+              "col": 0,
+              "byte_in_row": 0
+            }
+          }
+        ]
+      },
+      "per_channel": [
+        {
+          "channel": 0,
+          "rows": 256,
+          "masked_rows": 0,
+          "acts": 1,
+          "time_s": 2e-06,
+          "energy_nj_one_stack": 262.145,
+          "energy_nj_charged": 262.145
+        },
+        {
+          "channel": 1,
+          "rows": 8,
+          "masked_rows": 0,
+          "acts": 1,
+          "time_s": 7e-06,
+          "energy_nj_one_stack": 8.193,
+          "energy_nj_charged": 8.193
+        }
+      ],
+      "scan_time_s": 7e-06,
+      "scan_time_channel": 1,
+      "scan_energy_nj": 270.33799999999997,
+      "scan_acts": 2,
+      "reduction": "time = MAX over channels; energy = SUM over channels x energy_scale (real heads / simulated heads; E1 2026-09-05)"
+    },
+    {
+      "kind": "scan",
+      "layer": 0,
+      "tier": 0,
+      "request": "same-request",
+      "event_name": "pim_kv_scan_score_softmax_pv",
+      "policy": "master-diff-table-local-append",
+      "heads_per_hbm": 8,
+      "master_channels": 15,
+      "kv_heads": 8,
+      "num_hbm_used": 1,
+      "energy_scale": 1.0,
+      "reads_master": 0,
+      "reads_diff": 0,
+      "read_extents": [],
+      "read_extents_n": 0,
+      "read_extents_master_tokens": 0,
+      "read_extents_diff_runs": [],
+      "loads": [
+        256.0,
+        8.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "active": [
+        0,
+        1
+      ],
+      "extents": {
+        "0": [
+          {
+            "key_address": 0,
+            "value_address": 8388608,
+            "tokens": 256,
+            "acts": 1,
+            "key_decoded": {
+              "channel": 0,
+              "row": 0,
+              "col": 0,
+              "byte_in_row": 0
+            }
+          }
+        ],
+        "1": [
+          {
+            "key_address": 1073741824,
+            "value_address": 1082130432,
+            "tokens": 8,
+            "acts": 1,
+            "key_decoded": {
+              "channel": 1,
+              "row": 0,
+              "col": 0,
+              "byte_in_row": 0
+            }
+          }
+        ]
+      },
+      "per_channel": [
+        {
+          "channel": 0,
+          "rows": 256,
+          "masked_rows": 0,
+          "acts": 1,
+          "time_s": 2e-06,
+          "energy_nj_one_stack": 262.145,
+          "energy_nj_charged": 262.145
+        },
+        {
+          "channel": 1,
+          "rows": 8,
+          "masked_rows": 0,
+          "acts": 1,
+          "time_s": 7e-06,
+          "energy_nj_one_stack": 8.193,
+          "energy_nj_charged": 8.193
+        }
+      ],
+      "scan_time_s": 7e-06,
+      "scan_time_channel": 1,
+      "scan_energy_nj": 270.33799999999997,
+      "scan_acts": 2,
+      "reduction": "time = MAX over channels; energy = SUM over channels x energy_scale (real heads / simulated heads; E1 2026-09-05)"
+    }
+  ]
+}

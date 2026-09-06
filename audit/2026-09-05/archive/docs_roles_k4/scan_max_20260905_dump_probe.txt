@@ -1,0 +1,23 @@
+"""Current placement warm-bypass and dump identity checks, fixed-cost helpers only."""
+from pathlib import Path
+import json
+text=Path('/tmp/scan_max_20260905_probe.py').read_text().split("out={'revision'")[0]
+exec(compile(text,'/tmp/scan_max_20260905_probe.py','exec'))
+original=acc.get_time_and_energy_runs
+placeholder_calls=[]
+def placeholder(op):
+    placeholder_calls.append(op.name)
+    return [(0.,(0.,)) for _ in op.pim_kv_runs]
+acc.get_time_and_energy_runs=placeholder
+wr._WARM_BYPASS=(original,lambda op:(0.,(0.,)))
+wr._WARM_LEDGER=[]
+records=[];events=[]
+with patch.object(wr,'_placement_channel_runs',return_value=shape),patch.object(wr.layout_probe,'enabled',return_value=True),patch.object(wr.layout_probe,'_write',side_effect=records.append),patch.object(wr.layout_probe,'_scans',0),patch.object(wr.layout_probe,'_LAYER',None),patch.object(wr.layout_probe,'_MAX',400),patch.object(wr.layout_probe,'_REQUESTS',frozenset()):
+    for first in (0,8):
+        op=deepcopy(templates['score']);op.m=8;op.numOp=8
+        wr._append_placement_pim_scan(system,events,op=op,layer=0,tier=0,request='same-request',name='pim_kv_scan_score_softmax_pv',reads=[],deps=(),positions=tuple(range(first,first+8)),policy='master-diff-table-local-append',heads_per_hbm=8)
+assert len(records)==2 and all(r['scan_time_s']==7e-6 for r in records)
+assert placeholder_calls==[]
+out={'revision':'da220d1','scope':'Fixed-cost helper verification, no Ramulator; two distinct query-position sweeps use same shape. Warm real-entry values are fixed 2us/7us; installed placeholder would return zero.','placeholder_calls':len(placeholder_calls),'scan_times_us':[r['scan_time_s']*1e6 for r in records],'two_distinct_sweep_records_identical':records[0]==records[1],'missing_identity_fields':[k for k in ('event_id','query_positions','depends_on','query_count','sweep_id') if k not in records[0]],'records':records}
+Path('/tmp/scan_max_20260905_dump_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({k:v for k,v in out.items() if k!='records'},indent=2))

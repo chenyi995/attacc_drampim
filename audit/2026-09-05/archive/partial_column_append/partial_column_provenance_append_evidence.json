@@ -1,0 +1,381 @@
+{
+  "scope": "Hand-reserved objects through real current allocator; demonstrates allocation rule, not observed chronological write order of a public workload. Ordinary objects use master kind exactly as generated outputs; no Ramulator or timing experiment. 32B/1KB occupied ranges are ledger byte spans, not MAC_AB counts.",
+  "cases": {
+    "A3b_output4_then_diff8_heads8": {
+      "rung": "A3b",
+      "heads_per_hbm": 8,
+      "stripe": 2,
+      "reservation_order": [
+        [
+          "output4",
+          "master",
+          4
+        ],
+        [
+          "repair8",
+          "diff",
+          8
+        ]
+      ],
+      "objects": [
+        {
+          "fingerprint": "output4",
+          "kind": "master",
+          "tokens": 4,
+          "head0_channel": 0,
+          "start_byte_within_channel": 0,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 16,
+          "occupied_32B_column_indices": [
+            0,
+            0
+          ],
+          "occupied_1024B_row_indices": [
+            0,
+            0
+          ]
+        },
+        {
+          "fingerprint": "repair8",
+          "kind": "diff",
+          "tokens": 8,
+          "head0_channel": 1,
+          "start_byte_within_channel": 0,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 32,
+          "occupied_32B_column_indices": [
+            0,
+            0
+          ],
+          "occupied_1024B_row_indices": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    "A3b_output4_then_diff8_heads16": {
+      "rung": "A3b",
+      "heads_per_hbm": 16,
+      "stripe": 1,
+      "reservation_order": [
+        [
+          "output4",
+          "master",
+          4
+        ],
+        [
+          "repair8",
+          "diff",
+          8
+        ]
+      ],
+      "objects": [
+        {
+          "fingerprint": "output4",
+          "kind": "master",
+          "tokens": 4,
+          "head0_channel": 0,
+          "start_byte_within_channel": 0,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 16,
+          "occupied_32B_column_indices": [
+            0,
+            0
+          ],
+          "occupied_1024B_row_indices": [
+            0,
+            0
+          ]
+        },
+        {
+          "fingerprint": "repair8",
+          "kind": "diff",
+          "tokens": 8,
+          "head0_channel": 0,
+          "start_byte_within_channel": 1024,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 32,
+          "occupied_32B_column_indices": [
+            32,
+            32
+          ],
+          "occupied_1024B_row_indices": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    "A4c_prefix7_without_output": {
+      "rung": "A4c",
+      "heads_per_hbm": 8,
+      "stripe": 2,
+      "reservation_order": [
+        [
+          "old_diff",
+          "diff",
+          7
+        ],
+        [
+          "new_diff",
+          "diff",
+          3
+        ]
+      ],
+      "objects": [
+        {
+          "fingerprint": "old_diff",
+          "kind": "diff",
+          "tokens": 7,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4194304,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 28,
+          "occupied_32B_column_indices": [
+            131072,
+            131072
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4096
+          ]
+        },
+        {
+          "fingerprint": "new_diff",
+          "kind": "diff",
+          "tokens": 3,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4194332,
+          "byte_in_32B_column": 28,
+          "byte_in_1024B_row": 28,
+          "logical_payload_bytes": 12,
+          "occupied_32B_column_indices": [
+            131072,
+            131073
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4096
+          ]
+        }
+      ]
+    },
+    "A4c_prefix7_with_output4": {
+      "rung": "A4c",
+      "heads_per_hbm": 8,
+      "stripe": 2,
+      "reservation_order": [
+        [
+          "old_diff",
+          "diff",
+          7
+        ],
+        [
+          "output4",
+          "master",
+          4
+        ],
+        [
+          "new_diff",
+          "diff",
+          3
+        ]
+      ],
+      "objects": [
+        {
+          "fingerprint": "old_diff",
+          "kind": "diff",
+          "tokens": 7,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4194304,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 28,
+          "occupied_32B_column_indices": [
+            131072,
+            131072
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4096
+          ]
+        },
+        {
+          "fingerprint": "output4",
+          "kind": "master",
+          "tokens": 4,
+          "head0_channel": 0,
+          "start_byte_within_channel": 0,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 16,
+          "occupied_32B_column_indices": [
+            0,
+            0
+          ],
+          "occupied_1024B_row_indices": [
+            0,
+            0
+          ]
+        },
+        {
+          "fingerprint": "new_diff",
+          "kind": "diff",
+          "tokens": 3,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4194332,
+          "byte_in_32B_column": 28,
+          "byte_in_1024B_row": 28,
+          "logical_payload_bytes": 12,
+          "occupied_32B_column_indices": [
+            131072,
+            131073
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4096
+          ]
+        }
+      ]
+    },
+    "A4c_prefix255_without_output": {
+      "rung": "A4c",
+      "heads_per_hbm": 8,
+      "stripe": 2,
+      "reservation_order": [
+        [
+          "old_diff",
+          "diff",
+          255
+        ],
+        [
+          "new_diff",
+          "diff",
+          3
+        ]
+      ],
+      "objects": [
+        {
+          "fingerprint": "old_diff",
+          "kind": "diff",
+          "tokens": 255,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4194304,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 1020,
+          "occupied_32B_column_indices": [
+            131072,
+            131103
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4096
+          ]
+        },
+        {
+          "fingerprint": "new_diff",
+          "kind": "diff",
+          "tokens": 3,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4195324,
+          "byte_in_32B_column": 28,
+          "byte_in_1024B_row": 1020,
+          "logical_payload_bytes": 12,
+          "occupied_32B_column_indices": [
+            131103,
+            131104
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4097
+          ]
+        }
+      ]
+    },
+    "A4c_prefix255_with_output4": {
+      "rung": "A4c",
+      "heads_per_hbm": 8,
+      "stripe": 2,
+      "reservation_order": [
+        [
+          "old_diff",
+          "diff",
+          255
+        ],
+        [
+          "output4",
+          "master",
+          4
+        ],
+        [
+          "new_diff",
+          "diff",
+          3
+        ]
+      ],
+      "objects": [
+        {
+          "fingerprint": "old_diff",
+          "kind": "diff",
+          "tokens": 255,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4194304,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 1020,
+          "occupied_32B_column_indices": [
+            131072,
+            131103
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4096
+          ]
+        },
+        {
+          "fingerprint": "output4",
+          "kind": "master",
+          "tokens": 4,
+          "head0_channel": 0,
+          "start_byte_within_channel": 0,
+          "byte_in_32B_column": 0,
+          "byte_in_1024B_row": 0,
+          "logical_payload_bytes": 16,
+          "occupied_32B_column_indices": [
+            0,
+            0
+          ],
+          "occupied_1024B_row_indices": [
+            0,
+            0
+          ]
+        },
+        {
+          "fingerprint": "new_diff",
+          "kind": "diff",
+          "tokens": 3,
+          "head0_channel": 1,
+          "start_byte_within_channel": 4195324,
+          "byte_in_32B_column": 28,
+          "byte_in_1024B_row": 1020,
+          "logical_payload_bytes": 12,
+          "occupied_32B_column_indices": [
+            131103,
+            131104
+          ],
+          "occupied_1024B_row_indices": [
+            4096,
+            4097
+          ]
+        }
+      ]
+    }
+  }
+}

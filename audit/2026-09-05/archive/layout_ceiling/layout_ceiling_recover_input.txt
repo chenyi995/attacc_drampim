@@ -1,0 +1,39 @@
+"""Recover the initially read analysis script; require its recorded SHA256."""
+from pathlib import Path
+import json,hashlib
+root=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+path='output/analysis/b1_levers.py'
+initial=json.loads(Path('/tmp/layout_ceiling_snapshot.json').read_text())['files'][path]
+current=(root/path).read_text();s=current
+start=s.index('ROW_ADDR_BYTES = ');end=s.index('\ndef analyse(path):',start)
+s=s[:start]+'''def repair_rows(groups, diff_keys):
+    """Distinct DRAM rows that the diff extents occupy."""
+    rows = set()
+    for channel, _n, placed in groups:
+        for key, _v, count in placed:
+            if key in diff_keys:
+                first = key // _GEN_ROW_BYTES
+                last = (key + count * 4 - 1) // _GEN_ROW_BYTES
+                rows.update((channel, r) for r in range(first, last + 1))
+    return len(rows)
+
+''' +s[end:]
+s=s.replace('    mean_lane = {"A3b": 0.0, "A4e": 0.0}\n','')
+s=s.replace('    headroom = {r: dict(max=0, mean=0.0, packed_max=0, ideal=0.0) for r in ("A3b", "A4c", "A4e")}\n','')
+start=s.index('            lanes = lane_rows(groups)');end=s.index('        # repair rows under',start)
+s=s[:start]+'''            conflict[rung] += max(lane_rows(groups).values(), default=0)
+'''+s[end:]
+start=s.index('    print("  A4e lever');end=s.index('    print("  A4c lever',start)
+s=s[:start]+'''    print("  A4e lever  busiest-lane rows over all turns: naive %d  table %d  (%.1f%% fewer)" % (
+        conflict["A3b"], conflict["A4e"], 100 * (1 - conflict["A4e"] / max(1, conflict["A3b"])))))
+'''.replace(')))))','))))')+s[end:]
+start=s.index('    for rung, h in headroom.items():');end=s.index('    print("  A5/A6 lever',start)
+s=s[:start]+s[end:]
+sha=hashlib.sha256(s.encode()).hexdigest()
+assert sha==initial,(sha,initial)
+Path('/tmp/layout_ceiling_b1_levers_initial.txt').write_text(s)
+Path('/tmp/layout_ceiling_concurrent_change.json').write_text(json.dumps({
+    'path':path,'initial_sha256':initial,'final_observed_sha256':hashlib.sha256(current.encode()).hexdigest(),
+    'initial_recovery_hash_matches':True,
+    'note':'This audit did not write this source path. Final snapshot detected an external concurrent addition of headroom diagnostics. Original comparisons and side proxy formulas remain. Initial text recovered from the previously inspected content and required to match the pre-change SHA256. Implementation/workload snapshot remains unchanged.'},indent=2)+'\n')
+print('Recovered initial input exactly:',sha)

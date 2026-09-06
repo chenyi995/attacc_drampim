@@ -1,0 +1,34 @@
+"""Independent arithmetic and public-plan identity review; no device or Ramulator."""
+from pathlib import Path
+import json,sys,math
+sys.dont_write_bytecode=True
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT))
+from src.workload import load_workload,build_reuse_plan
+source=json.loads(Path('/tmp/layout_ceiling_a4e_evidence.json').read_text())
+b1=source['cases']['B1_turns.json']
+checks={}
+for view,summary in b1['summaries'].items():
+    s=summary['all_requests'];rows=[r['views'][view] for r in b1['requests']]
+    sums={r:sum(x[r]['max_lane_tokens'] for x in rows) for r in ('A3b','A4c','A4e')}
+    lb=sum(x['lower_bounds']['per_scan_block_optimum'] for x in rows)
+    assert sums==s['sum_max_lane_tokens'] and lb==s['sum_per_scan_block_optimum']
+    for x in rows:
+        b=x['lower_bounds'];n=b['master_tokens']+b['fixed_diff_tokens']
+        assert n==sum(x['A4c']['loads_head0'])==sum(x['A4e']['loads_head0'])
+        assert b['per_scan_block_optimum']>=max((n+1)//2,b['fixed_diff_tokens'])
+        assert b['per_scan_block_optimum']<=x['A4e']['max_lane_tokens']
+    a=sums['A4c'];e=sums['A4e']
+    checks[view]={'A4c_sum':a,'A4e_sum':e,'max_lane_lower_bound':lb,'actual_proxy_reduction_percent':100*(a-e)/a,'optimistic_proxy_reduction_upper_bound_percent':100*(a-lb)/a,'fraction_of_optimistic_savings_percent':100*(a-e)/(a-lb),'ledger_total_and_lb_assertions':'pass'}
+wl=load_workload(b1['path']);plan=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8)
+decisions={(d.request_id,d.segment_index):d for d in plan.reusable}
+collisions=[]
+for req in wl.requests:
+    owners_by_fp={}
+    for i,seg in enumerate(req.segments):
+        d=decisions.get((req.request_id,i));owner=d.owner_request_id if d else req.request_id
+        owners_by_fp.setdefault(seg.fingerprint,set()).add(owner)
+    collisions.extend({'request':req.request_id,'fingerprint':fp,'owners':sorted(owners)} for fp,owners in owners_by_fp.items() if len(owners)>1)
+out={'scope':'B1 only; recompute k8 public-plan identity and archived geometry JSON arithmetic; no timing experiment','checks':checks,'within_request_same_fingerprint_multiple_master_owners':collisions,'identity_note':'Read-row dedup (layer,owner,fingerprint,kind,owner_row) matches ledger physical-object identity. Table slots are keyed by (fingerprint,block), so permitting independently placed owner copies would be a further relaxation in general; no such within-request owner collision in this B1 plan.'}
+Path('/tmp/layout_ceiling_a4e_review.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps(out,indent=2))

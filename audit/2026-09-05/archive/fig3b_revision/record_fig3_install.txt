@@ -1,0 +1,11 @@
+from pathlib import Path
+import hashlib,json
+SIM=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+STAGE=Path('/tmp/fugue_fig3_revision')
+PAPER=Path('/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027')
+manifest=json.loads((STAGE/'install_manifest.json').read_text())
+assert all(hashlib.sha256((PAPER/p).read_bytes()).hexdigest()==h for p,h in manifest['changed'].items())
+dest=SIM/'audit/2026-09-05/archive/fig3b_revision';dest.mkdir(parents=True,exist_ok=True)
+for name in ('install_manifest.json','install_receipt.json'):(dest/name).write_bytes((STAGE/name).read_bytes())
+for name in ('install_fig3_revision.py','record_fig3_install.py'):(dest/(Path(name).stem+'.txt')).write_bytes((Path('/tmp')/name).read_bytes())
+print('Installed artifact hashes match the reviewed manifest; receipt preserved in simulator audit archive.')

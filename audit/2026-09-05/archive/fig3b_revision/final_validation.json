@@ -1,0 +1,7 @@
+{
+  "all_installed_hashes_match": true,
+  "git_diff_check": "PASS",
+  "raw_evidence_verification": "PASS",
+  "paper_build": "PASS",
+  "simulator_implementation_edited_by_this_task": false
+}

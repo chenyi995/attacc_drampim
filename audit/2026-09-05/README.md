@@ -1,6 +1,14 @@
 # 2026-09-05 Audit：从这里开始
 
-**主体审计 `bb19f31`，已补核至 `ff5b91e`。当前只需读 [CURRENT_ISSUES.md](CURRENT_ISSUES.md)。**
+最新补核：[短输出挤偏后继 diff 的部分列追加](PARTIAL_COLUMN_APPEND_AUDIT.md)——用户所指机制成立；当前行对齐与列命令取整尚未验证这一收益，分别说明 AttAcc 来源及公平性方向。
+
+新增核验：[scan 取最慢 channel](SCAN_MAX_AUDIT.md)；文档用途分类与当前跑法见 [docs 入口](../../docs/README.md)。
+
+最新口径：[四项指标与每 KV head 八通道](METRICS_AND_EIGHT_CHANNELS.md)——decode scan latency、TBT、TTFT、E2E 的定义及八通道受控比较。
+
+本次新增：[布局收益上限与 B1/T9 分析](LAYOUT_BENEFIT_CEILING.md)——分清 diff 占行、A4e 相邻档通道收益和已有 E2E；说明何时收益可扩大。
+
+**主体审计 `bb19f31`，已补核至 `ff5b91e`。既有实现问题见 [CURRENT_ISSUES.md](CURRENT_ISSUES.md)；本次布局收益见上方专项。**
 
 上轮跨轮断链、prefill 漏 diff、A2 重算、collector 公式和能量诊断等具体反例已修复。本轮另查到条件性边界；当前默认 recompute、batch=8、history_len=0 及 turns 输出指纹规则不触发这些控制条件，不据此否定默认阶梯。
 

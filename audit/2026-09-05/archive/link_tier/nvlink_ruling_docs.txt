@@ -1,0 +1,81 @@
+"""Record chenyi9's NVLink-only ruling; edit documentation only."""
+from pathlib import Path
+import hashlib,json,re,subprocess
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+ARCH=ROOT/'audit/2026-09-05/archive/link_tier'
+targets=['docs/experiments/README.md','docs/analysis/README.md','docs/audit/README.md',
+         'audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md',
+         'docs/sessions/2026-09-05-docs-roles-k4-scan-max.md','docs/sessions/README.md']
+source_paths=[p for p in subprocess.check_output(['git','ls-files','-z'],cwd=ROOT,text=True).split('\0')
+              if p and not p.startswith(('docs/','audit/')) and (ROOT/p).is_file()]
+before={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in source_paths}
+history={}
+for p in targets:
+    dest=ARCH/(p.replace('/','__')+'.before_nvlink_ruling.txt')
+    if not dest.exists():dest.write_bytes((ROOT/p).read_bytes())
+    history[dest.name]=hashlib.sha256(dest.read_bytes()).hexdigest()
+guide=ROOT/targets[0]
+guide.write_text(guide.read_text().split('\n## 7. NVLink / PCIe 带宽与分层')[0]+'''
+## 7. 已确定的 NVLink 配置
+
+chenyi9 裁决：保持之前的 NVLink 连接 GPU，沿用本指南命令中的 `--pim-link nvlink3`。各档共用相同链路配置和已有计价规则。
+
+两级内存、context 阈值切换 PCIe 及为拉开 A5/A6 而降低链路带宽的提议不采用。A5/A6 按现有 NVLink 下的逐请求价格和实际指标比较。裁决与原审查来源见 [链路记录](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md)。
+''')
+analysis=ROOT/targets[1]
+analysis.write_text(analysis.read_text().split('\n## 8. 链路带宽与容量分层')[0]+'''
+## 8. 链路按原 NVLink 配置
+
+chenyi9 裁决：GPU 与 AttAcc/PIM 保持原 NVLink 连接，当前跑法沿用 `--pim-link nvlink3`。A5/A6 的分析使用这一固定硬件条件下的实际价格、工作量和选边结果。
+
+此前讨论的 NVLink/PCIe 两级方案不采用，容量阈值示例不作为实验参数；原讨论保留在 [链路历史记录](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md)。
+''')
+index=ROOT/targets[2]
+old='| 链路带宽与容量分层 | [分层假设](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md) | 固定链路已支持；token 阈值未实现；降低带宽对两类请求方向不同 |'
+new='| 已定 NVLink 配置 | [链路裁决](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md) | 沿用原 NVLink；两级方案不采用，已关闭讨论 |'
+assert old in index.read_text()
+index.write_text(index.read_text().replace(old,new))
+(ROOT/targets[3]).write_text('''# 链路裁决：沿用原 NVLink，两级方案不采用
+
+**状态：chenyi9 已裁决，讨论关闭。** 用户原话：“那就不要做两级了，就是NV Link 链接GPU 和之前一样”。
+
+GPU 与 AttAcc/PIM 继续使用原 NVLink 连接，沿用现有 `--pim-link nvlink3`、链路计价和各档一致的硬件配置。此前提出的容量阈值、NVLink/PCIe 两级方案以及降带宽实验不作为当前实验要求。
+
+这项决定只需同步文档：代码本来没有按容量自动分层实现，现有实验命令已经使用 NVLink。decode 小流量固定开销继续按此前裁决忽略。
+
+原审计查明：AttAcc 有固定链路带宽配置，没有 context 阈值自动分层；当前仓库的 --pim-link 同样是整次运行固定选项。原始依据和推导保留为历史资料，不代表待实现事项：
+
+- [裁决前链路审计原文](archive/link_tier/audit__2026-09-05__LINK_TIER_ASSUMPTIONS.md.before_nvlink_ruling.txt)。
+- [裁决前性能分析原文](archive/link_tier/docs__analysis__README.md.before_nvlink_ruling.txt)。
+- [上游 config](archive/link_tier/attacc_c600051_src_config.py.txt)、[上游 main](archive/link_tier/attacc_c600051_main.py.txt)、[上游 devices](archive/link_tier/attacc_c600051_src_devices.py.txt)。
+
+当前执行口径见 [实验指导](../../docs/experiments/README.md#7-已确定的-nvlink-配置)，变更原因见 [session](../../docs/sessions/2026-09-05-docs-roles-k4-scan-max.md#最终链路裁决沿用原-nvlink)。
+''')
+session=ROOT/targets[4]
+session.write_text(session.read_text()+'''
+## 最终链路裁决：沿用原 NVLink
+
+chenyi9 裁决：“那就不要做两级了，就是NV Link 链接GPU 和之前一样”。这是对上一节实验提议的最终决定，前述分层假设不再是当前方案。
+
+因此将实验指导第7节与性能分析第8节改为原 NVLink 配置；移除当前指导中的容量阈值和改用 PCIe 的跑法建议。LINK_TIER_ASSUMPTIONS 标为已关闭、两级方案不采用，audit 与 session 索引同步状态。旧文字以原始字节保留在 audit/2026-09-05/archive/link_tier 中，便于追溯为什么撤回。
+
+仅同步文档；运行命令仍为 --pim-link nvlink3，模拟器实现和已有计价无需修改。没有运行性能实验。修改脚本和验证结果保存在 archive/link_tier/nvlink_ruling_docs.txt、nvlink_ruling_validation.json。
+''')
+si=ROOT/targets[5]
+si.write_text(si.read_text().replace('真实 k4 工作量、A5/A6 条件、max(channel time) 独立通过；仅 docs/audit',
+ '真实 k4 工作量、A5/A6 条件、max(channel time) 独立通过；最终裁决沿用原 NVLink、两级方案不采用；仅 docs/audit',1))
+assert all(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==h for p,h in before.items())
+links=0
+for p in targets:
+    for target in re.findall(r'\]\(([^)]+)\)',(ROOT/p).read_text()):
+        path=target.strip('<>').split('#',1)[0]
+        if not path or '://' in path:continue
+        assert ((ROOT/p).parent/path).resolve().exists(),(p,target)
+        links+=1
+subprocess.run(['git','diff','--check','--',*targets],cwd=ROOT,check=True)
+result={'decision':'Keep original NVLink connection; reject two-tier proposal',
+        'changed_docs':targets,'history_sha256':history,'local_links_checked':links,
+        'tracked_implementation_and_input_hashes_unchanged':True,'performance_experiments_run':False}
+(ARCH/'nvlink_ruling_docs.txt').write_bytes(Path(__file__).read_bytes())
+(ARCH/'nvlink_ruling_validation.json').write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n')
+print(json.dumps(result,indent=2,ensure_ascii=False))

@@ -1,0 +1,51 @@
+{
+  "method": "Real A3b ledger for two full master blocks on head0/ch0, plus same-row interface control. Tracked Attention command order only; not Ramulator ACT measurements.",
+  "a3b_two_full_master_rows": {
+    "extents": [
+      [
+        0,
+        8388608,
+        256
+      ],
+      [
+        1024,
+        8389632,
+        256
+      ]
+    ],
+    "score_row_runs": [
+      0,
+      1
+    ],
+    "context_row_runs": [
+      8192,
+      8193,
+      8192,
+      8193
+    ],
+    "context_distinct_rows": 2,
+    "context_row_runs_count": 4
+  },
+  "two_extents_same_row_control": {
+    "extents": [
+      [
+        0,
+        8388608,
+        8
+      ],
+      [
+        32,
+        8388640,
+        8
+      ]
+    ],
+    "score_row_runs": [
+      0
+    ],
+    "context_row_runs": [
+      8192
+    ],
+    "context_distinct_rows": 1,
+    "context_row_runs_count": 1
+  }
+}

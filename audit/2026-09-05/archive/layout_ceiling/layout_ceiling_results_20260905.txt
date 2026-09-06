@@ -1,0 +1,192 @@
+"""Read existing small-run reports only; no simulation or result rewriting."""
+from pathlib import Path
+import csv
+from collections import Counter
+import datetime
+import hashlib
+import json
+import re
+import subprocess
+
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+BASE=Path('/data2/chenyi9/KV-PIM/scratch_0905/small')
+OUT=BASE/'out'
+WORKLOAD=BASE/'wl_small_A4R4.json'
+SESSION=ROOT/'docs/sessions/2026-09-05-ladder-fixes-f01-f02-f04.md'
+PREFIX=Path('/tmp/layout_ceiling_results_20260905')
+sources={}
+def read(path):
+    raw=path.read_bytes()
+    sources[str(path)]={'sha256':hashlib.sha256(raw).hexdigest(), 'bytes':len(raw),
+        'mtime_utc':datetime.datetime.fromtimestamp(path.stat().st_mtime,datetime.timezone.utc).isoformat()}
+    return raw.decode()
+wl=json.loads(read(WORKLOAD))
+agents={r['id']:r for r in wl['agents']}
+ladder_log=read(BASE/'ladder.log')
+with (OUT/'dag_ladder.csv').open() as f:
+    csv_rows={r['ablation']:r for r in csv.DictReader(f)}
+read(OUT/'dag_ladder.csv')
+reports={r:json.loads(read(OUT/f'dag_{r}.json')) for r in ('A3b','A4c','A4e')}
+rows={}
+for rung,d in reports.items():
+    log=read(OUT/f'dag_{rung}.log')
+    recs=d['summary']['requests']
+    spans=[(r,rec['end_s']-rec['first_token_s'],agents[r]['lout']-1) for r,rec in recs.items()]
+    total_steps=sum(v[2] for v in spans)
+    end=max(rec['end_s'] for rec in recs.values())
+    first=min(rec['first_token_s'] for rec in recs.values())
+    start=min(b['attention_start_s'] for b in d['batches'] if b.get('attention_start_s') is not None)
+    lane_sum=d['pim_pool_time_s_unoverlapped']
+    gpu=d['gpu_time_s_unoverlapped']
+    rows[rung]={
+       'makespan_s':d['makespan_s'],
+       'tbt_weighted_us':sum(v[1] for v in spans)/total_steps*1e6,
+       'tbt_mean_us':sum(v[1]/v[2] for v in spans)/len(spans)*1e6,
+       'pim_lane_sum_s':lane_sum,'gpu_time_sum_s':gpu,
+       'pim_energy_j':d['energy_breakdown_nj']['by_class']['PIM']*1e-9,
+       'total_energy_j':d['energy_nj']*1e-9,
+       'first_decode_attention_s':start,'first_token_completed_s':first,
+       'decode_attention_to_end_span_s':end-start,
+       'first_token_to_end_span_s':end-first,
+       'lane_count_assumption':16,
+       'average_lane_busy_over_full_e2e':lane_sum/(16*d['makespan_s']),
+       'average_lane_busy_over_decode_attention_window':lane_sum/(16*(end-start)),
+       'lane_sum_div_16_div_firsttoken_to_end_proxy':lane_sum/(16*(end-first)),
+       'lane_sum_div_e2e_is_not_utilization':lane_sum/d['makespan_s'],
+       'gpu_busy_over_full_e2e':gpu/d['makespan_s'],
+       'all_pim_removed_e2e_speedup_ceiling_from_unchanged_gpu_work':d['makespan_s']/gpu,
+       'all_pim_removed_e2e_reduction_ceiling_from_unchanged_gpu_work':1-gpu/d['makespan_s'],
+       'events_retained':d.get('events') is not None,
+       'corrected_rows_sha':d['corrected_rows_sha'], 'link_bytes':d['link_bytes'],
+       'policy':d['policy'],'batch_size':d['cacheblend_batch_size'],
+       'pim_prefill_mode':d['pim_prefill_mode'],'pim_batch_command':d['pim_batch_command'],
+       'pim_pe_freq_ghz':d['pim_pe_freq_ghz'],'gemv_buffer_bytes':d['gemv_buffer_bytes'],
+       'history_rows':d['history_rows'],'prefill_attention_rows':d['prefill_attention_rows'],
+       'ablation':d['ablation'],'ramulator_signature_cache':d['ramulator_signature_cache'],
+       'pipeline':d['overlap_validation']['pipe'],
+       'model_label_csv':csv_rows[rung]['model'],
+       'platform_log_match':re.findall(r'dgx-attacc:.*',log),
+       'workload_metadata_sha256':hashlib.sha256(json.dumps(d['workload'],sort_keys=True).encode()).hexdigest()
+    }
+    assert float(csv_rows[rung]['makespan_s'])==d['makespan_s']
+    assert all(agents[r]['lout']==256 for r in recs)
+compare=[]
+for base,new in [('A3b','A4c'),('A4c','A4e'),('A3b','A4e')]:
+    a,b=rows[base],rows[new]
+    compare.append({'base':base,'new':new,
+       'e2e_speedup':a['makespan_s']/b['makespan_s'],
+       'e2e_reduction_pct':100*(1-b['makespan_s']/a['makespan_s']),
+       'weighted_tbt_speedup':a['tbt_weighted_us']/b['tbt_weighted_us'],
+       'weighted_tbt_reduction_pct':100*(1-b['tbt_weighted_us']/a['tbt_weighted_us']),
+       'lane_sum_reduction_pct':100*(1-b['pim_lane_sum_s']/a['pim_lane_sum_s']),
+       'pim_energy_reduction_pct':100*(1-b['pim_energy_j']/a['pim_energy_j']),
+       'total_energy_reduction_pct':100*(1-b['total_energy_j']/a['total_energy_j'])})
+session=read(SESSION)
+section16=session.split('## 16.',1)[1].split('## 17.',1)[0]
+old_rows=[]
+for line in section16.splitlines():
+    fields=[x.strip() for x in line.strip().strip('|').split('|')]
+    if len(fields)>=4 and fields[0] in reports:
+        old_rows.append({'rung':fields[0],'e2e_s_document_rounded':float(fields[1]),
+                         'tbt_us_document_rounded':float(fields[2]),
+                         'pim_lane_sum_s_document_rounded':float(fields[3])})
+common_fields=['corrected_rows_sha','link_bytes','policy','batch_size','pim_prefill_mode',
+               'pim_batch_command','pim_pe_freq_ghz','gemv_buffer_bytes','history_rows',
+               'prefill_attention_rows','pipeline','model_label_csv','workload_metadata_sha256','gpu_time_sum_s']
+equal={k:all(rows[r][k]==rows['A3b'][k] for r in rows) for k in common_fields}
+payload={'scope':'Read-only extraction of the latest existing small-run reports; no new simulation.',
+ 'audit_checkout':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+ 'run_scope':{'workload_meta':wl['meta'],'requests':len(agents),'tiers':sorted({a['tier'] for a in agents.values()}),
+              'launch_lines':[line for line in ladder_log.splitlines() if 'launch' in line],
+              'version_note':'Run reports contain no commit/GPU-model/config fingerprint. Log launch 17:53:17 follows da220d1 commit 17:51:35; same checkout is an inference, not a pinned provenance guarantee. Session16 documents earlier bb19f31 timing before 9c40891 and is a different run. Model CSV and platform log identify CACHEBLEND-TINY/A100a x1; flash and one-HBM setup follow documented small-run context, not an embedded run manifest.'},
+ 'same_configuration_checks':equal,'rows':rows,'adjacent_comparisons':compare,
+ 'older_session16_different_run_document_values':old_rows,
+ 'interpretation':{'lane_counter':'Sum of all PIM:pool event service times, not the duration of the critical path.',
+   'forty_percent':'Around 42% is reproduced only after dividing lane service by 16 channels and the decode observation window. Full-run denominator yields around 26%. No events are retained, so individual lane busy intervals/critical-path fraction cannot be recovered.',
+   'gpu_floor':'With unchanged GPU work and one serial GPU resource, E2E cannot fall below the reported sum of GPU service times. This is a loose ceiling even if PIM service were removed completely, not an achievable layout-only speedup or a measured counterfactual.',
+   'excluded_results':'Older out_R*/out_a6* and experiments/paper_ladder/results use previous modeling/workload snapshots and are not merged into this comparison.'},
+ 'sources':sources}
+# Bounded follow-up: existing artifacts plus source definitions only.
+for source in ('src/workload_runner.py', 'src/cpp_eventcore.py', 'src/cppcore/eventcore.cpp',
+               'src/devices.py', 'src/system.py', 'src/config.py', 'main.py',
+               'experiments/run_dag_ladder.sh', 'workload/probe/gen_sweep.py'):
+    read(ROOT/source)
+request_structure=[]
+for a in agents.values():
+    request_structure.append({'id':a['id'], 'tier':a['tier'], 'parent':a.get('parent'),
+       'history_len':a.get('history_len',0),'lout':a['lout'],
+       'prompt_tokens':sum(s['len'] for s in a['segs']),
+       'role_counts':dict(Counter(s['role'] for s in a['segs'])),
+       'role_sequence':[s['role'] for s in a['segs']]})
+payload['run_scope'].update({
+   'case_name':WORKLOAD.name,'workload_path':str(WORKLOAD),
+   'workload_sha256':sources[str(WORKLOAD)]['sha256'],
+   'request_structure':request_structure,
+   'parent_edges':sum(a.get('parent') is not None for a in agents.values()),
+   'parent_out_segments':sum(s['role']=='parent_out' for a in agents.values() for s in a['segs']),
+   'total_input_tokens':sum(r['prompt_tokens'] for r in request_structure),
+   'total_output_tokens':sum(a['lout'] for a in agents.values()),
+   'form_meaning':'Four doc/doc/user groups are concatenated inside each of four worker prompts; one prefill and one 256-token decode per worker, plus the cache owner. There are no inter-round parent edges, no parent_out segments and no tier boundaries. This is not B1/T9 turns performance.',
+   'recompute_k_report':reports['A3b']['workload']['reuse']['epic_prefix_recompute_tokens'],
+   'reusable_segment_correction_count_histogram':dict(Counter(len(s['epic_prefix_rows']) for s in reports['A3b']['workload']['reuse']['reusable_segments'])),
+   'corrected_rows_total_per_layer':sum(len(s['epic_prefix_rows']) for s in reports['A3b']['workload']['reuse']['reusable_segments']),
+   'flash_provenance':{'explicit_gpu_model_field_in_reports':False,
+       'report_latency_model_values':{r:d.get('latency_model') for r,d in reports.items()},
+       'log_or_csv_flash_literal':{r:('flash' in (OUT/f'dag_{r}.log').read_text().lower()) for r in reports},
+       'documented_context':'Session section16 explicitly describes the initial small case as flash; section18 calls the later run its post-section17 rerun.',
+       'source_default':'da220d1:experiments/run_dag_ladder.sh:37-40 defaults GPU_MODEL to flash, forwarded at line77. GPU_MODEL environment can override; no saved invocation/environment manifest.',
+       'conclusion':'Flash is the documented/intended setup and script default, not independently self-certified by these JSON/log/CSV artifacts. Do not turn this inference into a pinned configuration guarantee.'},
+   'model_definition_at_audit_source':{'name':'CACHEBLEND-TINY','ndec':4,'hidden_width':1024,'q_heads':8,'head_width':128,'ff_scale':4,'gqa':1,'source':'src/config.py:318-321'},
+   'version_evidence':{'audit_head_commit_time':subprocess.check_output(['git','show','-s','--format=%H %cI %s','HEAD'],cwd=ROOT,text=True).strip(),
+     'embedded_run_commit':None,
+     'statement':'Launch 17:53:17 follows da220d1 at 17:51:35; source-version attribution remains temporal inference. Current uncommitted B1/T9 generator edits do not establish this old small-run configuration.'}
+})
+payload['gpu_resource_floor_verification']={
+ 'counter_source':'src/workload_runner.py:5276-5277 sums ONLY event.device == GPU, across both prefill and decode; LINK and all PIM resources are excluded.',
+ 'included_operations':'QKV, GPU prefill score/softmax/context, local decode attention, projection, FFN/GELU/norms, and G2G template events. Single-GPU G2G time is zero (src/devices.py:395-396).',
+ 'python_resource_source':'src/workload_runner.py:2569-2575 uses event.device as one availability key when pipe=True; every GPU event reserves that same key.',
+ 'native_resource_source':'src/cpp_eventcore.py:81-88 maps the identical GPU string to one device ID; src/cppcore/eventcore.cpp:34-43,144-152 maintains one availability per ID.',
+ 'report_validation_passed':{r:d['overlap_validation']['passed'] for r,d in reports.items()},
+ 'platform_log':'A100a x 1 in all three per-rung logs, emitted from args.gpu and args.ngpu at main.py:510.',
+ 'tp_source':'src/system.py:99-100 sets tensor_parallel to GPU.num_xpu; src/model.py:98 stores tp. This run has tp=1; there is no multiple-GPU service-time sum requiring division.',
+ 'gpu_time_not_energy_multiplier':'src/devices.py:353 multiplies energy by num_xpu, while time returns the modeled layer duration at 337/402-406.',
+ 'condition':'With these SAME GPU event durations on this SAME single serial GPU resource, makespan >= gpu_time_s_unoverlapped. Current A3b/A4c/A4e report the exact same sum. Not a lower bound if a hypothetical future layout change also changes GPU work or its batching.',
+ 'evidence_limit':'Events were not retained, so we validate the counter/scheduler definition and saved contract pass, not replay original event intervals.'}
+for rung,d in reports.items():
+    rs=rows[rung]
+    rs['tbt_observations']=sum(a['lout']-1 for a in agents.values())
+    rs['tbt_request_count']=len(agents)
+    rs['reported_decode_batches']=len(d['batches'])
+    rs['reported_distinct_output_rows']=len({b['output_row'] for b in d['batches']})
+    rs['reported_distinct_layers']=sorted({b['transformer_layer'] for b in d['batches']})
+    rs['scan_energy_by_event_nj']={k:v for k,v in d['energy_breakdown_nj']['by_event'].items() if 'pim_kv_scan' in k}
+    rs['direct_w00_tbt_us_crosscheck']=(d['summary']['requests']['w00']['end_s']-d['summary']['requests']['w00']['first_token_s'])/(agents['w00']['lout']-1)*1e6
+    assert abs(rs['direct_w00_tbt_us_crosscheck']-rs['tbt_weighted_us'])<1e-9
+    assert abs(sum(rs['scan_energy_by_event_nj'].values())*1e-9-rs['pim_energy_j'])<1e-10
+payload['energy_difference_existing_breakdown']={
+   'common_batched_scan_energy_j':rows['A3b']['scan_energy_by_event_nj']['decode_batch_pim_kv_scan_score_softmax_pv']*1e-9,
+   'batch_scan_equal_all_rungs':len({r['scan_energy_by_event_nj']['decode_batch_pim_kv_scan_score_softmax_pv'] for r in rows.values()})==1,
+   'single_scan_energy_A4c_minus_A3b_j':(rows['A4c']['scan_energy_by_event_nj']['decode_pim_kv_scan_score_softmax_pv']-rows['A3b']['scan_energy_by_event_nj']['decode_pim_kv_scan_score_softmax_pv'])*1e-9,
+   'single_scan_energy_A4e_minus_A4c_j':(rows['A4e']['scan_energy_by_event_nj']['decode_pim_kv_scan_score_softmax_pv']-rows['A4c']['scan_energy_by_event_nj']['decode_pim_kv_scan_score_softmax_pv'])*1e-9,
+   'other_classes_equal':{k:len({d['energy_breakdown_nj']['by_class'][k] for d in reports.values()})==1 for k in ('GPU','LINK','STORE','DIE','TLB')},
+   'limit':'All observed energy deltas are in decode_pim_kv_scan_score_softmax_pv; the saved breakdown does not retain command-level ACT/MAC/MV/SFM terms, so the physical cause cannot be identified from these results alone.'}
+PREFIX.with_suffix('.json').write_text(json.dumps(payload,indent=2)+'\n')
+lines=['Existing small-run extraction; computed from the JSON files listed in the accompanying evidence.','',
+ '| Rung | E2E ms | weighted TBT us | PIM lane sum ms | PIM energy J | full-run avg lane busy % | decode-window avg lane busy % |',
+ '|---|---:|---:|---:|---:|---:|---:|']
+for rung,r in rows.items():
+    lines.append(f"| {rung} | {r['makespan_s']*1e3:.6f} | {r['tbt_weighted_us']:.6f} | {r['pim_lane_sum_s']*1e3:.6f} | {r['pim_energy_j']:.9f} | {r['average_lane_busy_over_full_e2e']*100:.4f} | {r['average_lane_busy_over_decode_attention_window']*100:.4f} |")
+lines += ['', '| Transition | E2E reduction % | weighted TBT reduction % | lane sum reduction % | PIM energy reduction % |','|---|---:|---:|---:|---:|']
+for r in compare:
+    lines.append(f"| {r['base']} -> {r['new']} | {r['e2e_reduction_pct']:.6f} | {r['weighted_tbt_reduction_pct']:.6f} | {r['lane_sum_reduction_pct']:.6f} | {r['pim_energy_reduction_pct']:.6f} |")
+lines += ['', f"A3b GPU work = {rows['A3b']['gpu_time_sum_s']*1000:.6f} ms; GPU busy / E2E = {rows['A3b']['gpu_busy_over_full_e2e']*100:.4f}%; loose zero-PIM E2E speedup ceiling = {rows['A3b']['all_pim_removed_e2e_speedup_ceiling_from_unchanged_gpu_work']:.6f}x.", '', payload['interpretation']['forty_percent'], '',payload['run_scope']['version_note']]
+lines += ['', 'Follow-up provenance/resource checks:',
+   'Workload: '+str(WORKLOAD)+'; SHA256 '+payload['run_scope']['workload_sha256'],
+   payload['run_scope']['form_meaning'],
+   'TBT: 5 request summaries, 255 post-first-token intervals per request = 1275 observations; 1024 saved decode batches = 256 output positions x 4 layers.',
+   'Recompute k=8 in report; 30 reused segments have 8 correction rows and 2 have 0, total 240 correction rows per layer.',
+   payload['gpu_resource_floor_verification']['condition'],
+   payload['run_scope']['flash_provenance']['conclusion'],
+   payload['energy_difference_existing_breakdown']['limit']]
+PREFIX.with_suffix('.md').write_text('\n'.join(lines)+'\n')
+print('\n'.join(lines))

@@ -1,0 +1,594 @@
+{
+  "kind": "supervisor",
+  "requests": 5,
+  "reuse": {
+    "cacheblend_full_recompute_layers": [],
+    "cacheblend_partial_recompute_layers": [],
+    "cacheblend_partial_rows": {},
+    "cacheblend_recompute_ratio": 0.0,
+    "cachecraft_alpha": 0.05,
+    "epic_prefix_recompute_tokens": 8,
+    "fresh_tokens": 19712,
+    "policy": "recompute",
+    "random_seed": 0,
+    "recompute_canonical": false,
+    "reusable_segments": [
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [],
+        "fingerprint": "a5196a8c72f02c87",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [],
+        "fingerprint": "106cceb689606285",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          20,
+          132,
+          155,
+          197,
+          207,
+          215,
+          244,
+          248
+        ],
+        "fingerprint": "4f792a9324d06cdc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          48,
+          71,
+          75,
+          111,
+          128,
+          144,
+          158,
+          183
+        ],
+        "fingerprint": "8a733b957e03ed62",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          37,
+          50,
+          51,
+          161,
+          169,
+          181,
+          222,
+          241
+        ],
+        "fingerprint": "b58b7f2bca57800e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          7,
+          31,
+          47,
+          104,
+          133,
+          204,
+          226,
+          244
+        ],
+        "fingerprint": "4af56c0a84fa1978",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          0,
+          32,
+          97,
+          113,
+          124,
+          166,
+          170,
+          252
+        ],
+        "fingerprint": "3b6930415f1b4d64",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          41,
+          46,
+          55,
+          72,
+          122,
+          163,
+          229,
+          250
+        ],
+        "fingerprint": "d2196c13a15213d8",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w00",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          46,
+          63,
+          104,
+          147,
+          149,
+          154,
+          170,
+          227
+        ],
+        "fingerprint": "4f792a9324d06cdc",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          16,
+          94,
+          95,
+          96,
+          123,
+          148,
+          162,
+          197
+        ],
+        "fingerprint": "8a733b957e03ed62",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          19,
+          35,
+          41,
+          45,
+          66,
+          76,
+          133,
+          243
+        ],
+        "fingerprint": "b58b7f2bca57800e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          110,
+          120,
+          140,
+          141,
+          200,
+          214,
+          230,
+          252
+        ],
+        "fingerprint": "4af56c0a84fa1978",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          42,
+          59,
+          97,
+          124,
+          166,
+          171,
+          182,
+          249
+        ],
+        "fingerprint": "3b6930415f1b4d64",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          8,
+          59,
+          87,
+          112,
+          138,
+          170,
+          190,
+          218
+        ],
+        "fingerprint": "d2196c13a15213d8",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          13,
+          23,
+          31,
+          37,
+          51,
+          63,
+          74,
+          112
+        ],
+        "fingerprint": "b0762c36489d8639",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          11,
+          18,
+          46,
+          59,
+          61,
+          96,
+          189,
+          200
+        ],
+        "fingerprint": "83a8d9f77081937b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w01",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          11,
+          31,
+          63,
+          94,
+          99,
+          107,
+          217,
+          245
+        ],
+        "fingerprint": "b58b7f2bca57800e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          35,
+          36,
+          51,
+          113,
+          133,
+          154,
+          179,
+          223
+        ],
+        "fingerprint": "4af56c0a84fa1978",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          20,
+          31,
+          51,
+          92,
+          102,
+          133,
+          200,
+          239
+        ],
+        "fingerprint": "3b6930415f1b4d64",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          29,
+          81,
+          82,
+          86,
+          104,
+          175,
+          183,
+          240
+        ],
+        "fingerprint": "d2196c13a15213d8",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          6,
+          60,
+          89,
+          128,
+          159,
+          209,
+          226,
+          241
+        ],
+        "fingerprint": "b0762c36489d8639",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          6,
+          40,
+          78,
+          128,
+          171,
+          182,
+          198,
+          234
+        ],
+        "fingerprint": "83a8d9f77081937b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          23,
+          69,
+          122,
+          143,
+          147,
+          180,
+          183,
+          246
+        ],
+        "fingerprint": "4b20c0a591f537c2",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          0,
+          41,
+          67,
+          98,
+          158,
+          171,
+          198,
+          212
+        ],
+        "fingerprint": "20f5fc6b78ffe5a5",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w02",
+        "segment_index": 11
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          16,
+          81,
+          114,
+          122,
+          193,
+          205,
+          212,
+          229
+        ],
+        "fingerprint": "3b6930415f1b4d64",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 1
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          23,
+          32,
+          80,
+          84,
+          132,
+          214,
+          228,
+          249
+        ],
+        "fingerprint": "d2196c13a15213d8",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 2
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          0,
+          19,
+          25,
+          159,
+          166,
+          212,
+          239,
+          253
+        ],
+        "fingerprint": "b0762c36489d8639",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 4
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          1,
+          7,
+          42,
+          66,
+          96,
+          161,
+          205,
+          213
+        ],
+        "fingerprint": "83a8d9f77081937b",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 5
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          1,
+          7,
+          50,
+          60,
+          97,
+          101,
+          109,
+          154
+        ],
+        "fingerprint": "4b20c0a591f537c2",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 7
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          11,
+          41,
+          51,
+          93,
+          140,
+          143,
+          203,
+          243
+        ],
+        "fingerprint": "20f5fc6b78ffe5a5",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 8
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          58,
+          59,
+          68,
+          79,
+          131,
+          142,
+          177,
+          231
+        ],
+        "fingerprint": "bb04912044c9d314",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 10
+      },
+      {
+        "cache_owner": "a0_owner",
+        "epic_prefix_rows": [
+          9,
+          20,
+          21,
+          105,
+          132,
+          161,
+          187,
+          253
+        ],
+        "fingerprint": "c45bf7427938135e",
+        "length": 256,
+        "owner_tier": 0,
+        "request": "w03",
+        "segment_index": 11
+      }
+    ],
+    "reused_tokens": 8192
+  },
+  "tiers": {
+    "0": [
+      "a0_owner",
+      "w00",
+      "w01",
+      "w02",
+      "w03"
+    ]
+  },
+  "total_history_tokens": 0,
+  "total_input_tokens": 27904,
+  "total_output_tokens": 1280
+}[warm] collected 0 Acc ops -> 0 unique shapes (single build 58s); simulating with up to 9 workers
+[warm] cache ready after 58s total; repriced 0 events, finalizing once
+
+dgx-attacc: (A100a x 1), PIM:bank, [Lin, Lout, batch]: [2048, 128, 1]
+Wrote ablation report to /data2/chenyi9/KV-PIM/scratch_0905/small/out/dag_A4e.json
+REPORT_SUMMARY {"ablation": "A4e", "decode_attn": "pim", "energy_nj": 3562956624.1835294, "engine": "dag", "event_count": 157008, "kv_mapping": "master-diff-table-local", "link_bytes": 541230464, "makespan_s": 0.09649029117664626, "pim_prefill_mode": "gpu", "policy": "recompute"}

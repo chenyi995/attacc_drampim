@@ -1,0 +1,421 @@
+{
+  "scope": "Only archived small-case results, not a new eight-channel/head controlled run; no simulation or code changes.",
+  "audit_checkout": "da220d1ea5c57358fb2f2d26a897a5178d0b7f0c",
+  "workload": {
+    "path": "/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/layout_ceiling/existing_run/wl_small_A4R4.json",
+    "sha256": "c1a09ee22da4de0d5aaf4c41f72c4f0df2eb4484fb4b3bdfde47815fe2c742c9",
+    "case": "wl_small_A4R4.json",
+    "metadata": {
+      "format": "v2-dag",
+      "kind": "ladder sweep point (gen_sweep.py, 2026-09-05)",
+      "form": "interleaved",
+      "block_tokens": 256,
+      "sys_tokens": 256,
+      "agents": 4,
+      "rounds": 4,
+      "chunks": 2,
+      "own": 128,
+      "lout": 256,
+      "corpus": 64,
+      "fresh_share": 0.0
+    },
+    "requests": 5,
+    "all_tier0": true,
+    "all_no_parent": true
+  },
+  "rows": {
+    "A3b": {
+      "ttft_mean_ms": 36.90823969562962,
+      "ttft_p95_nearest_rank_ms": 36.90823969562962,
+      "ttft_request_observations": 5,
+      "ttft_all_requests_identical": true,
+      "weighted_tbt_us": 235.62226616087526,
+      "tbt_interval_count": 1275,
+      "e2e_makespan_ms": 96.9919175666528,
+      "decode_pim_lane_service_sum_ms": 403.5828395839926,
+      "true_decode_scan_latency_ms": null,
+      "true_decode_scan_latency_reason": "No per-lane service durations or ends are retained. The report counter is sum across lanes; batch records contain starts only.",
+      "events_retained": false,
+      "batch_keys": [
+        "admission",
+        "attention_admission_s",
+        "attention_start_s",
+        "id",
+        "members",
+        "output_row",
+        "q_arrival_event_ids",
+        "q_arrival_s",
+        "qkv_batch_members",
+        "query_positions",
+        "size",
+        "sweeps",
+        "tier",
+        "transformer_layer"
+      ],
+      "sweep_keys": [
+        "admission_s",
+        "members",
+        "start_s"
+      ],
+      "tier_summary": {
+        "0": {
+          "end_s": 0.0969919175666528,
+          "requests": 5,
+          "start_s": 0.0
+        }
+      },
+      "request_metrics": [
+        {
+          "request": "a0_owner",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.03690823969562962,
+          "ttft_from_modeled_release_s": 0.03690823969562962,
+          "end_s": 0.0969919175666528,
+          "prefill_end_s": 0.03188804069272301,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023562226616087524
+        },
+        {
+          "request": "w00",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.03690823969562962,
+          "ttft_from_modeled_release_s": 0.03690823969562962,
+          "end_s": 0.0969919175666528,
+          "prefill_end_s": 0.03307169006915027,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023562226616087524
+        },
+        {
+          "request": "w01",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.03690823969562962,
+          "ttft_from_modeled_release_s": 0.03690823969562962,
+          "end_s": 0.0969919175666528,
+          "prefill_end_s": 0.03427274646827343,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023562226616087524
+        },
+        {
+          "request": "w02",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.03690823969562962,
+          "ttft_from_modeled_release_s": 0.03690823969562962,
+          "end_s": 0.0969919175666528,
+          "prefill_end_s": 0.035473802867396584,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023562226616087524
+        },
+        {
+          "request": "w03",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.03690823969562962,
+          "ttft_from_modeled_release_s": 0.03690823969562962,
+          "end_s": 0.0969919175666528,
+          "prefill_end_s": 0.03667485926651974,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023562226616087524
+        }
+      ],
+      "prefill_attention_rows": {
+        "gpu": 79808,
+        "pim": 0
+      },
+      "pipeline": true,
+      "cacheblend_batch_size": 8,
+      "policy": "recompute",
+      "recompute_k": 8
+    },
+    "A4c": {
+      "ttft_mean_ms": 36.906426393629616,
+      "ttft_p95_nearest_rank_ms": 36.906426393629616,
+      "ttft_request_observations": 5,
+      "ttft_all_requests_identical": true,
+      "weighted_tbt_us": 234.62576881967843,
+      "tbt_interval_count": 1275,
+      "e2e_makespan_ms": 96.73599744264762,
+      "decode_pim_lane_service_sum_ms": 393.6108905278909,
+      "true_decode_scan_latency_ms": null,
+      "true_decode_scan_latency_reason": "No per-lane service durations or ends are retained. The report counter is sum across lanes; batch records contain starts only.",
+      "events_retained": false,
+      "batch_keys": [
+        "admission",
+        "attention_admission_s",
+        "attention_start_s",
+        "id",
+        "members",
+        "output_row",
+        "q_arrival_event_ids",
+        "q_arrival_s",
+        "qkv_batch_members",
+        "query_positions",
+        "size",
+        "sweeps",
+        "tier",
+        "transformer_layer"
+      ],
+      "sweep_keys": [
+        "admission_s",
+        "members",
+        "start_s"
+      ],
+      "tier_summary": {
+        "0": {
+          "end_s": 0.09673599744264762,
+          "requests": 5,
+          "start_s": 0.0
+        }
+      },
+      "request_metrics": [
+        {
+          "request": "a0_owner",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906426393629614,
+          "ttft_from_modeled_release_s": 0.036906426393629614,
+          "end_s": 0.09673599744264762,
+          "prefill_end_s": 0.03188804069272301,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023462576881967844
+        },
+        {
+          "request": "w00",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906426393629614,
+          "ttft_from_modeled_release_s": 0.036906426393629614,
+          "end_s": 0.09673599744264762,
+          "prefill_end_s": 0.03307169006915027,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023462576881967844
+        },
+        {
+          "request": "w01",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906426393629614,
+          "ttft_from_modeled_release_s": 0.036906426393629614,
+          "end_s": 0.09673599744264762,
+          "prefill_end_s": 0.03427274646827343,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023462576881967844
+        },
+        {
+          "request": "w02",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906426393629614,
+          "ttft_from_modeled_release_s": 0.036906426393629614,
+          "end_s": 0.09673599744264762,
+          "prefill_end_s": 0.035473802867396584,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023462576881967844
+        },
+        {
+          "request": "w03",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906426393629614,
+          "ttft_from_modeled_release_s": 0.036906426393629614,
+          "end_s": 0.09673599744264762,
+          "prefill_end_s": 0.03667485926651974,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023462576881967844
+        }
+      ],
+      "prefill_attention_rows": {
+        "gpu": 79808,
+        "pim": 0
+      },
+      "pipeline": true,
+      "cacheblend_batch_size": 8,
+      "policy": "recompute",
+      "recompute_k": 8
+    },
+    "A4e": {
+      "ttft_mean_ms": 36.9069969916296,
+      "ttft_p95_nearest_rank_ms": 36.9069969916296,
+      "ttft_request_observations": 5,
+      "ttft_all_requests_identical": true,
+      "weighted_tbt_us": 233.65997719614379,
+      "tbt_interval_count": 1275,
+      "e2e_makespan_ms": 96.49029117664625,
+      "decode_pim_lane_service_sum_ms": 393.50025295982675,
+      "true_decode_scan_latency_ms": null,
+      "true_decode_scan_latency_reason": "No per-lane service durations or ends are retained. The report counter is sum across lanes; batch records contain starts only.",
+      "events_retained": false,
+      "batch_keys": [
+        "admission",
+        "attention_admission_s",
+        "attention_start_s",
+        "id",
+        "members",
+        "output_row",
+        "q_arrival_event_ids",
+        "q_arrival_s",
+        "qkv_batch_members",
+        "query_positions",
+        "size",
+        "sweeps",
+        "tier",
+        "transformer_layer"
+      ],
+      "sweep_keys": [
+        "admission_s",
+        "members",
+        "start_s"
+      ],
+      "tier_summary": {
+        "0": {
+          "end_s": 0.09649029117664626,
+          "requests": 5,
+          "start_s": 0.0
+        }
+      },
+      "request_metrics": [
+        {
+          "request": "a0_owner",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906996991629595,
+          "ttft_from_modeled_release_s": 0.036906996991629595,
+          "end_s": 0.09649029117664626,
+          "prefill_end_s": 0.03188804069272301,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023365997719614377
+        },
+        {
+          "request": "w00",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906996991629595,
+          "ttft_from_modeled_release_s": 0.036906996991629595,
+          "end_s": 0.09649029117664626,
+          "prefill_end_s": 0.03307169006915027,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023365997719614377
+        },
+        {
+          "request": "w01",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906996991629595,
+          "ttft_from_modeled_release_s": 0.036906996991629595,
+          "end_s": 0.09649029117664626,
+          "prefill_end_s": 0.03427274646827343,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023365997719614377
+        },
+        {
+          "request": "w02",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906996991629595,
+          "ttft_from_modeled_release_s": 0.036906996991629595,
+          "end_s": 0.09649029117664626,
+          "prefill_end_s": 0.035473802867396584,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023365997719614377
+        },
+        {
+          "request": "w03",
+          "modeled_common_release_s": 0.0,
+          "request_scheduled_start_s": null,
+          "first_token_completion_s": 0.036906996991629595,
+          "ttft_from_modeled_release_s": 0.036906996991629595,
+          "end_s": 0.09649029117664626,
+          "prefill_end_s": 0.03667485926651974,
+          "post_first_token_intervals": 255,
+          "tbt_mean_s": 0.00023365997719614377
+        }
+      ],
+      "prefill_attention_rows": {
+        "gpu": 79808,
+        "pim": 0
+      },
+      "pipeline": true,
+      "cacheblend_batch_size": 8,
+      "policy": "recompute",
+      "recompute_k": 8
+    }
+  },
+  "comparisons": [
+    {
+      "from": "A3b",
+      "to": "A4c",
+      "ttft_mean_ms_reduction_pct": 0.004913000497874798,
+      "weighted_tbt_us_reduction_pct": 0.42292155042615853,
+      "e2e_makespan_ms_reduction_pct": 0.2638571650357524,
+      "decode_pim_lane_service_sum_ms_reduction_pct": 2.470855566203123,
+      "ttft_reduction_us": 1.8133020000021816,
+      "true_decode_scan_latency_reduction_pct": null
+    },
+    {
+      "from": "A4c",
+      "to": "A4e",
+      "ttft_mean_ms_reduction_pct": -0.0015460667849520604,
+      "weighted_tbt_us_reduction_pct": 0.4116306697227734,
+      "e2e_makespan_ms_reduction_pct": 0.25399672562123055,
+      "decode_pim_lane_service_sum_ms_reduction_pct": 0.028108360496770235,
+      "ttft_reduction_us": -0.5705979999817146,
+      "true_decode_scan_latency_reduction_pct": null
+    },
+    {
+      "from": "A3b",
+      "to": "A4e",
+      "ttft_mean_ms_reduction_pct": 0.003367009671195742,
+      "weighted_tbt_us_reduction_pct": 0.8328113453385133,
+      "e2e_makespan_ms_reduction_pct": 0.517183702097479,
+      "decode_pim_lane_service_sum_ms_reduction_pct": 2.4982694097099967,
+      "ttft_reduction_us": 1.242704000020467,
+      "true_decode_scan_latency_reduction_pct": null
+    }
+  ],
+  "definitions": {
+    "first_token_s": "src/workload_runner.py:4310-4336: last end_s of a decode_ event at first query position total_length, attributed to every batch member. Absolute DAG timestamp; includes post-attention GPU operations under the fixed names.",
+    "ttft_this_case": "first_token_s minus modeled common release 0. All requests are tier0 roots; Request has no external arrival-time field (src/workload.py:75-86). This includes resource and owner-store waiting. It is not first_token_s minus each request scheduled start.",
+    "scheduled_start_limit": "Only tier start=min(event.start_s) is stored (workload_runner.py:4342-4350). Each request actual scheduled start is absent. Therefore post-scheduling service TTFT cannot be recovered.",
+    "higher_tier_limit": "collect_dag_ladder.py:156-166 calls max per-request absolute first_token_s ttft_s. For higher tiers this is a completion timestamp from global time zero, not release-relative request TTFT. The archived small case has only tier0, so this ambiguity does not change its numbers.",
+    "p95": "Nearest-rank empirical p95 across five deterministic request TTFTs. All five are identical within each rung; p95=mean. This is not a repeated-run or production-tail-latency estimate.",
+    "tbt": "sum_request(end_s-first_token_s) / sum_request(lout-1). There are five requests x255 intervals=1275, not 1275 independent repeated-run observations.",
+    "lane_service_sum": "src/workload_runner.py:5281-5282: sum all PIM:* event.time_s. Here prefill PIM rows=0, so these are decode scan lane service totals. Dividing by16 gives average cumulative per-lane work, not busiest-lane latency.",
+    "scan_service_needed": "For each logical scan invocation, max_channel(t_lane). Preserve logical invocation and shared-batch identity within request/layer/output-step; different private/shared scan contributions must not be accidentally collapsed or double-counted.",
+    "scan_elapsed_distinct": "If resource waiting matters, logical scan completion-minus-admission or max(end)-min(start) are elapsed quantities distinct from max lane service duration. Neither is recoverable here.",
+    "why_unrecoverable": "workload_runner.py:2466-2478 creates one event with its measured duration per channel, but JSON events=null. batches contain attention_start_s and sweep.start_s/admission_s, with no durations/ends. 403.582840 ->393.500253ms is lane-sum work reduction, not a measured 2.498269% scan latency reduction.",
+    "version_limit": "Archived reports have no commit or GPU-model fingerprint. Previous launch timestamps followed da220d1, but exact attribution/Flash mode remains documented-context inference."
+  },
+  "sources": {
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/layout_ceiling/existing_run/wl_small_A4R4.json": {
+      "sha256": "c1a09ee22da4de0d5aaf4c41f72c4f0df2eb4484fb4b3bdfde47815fe2c742c9",
+      "bytes": 10353
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/layout_ceiling/existing_run/out/dag_A3b.json": {
+      "sha256": "81094efcf57d34c6f29485c343dd512063237cd2c43d7ccaa102048428b294f8",
+      "bytes": 1750395
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/layout_ceiling/existing_run/out/dag_A4c.json": {
+      "sha256": "bcb8fb9c232ca6b53764f1245f9e8a191af3f2332044d9bcc534c88229d9ca0f",
+      "bytes": 3235344
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/layout_ceiling/existing_run/out/dag_A4e.json": {
+      "sha256": "b8e026e784a71897e277e3f9b732d89c79387988b4e54e0901de2f730bcbb194",
+      "bytes": 3235359
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/workload_runner.py": {
+      "sha256": "f2b4bfb57bf728e25576ac6f31239bb1e6a75a7c3b5d9b83d85e2ef0610d68f1",
+      "bytes": 303049
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/src/workload.py": {
+      "sha256": "b9dbabacdac34712aa78898f10cad3d24b4332f0b1daa5a83056d592e19780ea",
+      "bytes": 35651
+    },
+    "/data2/chenyi9/KV-PIM/attacc_drampim_822/experiments/collect_dag_ladder.py": {
+      "sha256": "5ed143901e27a0f6914ec5b580fbac2e88b2fbd8960d8e19cd6f3d9bc64ad8f2",
+      "bytes": 9088
+    }
+  }
+}

@@ -1,0 +1,105 @@
+"""Document link sensitivity and a proposed capacity model; do not simulate."""
+from pathlib import Path
+import ast,hashlib,json,subprocess
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+ARCH=ROOT/'audit/2026-09-05/archive/link_tier'
+ARCH.mkdir(parents=True,exist_ok=True)
+tree=ast.parse((ROOT/'src/config.py').read_text())
+model=None
+for node in ast.walk(tree):
+    if isinstance(node,ast.Assign):
+        for target in node.targets:
+            if isinstance(target,ast.Subscript) and isinstance(target.value,ast.Name) and target.value.id=='model_table':
+                if isinstance(target.slice,ast.Constant) and target.slice.value=='LLAMA3-8B':model=ast.literal_eval(node.value)
+assert model
+layers,hidden,qheads,headsize,ff,gqa=model
+kvheads=qheads//gqa;bytes_per_token=2*layers*kvheads*headsize*2
+caps=[{'hypothetical_fast_KV_GiB':gib,'unique_full_model_KV_tokens':gib*2**30//bytes_per_token} for gib in (8,16,32)]
+table='| 假设快层净 KV 容量 | 对应不含额外 padding/diff 的唯一 token 容量 |\n|---|---:|\n'
+for c in caps:table+=f"| {c['hypothetical_fast_KV_GiB']} GiB | {c['unique_full_model_KV_tokens']:,} |\n"
+e={'model':'LLAMA3-8B','word_bytes':2,'layers':layers,'query_heads':qheads,'kv_heads':kvheads,
+   'head_dim':headsize,'full_model_KV_bytes_per_token':bytes_per_token,'capacity_examples':caps,
+   'scope':'Derived raw KV capacity examples; no device calibration or performance execution.',
+   'source_sha256':{p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in ('src/config.py','main.py','src/devices.py','src/workload_runner.py')}}
+(ARCH/'capacity_evidence.json').write_text(json.dumps(e,indent=2)+'\n')
+for p in ('src/config.py','src/devices.py','main.py'):
+    (ARCH/('attacc_c600051_'+p.replace('/','_')+'.txt')).write_bytes(subprocess.check_output(['git','show','c600051:'+p],cwd=ROOT))
+(ARCH/'link_tier_docs_20260905.txt').write_bytes(Path(__file__).read_bytes())
+analysis=Path('/tmp/fugue_performance_analysis.md')
+content=analysis.read_text().split('\n## 8. 链路带宽与容量分层')[0]
+content+=f'''
+## 8. 链路带宽与容量分层
+
+chenyi9 提议按 context 大小分级，快层通过 NVLink，超出后通过 PCIe；此处将“KV link”按 NVLink 理解。它可作为额外实验假设，但降带宽不能保证 A5/A6 拉开。
+
+设一次 prefill 的 GPU KV 回读为 D_G，PIM context 返回为 D_P，g 为 GQA group。当前代码的字节关系是 `D_G = 2R × KV宽度 × word_bytes`、`D_P = m × query宽度 × word_bytes`，因此 `D_G/D_P = 2R/(g m)`。m/R 都取实际请求，不能仅用总 context 长度判断。
+
+当链路成为瓶颈且两种传输都使用同一有效带宽 B，局部价格差 `P−G = 固定计算项 + (D_P−D_G)/B`，A6 相对固定 PIM 的选择优势仍是 `max(P−G,0)`。
+
+- 仅降低 GPU 回读带宽：G 增大，A6 更多选择 PIM，A5/A6 的局部差距缩小或不变。
+- 大量复用 KV、少量 query：通常 D_G>D_P，统一降低链路带宽也更伤 GPU 路径；更适合展示 A4e→A5 的驻留收益。
+- 大量 fresh query、R 接近零：GPU 没有驻留 KV 回读，PIM 的 context 返回变慢，A5/A6 差距可能扩大。
+- 混合这两类请求：可以展示逐请求选边价值；E2E 还受共同写回、decode 传输和排队影响，不能从局部公式预先保证涨幅。
+
+对 GQA={gqa}，回读量大于返回量的条件为 `R>{gqa//2}m`。带宽仍高于远端 HBM 可供数据的速度时，继续降带宽也可能暂时不改变服务时间。
+
+容量阈值建议按快层**净 KV 字节容量**推导，而不是为拉开结果挑 context 阈值。全模型原始 KV：`bytes/token = 2 × layers × KV_heads × head_dim × word_bytes`。仓库 LLAMA3-8B、fp16、TP=1 得到每 token {bytes_per_token:,} B（{bytes_per_token//1024} KiB）：
+
+{table}
+
+这些是明确假设的快层 KV 配额，不是现有硬件的可用容量实测。若选净 KV 容量 16 GiB，可以先以 131,072 个唯一 token 作为不含额外开销的容量上限；真实阈值须计入各档实际 master/diff/padding，并扣除保留空间。多个 request 共用该层时按全局唯一驻留 KV 计数，共享 chunk 只存一份，不能让每个请求都独占这个阈值。
+
+真正溢出应按地址分层：未溢出的实际读取走 NVLink，溢出部分走 PCIe；不是 context 一越线，全部 KV 都突然变 PCIe。串行读取时两部分时间相加；若独立链路/设备能并行，按真实资源依赖取完成时间。PCIe 后端若仍能做 PIM，说明其 PIM 能力和容量；若是普通主存，则不能让 A5 免费在该处沿用 HBM-PIM 扫描价格，需说明搬运路径。
+
+这组层级是所有档共用的硬件与放置规则，A5/A6 保持同一存储布局，仅选边不同。现有 AttAcc 能量系数保持原口径，不额外发明分层/TLB 能耗。[容量推导证据](../../audit/2026-09-05/archive/link_tier/capacity_evidence.json)；当前实现与上游边界见 [链路审计](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md)。
+'''
+analysis.write_text(content)
+guide=Path('/tmp/fugue_experiment_guide.md')
+content=guide.read_text().split('\n## 7. NVLink / PCIe 带宽与分层')[0]
+content+='''
+## 7. NVLink / PCIe 带宽与分层
+
+当前 `--pim-link` 可选 `nvlink3`、`nvlink4`、`pcie5`、`pcie4`，作用于整次运行。要做现有代码能支持的固定带宽敏感性，在第4节命令中替换这一选项，并把链路名写进 FUGUE_OUTROOT；同一配置比较 A4e/A5/A6，参考档设 A4e，其余参数和输入保持一致。k4/k8 分开报告，保留 side log。
+
+先分类统计大量复用、少量 query 与大量 fresh query 的两侧价格、选边和四项指标，再解释 A5/A6 差距。降低带宽不保证扩大选择收益，推导见 [性能分析](../analysis/README.md#8-链路带宽与容量分层)。
+
+当前没有“超过 token 阈值自动切 PCIe”的参数或容量溢出实现，不能用固定 PCIe 跑法声称完成了分层实验。分层方案的容量阈值、共享驻留计数、溢出地址和 PIM 所在层先按性能分析中的定义明确；本文没有虚构可直接运行的分层命令。
+'''
+guide.write_text(content)
+audit='''# NVLink / PCIe 分层：实验假设与当前实现
+
+chenyi9 提出按 context 大小使用快慢链路。当前可以做整次运行固定链路的带宽敏感性；按容量自动溢出到另一层仍是新增实验假设。降低带宽不保证 A5/A6 差距扩大，需按请求复用量与计算量解释。
+
+| 核查项 | 原始 AttAcc | 当前仓库 |
+|---|---|---|
+| 固定 NVLink / PCIe 带宽 | c600051 的 config 有枚举与带宽分支；main 固定 NVLINK3 | main.py:130–134、525–529 提供 --pim-link，整次运行统一 |
+| 按 token / 容量阈值自动分层 | 没有该规则 | 没有该参数、对象级 tier 放置或溢出读取计价 |
+| KV 回读和 PIM context 返回 | 原始无 Fugue 逐请求选边 | runner:4067–4070、4133–4134 均调用同一 GPU X2G 链路；执行分支亦相同 |
+| PCIe latency / energy | 不能从枚举推导完整 PCIe 分层系统 | 固定选项改带宽；Flash 固定延迟和每字节能量仍沿用现有模型，没有新 PCIe 校准 |
+
+源码 `src/devices.py:382–392` 的传输时间取链路与远端 HBM 供数两者较慢值，再按已定规则处理固定项；decode 小传输固定开销仍按 chenyi9 裁决忽略，不在本次重开。GPU↔GPU all-reduce 不随 --pim-link 改动。
+
+独立 agent attacc_model_provenance 核验：只降 GPU 回读带宽时，A6 选择优势 max(P−G,0) 缩小或不变。统一降链路时，回读字节 D_G 大于 context 返回 D_P 的请求也倾向缩小；大量 fresh query 则可能扩大。这是固定请求工作量的局部推导，不能代替 E2E。
+
+公平的分层对照应共用容量、地址放置和传输规则，并确认每层是否支持 PIM。不能仅让 baseline 的整份 KV 在越过阈值后走慢链路，同时让 Fugue 在未说明的存储层免费扫描。按实际快慢层读取字节与可并行资源计费；参数和输出统一保留。
+
+具体容量推导与实验条件见 [性能分析](../../docs/analysis/README.md#8-链路带宽与容量分层)，可执行的固定链路跑法见 [实验指导](../../docs/experiments/README.md#7-nvlink--pcie-带宽与分层)。
+
+证据：[容量计算与源码 SHA256](archive/link_tier/capacity_evidence.json)、[生成脚本](archive/link_tier/link_tier_docs_20260905.txt)、[上游 config](archive/link_tier/attacc_c600051_src_config.py.txt)、[上游 main](archive/link_tier/attacc_c600051_main.py.txt)、[上游 devices](archive/link_tier/attacc_c600051_src_devices.py.txt)。没有运行性能实验或修改实现。
+'''
+(ROOT/'audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md').write_text(audit)
+index=Path('/tmp/fugue_audit_index.md');old=index.read_text()
+line='| 链路带宽与容量分层 | [分层假设](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md) | 固定链路已支持；token 阈值未实现；降低带宽对两类请求方向不同 |\n'
+if line not in old:index.write_text(old.replace('|---|---|---|\n','|---|---|---|\n'+line,1))
+session=Path('/tmp/fugue_docs_reorg_session.md');old=session.read_text()
+addition='''
+## 最新澄清与独立文档复核
+
+部分列专项记录两层覆盖限制：A3b 整行分配消除输出尾部偏移，trace 列命令数量也未按起点偏移调整。独立两轮 plan 复核成立；收益方向分开报告，因为行分散可能反向影响 A3b。证据保存在 audit/2026-09-05/archive/partial_column_append。
+
+attacc_model_provenance 复核新指导和分析后，去掉 PIM 价格单边“共同项”，补充 A5 的 MQ/PE 也影响 decode；子集只含 A4e/A5/A6 时将 summary 参考档改为 A4e，避免相对结果表缺失。
+
+chenyi9 随后提议按 context 分 NVLink/PCIe。新增 LINK_TIER_ASSUMPTIONS.md，并在实验指导/分析增加对应一节：区分现有固定链路选项与尚未实现的容量溢出；按模型 KV 字节量推导假设快层容量，说明大量复用与大量 fresh 请求的 A5/A6 方向不同。用户提议记录为实验假设，没有当作已经确定的容量或已完成的实现。独立 agent 核上游与当前链路，证据在 archive/link_tier。
+'''
+if addition not in old:session.write_text(old+addition)
+print(json.dumps(e,indent=2))

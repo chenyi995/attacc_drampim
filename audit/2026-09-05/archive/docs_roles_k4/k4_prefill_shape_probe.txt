@@ -1,0 +1,75 @@
+from pathlib import Path
+from collections import defaultdict,Counter
+import json,math,sys
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT));sys.dont_write_bytecode=True
+from src.workload import load_workload,build_reuse_plan
+from src.workload_runner import (TableLocalDiffKVLayout,_prepare_cacheblend_tlb,_parent_output_fingerprints,
+                                _cacheblend_tlb_rows,_striped_append_channel_extents)
+from src.ramulator_wrapper import mq_query_capacity
+wl=load_workload(ROOT/'workload/probe/sweep/B1_turns.json')
+
+def calculate(k):
+ p=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=k)
+ t=TableLocalDiffKVLayout(256,'slice');_prepare_cacheblend_tlb(wl,p,1,t,_parent_output_fingerprints(wl))
+ out={}
+ for req in wl.requests:
+  b=_cacheblend_tlb_rows(wl,p,0,req,t)
+  compute=[pos for pos,reused,corrected,loc in b if not reused or(corrected and loc.owner==req.request_id)]
+  writes=[loc for pos,reused,corrected,loc in b if pos in compute]
+  inherited=[loc for _,reused,corrected,loc in b if reused and corrected and loc.owner!=req.request_id]
+  old=[loc.shadow if corrected else loc for _,reused,corrected,loc in b if reused and(not corrected or loc.shadow is not None)]+inherited
+  scan=old+writes
+  resident=[loc for _,reused,corrected,loc in b if reused and not corrected]+inherited
+  gs=_striped_append_channel_extents(scan,policy=t.layout_policy,heads_per_hbm=8,tlb=t)
+  perchannel={c:sum(e[2] for e in es) for c,n,es in gs}
+  if req.request_id=='a0_owner':kind='owner';stage='owner'
+  else:kind='chatty' if int(req.request_id[1:3])<4 else 'writer';stage='first' if req.tier==0 else 'later'
+  out[req.request_id]={'request':req.request_id,'round':req.tier+1,'kind':kind,'stage':stage,
+    'prompt_tokens':req.total_length,'m_compute_tokens':len(compute),'resident_readback_tokens':len(resident),
+    'scan_input_token_rows':len(scan),'scan_unique_tokens_per_head':sum(perchannel.values())//8,
+    'scan_busiest_lane_tokens':max(perchannel.values(),default=0),
+    'own_new_diff_tokens':sum(1 for l in writes if l.kind=='diff'),
+    'inherited_diff_tokens':len(inherited),'fresh_tokens':sum(not reused for _,reused,_,_ in b),
+    'MQ_sweeps':{model:math.ceil(len(compute)/cap) for model,cap in [('TINY',mq_query_capacity(512)),('LLAMA3_GQA4',mq_query_capacity(512)//4)]}}
+  assert req.total_length==len(compute)+len(resident)
+ return out
+rows8,rows4=calculate(8),calculate(4)
+records=[];groups=defaultdict(list)
+for rid,v8 in rows8.items():
+ v4=rows4[rid]
+ delta={key:v4[key]-v8[key] for key in ('m_compute_tokens','resident_readback_tokens','scan_input_token_rows','scan_unique_tokens_per_head','scan_busiest_lane_tokens')}
+ row={'request':rid,'k8':v8,'k4':v4,'k4_minus_k8':delta,
+      'm_reduction_fraction':1-v4['m_compute_tokens']/v8['m_compute_tokens']}
+ records.append(row);groups[(v8['kind'],v8['stage'])].append(row)
+summary={}
+for (kind,stage),rs in groups.items():
+ summary[kind+'_'+stage]={'requests':len(rs),'m_k8':sorted({r['k8']['m_compute_tokens'] for r in rs}),
+      'm_k4':sorted({r['k4']['m_compute_tokens'] for r in rs}),
+      'm_pair_counts':dict(Counter(str(r['k8']['m_compute_tokens'])+' -> '+str(r['k4']['m_compute_tokens']) for r in rs)),
+      'm_reduction_fraction':sorted({r['m_reduction_fraction'] for r in rs}),
+      'R_k4_minus_k8':sorted({r['k4_minus_k8']['resident_readback_tokens'] for r in rs}),
+      'scan_input_k4_minus_k8':sorted({r['k4_minus_k8']['scan_input_token_rows'] for r in rs}),
+      'sweeps':{model:{'k8':sorted({r['k8']['MQ_sweeps'][model] for r in rs}),'k4':sorted({r['k4']['MQ_sweeps'][model] for r in rs})} for model in ('TINY','LLAMA3_GQA4')}}
+out={'head':'da220d1ea5c57358fb2f2d26a897a5178d0b7f0c',
+ 'method':'Real B1 workload, recompute plans k=8/4, real TLB bindings and persistent table-local ledger; reproduces actual prefill compute/resident/scan selection expressions. No device pricing or Ramulator invocation. Token row counts are not DRAM ACTs.',
+ 'MQ_capacity':{'buffer_bytes':512,'physical_Q_slices_per_bank':mq_query_capacity(512),'TINY_request_query_capacity':mq_query_capacity(512),'LLAMA3_GQA4_request_query_capacity':mq_query_capacity(512)//4,'assumption':'batch_size >= 8; runtime min(batch_size,capacity/gqa_group) can lower it'},
+ 'summaries':summary,'requests':records,
+ 'totals':{label:{'new_diff_tokens':sum(r[label]['own_new_diff_tokens'] for r in records),'compute_tokens':sum(r[label]['m_compute_tokens'] for r in records),'resident_readback_tokens':sum(r[label]['resident_readback_tokens'] for r in records)} for label in ('k8','k4')}}
+new_chunk_offsets=[]
+plan=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=8)
+byid={r.request_id:r for r in wl.requests}
+for d in plan.reusable:
+    r=byid[d.request_id]
+    if r.request_id not in ('w05_t06','w07_t04') or d.segment_index<len(r.segments)-3:continue
+    owner=byid[d.owner_request_id]
+    oi=next(i for i,s in enumerate(owner.segments) if s.fingerprint==d.fingerprint)
+    new_chunk_offsets.append({'request':r.request_id,'segment_index':d.segment_index,
+       'consumer_offset':sum(s.length for s in r.segments[:d.segment_index]),
+       'owner_offset':sum(s.length for s in owner.segments[:oi]),'correction_rows':len(d.epic_prefix_rows)})
+out['exceptions_new_chunk_offsets']=new_chunk_offsets
+Path('/tmp/k4_prefill_shape_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps(summary,indent=2))
+print('selected_requests')
+for r in records:
+ if r['request'] in ('a0_owner','w00_t00','w00_t01','w00_t07','w04_t00','w04_t01','w04_t07'):print(json.dumps(r))

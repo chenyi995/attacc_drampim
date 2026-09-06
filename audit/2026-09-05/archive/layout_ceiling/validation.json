@@ -1,0 +1,17 @@
+{
+  "head": "da220d1ea5c57358fb2f2d26a897a5178d0b7f0c",
+  "initial_existing_paths_changed": [
+    "audit/2026-09-05/README.md",
+    "docs/sessions/README.md",
+    "output/analysis/b1_levers.py"
+  ],
+  "unexplained_existing_path_changes": [],
+  "external_analysis_script_update": "detected and archived separately; initial source recovered with exact SHA256",
+  "archive_hashes_verified": 46,
+  "local_document_links_checked": 47,
+  "missing_links": [],
+  "same_run_common_config_checks": 14,
+  "raw_result_spot_checks": "A3b E2E, A4e lane sum, pairwise E2E ratio passed",
+  "implementation_and_workload_initial_hashes": "unchanged",
+  "new_performance_simulation": false
+}
