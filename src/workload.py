@@ -481,8 +481,11 @@ def build_reuse_plan(workload: Workload,
             # with the SAME context in front of it.  The correction belongs to
             # the turn that actually wrote it (the root of the chain, C8.1),
             # and it is only valid if the prefix that shaped it is unchanged.
+            # A parent_out names its producer explicitly and never inherits
+            # (re-audit C8.6: a re-used output fingerprint must not be
+            # re-pointed at an older request).
             inherited = None
-            ancestor_id = request.parent_id
+            ancestor_id = None if segment.role == "parent_out" else request.parent_id
             prefix = tuple(seg.fingerprint for seg in request.segments[:index])
             while ancestor_id is not None and inherited is None:
                 candidate = decided.get((ancestor_id, segment.fingerprint,
