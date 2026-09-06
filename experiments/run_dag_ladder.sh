@@ -44,6 +44,8 @@ EVENTS=${EVENTS:-none}
 # context the scan is a few percent of a decode step); a sensitivity run
 # passes BATCH=32 with the same workload.
 BATCH=${BATCH:-8}
+# GPU: the GPU type (A100a default; H200 / B200 = DGX H200 / B200 numbers, PIM stacks unchanged).
+GPU=${GPU:-A100a}
 # GPU model (chenyi9 ruling 2026-09-05, re-audit C1): FlashAttention-2 is
 # the common GPU model of every rung.  Default flash here so no entry point
 # silently runs the legacy AttAcc xPU formulas; GPU_MODEL=legacy opts out.
@@ -85,6 +87,7 @@ for A in $RUNGS; do
         ${NGPU:+--ngpu "$NGPU"} \
         ${NO_WARM:+--no-warm} \
         ${GPU_MODEL:+--gpu-model "$GPU_MODEL"} \
+        ${GPU:+--gpu "$GPU"} \
         --ramulator-workers "$RAMU_WORKERS") > "$OUT/dag_${A}.log" 2>&1 &
     PID[$A]=$!
 done

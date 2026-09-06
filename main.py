@@ -155,7 +155,7 @@ def main():
         "--gpu",
         type=str,
         default='A100a',
-        help="GPU type (A100a and H100), A100a is A100 with HBM3")
+        help="GPU type (A100a, H100, H200, B200), A100a is A100 with HBM3")
     parser.add_argument("--ngpu",
                         type=int,
                         default=8,
@@ -537,6 +537,10 @@ def main():
 
     if args.gpu == 'H100':
         gpu_device = GPUType.H100
+    elif args.gpu == 'B200':
+        gpu_device = GPUType.B200
+    elif args.gpu == 'H200':
+        gpu_device = GPUType.H200
     elif args.gpu == 'A100a':
         gpu_device = GPUType.A100a
     else:

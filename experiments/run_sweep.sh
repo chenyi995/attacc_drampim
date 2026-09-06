@@ -15,7 +15,7 @@
 #     MODEL         default LLAMA3-8B
 #   env: RUNGS (override the per-point rule), RAMU_WORKERS (8), PARALLEL,
 #        EPIC_K (8), GPU_MODEL (flash), NGPU / NUM_HBM (override the table),
-#        EVENTS (none), BATCH (8), KVPIM_SCRATCH (Ramulator dir)
+#        EVENTS (none), BATCH (8), GPU (A100a | H100 | H200 | B200), KVPIM_SCRATCH (Ramulator dir)
 set -u
 OUTROOT=${1:?usage: run_sweep.sh <outroot> [filter-regex] [MODEL]}
 FILTER=${2:-.}
@@ -39,7 +39,7 @@ gpus_for() {
 }
 export NGPU=${NGPU:-$(gpus_for "$MODEL")}
 export NUM_HBM=${NUM_HBM:-$((5 * NGPU))}
-export EPIC_K=${EPIC_K:-8} GPU_MODEL=${GPU_MODEL:-flash} EVENTS=${EVENTS:-none} BATCH=${BATCH:-8}
+export EPIC_K=${EPIC_K:-8} GPU_MODEL=${GPU_MODEL:-flash} EVENTS=${EVENTS:-none} BATCH=${BATCH:-8} GPU=${GPU:-A100a}
 export KVPIM_CPPCORE=1 PYTHONPATH=$REPO OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 RUNGS_OVERRIDE=${RUNGS:-}
 if [ -n "${KVPIM_SCRATCH:-}" ]; then
@@ -47,7 +47,7 @@ if [ -n "${KVPIM_SCRATCH:-}" ]; then
 fi
 mkdir -p "$OUTROOT"
 mapfile -t FILES < <(tail -n +2 "$SWEEP/manifest.csv" | cut -d, -f1 | grep -E "$FILTER")
-echo "$(date +%T) sweep start: ${#FILES[@]} workloads, model $MODEL (ngpu $NGPU, hbm $NUM_HBM), gpu_model $GPU_MODEL, k $EPIC_K, batch $BATCH" >> "$OUTROOT/sweep.log"
+echo "$(date +%T) sweep start: ${#FILES[@]} workloads, model $MODEL (ngpu $NGPU, hbm $NUM_HBM), gpu $GPU, gpu_model $GPU_MODEL, k $EPIC_K, batch $BATCH" >> "$OUTROOT/sweep.log"
 is_baseline() { [[ $1 =~ ^W[0-9]+_turns\.json$ ]]; }
 rungs_for() {   # baseline: every combo; sweep point: A3b and A6
     if [ -n "$RUNGS_OVERRIDE" ]; then echo "$RUNGS_OVERRIDE";

@@ -163,6 +163,9 @@ def make_xpu_config(gpu_type: GPUType,
     # default so the 2026-08-21 flash matrix stays reproducible.
     config['GPU']["ATTN_SPLITK"] = bool(attn_splitk)
     config['GPU']["HBM_SPEC"] = HBM3_STACK
+    # the PIM side's stack count per GPU (far-HBM streaming term of X2G);
+    # kept at 5 for B200 too: the run geometry is set by --num-hbm and the
+    # B200 runs use the same 5-stack geometry as the A100a ones
     config['GPU']["NUM_HBM_STACKS"] = 5
     config['GPU']["HBM_STREAM_EFF"] = hbm3_stream_efficiency()
     # latency of one GPU<->AttAcc NVLink transfer: the intercept of the A100
@@ -236,6 +239,77 @@ def make_xpu_config(gpu_type: GPUType,
         # 5.5TB/s, https://chipsandcheese.com/2023/07/02/nvidias-h100-funny-l2-and-tons-of-bandwidth/
         config['CPU']["L2_MEM_BW_PER_DEVICE"] = 5.5 * 1000 * 1000 * 1000 * 1000
         # TODO: Modify it
+        config['CPU']["L1_CAP_PER_CORE"] = 48 * 1024
+        config['CPU']["L2_CAP_PER_DEVICE"] = 2 * 1024 * 1024
+        config['CPU']["INTERFACE_BW"] = 4 * 128 * 1000 * 1000 * 1000
+        config['CPU']["ENERGY_TABLE"] = ENERGY_TABLE['CPU']
+
+    elif gpu_type == GPUType.H200:
+        # DGX H200 (chenyi9 2026-09-06): Hopper compute with HBM3e.
+        #   fp16 dense 989.4 TFLOPS (same die as H100); HBM3e 4.8 TB/s and
+        #   141 GB per GPU; NVLink 900 GB/s per GPU (7.2 TB/s aggregate / 8).
+        # Energy table, FA-2 efficiency curve and the NVLink transfer
+        # intercept are kept from A100 (no Hopper fits in this repo).
+        config['GPU']["NUM_CORE"] = 132
+        config['GPU']["FLOPS_PER_DEVICE"] = 989.4 * 1000 * 1000 * 1000 * 1000 \
+                                            if flops is None else flops
+        config['GPU']["MEM_CAPACITY_PER_DEVICE"] = 141 * 1024 * 1024 * 1024 \
+                                                   if mem_cap is None else mem_cap
+        config['GPU']["OFF_MEM_BW_PER_DEVICE"] = 4800 * 1000 * 1000 * 1000 \
+                                                 if mem_bw is None else mem_bw
+        config['GPU']["L2_MEM_BW_PER_DEVICE"] = float('inf')
+        config['GPU']["L1_CAP_PER_CORE"] = 256 * 1024
+        config['GPU']["L2_CAP_PER_DEVICE"] = 50 * 1024 * 1024
+        config['GPU']["INTERFACE_BW"] = 900 * 1000 * 1000 * 1000
+        config['GPU']["ENERGY_TABLE"] = ENERGY_TABLE['GPU']
+
+        config['CPU']["NUM_DEVICE"] = 2
+        config['CPU']["NUM_CORE"] = 56
+        config['CPU']["FLOPS_PER_DEVICE"] = 4 * 1000 * 1000 * 1000 * 1000
+        config['CPU']["MEM_CAPACITY_PER_DEVICE"] = 1024 * 1024 * 1024 * 1024
+        config['CPU']["OFF_MEM_BW_PER_DEVICE"] = 8 * 2 * 4400 * (
+            64 / 8) * 1000 * 1000
+        config['CPU']["L2_MEM_BW_PER_DEVICE"] = float('inf')
+        config['CPU']["L1_CAP_PER_CORE"] = 48 * 1024
+        config['CPU']["L2_CAP_PER_DEVICE"] = 2 * 1024 * 1024
+        config['CPU']["INTERFACE_BW"] = 4 * 128 * 1000 * 1000 * 1000
+        config['CPU']["ENERGY_TABLE"] = ENERGY_TABLE['CPU']
+
+    elif gpu_type == GPUType.B200:
+        # DGX B200 (chenyi9 2026-09-06): numbers from the DGX B200
+        # specification page, per GPU = system / 8.
+        #   fp16 dense 2.25 PFLOPS: the page's 72 PFLOPS FP8 carries the
+        #   sparsity footnote, dense FP8 is 36 PFLOPS, fp16 half of that,
+        #   over 8 GPUs (推导; the A100a/H100 entries are dense too);
+        #   HBM3e 8 TB/s = 64 TB/s / 8, 180 GB = 1440 GB / 8;
+        #   NVLink 1.8 TB/s = 14.4 TB/s / 8.
+        # 148 SMs and the 256 KiB L1 / 126 MiB L2 are the public Blackwell
+        # figures (推测: not from the spec page).  The GPU energy table, the
+        # FlashAttention efficiency curve (A100 FA-2) and the NVLink
+        # transfer intercept are kept from A100 -- no Blackwell fits exist
+        # in this repo, so the GPU is priced conservatively.  The PIM
+        # stacks stay HBM3-PIM; only the GPU side is upgraded here.
+        config['GPU']["NUM_CORE"] = 148
+        config['GPU']["FLOPS_PER_DEVICE"] = 2250 * 1000 * 1000 * 1000 * 1000 \
+                                            if flops is None else flops
+        config['GPU']["MEM_CAPACITY_PER_DEVICE"] = 180 * 1024 * 1024 * 1024 \
+                                                   if mem_cap is None else mem_cap
+        config['GPU']["OFF_MEM_BW_PER_DEVICE"] = 8000 * 1000 * 1000 * 1000 \
+                                                 if mem_bw is None else mem_bw
+        config['GPU']["L2_MEM_BW_PER_DEVICE"] = float('inf')
+        config['GPU']["L1_CAP_PER_CORE"] = 256 * 1024
+        config['GPU']["L2_CAP_PER_DEVICE"] = 126 * 1024 * 1024
+        config['GPU']["INTERFACE_BW"] = 1800 * 1000 * 1000 * 1000
+        config['GPU']["ENERGY_TABLE"] = ENERGY_TABLE['GPU']
+
+        # DGX B200 CPUs: 2 x Xeon Platinum 8570, 112 cores total
+        config['CPU']["NUM_DEVICE"] = 2
+        config['CPU']["NUM_CORE"] = 56
+        config['CPU']["FLOPS_PER_DEVICE"] = 4 * 1000 * 1000 * 1000 * 1000
+        config['CPU']["MEM_CAPACITY_PER_DEVICE"] = 1024 * 1024 * 1024 * 1024
+        config['CPU']["OFF_MEM_BW_PER_DEVICE"] = 8 * 2 * 4400 * (
+            64 / 8) * 1000 * 1000
+        config['CPU']["L2_MEM_BW_PER_DEVICE"] = float('inf')
         config['CPU']["L1_CAP_PER_CORE"] = 48 * 1024
         config['CPU']["L2_CAP_PER_DEVICE"] = 2 * 1024 * 1024
         config['CPU']["INTERFACE_BW"] = 4 * 128 * 1000 * 1000 * 1000
