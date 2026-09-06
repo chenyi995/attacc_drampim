@@ -4,6 +4,7 @@
 
 | 日期 | Session | 内容 |
 |---|---|---|
+| 2026-09-05（bb19f31→ff5b91e 复核） | [上轮修复验收与条件性边界](2026-09-05-bb19f31-fix-verification.md) | 旧C8读集/来源、collector与能量诊断通过；补查batch1/A2 history的summary、CacheBlend取整和重复parent输出来源；只audit，默认配置影响分开说明 |
 | 2026-09-05（fbe6756 复核） | [新一轮修复验收](2026-09-05-fbe6756-fix-verification.md) | GQA/diff地址/flash/A6指定估价通过；三轮继承、prefill漏旧diff、A2工作量、tier口径与能量诊断仍需处理；主审+三个独立agent，仅audit |
 | 2026-09-05（口径确定与交接） | [已定原则、待执行和验收](2026-09-05-audit-decisions-finalized.md) | C8 按 a/c 原址继续引用要求对齐；本轮无待重复裁决口径；明确不代表代码已修 |
 | 2026-09-05（行列计时澄清） | [C4 与实际 decode 扫描输入](2026-09-05-row-column-audit-clarification.md) | 确认 ACTAB/PREA 由 Ramulator 处理；区分列地址边界与已证明性能问题；独立检查 reads/plan_reads |
