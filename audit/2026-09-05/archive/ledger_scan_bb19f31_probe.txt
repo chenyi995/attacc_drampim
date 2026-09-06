@@ -1,0 +1,121 @@
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+from collections import Counter
+from copy import deepcopy
+import ast, json, sys
+ROOT=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0,str(ROOT));sys.dont_write_bytecode=True
+from src import workload_runner as wr
+from src.workload import Request,Segment,Workload,build_reuse_plan
+from src.model import Transformer
+from src.type import DataType,DeviceType
+from src.ablation import resolve_config
+
+class Device:
+    num_hbm=1;num_attacc=1;num_xpu=1;peak_memory_bandwidth=10**12;softmax_peak_bandwidth=10**12
+    energy_table={'mem':1.,'sram':1.,'alu':1.};ramulator=SimpleNamespace(workers=1);gpu_model='flash'
+    def get_time_and_energy(self,op):return 1e-6,(1.,)
+    def get_time_and_energy_runs(self,op):return [(1e-6,(1.,)) for _ in op.pim_kv_runs]
+
+def seg(role,fp,n):return Segment(role,fp,n)
+def req(id,tier,parent,segs):return Request(id,tier,parent,2,tuple(segs),sum(s.length for s in segs))
+def workload(mixed):
+    owner=req('a',0,None,[seg('sys','sa',2),seg('doc','D',8),seg('doc','E',8)])
+    w0s=[seg('sys','sw',4),seg('doc','D',8),seg('user','q0',2)]
+    w0=req('w0',0,None,w0s)
+    w1s=w0s+[seg('parent_out','w0-out',2)]
+    if mixed:w1s+=[seg('doc','E',8)]
+    w1=req('w1',1,'w0',w1s+[seg('user','q1',2)])
+    return Workload('supervisor',(owner,w0,w1),{})
+def identity(l):return (l.layer,l.owner,l.fingerprint,l.kind,l.owner_row)
+def idrecord(l):return {'id':identity(l),'K':l.key_address,'V':l.value_address}
+
+def run(mixed,rung):
+    wl=workload(mixed);plan=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=2)
+    cfg=resolve_config(rung,None,None,None,policy='recompute')
+    system=SimpleNamespace(hetero_name=DeviceType.PIM,devices={'GPU':Device(),'Acc':Device()},
+          model=Transformer(dict(name='audit-toy',ndec=1,num_heads=4,hdim=512,ff_scale=4,dtype=DataType.W16A16,gqa_size=1),1))
+    scans=[];stores=[];bindings={};ledger_maps={}
+    oldscan=wr._append_placement_pim_scan;oldstore=wr._append_channel_kv_stores;oldbinding=wr._cacheblend_tlb_rows
+    def bind(*args,**kw):
+        result=oldbinding(*args,**kw)
+        request=args[3];tlb=args[4]
+        bindings[request.request_id]=[(p,reused,corrected,l) for p,reused,corrected,l in result]
+        if request.request_id in ('w0','w1'):
+            ledger=tlb.physical_ledger(tlb.layout_policy,4)
+            for _,_,_,l in result:
+                if l.kind=='diff':ledger_maps[(request.request_id,identity(l))]=ledger.extent_groups([l])
+        return result
+    def scan(*args,**kw):
+        rec={'request':kw['request'],'name':kw['name'],'positions':kw['positions'],'identities':[identity(l) for l in kw['reads']]}
+        rec['extent_groups']=kw['tlb'].physical_ledger(kw['policy'],kw['heads_per_hbm']).extent_groups(kw['reads'])
+        rec['masked_count']=len(kw.get('masked',()))
+        rec['event_ids']=oldscan(*args,**kw)
+        scans.append(rec)
+        return rec['event_ids']
+    def store(*args,**kw):
+        rec={'request':kw['request'],'name':kw['name'],'rows':[idrecord(l) for l in kw['locations']]}
+        rec['event_ids']=oldstore(*args,**kw);stores.append(rec)
+        return rec['event_ids']
+    with patch.object(wr,'_new_event_core',return_value=None),patch.object(wr,'_cacheblend_tlb_rows',side_effect=bind), \
+         patch.object(wr,'_append_placement_pim_scan',side_effect=scan),patch.object(wr,'_append_channel_kv_stores',side_effect=store):
+        result=wr.run_reuse_prefill(system,wl,plan,warm=False,pipe=True,cacheblend_batch_size=2,include_events=True,
+          pim_prefill_mode=cfg.prefill_attn,decode_attn=cfg.decode_attn,pim_batch_command=cfg.pim_batch_command,
+          pim_pe_freq_ghz=cfg.pim_pe_freq_ghz,kv_mapping=cfg.kv_mapping,channel_placement=cfg.channel_placement)
+    own=bindings['w1']
+    expected_inherited={identity(l) for _,reused,corrected,l in own if reused and corrected and l.owner!='w1'}
+    expected_writes={identity(l) for _,reused,corrected,l in own if not reused or (corrected and l.owner=='w1')}
+    observed_stores=[r for r in stores if r['request']=='w1' and not r['name'].startswith('decode') and r['name']!='dram_read_resident']
+    observed_write_ids={tuple(l['id']) for r in observed_stores for l in r['rows']}
+    reads=[r for r in stores if r['request']=='w1' and r['name']=='dram_read_resident']
+    prefill_scans=[r for r in scans if r['request']=='w1' and not r['name'].startswith('decode')]
+    expected_visible={identity(l) for _,_,_,l in own}
+    physical_expected=expected_visible|{identity(l.shadow) for _,_,_,l in own if l.shadow is not None}
+    scan_checks=[]
+    for s in prefill_scans:
+        obs=set(s['identities'])
+        scan_checks.append({'positions':s['positions'],'missing_visible':sorted(expected_visible-obs),
+          'extra_outside_visible_and_shadows':sorted(obs-physical_expected),
+          'raw_duplicate_id_count':len(s['identities'])-len(obs),
+          'extent_row_sum':sum(e[2] for c,n,es in s['extent_groups'] for e in es),
+          'unique_read_ids':len(obs),'inherited_ids_seen':sorted(expected_inherited&obs),
+          'new_diff_ids_seen':sorted(i for i in expected_writes&obs if i[3]=='diff')})
+    resident_ids={tuple(l['id']) for r in reads for l in r['rows']}
+    address_equal={str(i):ledger_maps[('w0',i)]==ledger_maps[('w1',i)] for i in expected_inherited}
+    summary={'rung':rung,'context_tokens':wl.requests[-1].total_length,'prefill_side':'pim' if prefill_scans else 'gpu',
+      'inherited_ids':sorted(expected_inherited),'expected_write_ids':sorted(expected_writes),
+      'missing_store_ids':sorted(expected_writes-observed_write_ids),'extra_store_ids':sorted(observed_write_ids-expected_writes),
+      'inherited_written_again':sorted(expected_inherited&observed_write_ids),
+      'inherited_ledger_addresses_equal_previous_turn':address_equal,
+      'gpu_resident_read_count':sum(len(r['rows']) for r in reads),
+      'gpu_resident_inherited_seen':sorted(expected_inherited&resident_ids),
+      'gpu_resident_new_diff_seen':sorted(i for i in expected_writes&resident_ids if i[3]=='diff'),
+      'scan_checks':scan_checks,'corrected_rows_sha':result.get('corrected_rows_sha')}
+    return {'summary':summary,'scan_records':scans,'store_records':stores}
+
+# Evaluate the exact guard condition from the current source AST, avoiding a
+# million-row allocation merely to cross a four-MiB region in a helper test.
+tree=ast.parse((ROOT/'src/workload_runner.py').read_text())
+condition=next(n.test for n in ast.walk(tree) if isinstance(n,ast.If) and isinstance(n.test,ast.Compare)
+               and isinstance(n.test.left,ast.Name) and n.test.left.id=='diff_cursor')
+check=compile(ast.Expression(condition),'<current-diff-guard>','eval')
+guard=[]
+for tokens in (1048575,1048576,1048577):
+    end=wr._DIFF_REGION_BYTES+tokens*wr._GEN_BYTES_PER_TOKEN
+    guard.append({'tokens':tokens,'end_exclusive':end,'reject':eval(check,{'diff_cursor':end,'_ORIGINAL_KV_GAP_BYTES':wr._ORIGINAL_KV_GAP_BYTES})})
+out={'revision':'bb19f31134362548405a3bc225c43139b4a768af','method':'real reuse plan and actual prefill helpers with constant devices; no Ramulator timing; diff guard uses exact AST condition at domain boundary',
+     'diff_capacity_boundary':guard,'cases':{}}
+for mixed in (False,True):
+    key='inherited_plus_new_diff' if mixed else 'inherited_only'
+    out['cases'][key]={r:run(mixed,r) for r in ('A3b','A4c','A4e','A5','A6')}
+for case,d in out['cases'].items():
+    def decode_records(rung):
+        return [{'name':s['name'],'positions':s['positions'],'ids':sorted(s['identities'])}
+                for s in d[rung]['scan_records'] if s['request']=='w1' and s['name'].startswith('decode')]
+    a,b=decode_records('A3b'),decode_records('A4c')
+    d['A3b_A4c_comparison']={'same_corrected_plan':d['A3b']['summary']['corrected_rows_sha']==d['A4c']['summary']['corrected_rows_sha'],
+        'same_write_id_set':d['A3b']['summary']['expected_write_ids']==d['A4c']['summary']['expected_write_ids'],
+        'same_decode_read_id_sequences':a==b,'decode_scan_count':len(a)}
+Path('/tmp/ledger_scan_bb19f31_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({'guard':guard,'cases':{k:{r:v['summary'] for r,v in cases.items() if r!='A3b_A4c_comparison'} for k,cases in out['cases'].items()}},indent=2))

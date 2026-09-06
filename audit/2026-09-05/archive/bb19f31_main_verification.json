@@ -1,0 +1,137 @@
+{
+  "revision": "bb19f31",
+  "scope": "Main audit: public loader, planner, validator, binding only. No simulation.",
+  "cacheblend_rounding": {
+    "exception": "WorkloadValidationError",
+    "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5"
+  },
+  "parent_output_source": {
+    "declared_parent": "w0",
+    "decisions": [
+      {
+        "master_owner": "a",
+        "inherits_from": "w0",
+        "correction_rows": []
+      }
+    ],
+    "binding_owners": [
+      "a",
+      "a"
+    ]
+  },
+  "current_turns_inputs": [
+    {
+      "file": "B0_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S1_agents_16_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S1_agents_32_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S1_agents_4_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S2_rounds_16_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S2_rounds_2_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S2_rounds_4_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S3_lout_1024_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S3_lout_128_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S3_lout_2048_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S3_lout_512_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S4_own_1024_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S4_own_16_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S4_own_256_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S4_own_64_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S5_fresh_0p25_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S5_fresh_0p5_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S5_fresh_0p75_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S6_chunks_1_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S6_chunks_4_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    },
+    {
+      "file": "S6_chunks_8_turns.json",
+      "nonzero_history_requests": 0,
+      "output_fingerprint_shared_by_different_parents": false
+    }
+  ],
+  "implementation_changed_since_last": [
+    "experiments/collect_dag_ladder.py",
+    "src/layout_probe.py",
+    "src/workload.py",
+    "src/workload_runner.py",
+    "tests/test_collect_ladder.py",
+    "tests/test_workload.py"
+  ]
+}

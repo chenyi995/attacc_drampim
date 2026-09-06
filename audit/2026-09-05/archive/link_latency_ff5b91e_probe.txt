@@ -1,0 +1,31 @@
+from pathlib import Path
+import hashlib,json,sys
+sys.dont_write_bytecode=True
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');sys.path.insert(0,str(R))
+from src.config import make_model_config,make_xpu_config
+from src.type import DataType,GPUType
+from src.system import System
+from src.workload_runner import _link_layer
+cfg=make_xpu_config(GPUType.A100a,num_gpu=1,mem_cap=80<<30,gpu_model='flash',pim_link_bw=600e9,attn_splitk=False)
+s=System(cfg['GPU'],make_model_config('CACHEBLEND-TINY',DataType.W16A16));s.model.build(1,1,2,True)
+gpu=s.devices['GPU'];template=next(l for l in s.model.sum_decoder if l.name=='comm_x2g')
+rows=[]
+for size in (4096,1<<24):
+    for name in ('kv_remote_to_gpu','decode_kv_remote_to_gpu','decode_kv_gpu_to_remote',
+                 'q_gpu_to_pim','decode_q_gpu_to_pim','decode_kv_gpu_to_pim',
+                 'decode_gpu_partial_lse_to_pim','decode_ctx_pim_to_gpu','decode_gpu_rotate_q_extra_to_pim','di_bitmap_gpu_to_die'):
+        op=_link_layer(template,name,size);t,e=gpu.get_time_and_energy(op)
+        rows.append({'name':name,'bytes':size,'link_latency':op.link_latency,'time_s':t,'energy':e})
+    control=[r for r in rows if r['bytes']==size]
+    p=next(r for r in control if r['name']=='kv_remote_to_gpu')
+    for r in control:
+        if not r['link_latency']:
+            assert abs(p['time_s']-r['time_s']-gpu.nvlink_latency)<1e-15
+        assert r['energy']==p['energy']
+out={'revision':'ff5b91e','scope':'Shared helper and analytic device prices only; no GPU execution, Ramulator, or performance experiment.',
+ 'source_sha256':{f:hashlib.sha256((R/f).read_bytes()).hexdigest() for f in ('src/devices.py','src/workload_runner.py','src/ramulator_wrapper.py')},
+ 'independent_review':'attacc_model_provenance inspected A2/PIM decode and prefill call sites: shared phase/name rule, no byte-size threshold.',
+ 'fixed_latency_s':gpu.nvlink_latency,'controls':rows,
+ 'limit':'Same-shape energy formula and Ramulator model unchanged. Changed arrival times may indirectly change batch composition and total energy.'}
+Path('/tmp/link_latency_ff5b91e_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({'controls':len(rows),'sizes':sorted({r['bytes'] for r in rows}),'same_size_energy_equal':True,'latency_difference_exact':True}))

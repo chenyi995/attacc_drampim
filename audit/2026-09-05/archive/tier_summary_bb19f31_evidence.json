@@ -1,0 +1,1937 @@
+{
+  "revision": "bb19f31134362548405a3bc225c43139b4a768af",
+  "scope": "Actual small DAGs with fixed device prices, plus a controlled seven-rung collector fixture. No Ramulator.",
+  "source_sha256": {
+    "src/workload_runner.py": "006df9a3737e7692144eb3fbfc564740f48ed3e41b89687ce8cf71a2af301bdd",
+    "experiments/collect_dag_ladder.py": "7c83178753c42b3611fc8a132c444a15b095dbd1eb4ec9eec596f505726c27fd"
+  },
+  "actual_small_dags": [
+    {
+      "rung": "A2",
+      "history_len": 0,
+      "cacheblend_batch_size": 1,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.012000000000000004,
+            "first_token_s": 0.02500000000000001,
+            "end_s": 0.02600000000000001
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.02600000000000001,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-14",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "gpu-decode-t0-s0-w0",
+        "name": "decode_gpu_step_batch",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.012000000000000004,
+        "energy_nj": 0.012,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-13"
+        ],
+        "query_positions": [
+          4
+        ],
+        "dram_addresses": [],
+        "batch_members": [
+          "r"
+        ],
+        "masked_rows": 0,
+        "start_s": 0.013000000000000005,
+        "end_s": 0.02500000000000001
+      },
+      "final_non_decode_events": [],
+      "decode_events": [
+        {
+          "name": "decode_kv_remote_to_gpu",
+          "start_s": 0.012000000000000004,
+          "end_s": 0.013000000000000005,
+          "query_positions": [],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_step_batch",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.02500000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_kv_gpu_to_remote",
+          "start_s": 0.02500000000000001,
+          "end_s": 0.02600000000000001,
+          "query_positions": [],
+          "batch_members": []
+        }
+      ]
+    },
+    {
+      "rung": "A3b",
+      "history_len": 0,
+      "cacheblend_batch_size": 1,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.026000000000000016,
+            "first_token_s": 0.01800000000000001,
+            "end_s": 0.026000000000000016
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.026000000000000016,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-35",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "r",
+        "name": "gpu_norm2",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.001,
+        "energy_nj": 0.001,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-34"
+        ],
+        "query_positions": [
+          4
+        ],
+        "dram_addresses": [],
+        "batch_members": [],
+        "masked_rows": 0,
+        "start_s": 0.025000000000000015,
+        "end_s": 0.026000000000000016
+      },
+      "final_non_decode_events": [
+        {
+          "id": "cb-28",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_proj",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-27"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.01800000000000001,
+          "end_s": 0.01900000000000001
+        },
+        {
+          "id": "cb-29",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_comm_g2g",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-28"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.01900000000000001,
+          "end_s": 0.02000000000000001
+        },
+        {
+          "id": "cb-30",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_norm1",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-29"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.02000000000000001,
+          "end_s": 0.02100000000000001
+        },
+        {
+          "id": "cb-31",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_ff1",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-30"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.02100000000000001,
+          "end_s": 0.022000000000000013
+        },
+        {
+          "id": "cb-32",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_gelu",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-31"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.022000000000000013,
+          "end_s": 0.023000000000000013
+        },
+        {
+          "id": "cb-33",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_ff2",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-32"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.023000000000000013,
+          "end_s": 0.024000000000000014
+        },
+        {
+          "id": "cb-34",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_comm_g2g",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-33"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.024000000000000014,
+          "end_s": 0.025000000000000015
+        },
+        {
+          "id": "cb-35",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_norm2",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-34"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.025000000000000015,
+          "end_s": 0.026000000000000016
+        }
+      ],
+      "decode_events": [
+        {
+          "name": "decode_qkv",
+          "start_s": 0.012000000000000004,
+          "end_s": 0.013000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_q_gpu_to_pim",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.014000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_local_score",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.014000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_local_softmax",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_local_context",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_partial_lse_to_pim",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_tlb_lookup_and_bank_plan",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.014000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_die_lse_merge",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_ctx_pim_to_gpu",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_dram_store_master",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        }
+      ]
+    },
+    {
+      "rung": "A2",
+      "history_len": 3,
+      "cacheblend_batch_size": 1,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.012000000000000004,
+            "first_token_s": 0.0,
+            "end_s": 0.02600000000000001
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.02600000000000001,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-15",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "gpu-decode-t0-s0-w0",
+        "name": "decode_gpu_step_batch",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.012000000000000004,
+        "energy_nj": 0.012,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-14"
+        ],
+        "query_positions": [
+          7
+        ],
+        "dram_addresses": [],
+        "batch_members": [
+          "r"
+        ],
+        "masked_rows": 0,
+        "start_s": 0.013000000000000005,
+        "end_s": 0.02500000000000001
+      },
+      "final_non_decode_events": [],
+      "decode_events": [
+        {
+          "name": "decode_kv_remote_to_gpu",
+          "start_s": 0.012000000000000004,
+          "end_s": 0.013000000000000005,
+          "query_positions": [],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_step_batch",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.02500000000000001,
+          "query_positions": [
+            7
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_kv_gpu_to_remote",
+          "start_s": 0.02500000000000001,
+          "end_s": 0.02600000000000001,
+          "query_positions": [],
+          "batch_members": []
+        }
+      ]
+    },
+    {
+      "rung": "A3b",
+      "history_len": 3,
+      "cacheblend_batch_size": 1,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.028000000000000018,
+            "first_token_s": 0.02000000000000001,
+            "end_s": 0.028000000000000018
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.028000000000000018,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-41",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "r",
+        "name": "gpu_norm2",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.001,
+        "energy_nj": 0.001,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-40"
+        ],
+        "query_positions": [
+          4
+        ],
+        "dram_addresses": [],
+        "batch_members": [],
+        "masked_rows": 0,
+        "start_s": 0.027000000000000017,
+        "end_s": 0.028000000000000018
+      },
+      "final_non_decode_events": [
+        {
+          "id": "cb-34",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_proj",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-33"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.02000000000000001,
+          "end_s": 0.02100000000000001
+        },
+        {
+          "id": "cb-35",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_comm_g2g",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-34"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.02100000000000001,
+          "end_s": 0.022000000000000013
+        },
+        {
+          "id": "cb-36",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_norm1",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-35"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.022000000000000013,
+          "end_s": 0.023000000000000013
+        },
+        {
+          "id": "cb-37",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_ff1",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-36"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.023000000000000013,
+          "end_s": 0.024000000000000014
+        },
+        {
+          "id": "cb-38",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_gelu",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-37"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.024000000000000014,
+          "end_s": 0.025000000000000015
+        },
+        {
+          "id": "cb-39",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_ff2",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-38"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.025000000000000015,
+          "end_s": 0.026000000000000016
+        },
+        {
+          "id": "cb-40",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_comm_g2g",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-39"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.026000000000000016,
+          "end_s": 0.027000000000000017
+        },
+        {
+          "id": "cb-41",
+          "transformer_layer": 0,
+          "tier": 0,
+          "request": "r",
+          "name": "gpu_norm2",
+          "device": "GPU",
+          "rows": 1,
+          "time_s": 0.001,
+          "energy_nj": 0.001,
+          "link_bytes": 0,
+          "depends_on": [
+            "cb-40"
+          ],
+          "query_positions": [
+            4
+          ],
+          "dram_addresses": [],
+          "batch_members": [],
+          "masked_rows": 0,
+          "start_s": 0.027000000000000017,
+          "end_s": 0.028000000000000018
+        }
+      ],
+      "decode_events": [
+        {
+          "name": "decode_qkv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_q_gpu_to_pim",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_local_score",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_local_softmax",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_local_context",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_partial_lse_to_pim",
+          "start_s": 0.01800000000000001,
+          "end_s": 0.01900000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_tlb_lookup_and_bank_plan",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_die_lse_merge",
+          "start_s": 0.01900000000000001,
+          "end_s": 0.01900000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_ctx_pim_to_gpu",
+          "start_s": 0.01900000000000001,
+          "end_s": 0.02000000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_dram_store_master",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        }
+      ]
+    },
+    {
+      "rung": "A2",
+      "history_len": 0,
+      "cacheblend_batch_size": 8,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.012000000000000004,
+            "first_token_s": 0.02500000000000001,
+            "end_s": 0.02600000000000001
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.02600000000000001,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-14",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "gpu-decode-t0-s0-w0",
+        "name": "decode_gpu_step_batch",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.012000000000000004,
+        "energy_nj": 0.012,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-13"
+        ],
+        "query_positions": [
+          4
+        ],
+        "dram_addresses": [],
+        "batch_members": [
+          "r"
+        ],
+        "masked_rows": 0,
+        "start_s": 0.013000000000000005,
+        "end_s": 0.02500000000000001
+      },
+      "final_non_decode_events": [],
+      "decode_events": [
+        {
+          "name": "decode_kv_remote_to_gpu",
+          "start_s": 0.012000000000000004,
+          "end_s": 0.013000000000000005,
+          "query_positions": [],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_step_batch",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.02500000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_kv_gpu_to_remote",
+          "start_s": 0.02500000000000001,
+          "end_s": 0.02600000000000001,
+          "query_positions": [],
+          "batch_members": []
+        }
+      ]
+    },
+    {
+      "rung": "A3b",
+      "history_len": 0,
+      "cacheblend_batch_size": 8,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.012000000000000004,
+            "first_token_s": 0.026000000000000016,
+            "end_s": 0.026000000000000016
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.026000000000000016,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-36",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "batch:t0:o0:l0:g0",
+        "name": "decode_batch_gpu_norm2",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.001,
+        "energy_nj": 0.001,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-35"
+        ],
+        "query_positions": [
+          4
+        ],
+        "dram_addresses": [],
+        "batch_members": [
+          "r"
+        ],
+        "masked_rows": 0,
+        "start_s": 0.025000000000000015,
+        "end_s": 0.026000000000000016
+      },
+      "final_non_decode_events": [],
+      "decode_events": [
+        {
+          "name": "decode_batch_qkv",
+          "start_s": 0.012000000000000004,
+          "end_s": 0.013000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_qkv",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.013000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_q_gpu_to_pim",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.014000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_batch_gpu_local_score",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.014000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_local_softmax",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_local_context",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_gpu_partial_lse_to_pim",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_batch_tlb_lookup_and_bank_plan",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.014000000000000005,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_die_lse_merge",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_ctx_pim_to_gpu",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_batch_gpu_proj",
+          "start_s": 0.01800000000000001,
+          "end_s": 0.01900000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_comm_g2g",
+          "start_s": 0.01900000000000001,
+          "end_s": 0.02000000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_norm1",
+          "start_s": 0.02000000000000001,
+          "end_s": 0.02100000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_ff1",
+          "start_s": 0.02100000000000001,
+          "end_s": 0.022000000000000013,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_gelu",
+          "start_s": 0.022000000000000013,
+          "end_s": 0.023000000000000013,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_ff2",
+          "start_s": 0.023000000000000013,
+          "end_s": 0.024000000000000014,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_comm_g2g",
+          "start_s": 0.024000000000000014,
+          "end_s": 0.025000000000000015,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_norm2",
+          "start_s": 0.025000000000000015,
+          "end_s": 0.026000000000000016,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_dram_store_master",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        }
+      ]
+    },
+    {
+      "rung": "A2",
+      "history_len": 3,
+      "cacheblend_batch_size": 8,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.012000000000000004,
+            "first_token_s": 0.0,
+            "end_s": 0.02600000000000001
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.02600000000000001,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-15",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "gpu-decode-t0-s0-w0",
+        "name": "decode_gpu_step_batch",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.012000000000000004,
+        "energy_nj": 0.012,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-14"
+        ],
+        "query_positions": [
+          7
+        ],
+        "dram_addresses": [],
+        "batch_members": [
+          "r"
+        ],
+        "masked_rows": 0,
+        "start_s": 0.013000000000000005,
+        "end_s": 0.02500000000000001
+      },
+      "final_non_decode_events": [],
+      "decode_events": [
+        {
+          "name": "decode_kv_remote_to_gpu",
+          "start_s": 0.012000000000000004,
+          "end_s": 0.013000000000000005,
+          "query_positions": [],
+          "batch_members": []
+        },
+        {
+          "name": "decode_gpu_step_batch",
+          "start_s": 0.013000000000000005,
+          "end_s": 0.02500000000000001,
+          "query_positions": [
+            7
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_kv_gpu_to_remote",
+          "start_s": 0.02500000000000001,
+          "end_s": 0.02600000000000001,
+          "query_positions": [],
+          "batch_members": []
+        }
+      ]
+    },
+    {
+      "rung": "A3b",
+      "history_len": 3,
+      "cacheblend_batch_size": 8,
+      "summary": {
+        "requests": {
+          "r": {
+            "tier": 0,
+            "prefill_end_s": 0.014000000000000005,
+            "first_token_s": 0.028000000000000018,
+            "end_s": 0.028000000000000018
+          }
+        },
+        "tiers": {
+          "0": {
+            "start_s": 0.0,
+            "end_s": 0.028000000000000018,
+            "requests": 1
+          }
+        }
+      },
+      "final_gpu_event": {
+        "id": "cb-42",
+        "transformer_layer": 0,
+        "tier": 0,
+        "request": "batch:t0:o0:l0:g0",
+        "name": "decode_batch_gpu_norm2",
+        "device": "GPU",
+        "rows": 1,
+        "time_s": 0.001,
+        "energy_nj": 0.001,
+        "link_bytes": 0,
+        "depends_on": [
+          "cb-41"
+        ],
+        "query_positions": [
+          4
+        ],
+        "dram_addresses": [],
+        "batch_members": [
+          "r"
+        ],
+        "masked_rows": 0,
+        "start_s": 0.027000000000000017,
+        "end_s": 0.028000000000000018
+      },
+      "final_non_decode_events": [],
+      "decode_events": [
+        {
+          "name": "decode_batch_qkv",
+          "start_s": 0.014000000000000005,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_qkv",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.015000000000000006,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_q_gpu_to_pim",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_kv_gpu_to_pim",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_batch_gpu_local_score",
+          "start_s": 0.015000000000000006,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_local_softmax",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_local_context",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_gpu_partial_lse_to_pim",
+          "start_s": 0.01800000000000001,
+          "end_s": 0.01900000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_batch_tlb_lookup_and_bank_plan",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.016000000000000007,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_pim_kv_scan_score_softmax_pv",
+          "start_s": 0.016000000000000007,
+          "end_s": 0.01800000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_die_lse_merge",
+          "start_s": 0.01900000000000001,
+          "end_s": 0.01900000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_ctx_pim_to_gpu",
+          "start_s": 0.01900000000000001,
+          "end_s": 0.02000000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        },
+        {
+          "name": "decode_batch_gpu_proj",
+          "start_s": 0.02000000000000001,
+          "end_s": 0.02100000000000001,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_comm_g2g",
+          "start_s": 0.02100000000000001,
+          "end_s": 0.022000000000000013,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_norm1",
+          "start_s": 0.022000000000000013,
+          "end_s": 0.023000000000000013,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_ff1",
+          "start_s": 0.023000000000000013,
+          "end_s": 0.024000000000000014,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_gelu",
+          "start_s": 0.024000000000000014,
+          "end_s": 0.025000000000000015,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_ff2",
+          "start_s": 0.025000000000000015,
+          "end_s": 0.026000000000000016,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_comm_g2g",
+          "start_s": 0.026000000000000016,
+          "end_s": 0.027000000000000017,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_batch_gpu_norm2",
+          "start_s": 0.027000000000000017,
+          "end_s": 0.028000000000000018,
+          "query_positions": [
+            4
+          ],
+          "batch_members": [
+            "r"
+          ]
+        },
+        {
+          "name": "decode_dram_store_master",
+          "start_s": 0.017000000000000008,
+          "end_s": 0.017000000000000008,
+          "query_positions": [
+            4
+          ],
+          "batch_members": []
+        }
+      ]
+    }
+  ],
+  "collector_fixture": {
+    "requests": {
+      "a": {
+        "tier": 0,
+        "prefill_end_s": 2.0,
+        "first_token_s": 3.0,
+        "end_s": 12.0
+      },
+      "b": {
+        "tier": 0,
+        "prefill_end_s": 6.0,
+        "first_token_s": 7.0,
+        "end_s": 9.0
+      },
+      "c": {
+        "tier": 1,
+        "prefill_end_s": 14.0,
+        "first_token_s": 15.0,
+        "end_s": 20.0
+      }
+    }
+  },
+  "collector_rows": [
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A1",
+      "tier": "0",
+      "ttft_s": "7.0",
+      "prefill_end_s": "6.0",
+      "decode_s": "5.0",
+      "tier_total_s": "12.0",
+      "cum_end_s": "12.0",
+      "batch_first_attention_s": "1.2",
+      "batch_last_attention_s": "8.3",
+      "decode_batches": "2"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A1",
+      "tier": "1",
+      "ttft_s": "15.0",
+      "prefill_end_s": "14.0",
+      "decode_s": "5.0",
+      "tier_total_s": "20.0",
+      "cum_end_s": "20.0",
+      "batch_first_attention_s": "13.2",
+      "batch_last_attention_s": "13.3",
+      "decode_batches": "1"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A2",
+      "tier": "0",
+      "ttft_s": "7.0",
+      "prefill_end_s": "6.0",
+      "decode_s": "5.0",
+      "tier_total_s": "12.0",
+      "cum_end_s": "12.0",
+      "batch_first_attention_s": "",
+      "batch_last_attention_s": "",
+      "decode_batches": "0"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A2",
+      "tier": "1",
+      "ttft_s": "15.0",
+      "prefill_end_s": "14.0",
+      "decode_s": "5.0",
+      "tier_total_s": "20.0",
+      "cum_end_s": "20.0",
+      "batch_first_attention_s": "",
+      "batch_last_attention_s": "",
+      "decode_batches": "0"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A3b",
+      "tier": "0",
+      "ttft_s": "7.0",
+      "prefill_end_s": "6.0",
+      "decode_s": "5.0",
+      "tier_total_s": "12.0",
+      "cum_end_s": "12.0",
+      "batch_first_attention_s": "1.2",
+      "batch_last_attention_s": "8.3",
+      "decode_batches": "2"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A3b",
+      "tier": "1",
+      "ttft_s": "15.0",
+      "prefill_end_s": "14.0",
+      "decode_s": "5.0",
+      "tier_total_s": "20.0",
+      "cum_end_s": "20.0",
+      "batch_first_attention_s": "13.2",
+      "batch_last_attention_s": "13.3",
+      "decode_batches": "1"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A4c",
+      "tier": "0",
+      "ttft_s": "7.0",
+      "prefill_end_s": "6.0",
+      "decode_s": "5.0",
+      "tier_total_s": "12.0",
+      "cum_end_s": "12.0",
+      "batch_first_attention_s": "1.2",
+      "batch_last_attention_s": "8.3",
+      "decode_batches": "2"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A4c",
+      "tier": "1",
+      "ttft_s": "15.0",
+      "prefill_end_s": "14.0",
+      "decode_s": "5.0",
+      "tier_total_s": "20.0",
+      "cum_end_s": "20.0",
+      "batch_first_attention_s": "13.2",
+      "batch_last_attention_s": "13.3",
+      "decode_batches": "1"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A4e",
+      "tier": "0",
+      "ttft_s": "7.0",
+      "prefill_end_s": "6.0",
+      "decode_s": "5.0",
+      "tier_total_s": "12.0",
+      "cum_end_s": "12.0",
+      "batch_first_attention_s": "1.2",
+      "batch_last_attention_s": "8.3",
+      "decode_batches": "2"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A4e",
+      "tier": "1",
+      "ttft_s": "15.0",
+      "prefill_end_s": "14.0",
+      "decode_s": "5.0",
+      "tier_total_s": "20.0",
+      "cum_end_s": "20.0",
+      "batch_first_attention_s": "13.2",
+      "batch_last_attention_s": "13.3",
+      "decode_batches": "1"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A5",
+      "tier": "0",
+      "ttft_s": "7.0",
+      "prefill_end_s": "6.0",
+      "decode_s": "5.0",
+      "tier_total_s": "12.0",
+      "cum_end_s": "12.0",
+      "batch_first_attention_s": "1.2",
+      "batch_last_attention_s": "8.3",
+      "decode_batches": "2"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A5",
+      "tier": "1",
+      "ttft_s": "15.0",
+      "prefill_end_s": "14.0",
+      "decode_s": "5.0",
+      "tier_total_s": "20.0",
+      "cum_end_s": "20.0",
+      "batch_first_attention_s": "13.2",
+      "batch_last_attention_s": "13.3",
+      "decode_batches": "1"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A6",
+      "tier": "0",
+      "ttft_s": "7.0",
+      "prefill_end_s": "6.0",
+      "decode_s": "5.0",
+      "tier_total_s": "12.0",
+      "cum_end_s": "12.0",
+      "batch_first_attention_s": "1.2",
+      "batch_last_attention_s": "8.3",
+      "decode_batches": "2"
+    },
+    {
+      "workload": "fixture_workload.json",
+      "ablation": "A6",
+      "tier": "1",
+      "ttft_s": "15.0",
+      "prefill_end_s": "14.0",
+      "decode_s": "5.0",
+      "tier_total_s": "20.0",
+      "cum_end_s": "20.0",
+      "batch_first_attention_s": "13.2",
+      "batch_last_attention_s": "13.3",
+      "decode_batches": "1"
+    }
+  ],
+  "batch_diagnostic_name_check": {
+    "reported_batch_first_attention_s": 1.2,
+    "actual_min_attention_start_s": 1.3,
+    "actual_min_q_arrival_s": 1.2
+  }
+}

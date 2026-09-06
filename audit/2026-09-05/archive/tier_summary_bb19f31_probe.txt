@@ -1,0 +1,105 @@
+import contextlib
+import csv
+import hashlib
+import io
+import json
+from pathlib import Path
+import subprocess
+import sys
+from types import SimpleNamespace
+
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT))
+from src.model import Transformer
+from src.type import DataType, DeviceType
+from src.workload import Request, Segment, Workload, build_reuse_plan
+from src.workload_runner import run_reuse_prefill
+
+DEST = Path('/tmp/tier_summary_bb19f31')
+DEST.mkdir(exist_ok=True)
+class Device:
+    num_hbm = 1
+    peak_memory_bandwidth = 1e12
+    softmax_peak_bandwidth = 1e12
+    energy_table = {'mem':1, 'sram':1}
+    def get_time_and_energy(self, layer):
+        return .001, [1, 0, 0, 0, 0, 0]
+    def get_time_and_energy_runs(self, layer):
+        return [(.002,[2,0,0,0,0,0]) for _ in layer.pim_kv_runs]
+
+def system():
+    return SimpleNamespace(hetero_name=DeviceType.PIM,
+        devices={'GPU':Device(), 'Acc':Device()},
+        model=Transformer({'name':'toy','ndec':1,'num_heads':4,'hdim':512,
+                           'ff_scale':4,'dtype':DataType.W16A16}, 1))
+
+real_summaries = []
+for rung, history, batch in [('A2',0,1), ('A3b',0,1), ('A2',3,1), ('A3b',3,1),
+                              ('A2',0,8), ('A3b',0,8), ('A2',3,8), ('A3b',3,8)]:
+    request = Request('r',0,None,1,(Segment('sys','s',4),),4,history_len=history)
+    workload = Workload('rag',(request,),{})
+    plan = build_reuse_plan(workload,'recompute',epic_prefix_recompute_tokens=1)
+    with contextlib.redirect_stdout(io.StringIO()):
+        report = run_reuse_prefill(system(),workload,plan,pipe=True,
+            decode_attn='gpu' if rung=='A2' else 'pim',pim_prefill_mode='gpu',
+            kv_mapping='none' if rung=='A2' else 'naive',channel_placement='slice',include_events=True,
+            cacheblend_batch_size=batch)
+    events = report['events']
+    row = dict(rung=rung,history_len=history,cacheblend_batch_size=batch,summary=report['summary'],
+               final_gpu_event=max((e for e in events if e['device']=='GPU'), key=lambda e:e['end_s']),
+               final_non_decode_events=[e for e in events if not e['name'].startswith('decode_') and
+                                         e['query_positions']==[request.total_length]],
+               decode_events=[dict(name=e['name'],start_s=e['start_s'],end_s=e['end_s'],
+                                   query_positions=e.get('query_positions'),
+                                   batch_members=e.get('batch_members'))
+                              for e in events if e['name'].startswith('decode_')])
+    real_summaries.append(row)
+    (DEST / f'real_{rung}_history{history}_batch{batch}.json').write_text(json.dumps(report,indent=2)+'\n')
+
+# Two tiers and two differently timed requests expose the aggregate definition.
+summary = {'requests':{
+    'a':{'tier':0,'prefill_end_s':2.,'first_token_s':3.,'end_s':12.},
+    'b':{'tier':0,'prefill_end_s':6.,'first_token_s':7.,'end_s':9.},
+    'c':{'tier':1,'prefill_end_s':14.,'first_token_s':15.,'end_s':20.}}}
+for rung in ('A1','A2','A3b','A4c','A4e','A5','A6'):
+    batches = ([] if rung=='A2' else [
+        {'tier':0,'q_arrival_s':1.2,'attention_start_s':1.3},
+        {'tier':0,'q_arrival_s':8.2,'attention_start_s':8.3},
+        {'tier':1,'q_arrival_s':13.2,'attention_start_s':13.3}])
+    report={'summary':summary,'batches':batches,'makespan_s':20.,'energy_nj':1.,
+            'energy_breakdown_nj':{'by_class':{}}}
+    (DEST/f'dag_{rung}.json').write_text(json.dumps(report)+'\n')
+wl = DEST/'fixture_workload.json'
+wl.write_text('{}\n')
+subprocess.run([sys.executable,str(ROOT/'experiments/collect_dag_ladder.py'),
+                str(DEST),str(wl),'TOY'],check=True,capture_output=True,text=True)
+with (DEST/'dag_ladder_tiers.csv').open() as handle:
+    tier_rows=list(csv.DictReader(handle))
+metrics=('ttft_s','prefill_end_s','decode_s','tier_total_s','cum_end_s')
+for tier in ('0','1'):
+    rows=[r for r in tier_rows if r['tier']==tier]
+    assert len(rows)==7
+    assert len({tuple(r[c] for c in metrics) for r in rows})==1
+first=tier_rows[0]
+assert float(first['ttft_s'])==7.
+assert float(first['decode_s'])==5.
+assert float(first['tier_total_s'])==12.
+assert real_summaries[0]['summary']['requests']['r']['prefill_end_s'] < real_summaries[0]['summary']['requests']['r']['first_token_s']
+assert real_summaries[2]['summary']['requests']['r']['first_token_s'] == 0.
+assert real_summaries[1]['summary']['requests']['r']['first_token_s'] < real_summaries[1]['final_gpu_event']['end_s']
+assert real_summaries[5]['summary']['requests']['r']['first_token_s'] == real_summaries[5]['final_gpu_event']['end_s']
+diagnostic_row=next(r for r in tier_rows if r['ablation']=='A3b' and r['tier']=='0')
+diagnostic_source=json.loads((DEST/'dag_A3b.json').read_text())
+diagnostic=dict(reported_batch_first_attention_s=float(diagnostic_row['batch_first_attention_s']),
+    actual_min_attention_start_s=min(b['attention_start_s'] for b in diagnostic_source['batches'] if b['tier']==0),
+    actual_min_q_arrival_s=min(b['q_arrival_s'] for b in diagnostic_source['batches'] if b['tier']==0))
+payload=dict(revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+    scope='Actual small DAGs with fixed device prices, plus a controlled seven-rung collector fixture. No Ramulator.',
+    source_sha256={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in (ROOT/'src/workload_runner.py',ROOT/'experiments/collect_dag_ladder.py')},
+    actual_small_dags=real_summaries,collector_fixture=summary,collector_rows=tier_rows,
+    batch_diagnostic_name_check=diagnostic)
+out=Path('/tmp/tier_summary_bb19f31_evidence.json')
+out.write_text(json.dumps(payload,indent=2)+'\n')
+print(json.dumps(dict(output=str(out),all_collector_metrics_equal_across_seven_rungs=True,
+    actual_summary_rows=[dict(rung=r['rung'],history_len=r['history_len'],cacheblend_batch_size=r['cacheblend_batch_size'],**r['summary']['requests']['r']) for r in real_summaries]),indent=2))

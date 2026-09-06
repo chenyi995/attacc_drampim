@@ -1,0 +1,20 @@
+from pathlib import Path
+import hashlib,json,subprocess
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822'); Z=R/'audit/2026-09-05/archive'
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+tracked=subprocess.check_output(['git','ls-files','-z'],cwd=R,text=True).split('\0')
+paper=R.parent/'KVPIM-1Fugue-ASPLOS2027'
+snapshot={'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip(),
+ 'status':subprocess.check_output(['git','status','--short'],cwd=R,text=True),
+ 'protected':{p:sha(R/p) for p in tracked if p and not p.startswith(('docs/','audit/')) and (R/p).is_file()},
+ 'existing_results':{str(p.relative_to(R)):sha(p) for p in (R/'experiments/paper_ladder').rglob('*') if p.is_file()},
+ 'paper':{str(p):sha(p) for p in paper.rglob('*.tex')},
+ 'prior_audit':{p:sha(R/p) for p in tracked if p.startswith('audit/') and (R/p).is_file()},
+ 'changed_since_last':subprocess.check_output(['git','diff','--name-only','fbe6756','HEAD'],cwd=R,text=True).splitlines()}
+Path('/tmp/bb19f31_audit_start.json').write_text(json.dumps(snapshot,indent=2)+'\n')
+source=Z/'independent_c8_fbe6756_probe.txt'
+script=source.read_text().replace('independent_c8','bb19f31_c8_replay').replace('fbe6756','bb19f31')
+Path('/tmp/bb19f31_c8_replay_probe.py').write_text(script)
+Path('/tmp/bb19f31_replay_provenance.json').write_text(json.dumps({'source':str(source),'source_sha256':sha(source),
+ 'changes':'Only output/input /tmp prefix independent_c8 -> bb19f31_c8_replay; revision string fbe6756 -> bb19f31. No behavioral changes.'},indent=2)+'\n')
+print(json.dumps({k:len(v) if isinstance(v,dict) else v for k,v in snapshot.items() if k!='changed_since_last'},indent=2))

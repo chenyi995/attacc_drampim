@@ -1,0 +1,1357 @@
+{
+  "revision": "bb19f31",
+  "scope": "Planner/TLB/constant-device DAG structure only; no measured latency/energy",
+  "cacheblend_rounding": [
+    {
+      "ratio": 0.1,
+      "selected": {
+        "0": {
+          "w0": {
+            "1": [
+              6
+            ]
+          },
+          "w1": {
+            "3": [
+              0
+            ],
+            "1": [
+              6
+            ]
+          }
+        }
+      },
+      "decisions": [
+        {
+          "request": "w0",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 0,
+          "length": 4,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": "w0"
+        },
+        {
+          "request": "w1",
+          "segment": 2,
+          "length": 2,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 3,
+          "length": 2,
+          "inherits_from": null
+        }
+      ],
+      "validate": "ok"
+    },
+    {
+      "ratio": 0.15,
+      "selected": {
+        "0": {
+          "w0": {
+            "1": [
+              6,
+              7
+            ]
+          },
+          "w1": {
+            "3": [
+              0
+            ],
+            "0": [
+              0
+            ],
+            "1": [
+              6,
+              7
+            ]
+          }
+        }
+      },
+      "decisions": [
+        {
+          "request": "w0",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 0,
+          "length": 4,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": "w0"
+        },
+        {
+          "request": "w1",
+          "segment": 2,
+          "length": 2,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 3,
+          "length": 2,
+          "inherits_from": null
+        }
+      ],
+      "validate": "WorkloadValidationError",
+      "message": "CacheBlend layer 0 request 'w1' has 4 recompute rows; expected 3"
+    },
+    {
+      "ratio": 0.2,
+      "selected": {
+        "0": {
+          "w0": {
+            "1": [
+              6,
+              7
+            ]
+          },
+          "w1": {
+            "3": [
+              0
+            ],
+            "0": [
+              0
+            ],
+            "1": [
+              6,
+              7
+            ]
+          }
+        }
+      },
+      "decisions": [
+        {
+          "request": "w0",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 0,
+          "length": 4,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": "w0"
+        },
+        {
+          "request": "w1",
+          "segment": 2,
+          "length": 2,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 3,
+          "length": 2,
+          "inherits_from": null
+        }
+      ],
+      "validate": "ok"
+    },
+    {
+      "ratio": 0.25,
+      "selected": {
+        "0": {
+          "w0": {
+            "1": [
+              6,
+              7
+            ]
+          },
+          "w1": {
+            "3": [
+              0
+            ],
+            "0": [
+              0
+            ],
+            "1": [
+              6,
+              7
+            ]
+          }
+        }
+      },
+      "decisions": [
+        {
+          "request": "w0",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 0,
+          "length": 4,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": "w0"
+        },
+        {
+          "request": "w1",
+          "segment": 2,
+          "length": 2,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 3,
+          "length": 2,
+          "inherits_from": null
+        }
+      ],
+      "validate": "ok"
+    },
+    {
+      "ratio": 0.3,
+      "selected": {
+        "0": {
+          "w0": {
+            "1": [
+              6,
+              7,
+              3
+            ]
+          },
+          "w1": {
+            "0": [
+              0,
+              2
+            ],
+            "2": [
+              0
+            ],
+            "1": [
+              6,
+              7,
+              3
+            ]
+          }
+        }
+      },
+      "decisions": [
+        {
+          "request": "w0",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 0,
+          "length": 4,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 1,
+          "length": 8,
+          "inherits_from": "w0"
+        },
+        {
+          "request": "w1",
+          "segment": 2,
+          "length": 2,
+          "inherits_from": null
+        },
+        {
+          "request": "w1",
+          "segment": 3,
+          "length": 2,
+          "inherits_from": null
+        }
+      ],
+      "validate": "WorkloadValidationError",
+      "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5",
+      "dag_by_rung": {
+        "A2": {
+          "status": "WorkloadValidationError",
+          "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5",
+          "scans": [],
+          "stores": [],
+          "events": []
+        },
+        "A3b": {
+          "status": "WorkloadValidationError",
+          "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5",
+          "scans": [],
+          "stores": [],
+          "events": []
+        },
+        "A4c": {
+          "status": "WorkloadValidationError",
+          "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5",
+          "scans": [],
+          "stores": [],
+          "events": []
+        },
+        "A4e": {
+          "status": "WorkloadValidationError",
+          "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5",
+          "scans": [],
+          "stores": [],
+          "events": []
+        },
+        "A5": {
+          "status": "WorkloadValidationError",
+          "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5",
+          "scans": [],
+          "stores": [],
+          "events": []
+        },
+        "A6": {
+          "status": "WorkloadValidationError",
+          "message": "CacheBlend layer 0 request 'w1' has 6 recompute rows; expected 5",
+          "scans": [],
+          "stores": [],
+          "events": []
+        }
+      }
+    }
+  ],
+  "same_parent_output_fingerprint": {
+    "decisions": [
+      {
+        "request": "w0",
+        "segment": 0,
+        "fingerprint": "sys",
+        "master_owner": "a",
+        "inherits_from": null,
+        "correction_rows": []
+      },
+      {
+        "request": "w0",
+        "segment": 1,
+        "fingerprint": "O",
+        "master_owner": "a",
+        "inherits_from": null,
+        "correction_rows": []
+      },
+      {
+        "request": "w1",
+        "segment": 0,
+        "fingerprint": "sys",
+        "master_owner": "a",
+        "inherits_from": "w0",
+        "correction_rows": []
+      },
+      {
+        "request": "w1",
+        "segment": 1,
+        "fingerprint": "O",
+        "master_owner": "a",
+        "inherits_from": "w0",
+        "correction_rows": []
+      }
+    ],
+    "bindings": {
+      "a": [
+        {
+          "position": 0,
+          "owner": "a",
+          "fingerprint": "sys",
+          "kind": "master",
+          "owner_row": 0
+        },
+        {
+          "position": 1,
+          "owner": "a",
+          "fingerprint": "sys",
+          "kind": "master",
+          "owner_row": 1
+        }
+      ],
+      "w0": [
+        {
+          "position": 0,
+          "owner": "a",
+          "fingerprint": "sys",
+          "kind": "master",
+          "owner_row": 0
+        },
+        {
+          "position": 1,
+          "owner": "a",
+          "fingerprint": "sys",
+          "kind": "master",
+          "owner_row": 1
+        },
+        {
+          "position": 2,
+          "owner": "a",
+          "fingerprint": "O",
+          "kind": "master",
+          "owner_row": 0
+        },
+        {
+          "position": 3,
+          "owner": "a",
+          "fingerprint": "O",
+          "kind": "master",
+          "owner_row": 1
+        },
+        {
+          "position": 4,
+          "owner": "w0",
+          "fingerprint": "own0",
+          "kind": "master",
+          "owner_row": 0
+        },
+        {
+          "position": 5,
+          "owner": "w0",
+          "fingerprint": "own0",
+          "kind": "master",
+          "owner_row": 1
+        }
+      ],
+      "w1": [
+        {
+          "position": 0,
+          "owner": "a",
+          "fingerprint": "sys",
+          "kind": "master",
+          "owner_row": 0
+        },
+        {
+          "position": 1,
+          "owner": "a",
+          "fingerprint": "sys",
+          "kind": "master",
+          "owner_row": 1
+        },
+        {
+          "position": 2,
+          "owner": "a",
+          "fingerprint": "O",
+          "kind": "master",
+          "owner_row": 0
+        },
+        {
+          "position": 3,
+          "owner": "a",
+          "fingerprint": "O",
+          "kind": "master",
+          "owner_row": 1
+        },
+        {
+          "position": 4,
+          "owner": "w1",
+          "fingerprint": "own1",
+          "kind": "master",
+          "owner_row": 0
+        },
+        {
+          "position": 5,
+          "owner": "w1",
+          "fingerprint": "own1",
+          "kind": "master",
+          "owner_row": 1
+        }
+      ]
+    },
+    "dag_A5": {
+      "status": "ok",
+      "corrected_rows_sha": "7ccd810fb4c58c5d",
+      "scans": [
+        {
+          "name": "pim_kv_scan_score_softmax_pv",
+          "positions": [
+            4,
+            5
+          ],
+          "rows": [
+            {
+              "owner": "a",
+              "fingerprint": "sys",
+              "kind": "master",
+              "owner_row": 0,
+              "K": 0
+            },
+            {
+              "owner": "a",
+              "fingerprint": "sys",
+              "kind": "master",
+              "owner_row": 1,
+              "K": 256
+            },
+            {
+              "owner": "a",
+              "fingerprint": "O",
+              "kind": "master",
+              "owner_row": 0,
+              "K": 512
+            },
+            {
+              "owner": "a",
+              "fingerprint": "O",
+              "kind": "master",
+              "owner_row": 1,
+              "K": 768
+            },
+            {
+              "owner": "w1",
+              "fingerprint": "own1",
+              "kind": "master",
+              "owner_row": 0,
+              "K": 1536
+            },
+            {
+              "owner": "w1",
+              "fingerprint": "own1",
+              "kind": "master",
+              "owner_row": 1,
+              "K": 1792
+            }
+          ],
+          "masked": []
+        }
+      ],
+      "stores": [
+        {
+          "name": "dram_store_diff_and_live",
+          "rows": [
+            {
+              "owner": "w1",
+              "fingerprint": "own1",
+              "kind": "master",
+              "owner_row": 0,
+              "K": 1536
+            },
+            {
+              "owner": "w1",
+              "fingerprint": "own1",
+              "kind": "master",
+              "owner_row": 1,
+              "K": 1792
+            }
+          ]
+        }
+      ],
+      "events": [
+        {
+          "name": "qkv",
+          "rows": 2,
+          "positions": [
+            4,
+            5
+          ],
+          "last_gpu_op": {
+            "name": "qkv",
+            "m": 2,
+            "n": 1536,
+            "k": 512,
+            "numOp": 1
+          }
+        }
+      ]
+    }
+  },
+  "cacheblend_cross_layer": {
+    "partial_rows": {
+      "1": {
+        "w0": {
+          "1": [
+            6,
+            7
+          ]
+        },
+        "w1": {
+          "3": [
+            0
+          ],
+          "0": [
+            0
+          ],
+          "1": [
+            6,
+            7
+          ]
+        },
+        "w2": {
+          "5": [
+            0
+          ],
+          "0": [
+            0
+          ],
+          "1": [
+            6,
+            7
+          ],
+          "3": [
+            0
+          ]
+        }
+      },
+      "2": {
+        "w0": {
+          "1": [
+            7,
+            3
+          ]
+        },
+        "w1": {
+          "2": [
+            0
+          ],
+          "0": [
+            3
+          ],
+          "1": [
+            7,
+            3
+          ]
+        },
+        "w2": {
+          "5": [
+            0
+          ],
+          "0": [
+            3
+          ],
+          "1": [
+            7,
+            3
+          ],
+          "2": [
+            0
+          ]
+        }
+      }
+    },
+    "bindings": {
+      "0": {
+        "a": [
+          {
+            "position": 2,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 3,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 7,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 7
+          }
+        ],
+        "w0": [
+          {
+            "position": 4,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 8,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 11,
+            "owner": "w0",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 7
+          }
+        ],
+        "w1": [
+          {
+            "position": 4,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 8,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 11,
+            "owner": "w1",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 7
+          }
+        ],
+        "w2": [
+          {
+            "position": 4,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 8,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 11,
+            "owner": "w2",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 7
+          }
+        ]
+      },
+      "1": {
+        "a": [
+          {
+            "position": 2,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 3,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 7,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 7
+          }
+        ],
+        "w0": [
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 10
+          },
+          {
+            "position": 11,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 11
+          }
+        ],
+        "w1": [
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 10
+          },
+          {
+            "position": 11,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 11
+          }
+        ],
+        "w2": [
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 10
+          },
+          {
+            "position": 11,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 11
+          }
+        ]
+      },
+      "2": {
+        "a": [
+          {
+            "position": 2,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 3,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 3
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 7,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 7
+          }
+        ],
+        "w0": [
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 7
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 11,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 11
+          }
+        ],
+        "w1": [
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 7
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 11,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 11
+          }
+        ],
+        "w2": [
+          {
+            "position": 4,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 0
+          },
+          {
+            "position": 5,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 1
+          },
+          {
+            "position": 6,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 2
+          },
+          {
+            "position": 7,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 7
+          },
+          {
+            "position": 8,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 4
+          },
+          {
+            "position": 9,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 5
+          },
+          {
+            "position": 10,
+            "owner": "a",
+            "kind": "master",
+            "fingerprint": "D",
+            "owner_row": 6
+          },
+          {
+            "position": 11,
+            "owner": "w0",
+            "kind": "diff",
+            "fingerprint": "D",
+            "owner_row": 11
+          }
+        ]
+      }
+    },
+    "validate": "ok"
+  }
+}

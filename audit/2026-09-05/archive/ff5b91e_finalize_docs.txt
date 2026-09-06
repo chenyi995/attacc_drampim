@@ -1,0 +1,25 @@
+from pathlib import Path
+import shutil
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');A=R/'audit/2026-09-05';Z=A/'archive'
+for name in ('link_latency_ff5b91e_probe.py','link_latency_ff5b91e_evidence.json'):
+    target=name[:-3]+'.txt' if name.endswith('.py') else name
+    shutil.copyfile(Path('/tmp')/name,Z/target)
+p=A/'CURRENT_ISSUES.md';s=p.read_text()
+s=s.replace('## E2：会话中新提交的链路固定延迟规则已补查','## E2：用户已确定链路固定延迟规则，共同实现已补查')
+marker='收尾时另一会话提交了 `9c40891` 和记录它的 `ff5b91e`。'
+s=s.replace(marker,'**chenyi9 在本轮再次明确裁决：链路计价由用户确定，decode 小流量传输的固定开销可以忽略。该规则不再作为待审问题，只核对实现是否共同生效。**\n\n'+marker)
+s=s.replace('没有改能量单价、Ramulator 周期或某个消融档的私有系数。','没有改能量公式、Ramulator 模型或某个消融档的私有系数。链路到达时间变化可能间接改变批次组合，不能据此保证总能量或实际送入 Ramulator 的任务组合不变。')
+s=s.replace('新增定向测试通过：同字节数的 prefill/decode 价格差正好是一次固定延迟，bitmap 与 decode 一致。','新增定向测试通过；另用 4 KiB 和 16 MiB 的共同 helper 控制核对，同字节数的 prefill/decode 价格差正好是一次固定延迟，bitmap 与 decode 一致。后一个大包控制仅验证代码按阶段分类，不将其称作小流量。')
+p.write_text(s)
+p=R/'docs/sessions/2026-09-05-bb19f31-fix-verification.md';s=p.read_text()
+s=s.replace('能量、带宽项、PIM trace/周期未因此改变。','能量公式、带宽项、PIM trace 生成器和周期计价公式未修改；链路到达时间变化可能间接改变批次和总能量，不保证全程序输入组合/能耗完全不变。')
+s+='''
+## 用户本轮再次确认链路口径
+
+chenyi9 明确：“链路计价是我定的，decode 小流量传输固定开销可以忽略不计。”本次将它作为已确定规则记录，不再列为待用户审阅或待修问题。审计仅核对共同 helper 是否给各档一致打标，以及是否仍保留传输带宽成本；实现按 decode 名字分类的事实如实说明。
+
+收尾另用同一真实解析设备模型检查 4 KiB 和 16 MiB 的阶段标签，20 个控制通过，证明现代码不按字节阈值切换；大包控制不解释为用户声称它是小流量。新增脚本和 JSON 以 `link_latency_ff5b91e` 保存。未运行性能模拟。
+'''
+p.write_text(s)
+shutil.copyfile('/tmp/ff5b91e_finalize_docs.py',Z/'ff5b91e_finalize_docs.txt')
+print('Recorded the direct user ruling; energy/model scope wording tightened.')

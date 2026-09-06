@@ -1,0 +1,137 @@
+"""Independent C8 audit: real public plans/ledger/DAG with constant-price devices."""
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+from copy import deepcopy
+import importlib.util
+import json
+import sys
+sys.dont_write_bytecode = True
+ROOT = Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+sys.path.insert(0, str(ROOT))
+from src import workload_runner as wr
+from src.workload import load_workload, build_reuse_plan
+from src.model import Transformer
+from src.type import DataType, DeviceType
+from src.ablation import resolve_config
+
+def s(role, fp, n): return {'role': role, 'sha': fp, 'len': n}
+owner = {'id':'a','tier':0,'parent':None,'lout':2,'segs':[s('sys','sa',2),s('doc','D',8)]}
+context = [s('sys','sw',4),s('doc','D',8),s('user','own0',2)]
+workers = [{'id':'w0','tier':0,'parent':None,'lout':2,'segs':deepcopy(context)}]
+for i in (1,2):
+    context += [s('parent_out',f'w{i-1}-out',2),s('user',f'own{i}',2)]
+    workers.append({'id':f'w{i}','tier':i,'parent':f'w{i-1}','lout':2,'segs':deepcopy(context)})
+    context[-2]['role'] = 'user'
+
+def load_case(name, agents):
+    path = Path('/tmp') / f'bb19f31_c8_replay_{name}.json'
+    path.write_text(json.dumps({'agents':agents}, indent=2)+'\n')
+    return load_workload(path)
+
+def decision_records(plan):
+    return [{'request':d.request_id,'segment':d.segment_index,'fingerprint':d.fingerprint,
+             'master_owner':d.owner_request_id,'inherits_from':d.inherits_from,
+             'correction_rows':d.epic_prefix_rows} for d in plan.reusable if d.fingerprint == 'D']
+
+def binding_check(workload, policy='recompute', **extra):
+    plan = build_reuse_plan(workload, policy, epic_prefix_recompute_tokens=2, **extra)
+    tlb = wr.NaiveKVLayout(256)
+    wr._prepare_cacheblend_tlb(workload, plan, 1, tlb, wr._parent_output_fingerprints(workload))
+    report = {'decisions':decision_records(plan), 'bindings':{},
+              'reserved_diff_keys':[k for k in tlb._reserved_rows if k[3]=='diff']}
+    for request in workload.requests:
+        try:
+            bindings = wr._cacheblend_tlb_rows(workload, plan, 0, request, tlb)
+            report['bindings'][request.request_id] = {'status':'ok','diff':[
+                {'position':p,'owner':l.owner,'fingerprint':l.fingerprint,'owner_row':l.owner_row}
+                for p,_,_,l in bindings if l.kind=='diff']}
+        except Exception as e:
+            report['bindings'][request.request_id] = {'status':type(e).__name__,'message':str(e)}
+    return report
+
+class Device:
+    num_hbm=1
+    num_attacc=1
+    num_xpu=1
+    peak_memory_bandwidth=10**12
+    softmax_peak_bandwidth=10**12
+    energy_table={'mem':1.,'sram':1.,'alu':1.}
+    ramulator=SimpleNamespace(workers=1)
+    gpu_model='flash'
+    def __init__(self): self.last=None
+    def get_time_and_energy(self,op):
+        self.last={'name':op.name,'m':op.m,'n':op.n,'k':op.k,'numOp':op.numOp}
+        return 1e-6,(1.,)
+    def get_time_and_energy_runs(self,op):
+        return [(1e-6,(1.,)) for _ in op.pim_kv_runs]
+
+def dag_check(workload, plan, rung):
+    gpu=Device()
+    system=SimpleNamespace(hetero_name=DeviceType.PIM,devices={'GPU':gpu,'Acc':Device()},
+        model=Transformer(dict(name='c8-toy',ndec=1,num_heads=4,hdim=512,ff_scale=4,
+                              dtype=DataType.W16A16,gqa_size=1),1))
+    cfg=resolve_config(rung,None,None,None,policy=plan.config.policy)
+    scans=[]; stores=[]; event_records=[]
+    orig_scan=wr._append_placement_pim_scan
+    orig_store=wr._append_channel_kv_stores
+    orig_event=wr._cacheblend_event
+    def ids(locs):
+        return [{'owner':l.owner,'fingerprint':l.fingerprint,'kind':l.kind,
+                 'owner_row':l.owner_row,'K':l.key_address} for l in locs]
+    def scan(*args,**kw):
+        if kw['request']=='w1': scans.append({'name':kw['name'],'positions':kw['positions'],
+            'rows':ids(kw['reads']), 'masked':list(kw.get('masked',()))})
+        return orig_scan(*args,**kw)
+    def store(*args,**kw):
+        if kw['request']=='w1': stores.append({'name':kw['name'],'rows':ids(kw['locations'])})
+        return orig_store(*args,**kw)
+    def event(*args,**kw):
+        if kw['request']=='w1' and kw['name'] in ('qkv','gpu_prefill_score','kv_pim_to_gpu','kv_remote_to_gpu'):
+            event_records.append({'name':kw['name'],'rows':kw['rows'],
+                                  'positions':kw.get('positions',()),'last_gpu_op':deepcopy(gpu.last)})
+        return orig_event(*args,**kw)
+    with patch.object(wr,'_new_event_core',return_value=None), \
+         patch.object(wr,'_append_placement_pim_scan',side_effect=scan), \
+         patch.object(wr,'_append_channel_kv_stores',side_effect=store), \
+         patch.object(wr,'_cacheblend_event',side_effect=event):
+        try:
+            result=wr.run_reuse_prefill(system,workload,plan,warm=False,pipe=True,
+                cacheblend_batch_size=2,include_events=True,pim_prefill_mode=cfg.prefill_attn,
+                decode_attn=cfg.decode_attn,pim_batch_command=cfg.pim_batch_command,
+                pim_pe_freq_ghz=cfg.pim_pe_freq_ghz,kv_mapping=cfg.kv_mapping,
+                channel_placement=cfg.channel_placement)
+            status={'status':'ok','corrected_rows_sha':result.get('corrected_rows_sha')}
+        except Exception as e: status={'status':type(e).__name__,'message':str(e)}
+    return dict(status,scans=scans,stores=stores,events=event_records)
+
+out={'revision':'bb19f31','scope':'No Ramulator performance runs; device prices are arbitrary constants'}
+two=load_case('two_turns',[owner]+workers[:2])
+three=load_case('three_turns',[owner]+workers)
+out['two_turn_bindings']=binding_check(two)
+out['three_turn_bindings']=binding_check(three)
+out['cacheblend_two_turn_bindings']=binding_check(two,'cacheblend',cacheblend_recompute_ratio=.25,
+    cacheblend_partial_recompute_layers=(0,))
+changed=deepcopy([owner]+workers[:2])
+changed[-1]['segs'][0]['sha']='different-prefix-same-length'
+out['changed_prefix_same_offset']=binding_check(load_case('changed_prefix',changed))
+plan=build_reuse_plan(two,'recompute',epic_prefix_recompute_tokens=2)
+out['two_turn_DAG']={r:dag_check(two,plan,r) for r in ('A2','A3b','A4c','A4e','A5','A6')}
+spec=importlib.util.spec_from_file_location('c8_gen',ROOT/'workload/probe/gen_sweep.py')
+gen=importlib.util.module_from_spec(spec); spec.loader.exec_module(gen)
+params=dict(gen.BASELINE,agents=2,rounds=3,chunks=1,own=2,lout=2,corpus=2)
+generated=gen.build(params,'turns')
+path=Path('/tmp/bb19f31_c8_replay_generated_turns.json');path.write_text(json.dumps(generated)+'\n')
+gen_wl=load_workload(path)
+out['generated_turns']={'parameters':params,'history_sum':sum(r.history_len for r in gen_wl.requests),
+                        'plan_bindings':binding_check(gen_wl)}
+target=Path('/tmp/bb19f31_c8_replay_bb19f31_evidence.json')
+target.write_text(json.dumps(out,indent=2)+'\n')
+brief={k:v for k,v in out.items() if k!='two_turn_DAG'}
+brief['two_turn_DAG']={r:{'status':v['status'],'message':v.get('message'),'events':v['events'],
+    'prefill_scans':[{'name':s['name'],'positions':s['positions'],'diff_rows':[l for l in s['rows'] if l['kind']=='diff'],
+                     'mask_count':len(s['masked'])} for s in v['scans'] if not s['name'].startswith('decode')],
+    'gpu_resident_diff_rows':[l for st in v['stores'] if st['name']=='dram_read_resident'
+                              for l in st['rows'] if l['kind']=='diff']}
+    for r,v in out['two_turn_DAG'].items()}
+print(json.dumps(brief,indent=2))

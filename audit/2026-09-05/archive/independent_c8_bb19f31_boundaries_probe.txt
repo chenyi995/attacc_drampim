@@ -1,0 +1,43 @@
+"""Read-only C8 boundary probes; arbitrary device costs, no Ramulator."""
+from pathlib import Path
+import json,sys
+sys.dont_write_bytecode=True
+base=Path('/tmp/independent_c8_bb19f31_probe.py').read_text().split("out={'revision'")[0]
+exec(compile(base,'/tmp/independent_c8_bb19f31_probe.py','exec'))
+from src.workload import validate_reuse_plan
+out={'revision':'bb19f31','scope':'Planner/TLB/constant-device DAG structure only; no measured latency/energy'}
+two=load_case('cacheblend_rounding',[owner]+workers[:2])
+out['cacheblend_rounding']=[]
+for ratio in (.1,.15,.2,.25,.3):
+    plan=build_reuse_plan(two,'cacheblend',cacheblend_recompute_ratio=ratio,cacheblend_partial_recompute_layers=(0,))
+    record={'ratio':ratio,'selected':plan.cacheblend_partial_rows,'decisions':[dict(request=d.request_id,segment=d.segment_index,length=d.length,inherits_from=d.inherits_from) for d in plan.reusable]}
+    try: validate_reuse_plan(two,plan,model_layers=1);record['validate']='ok'
+    except Exception as e: record['validate']=type(e).__name__;record['message']=str(e)
+    if ratio==.3: record['dag_by_rung']={r:dag_check(two,plan,r) for r in ('A2','A3b','A4c','A4e','A5','A6')}
+    out['cacheblend_rounding'].append(record)
+# parent_out has same content fingerprint in two generations, with short prompts.
+# Root a writes O; w0 consumes a's O then itself generates O; w1 names w0 as parent.
+sameout=[dict(id='a',tier=0,parent=None,lout=2,segs=[s('sys','sys',2)]),
+         dict(id='w0',tier=1,parent='a',lout=2,segs=[s('sys','sys',2),s('parent_out','O',2),s('user','own0',2)]),
+         dict(id='w1',tier=2,parent='w0',lout=2,segs=[s('sys','sys',2),s('parent_out','O',2),s('user','own1',2)])]
+wl=load_case('same_parent_output_fp',sameout)
+plan=build_reuse_plan(wl,'recompute',epic_prefix_recompute_tokens=1)
+validate_reuse_plan(wl,plan)
+tlb=wr.NaiveKVLayout(256)
+wr._prepare_cacheblend_tlb(wl,plan,1,tlb,wr._parent_output_fingerprints(wl))
+out['same_parent_output_fingerprint']={'decisions':[dict(request=d.request_id,segment=d.segment_index,fingerprint=d.fingerprint,master_owner=d.owner_request_id,inherits_from=d.inherits_from,correction_rows=d.epic_prefix_rows) for d in plan.reusable], 'bindings':{},'dag_A5':dag_check(wl,plan,'A5')}
+for req in wl.requests:
+    out['same_parent_output_fingerprint']['bindings'][req.request_id]=[dict(position=p,owner=loc.owner,fingerprint=loc.fingerprint,kind=loc.kind,owner_row=loc.owner_row) for p,_,_,loc in wr._cacheblend_tlb_rows(wl,plan,0,req,tlb)]
+# Two CacheBlend partial layers and one full layer: per-layer inherited rows should keep writer identity.
+wl=load_case('cacheblend_three_layers',[owner]+workers)
+plan=build_reuse_plan(wl,'cacheblend',cacheblend_recompute_ratio=.25,cacheblend_full_recompute_layers=(0,),cacheblend_partial_recompute_layers=(1,2))
+tlb=wr.NaiveKVLayout(256)
+wr._prepare_cacheblend_tlb(wl,plan,3,tlb,wr._parent_output_fingerprints(wl))
+record={'partial_rows':plan.cacheblend_partial_rows,'bindings':{}}
+try:validate_reuse_plan(wl,plan,model_layers=3);record['validate']='ok'
+except Exception as e:record['validate']=type(e).__name__;record['message']=str(e)
+for layer in range(3):
+    record['bindings'][layer]={req.request_id:[dict(position=p,owner=loc.owner,kind=loc.kind,fingerprint=loc.fingerprint,owner_row=loc.owner_row) for p,_,_,loc in wr._cacheblend_tlb_rows(wl,plan,layer,req,tlb,force_fresh=(layer==0)) if loc.fingerprint=='D'] for req in wl.requests}
+out['cacheblend_cross_layer']=record
+Path('/tmp/independent_c8_bb19f31_boundaries_evidence.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({'rounding':[dict(ratio=x['ratio'],validate=x['validate'],message=x.get('message'),dag_status={r:v['status'] for r,v in x.get('dag_by_rung',{}).items()}) for x in out['cacheblend_rounding']], 'same_parent_output_fingerprint':out['same_parent_output_fingerprint']['decisions'], 'cross_layer_validate':record['validate'],'cross_layer_message':record.get('message')},indent=2))

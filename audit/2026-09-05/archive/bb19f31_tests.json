@@ -1,0 +1,19 @@
+{
+  "revision": "bb19f31",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "unittest",
+    "tests.test_workload.AgenticHistoryTests.test_every_later_turn_inherits_from_the_turn_that_wrote_the_diff",
+    "tests.test_workload.AgenticHistoryTests.test_a_turn_reads_the_inherited_corrections_it_does_not_recompute",
+    "tests.test_workload.AgenticHistoryTests.test_gpu_only_baseline_does_not_recompute_inherited_corrections",
+    "tests.test_workload.AgenticHistoryTests.test_cacheblend_inherits_the_sampled_rows_of_the_writer",
+    "tests.test_workload.AgenticHistoryTests.test_a_changed_prefix_blocks_inheritance",
+    "tests.test_workload.AgenticHistoryTests.test_every_layout_executes_the_same_correction_plan",
+    "tests.test_collect_ladder.TierRowsTest"
+  ],
+  "returncode": 0,
+  "wall_seconds": 24.72714666975662,
+  "stdout": "",
+  "stderr": "....../data2/chenyi9/KV-PIM/attacc_drampim_822/tests/test_collect_ladder.py:20: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmphgebsl4k/dag_A2.json' mode='w' encoding='UTF-8'>\n  json.dump({\"makespan_s\": 5.0, \"energy_nj\": 1.0, \"summary\": summary,\nResourceWarning: Enable tracemalloc to get the object allocation traceback\n/data2/chenyi9/KV-PIM/attacc_drampim_822/tests/test_collect_ladder.py:23: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmphgebsl4k/dag_A3b.json' mode='w' encoding='UTF-8'>\n  json.dump({\"makespan_s\": 5.0, \"energy_nj\": 1.0, \"summary\": summary,\nResourceWarning: Enable tracemalloc to get the object allocation traceback\n/data2/chenyi9/KV-PIM/attacc_drampim_822/tests/test_collect_ladder.py:29: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmphgebsl4k/wl.json' mode='w' encoding='UTF-8'>\n  open(wl, \"w\").write(\"{}\")\nResourceWarning: Enable tracemalloc to get the object allocation traceback\n/data2/chenyi9/KV-PIM/attacc_drampim_822/tests/test_collect_ladder.py:32: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmphgebsl4k/dag_ladder_tiers.csv' mode='r' encoding='UTF-8'>\n  rows = {r[\"ablation\"]: r for r in csv.DictReader(open(os.path.join(out, \"dag_ladder_tiers.csv\")))}\nResourceWarning: Enable tracemalloc to get the object allocation traceback\n.\n----------------------------------------------------------------------\nRan 7 tests in 24.356s\n\nOK\n"
+}

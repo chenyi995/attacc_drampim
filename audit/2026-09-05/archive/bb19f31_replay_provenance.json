@@ -1,0 +1,5 @@
+{
+  "source": "/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/independent_c8_fbe6756_probe.txt",
+  "source_sha256": "d4efa072d20f14dcc977865e9fad4b9880db3c2b485496ed871baeaf931be3db",
+  "changes": "Only output/input /tmp prefix independent_c8 -> bb19f31_c8_replay; revision string fbe6756 -> bb19f31. No behavioral changes."
+}

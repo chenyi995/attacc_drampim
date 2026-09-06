@@ -4,6 +4,7 @@
 
 | 用途 | 文档 / 证据 |
 |---|---|
+| bb19f31 最新复查 | [主审](bb19f31_main_verification.json)、[C8](independent_c8_bb19f31_evidence.json)、[新边界](independent_c8_bb19f31_boundaries_evidence.json)、[存储/scan](ledger_scan_bb19f31_evidence.json)、[能量](head_energy_bb19f31_evidence.json)、[summary](tier_summary_bb19f31_evidence.json)、[manifest](bb19f31_audit_manifest.json)、[上轮当前页](CURRENT_ISSUES_before_bb19f31.txt) |
 | fbe6756 最新复查 | [主审 JSON](fbe6756_main_audit_evidence.json)、[C8 独立 JSON](independent_c8_fbe6756_evidence.json)、[地址](c3_fbe6756_evidence.json)、[能量](head_energy_a4669f4_evidence.json)、[manifest](fbe6756_audit_manifest.json)、[上次当前页快照](CURRENT_ISSUES_before_fbe6756.txt) |
 | C4 行列计时与默认路径 | [JSON](row_column_reachability_evidence.json)、[独立 probe](row_column_reachability_probe.txt)、[session](../../../docs/sessions/2026-09-05-row-column-audit-clarification.md) |
 | round 边界裁决与多轮覆盖 | [两轮证据及 B0 摘要](independent_round_boundary_evidence.json)、[独立 probe](independent_round_boundary_probe.txt) |

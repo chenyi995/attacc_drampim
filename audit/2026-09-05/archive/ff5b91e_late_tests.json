@@ -1,0 +1,12 @@
+{
+  "head": "ff5b91eb12648d532eed3fdc21a503a331ade025",
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "unittest",
+    "tests.test_workload.AgenticHistoryTests.test_link_latency_is_charged_on_prefill_transfers_only"
+  ],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+}

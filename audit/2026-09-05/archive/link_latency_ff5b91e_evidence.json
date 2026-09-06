@@ -1,0 +1,294 @@
+{
+  "revision": "ff5b91e",
+  "scope": "Shared helper and analytic device prices only; no GPU execution, Ramulator, or performance experiment.",
+  "source_sha256": {
+    "src/devices.py": "5307cbef94c87a66ddf303cac9040e81ed859e9f5ed9c0a93d21504681c0c271",
+    "src/workload_runner.py": "71048b4a96741f28ab94183901902d1819f57b5593e37971982527e661d319d3",
+    "src/ramulator_wrapper.py": "6f5081ebbd31fcd988ba18952e4b4f532e8af984885dd17da6507cff11979b00"
+  },
+  "independent_review": "attacc_model_provenance inspected A2/PIM decode and prefill call sites: shared phase/name rule, no byte-size threshold.",
+  "fixed_latency_s": 6.06e-06,
+  "controls": [
+    {
+      "name": "kv_remote_to_gpu",
+      "bytes": 4096,
+      "link_latency": true,
+      "time_s": 6.073653333333333e-06,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "decode_kv_remote_to_gpu",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "decode_kv_gpu_to_remote",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "q_gpu_to_pim",
+      "bytes": 4096,
+      "link_latency": true,
+      "time_s": 6.073653333333333e-06,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "decode_q_gpu_to_pim",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "decode_kv_gpu_to_pim",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "decode_gpu_partial_lse_to_pim",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "decode_ctx_pim_to_gpu",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "decode_gpu_rotate_q_extra_to_pim",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "di_bitmap_gpu_to_die",
+      "bytes": 4096,
+      "link_latency": false,
+      "time_s": 1.3653333333333333e-08,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        42598.4
+      ]
+    },
+    {
+      "name": "kv_remote_to_gpu",
+      "bytes": 16777216,
+      "link_latency": true,
+      "time_s": 6.198405333333334e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "decode_kv_remote_to_gpu",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "decode_kv_gpu_to_remote",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "q_gpu_to_pim",
+      "bytes": 16777216,
+      "link_latency": true,
+      "time_s": 6.198405333333334e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "decode_q_gpu_to_pim",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "decode_kv_gpu_to_pim",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "decode_gpu_partial_lse_to_pim",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "decode_ctx_pim_to_gpu",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "decode_gpu_rotate_q_extra_to_pim",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    },
+    {
+      "name": "di_bitmap_gpu_to_die",
+      "bytes": 16777216,
+      "link_latency": false,
+      "time_s": 5.592405333333333e-05,
+      "energy": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        174483046.4
+      ]
+    }
+  ],
+  "limit": "Same-shape energy formula and Ramulator model unchanged. Changed arrival times may indirectly change batch composition and total energy."
+}

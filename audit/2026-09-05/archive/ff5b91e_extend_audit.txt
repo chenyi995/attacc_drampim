@@ -1,0 +1,49 @@
+from pathlib import Path
+import json,shutil
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');A=R/'audit/2026-09-05';Z=A/'archive'
+for name in ('ff5b91e_late_check.py','ff5b91e_late_snapshot.json','ff5b91e_late_tests.json'):
+    target=name[:-3]+'.txt' if name.endswith('.py') else name
+    shutil.copyfile(Path('/tmp')/name,Z/target)
+p=A/'CURRENT_ISSUES.md';s=p.read_text()
+s=s.replace('**审计版本 `bb19f31`，对照上轮 `fbe6756` 和原始 AttAcc `c600051`。**','**主体复查版本 `bb19f31`，收尾补核至 `ff5b91e`，对照上轮 `fbe6756` 和原始 AttAcc `c600051`。**')
+s=s.replace('本轮实现变更只有 workload 计划、runner、collector、layout probe 和相应测试；','主体实现变更为 workload 计划、runner、collector、layout probe 和相应测试；收尾新增的共同链路固定延迟规则另见 E2。')
+s=s.replace('GPU/PIM 设备单价、Ramulator wrapper、trace generator 未改。','GPU/PIM 能量单价、Ramulator wrapper、trace generator 未改。')
+s=s.replace('| [E1 能量诊断](#e1) | 实际事件和诊断已同用 H/h，数值一致 | 上轮诊断问题关闭 |','| [E1 能量诊断](#e1) | 实际事件和诊断已同用 H/h，数值一致 | 上轮诊断问题关闭 |\n| [E2 会话内新增链路规则](#e2) | decode/bitmap 不收固定延迟，prefill 仍收；共同生效 | 改变绝对性能，旧结果须按模型版本解释 |')
+section='''<a id="e2"></a>
+
+## E2：会话中新提交的链路固定延迟规则已补查
+
+收尾时另一会话提交了 `9c40891` 和记录它的 `ff5b91e`。[实现 session §16](../../docs/sessions/2026-09-05-ladder-fixes-f01-f02-f04.md:350) 将“prefill 收固定链路延迟，decode 不收”记录为 chenyi9 的裁决。本次只补核实现及共同适用范围，没有修改这项规则，也没有复核该 session 中另一轮运行的性能数字。
+
+[统一链路 helper](../../src/workload_runner.py:319) 按操作名打标：`decode_*` 和 bitmap 不收固定延迟，其他操作仍收；[GPU 设备模型](../../src/devices.py:389) 根据该标记决定是否加 `nvlink_latency`。这是**按阶段/名字分类，不是字节大小阈值**；A2 decode 整段 KV 回读也适用，不能描述成只有 PIM 小包受益。带宽传输时间和远端 HBM 约束仍保留。
+
+原始 AttAcc legacy 链路没有当前 refined/flash 的这项固定启动延迟；这个共同取舍有上游口径可对照，但不能称相同公式完整照抄上游。它会改变绝对性能和瓶颈，不能与此前收全部固定延迟的结果混为同一模型。没有改能量单价、Ramulator 周期或某个消融档的私有系数。
+
+新增定向测试通过：同字节数的 prefill/decode 价格差正好是一次固定延迟，bitmap 与 decode 一致。独立补核见 [链路证据](archive/link_latency_ff5b91e_evidence.json)；新增提交和代码快照见 [收尾记录](archive/ff5b91e_late_snapshot.json)。此前固定价格设备桩的 C6/C8 反例不依赖真实链路单价，其结构结论不变；不能把那批假价格数字当成新模型性能。
+
+'''
+s=s.replace('<a id="c3"></a>\n',section+'<a id="c3"></a>\n',1)
+s=s.replace('本轮没有修改 Ramulator wrapper/generator、GPU/PIM 单价或 preset。','本轮没有修改 Ramulator wrapper/generator、GPU/PIM 能量单价或 preset；共同链路固定延迟的新增规则见 E2。')
+s=s.replace('新增定向测试 **7 个通过**。','主体定向测试 **7 个通过**，会话内新增链路测试 **1 个通过**。')
+p.write_text(s)
+p=A/'README.md';s=p.read_text().replace('**最新审计版本 `bb19f31`。','**主体审计 `bb19f31`，已补核至 `ff5b91e`。')
+s=s.replace('| AttAcc 能量和诊断是否一致 | [E1](CURRENT_ISSUES.md#e1) |','| AttAcc 能量、诊断与会话内新增链路规则 | [E1](CURRENT_ISSUES.md#e1)、[E2](CURRENT_ISSUES.md#e2) |')
+p.write_text(s)
+p=R/'docs/sessions/2026-09-05-bb19f31-fix-verification.md';s=p.read_text()
+s=s.replace('开始/结束核对实现等跟踪文件、已有结果、论文 tex 的 hash，并检查当前文档链接。','开始/结束核对文件 hash 时检测到外部新增提交，详细说明见下节；已有结果和论文 tex 单独检查，当前文档链接也检查。')
+addition='''
+## 收尾期间外部新增提交：补核到 ff5b91e
+
+第一次最终 hash 检查发现 `src/devices.py`、`src/workload_runner.py`、`tests/test_workload.py` 与主体审计起点不同。随后 git 显示另一会话已提交 `9c40891`（共同链路固定延迟规则）和 `ff5b91e`（实现 session §16）。**这些源码修改/提交不是本次 audit agent 实施的。** 不将“审计期间文件完全未变”写成通过；manifest 同时保留主体起点与新增提交后的快照。
+
+主审只读补查三个文件差分，并执行新增的链路定向测试，1 个通过。独立计量 agent 核对各档标记是否共用。规则按 decode/bitmap 操作名省略固定启动延迟，prefill 其余传输仍收；不是大小阈值，A2 decode 的历史 KV 回读也享用相同规则。能量、带宽项、PIM trace/周期未因此改变。
+
+§16 将该规则记录为 chenyi9 的裁决；本次据此说明来由与共同适用范围，没有重新裁决规则、修改实现或确认另会话的性能数字。由于模型口径有变化，旧结果与新结果不可混成同一配置。
+
+当前问题页增加 E2，版本头更新为“主体 bb19f31，补核至 ff5b91e”。C6/C8 的旧和新控制依赖事件/输入结构，固定桩不使用真实链路价格，所以其结论不因这笔提交消失。收尾新增测试和快照在 `ff5b91e_late_tests.json`、`ff5b91e_late_snapshot.json`；仍使用本轮唯一的 CURRENT_ISSUES 和 session，不另造第二份当前报告。
+'''
+if '## 收尾期间外部新增提交' not in s:s+=addition
+p.write_text(s)
+p=R/'docs/sessions/README.md';s=p.read_text().replace('2026-09-05（bb19f31 复核）','2026-09-05（bb19f31→ff5b91e 复核）');p.write_text(s)
+shutil.copyfile('/tmp/ff5b91e_extend_audit.py',Z/'ff5b91e_extend_audit.txt')
+print('Extended existing audit/session to the newly committed link model; no source writes.')

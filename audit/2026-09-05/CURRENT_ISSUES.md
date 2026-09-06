@@ -1,184 +1,158 @@
-# 最新复查：哪些已修，哪些仍不符合声明
+# 最新复查：上轮修复已通过，仍有条件性边界
 
-**审计版本：`fbe6756`；上次版本：`8c51672`；原始 AttAcc：`c600051`。目前不能确认全部正确。** 本轮主要剩两项：C8 的跨轮继承尚未贯通实际 attention，C6 的 tier 时间列仍不同口径；另有一处能量诊断输出未同步。GQA、diff 行地址隔离、脚本默认 FlashAttention 和 A6 的空回读/Q 估价问题已通过针对性复查。
+**主体复查版本 `bb19f31`，收尾补核至 `ff5b91e`，对照上轮 `fbe6756` 和原始 AttAcc `c600051`。** 上轮的跨轮断链、prefill 漏旧 diff、A2 重算旧 diff、已测 CacheBlend 继承位置、collector 混用 batch 时间、能量诊断不同步等具体反例已修复。本轮没有发现这些问题继续影响当前默认阶梯的证据。
 
-主审与三个独立 agent 分别检查执行公平性、存储到命令地址、AttAcc 能量来源。只运行已有定向单测、真实构图的固定价格设备桩、地址生成和小输入；**没有运行 Ramulator 性能实验，没有改实现、workload、论文或已有结果。** 所以这里能确认操作/地址/报表是否一致，不能提供修复后的加速比。
+这里的默认阶梯是 [ladder 脚本](../../experiments/run_dag_ladder.sh:63) 的 `recompute + batch 8 + FlashAttention + pipeline`，配合当前重列上下文、`history_len=0` 的 turns 输入。**这是针对修复和小输入的验收，不是全部 workload 的性能认证，也不是任意配置都正确的保证。** 继续检查发现了两个报表边界、两个复用输入边界，触发条件如下。它们不直接推翻默认比较，先供用户过目。
 
 <a id="decisions"></a>
 
-## 先看结论
+## 当前结论与阅读入口
 
-| Case | 本轮状态 | 实际结论 |
+| 项目 | 本轮结论 | 默认阶梯是否触发剩余问题 |
 |---|---|---|
-| [C1](#c1) FlashAttention / pipeline | 本轮入口修复通过 | ladder、sweep 默认 flash；ladder 显式开 pipeline。直接调用 main.py 仍须传 flash |
-| [C2](#c2) GQA | 原反例通过 | 七档均能构图，prefill、batch decode 和校验器的 KV 字节一致 |
-| [C3](#c3) diff 地址 | 原别名问题通过 | 新 diff 区改变真实 row 位；master/diff 的 K/V 行分离，master 通道未被缩减 |
-| [C4](#c4) 子段步长 | 沿用已接受口径 | 按实际行列命令交 Ramulator；不因共同列地址近似再次要求整改 |
-| [C5](#c5) A6 简单估价 | 指定公式修改通过，输入完整性受 C8 阻碍 | 空回读为零，估价忽略 Q、保留 context 返回；论文已同步 |
-| [C6](#c6) tier 报表 | **只修了一半** | A2 不再缺行，但 A2 用 token 完成时间，PIM 档仍用 attention 开始时间 |
-| [C7](#c7) A3b 同轮/跨轮 | 原裁决保持 | 同轮多组 diff 可正常紧排；不能人为削弱 A3b。跨轮旧 diff 的实际消费看 C8 |
-| [C8](#c8) 持久旧 diff | **未通过，主审与独立审查均复现** | 第三轮找不到 diff；第二轮 prefill 漏旧 diff；A2 仍重算它；CacheBlend 还有继承位置不一致 |
-| [E1](#e1) 能量说明/诊断 | 共同缩放有依据；诊断待同步 | 实际事件改用真实 head 数，layout probe 仍按满 stack 计能量 |
+| [C1 Flash / pipeline](#c1) | 脚本保持共同开启 | 未发现变化；直接 main 仍需显式 flash |
+| [C2 GQA](#c2) | 保持上轮 KV 字节修复 | 本轮未改变相应字节公式 |
+| [C3 地址与容量](#c3) | diff/master 实际行隔离保持；diff 上界也已补齐 | 上轮容量缺口关闭 |
+| [C4 行列扫描](#c4) | 保持用户接受的共同近似，由 Ramulator 决定 ACT/PRE | 不重开列步长指控 |
+| [C5 A6 估价](#c5) | 简单逐 request 规则保持，旧 diff 已补进估价读集 | 未发现本轮另加费用/缩时系数 |
+| [C6 tier 报表](#c6) | collector 同公式通过；底层 summary 有 batch=1、A2 history>0 两个边界 | 当前 batch=8、history=0 不触发这两个控制反例 |
+| [C7 A3b 轮次](#c7) | 同轮正常紧排，跨轮沿用旧对象；不人为削弱 baseline | 已接受规则保持 |
+| [C8 持久复用](#c8) | 上轮四个具体反例关闭；另有 CacheBlend 取整校验、重复输出指纹来源边界 | 当前 recompute 和 21 个 turns JSON 不触发这两个新控制条件 |
+| [E1 能量诊断](#e1) | 实际事件和诊断已同用 H/h，数值一致 | 上轮诊断问题关闭 |
+| [E2 会话内新增链路规则](#e2) | decode/bitmap 不收固定延迟，prefill 仍收；共同生效 | 改变绝对性能，旧结果须按模型版本解释 |
 
-**不需要重新决定已经确定的建模原则。** C6/C8 是既定要求的实现缺口，E1 是新发现的诊断不一致，本文先列来源和影响供过目；没有擅自修改它们。没有证据说明有人刻意削弱 A3b；但“没有发现刻意行为”和“性能比较已经公平”是两回事，后者目前不能签字。
+**怎么理解“还有问题”。** C6 的两个条件会使 A2/PIM 指标不同口径，使用对应配置时值得审阅。CacheBlend 校验是所有软件复用档共同拒绝执行的输入边界，没有形成分档加速优惠；重复输出指纹是有条件的来源错误，尚未量化性能影响。按用户要求，不把共同入口限制自动升级为默认阶梯不公平，也不重复要求已接受的共同近似证明各档误差相等。本次没有修改实现或替用户裁决这些新边界。
 
-## 不熟悉项目时，先理解这几个词
+## 先认识比较对象
 
-LLM 处理输入叫 **prefill**，之后逐 token 输出叫 **decode**。历史 token 的 K、V 向量存在 **KV 缓存**中。**master** 是共享的原始 KV，**diff** 是某个 agent 重算的少量 KV，不是两个数相减。一个 **head** 对应一组 attention；PIM 在内存旁扫描这些数据。
+prefill 是处理输入，decode 是逐 token 输出；master 是共享的原始 KV，diff 是某个 agent 重算的 KV。diff 不是数值相减。后续请求要读取原 master 和已产生的 diff，其他写入继续追加。
 
-| 档位 | 允许与前档不同的地方 |
+| 档位变化 | 用户允许的机制 |
 |---|---|
-| A1、A2 | 分别作为独立硬件、软件 baseline，不要求逐项只改一个变量 |
-| A3b | 朴素软件复用 + PIM decode，作为后续阶梯起点 |
-| A4c | 将同一 agent、同一 KV head 的 diff 集中存放，保留 master 全部通道 |
-| A4e | 改软件放置表，把可能共读的 master 分散到通道；继承 A4c 的 diff 规则 |
-| A5 | PIM prefill + MQ，及用户已接受的频点/缓冲配置包 |
-| A6 | 每 request 简单比较两侧 attention 估价，选快的一侧；首层决定后沿用，相等选 PIM |
+| A1 / A2 | 独立硬件 / 软件 baseline，不要求彼此只改一个变量 |
+| A3b | 朴素软件复用与 PIM 结合，作为后续起点 |
+| A3b → A4c | 同一 KV head 的 diff 集中布局，保留 master 全部通道 |
+| A4c → A4e | 软件表分散可能共读的 master，继承 diff 布局 |
+| A4e → A5 | PIM prefill + MQ，以及已接受的频点/缓冲配套 |
+| A5 → A6 | 每 request 简单估算哪边快选哪边，首层选择后沿用，相等选 PIM |
 
-本轮展开 preset 的相邻变化仍只有：A3b→A4c 改 `kv_mapping`，A4c→A4e 再改 `kv_mapping`；A4e→A5 改 prefill 侧、MQ、频点 `0.666→1.3004 GHz`、query batch `4→8`；A5→A6 只改 prefill 为 dynamic。各档缓冲默认已经同为 512 B，不是 A5 私有新增。配置本身符合已接受范围，**执行分支还必须真正处理相同的所需 KV**。
+主体实现变更为 workload 计划、runner、collector、layout probe 和相应测试；收尾新增的共同链路固定延迟规则另见 E2。[preset](../../src/ablation.py) 未改，GPU/PIM 能量单价、Ramulator wrapper、trace generator 未改。没有发现新增的档位私有拟合系数。配置差分仍在上述允许范围；下面另核对真正执行了哪些操作。
 
 <a id="c8"></a>
 
-## C8：地址继承已接上，但后续 attention 没有完整使用旧 diff
+## C8：旧反例关闭，新边界只在特定复用输入下出现
 
-**要求是什么。** 用户的 a/b/c/e/f 例子已经定清楚：原 shared chunk a 和第一轮产生的 diff c 留在原址；其他内容继续追加；之后 f 仍读取原来的 a/c。这直接关系到论文的 A3b→A4c 跨轮布局贡献。原始 AttAcc 没有这种跨 request 软件复用，下面的新增继承错误不能解释成沿用 AttAcc。
+**原要求及本轮通过的证据。** 用户 a/b/c/e/f 的要求是：a/c 留在原址，后轮继续读取它们。主审复跑上轮输入，独立 agent 另行检查，结果如下：
 
-**这一轮确实修好的部分。** `turns` 输入每轮重新列出旧上下文和历史输出，不再用新 history master 替代旧对象。21 个提交的 turns JSON 与当前生成器逐份一致，manifest 计数一致，history_len 全为零。两轮默认 recompute 的 TLB 也确实指向第一轮 diff，只预约一次；decode 路径能读到它。旧“正式 turns 仍是 history 占位”的结论已撤销。
+| 上轮问题 | 当前实际行为 |
+|---|---|
+| 第三轮找中间轮不存在的 diff | `inherits_from` 追溯真正写入者；三轮仍读取第一轮同一对象 |
+| 第二轮 prefill 漏旧 diff | GPU 回读旧 diff；PIM 的真实 scan 输入包含旧 diff，并保留对应 master 遮罩 |
+| A2 继续重算旧 diff | 两轮控制中 A2/A3b/A4c/A4e 都只计算新 2 行、读取驻留 16 行，attention 上下文为 18 行 |
+| CacheBlend 两轮位置不同 | 原 ratio=0.25 控制继承 writer 的逐层位置；full layer 0、partial layers 1/2 的三层绑定也通过 |
+| 换同长度前缀仍继承 | 前缀 fingerprint 序列变化会阻止旧修正继承 |
 
-但有四个可复现缺口：
+存储专项进一步检查“只有继承 diff”和“继承 diff + 本轮新 diff”两组输入。A3b–A6 均保留旧地址、不重写旧 diff；A5/A6 实际 scan 中旧 diff、新 diff 各一次，没有漏掉可见 KV。额外扫描被遮罩的 master 属于已声明机制。A3b/A4c 的计划、写入对象集合和 decode 读取对象序列一致，没有为了体现收益拆散同轮 A3b。
 
-| 子项 | 最小 case 与实际行为 | 为什么影响结论 |
-|---|---|---|
-| **C8.1 第三轮引用断链** | w0 创建 c，w1 继承 w0，没有创建新 c；w2 却去找 `w1 的 c`，构图报对象未预约 | 应一直指向实际持有者 w0。A3b、A4c、A4e/A5/A6 的三类 layout 均复现；当前生成器的两 agent、三轮输入也触发 |
-| **C8.2 第二轮 prefill 漏读 c** | 第二轮有 18 个上下文 token，其中 2 个是继承的旧 diff、2 个是新 token。A3b/A4c/A4e GPU 路径只回读 14、计算 2，attention 长度变成 16；A5/A6 的 PIM prefill 输入也没有那 2 个旧 diff，却遮罩了它们的 master 对应位置 | 旧 c 既不重算，也不从驻留 KV 读取。TLB 地址正确不等于实际扫描正确；缺的正是用户要求后续继续 attention 的数据 |
-| **C8.3 A2 未采用同一继承语义** | 同一个计划、同一第二轮请求，A2 的 QKV 计算位置为 `[10,11,16,17]`，A3b–A6 为 `[16,17]` | A2 仍重算旧 c，其他档跳过它。A2 可以独立设计，但当前 README 声明同一复用策略；这项执行工作量差异没有被声明为 baseline 设计 |
-| **C8.4 CacheBlend 修正位置未继承** | 两轮、partial layer 0、ratio=0.25：w0 生成位置 10/11，w1 重新抽到位置 4，再到 w0 查位置 4，报对象不存在 | 继承了 owner，却没有继承这个 policy 对应的逐层位置。此项是 CacheBlend 分支，不能冒称默认 recompute 两轮也因此报错 |
+上述都是实际构图/helper 的结构结果，未测性能。来源：[主审重放](archive/bb19f31_c8_replay_bb19f31_evidence.json)、[独立 C8 复验](archive/independent_c8_bb19f31_evidence.json)、[实际存储/scan 专项](archive/ledger_scan_bb19f31_evidence.json)。
 
-上述 token 数、位置和报错均来自构图/helper，**不是性能测量**。A6 的设备桩控制实际选择 PIM，因此捕获到其 PIM 漏读；GPU 分支的同类漏读由共享代码确认。decode 在该两轮控制中已经包含旧 c，本轮问题明确落在后续 prefill 与第三轮绑定，不说成所有扫描都漏读。
+### C8.5：CacheBlend 的旧数量校验与继承后的取整不一致
 
-**根因与怎么改。** [继承计划](../../src/workload.py:479) 把 `inherits_from` 固定设为最近一轮 request，而没有追溯实际 diff owner；[预约](../../src/workload_runner.py:3142) 又正确跳过继承对象的新建。应传递物理来源，保证连续多轮都落到实际存储对象。
+**触发条件。** 使用 CacheBlend，既继承旧修正，又第一次复用其他段，且比例取整不能直接相加。小输入有旧 D 的 8 行，下一轮还有另外 8 行首次复用；ratio=0.3 时旧修正 3 行、新抽样 3 行，共 6 行，但校验仍要求 `ceil(16×0.3)=5`。六个软件复用档 A2–A6 均报错。ratio=0.15 的控制也有 4 对 3 的冲突；原 ratio=0.25 控制能通过。
 
-[计算行选择](../../src/workload_runner.py:4862) 已排除继承 diff，但 [readback/scan 选择](../../src/workload_runner.py:4908) 仍把所有 corrected 行当成本轮会重算的行。应区分“本轮新算的修正”和“以前算好、这次驻留读取的修正”：GPU 回读后者，PIM 扫描后者并遮罩对应旧 master；新算部分才放进 writes。GPU 上下文长度及 A6 估价必须从这份完整集合取值。A2 的 [_software_reuse_rows](../../src/workload_runner.py:4336) 也须理解相同继承信息；CacheBlend 需保留实际逐层修正位置。
+**原因与建议。** [采样](../../src/workload.py:580) 已按“继承旧结果 + 新采样”处理，[校验](../../src/workload.py:642) 仍按所有复用行一次取整。若需要支持这类 CacheBlend 输入，数量规则应与持久继承定义一致；不能为了满足旧总数而静默丢掉已经存好的旧 diff。新抽样预算和继承数量应分别说明、校验。
 
-**影响哪些收益。** 漏读会少算部分必要工作，A2 多重算则可能使其相对显慢；不能用当前数据认证 A2 对比或多轮布局收益。这些是新增继承分支遗漏必要输入，并非沿用 AttAcc 的共同近似；GPU/PIM 都没有满足原 master/diff 必须继续读取的既定语义。本轮不要求共同近似证明各档误差相等。未测得净偏置大小，不断言总体收益一定高估。第三轮报错意味着不能完成该输入，不能解释为某档较慢。
+**AttAcc 有没有、是否影响默认比较。** 原始 AttAcc 没有 CacheBlend 或这套新校验。它是共同入口失败，不是某档被加罚时，也没有性能偏差数据。当前 ladder 使用 recompute，不触发。因此按用户口径先记支持范围，**不将它列为默认阶梯公平性的阻断项**。
 
-**验收应补在哪里。** 用同一小输入贯穿至少三轮，核对物理 owner、每层实际计算位置、GPU 回读地址、PIM prefill 与 decode 的完整地址集合；还要跑公开生成器和 CacheBlend 分支。现有 [两轮测试](../../tests/test_workload.py:1715) 只断言绑定和计算行数，未断言 prefill 消费旧 c，所以通过了仍不足以关闭 C8。
+### C8.6：重复输出指纹时，继承可能覆盖明确的 parent 来源
 
-另一个输入边界：当前继承条件只看祖先、fingerprint、偏移；若后轮更换同长度的前缀，仍继承旧修正。默认生成器逐字保留前缀，不触发这一点。执行时应明确继承要求上下文不变，不能仅用“偏移相等”证明旧 KV 可复用；本轮未把这项扩展输入边界混成默认 workload 的已测性能错误。
+**具体 case。** a 输出指纹 O；w0 读取 a/O 后，在自己的上下文又输出相同指纹 O；w1 明确声明 parent=w0，应该读取 w0/O。若旧段指纹、前缀和偏移碰巧一致，[继承分支](../../src/workload.py:488) 会覆盖刚指定的 parent，将 w1/O 的 owner 改回 a，且不作本应需要的位移修正。
 
-证据：[独立执行记录及四个控制](archive/independent_c8_fbe6756_evidence.json)、[主审三类 layout 复核](archive/fbe6756_c8_binding_evidence.json)、[21 个输入一致性](archive/fbe6756_workload_evidence.json)。生成器反例参数是 agents=2、rounds=3、chunks=1、corpus=2、own=2、lout=2，recompute k=2；输入保存在 [generated_turns](archive/independent_c8_generated_turns.json)。
+主审通过公开 loader、plan 和 TLB 重现 owner=a；独立 agent 捕获的 A5 prefill 实际 scan 也读 a/O。两个相同 token 指纹不保证在不同上下文下具有相同 KV。decode 沿用该绑定是源码推导，本次没有直接捕获这个反例的 batched decode 扫描。
+
+**AttAcc 有没有、是否影响默认比较。** 原始没有这套 parent/继承机制。这是来源语义错误，目前没有测出分档净偏差；21 个当前 turns JSON 没有不同 parent 共享输出指纹，不触发控制条件。建议保留 `parent_out` 的明确 producer，只有物理来源也一致时才继承旧修正；不依据这个边界笼统判全部 workload 不公平。
+
+两项新边界的完整输入、计划及错误：[独立证据](archive/independent_c8_bb19f31_boundaries_evidence.json)；主审独立复现及当前 21 个输入条件检查：[JSON](archive/bb19f31_main_verification.json)。
 
 <a id="c6"></a>
 
-## C6：A2 已补进表，但时间列仍不是同一个指标
+## C6：collector 已同口径，底层 summary 仍有两个条件性错误
 
-**AttAcc 是否已有。** 没有；这是新增七档 tier 汇总器。tier 是同一阶段的一组请求。论文比较七档时，同名指标须使用同一事件边界。
+**已修部分。** [collector](../../experiments/collect_dag_ladder.py:147) 已对七档统一从 request summary 取值，PIM batch 记录只作诊断。相同 summary、不同 batch 字段的七档两 tier 控制通过，不再出现上轮同样 end 却报不同 tier_total 的问题。
 
-当前 [collector](../../experiments/collect_dag_ladder.py:144) 对有 PIM batch 的档位保留 Q 到达/attention 开始时刻；只有没有 batch 的 A2 才用 request 的 first_token/end。新读取的 `prefill_end_s` 实际没有用于这些列。
+当前 `ttft_s=max(first_token_s)`、`prefill_end_s=max(prefill_end_s)`、`tier_total_s=cum_end_s=max(end_s)` 均是从运行起点计的 tier 完成时刻；`decode_s` 是最后一个首 token 完成后到 tier 结束的尾段。它不是每请求平均 TTFT/decode 时长，也不应将各 tier 的累计时刻相加。公式共同适用本身不另列问题。
 
-给两档完全相同的 request summary：prefill 在 2 s 结束，首 token 在 3 s 完成，整个 request 在 5 s 结束；PIM batch 的 Q/attention 戳为 2.2/2.3 和 4.2/4.3 s。真实 collector 输出：
+但 summary 的事件分类仍有边界。下表来自一层、单请求、lout=1 的真实构图，GPU 操作固定 0.001 s、PIM lane 固定 0.002 s；**用于查时间戳，不是性能测量或两档速度比较**：
 
-| 档位 | prefill_s | decode_s | tier_total_s | cum_end_s |
+| 控制 | prefill_end_s | first_token_s | 最后 GPU 算子完成 | end_s |
 |---|---:|---:|---:|---:|
-| A2 | 3.0 | 2.0 | 5.0 | 5.0 |
-| A3b | 2.2 | 2.1 | 4.3 | 5.0 |
+| A3b，history=0，batch=1 | 0.026 | 0.018 | 0.026 | 0.026 |
+| A2，history=0，batch=8 | 0.012 | 0.025 | 0.025 | 0.026 |
+| A3b，history=0，batch=8 | 0.012 | 0.026 | 0.026 | 0.026 |
+| A2，history=3，batch=8 | 0.012 | 0.000 | 0.025 | 0.026 |
 
-**这些秒数是受控输入，不是设备性能。** 同样完成时间仅因 batch 字段存在就报出不同 tier_total，说明报表口径仍未统一。A2 第一列还包含首个 decode token，不能直接当成纯 prefill。`cum_end_s` 已正确使用 request end；本例不否定它，也不否定独立计算的 makespan/TBT。
+**C6.1：batch size=1 的 PIM decode 后处理被算进 prefill。** [单路 decode](../../src/workload_runner.py:3481) 调共同后处理 helper，生成的名字是 `gpu_*`；[summary](../../src/workload_runner.py:4315) 只把 `decode_*` 认作 decode。结果首 token 时间停在 attention 附近，后面的投影/FFN 却归入 prefill。batch>1 用 `decode_batch_gpu_*`，不触发该错误；**不是“只有一个 request 就一定错”，选择条件是 batch 参数**。建议统一事件阶段标记，让单路/批处理都覆盖完整生成计算。
 
-**修改建议。** 七档统一从 request summary 提取所声明阶段的边界，batch 戳只作另外的诊断列；定义 prefill、decode、tier 完成时间后按统一规则输出。pipeline 下阶段可能重叠，不强求各段机械相加等于 makespan。证据：[主审 collector fixture 和真实构图报表](archive/fbe6756_main_audit_evidence.json) 的 `C6_identical_summary_fixture` / `C6_real_DAG_summaries` / `C6_real_DAG_tier_rows`。
+**C6.2：A2 history_len>0 时可能记录首 token 为零。** A2 的 decode query 位置从 `total_length+history_len` 起，而 summary 匹配 `total_length`。history=3、lout=1 的控制就返回 0；与它对照的 PIM 路径可匹配。建议统一首个 decode query 的位置规则，避免把“未匹配”误报为“零时间”。当前重列旧段、history_len=0 的 turns 输入不触发。
+
+**AttAcc 是否已有、影响哪里。** 原始 AttAcc 没有这些 request/tier summary；这是新增报告接口，不是硬件共同近似。这两个条件会影响 A2 与 PIM 档的 TTFT、prefill、decode/TBT 解读，但不改变该控制中实际调度和 end/makespan。当前默认 batch=8、history=0 不触发，不能因此否定其全部报表；使用对应配置时应先处理或如实限定相关指标。
+
+还有一项诊断命名：`batch_first_attention_s` 仍可能取更早的 Q arrival，因为旧提取逻辑对两种时间共同取 min。它不参与新的主指标；可改名或只取 attention_start。证据：[summary 与七档 collector](archive/tier_summary_bb19f31_evidence.json)、[逐事件控制输出](archive/bb19f31_raw/README.md)。
 
 <a id="e1"></a>
 
-## E1：能量仍用 AttAcc 单价，实际事件与诊断缩放需一致
+## E1：能量诊断与实际事件已对齐
 
-**这轮改了什么。** `a4669f4` 将 placement 扫描能量的外层倍数从 `ceil(H/h)` 改为 `H/h`：H 是一个 GPU 实际负责的本地 KV heads，h 是最忙 HBM stack 折入 trace 的 heads。原方法把尾部未满 stack 也按满载复制；新方法按真实 head 数线性外推。
+runner 把实际 `energy_scale=H/h` 传给 [layout probe](../../src/layout_probe.py:219)，两者使用相同单位和通道求和。在 8 组 PIM 路径与 4 组控制中，诊断/事件能量比均为 1，旧 E1 关闭。
 
-**与原始 AttAcc 的关系。** 原始 AttAcc 是最忙 stack 的计数乘全部 stack。新方法沿用 AttAcc 的 DRAM/ALU 等能量单价，改变共同复制方式；不是为某档额外给一个收益系数。各标准 PIM decode 和 A5/A6 PIM prefill 共用此 helper。没有改延迟、MQ 命令输入或 A6 选边。它有明确 head 数依据，但属于整份扫描能量的线性近似，**不能称每个部分占用 stack 都单独经过 Ramulator 实测**。
+H 是本地真实 KV heads，h 是最忙 stack 已折入 trace 的 heads。能量仍按 AttAcc 单价和共同 head 数外推；原始 AttAcc 按满 stack 复制，新方法按实际 head 数线性外推。这一共同近似已说明，不把它改写为每个部分占用 stack 都独立模拟过。此轮修的是诊断接线，没有改 PIM 时间、MQ 命令或分档单价。[证据](archive/head_energy_bb19f31_evidence.json)。
 
-独立 probe 用真实 placement 和 PIM 能量接口、固定假 traffic，检查 8 组路径及 4 组整除/单 stack 控制；H=26、h=6 时新旧实际事件能量比均为 `26/30`，设备输入及时间不变。该试验核对乘法接线，不是能耗实测。[能量链条证据](archive/head_energy_a4669f4_evidence.json)。
+<a id="e2"></a>
 
-**本轮发现的新不一致。** [实际事件](../../src/workload_runner.py:2462) 用 H/h，但 [layout_probe](../../src/layout_probe.py:219) 的 `energy_nj_charged`、`scan_energy_nj` 和解释字符串仍乘旧 `num_hbm_used`。上述控制中诊断比实际事件大 `30/26`。应同步诊断公式；这不证明最终事件报表能量算错，也不影响性能。
+## E2：用户已确定链路固定延迟规则，共同实现已补查
 
-DIE/TLB、普通 STORE 仍不另计缺乏 AttAcc 依据的 latency/energy，旋转仍按已接受的 GPU 路径；本轮没有恢复任何此类附加费。该能量 commit 和论文公式已更新的事实，也已补到 [本轮 session](../../docs/sessions/2026-09-05-fbe6756-fix-verification.md)，避免旧 session 的“MP-05 / 论文未做”继续被当作现状。
+**chenyi9 在本轮再次明确裁决：链路计价由用户确定，decode 小流量传输的固定开销可以忽略。该规则不再作为待审问题，只核对实现是否共同生效。**
 
-<a id="c1"></a>
+收尾时另一会话提交了 `9c40891` 和记录它的 `ff5b91e`。[实现 session §16](../../docs/sessions/2026-09-05-ladder-fixes-f01-f02-f04.md:350) 将“prefill 收固定链路延迟，decode 不收”记录为 chenyi9 的裁决。本次只补核实现及共同适用范围，没有修改这项规则，也没有复核该 session 中另一轮运行的性能数字。
 
-## C1：FlashAttention 和 pipeline 入口已对齐
+[统一链路 helper](../../src/workload_runner.py:319) 按操作名打标：`decode_*` 和 bitmap 不收固定延迟，其他操作仍收；[GPU 设备模型](../../src/devices.py:389) 根据该标记决定是否加 `nvlink_latency`。这是**按阶段/名字分类，不是字节大小阈值**；A2 decode 整段 KV 回读也适用，不能描述成只有 PIM 小包受益。带宽传输时间和远端 HBM 约束仍保留。
 
-[ladder](../../experiments/run_dag_ladder.sh:40) 默认 `GPU_MODEL=flash`，并显式传 `--pipeopt`；[sweep](../../experiments/run_sweep.sh:22) 默认 flash，调用同一 ladder。[main.py](../../main.py:141) 单独运行仍默认 legacy，需要显式 `--gpu-model flash`；用户显式环境覆盖也能退回 legacy。
+原始 AttAcc legacy 链路没有当前 refined/flash 的这项固定启动延迟；这个共同取舍有上游口径可对照，但不能称相同公式完整照抄上游。它会改变绝对性能和瓶颈，不能与此前收全部固定延迟的结果混为同一模型。没有改能量公式、Ramulator 模型或某个消融档的私有系数。链路到达时间变化可能间接改变批次组合，不能据此保证总能量或实际送入 Ramulator 的任务组合不变。
 
-原始 AttAcc 没有我们新增的 flash 模型，必须共同开启的要求继续生效。当前脚本默认已满足；未重新核验全部历史产物的开关，不能据此认证历史结果。共同调度/overlap 近似按此前裁决接受。
-
-<a id="c2"></a>
-
-## C2：GQA 校验和 KV 字节的原反例已通过
-
-GQA 让多个 Q heads 共用较少的 KV heads；KV 存储/传输必须按后者算。这轮 [校验器](../../src/workload_runner.py:2745)、[batch decode](../../src/workload_runner.py:3508) 和 A1 helper 已统一。主审分别用 LLAMA3-8B（GQA）和 CACHEBLEND-TINY（MHA）一层构图，七档都通过，捕获 KV link 的每行字节均等于各自模型的 KV 宽度。
-
-原始 AttAcc 没有当前新 validator 与完整 GQA 数据通路；原问题是新增代码不一致，本轮确实修正，不是只放宽检查。该结论限于已检查的字节/构图，不宣称全面验证数值 GQA kernel。证据：[七档 GQA/MHA](archive/fbe6756_main_audit_evidence.json)。
+新增定向测试通过；另用 4 KiB 和 16 MiB 的共同 helper 控制核对，同字节数的 prefill/decode 价格差正好是一次固定延迟，bitmap 与 decode 一致。后一个大包控制仅验证代码按阶段分类，不将其称作小流量。独立补核见 [链路证据](archive/link_latency_ff5b91e_evidence.json)；新增提交和代码快照见 [收尾记录](archive/ff5b91e_late_snapshot.json)。此前固定价格设备桩的 C6/C8 反例不依赖真实链路单价，其结构结论不变；不能把那批假价格数字当成新模型性能。
 
 <a id="c3"></a>
 
-## C3：diff 已移动到独立的实际 ALL-BANK 行
+## C3：实际行隔离保持，新增容量上界正确
 
-原 512 MiB 偏移只翻 pseudochannel 位，ALL-BANK 下仍与 master 同行；现在 [diff 偏移](../../src/workload_runner.py:820) 为 4 MiB，对应 row4096。独立 agent 调真实 generator 并按 mapper 解码：master K/V 为 row0/8192，diff K/V 为 row4096/12288。旧行别名反例关闭。
+上轮已证明 4 MiB diff 偏移改变实际 ALL-BANK row，master K/V 与 diff K/V 行分离。此次 [容量检查](../../src/workload_runner.py:992) 在 diff 末端超过 8 MiB 时拒绝；源码条件推导最大为 1,048,576 个 diff tokens，K diff 保持在 4–8 MiB、V diff 在 12–16 MiB。等于上界允许，再多一个 token 拒绝。
 
-heads 为 1、2、3、4、8、16 的控制中，A3b/A4c master 几何完全相同，diff 仍放各 head 末通道；master 容量保护在 4096 个独立单行块通过、4097 个报错。mapper、HBM action/preq 和 generator 相对上次审计未变；原始 AttAcc 有相同 ALL-BANK 语义，没有这个新增 diff allocator。证据：[实际地址与边界控制](archive/c3_fbe6756_evidence.json)。
+边界是对当前源码条件的计算，未做百万行分配或性能模拟。原始 AttAcc 有 ALL-BANK 语义，没有新增 diff allocator；此前缺的容量保护已补齐。[本轮存储证据](archive/ledger_scan_bb19f31_evidence.json)，实际行解码沿用 [上轮控制](archive/c3_fbe6756_evidence.json)。
 
-有一个未触发的容量边界：diff_cursor 没有上界保护，源码推导累计 diff 超过 1,048,576 tokens 后 K 区可能进入 master V 区。本轮未证明提交 workload 超界，保留容量说明，不把它写成旧 C3 尚未修复。
-
-<a id="c5"></a>
-
-## C5：A6 已使用用户要求的简单逐 request 估价
-
-```text
-T_GPU = Link(B_history) + FlashAttention(q, N)
-T_PIM = Σ_s max_c RamulatorTime(extents_c, queries_s, MQ配置)
-        + Link(B_context)
-Link(0) = 0；T_PIM ≤ T_GPU 时选 PIM，否则选 GPU。
-```
-
-R 个真正驻留、未重算的 KV token 对应 `B_history = 2 × R × H_KV × d_head × 元素字节`；context 返回按本地 Q heads 算。Q 输入传输在**估价**中忽略，执行仍保留实际数据/依赖；共用线性层、新 KV 写入按共同项处理。每个 sweep 使用实际 query 数，GQA 驻留 queries 为 token queries × GQA group；全通道完整 QK/SFM/PV 取 max 后跨 sweep 求和。
-
-本轮 [选择器](../../src/workload_runner.py:4032) 不再为空历史创建回读估价，PIM 候选只保留 context 返回。[论文正文](</data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027/sections/05-execution.tex:28>) 已同步为简单公式、首层选择后沿用、Q 忽略；不再要求双候选 DAG。
-
-主审捕获真实选择器调用：全新输入回读调用为 0，有 16 个驻留 token 时为 1；两者估价的 Q 输入调用均为 0，context 返回均为 1。原始 AttAcc 没有这个选择器，费用接口沿用共同设备和 Ramulator，未加入拟合比例。**公式/空项修改通过，不代表 C8 漏掉的旧 diff 已进入估价；这部分须随 C8 一并修正。** 证据：[C5_current_pricing](archive/fbe6756_main_audit_evidence.json)。
-
+<a id="c1"></a>
+<a id="c2"></a>
 <a id="c4"></a>
-
-## C4：继续按实际行列交 Ramulator，保留共同近似
-
-用户已明确：每 channel 按实际需要的行/列扫描，再输入下一段 KV 地址，ACTAB/PREA 和时序交给 Ramulator。现有前置条件就是这样处理，不应手加“跳转/步长惩罚”。同一 V 子段接口沿用 AttAcc dense 公式的列跨度边界仍保留，但相同输入下各档共有；单凭列地址解释差异不能证明性能偏置。
-
-上轮真实 `_pool_reads` 复核还确认，默认 A3b decode 会补回 shadow master，不能拿手工绕过该路径的子段反例说 A3b 多付 ACT。本轮没有改相关实现或发现新的独享优惠，因此不重开。来源：[行列实际路径证据](archive/row_column_reachability_evidence.json)。C8 是实际漏掉应读的 diff，与这一共同近似不同。
-
+<a id="c5"></a>
 <a id="c7"></a>
 
-## C7：保持朴素 baseline 合理，不强拆同轮 diff
+## 保持有效的共同配置和裁决
 
-同一个 round 的多组修正可以正常追加、紧排；有输出或新 KV 穿插的不同 round 不能重新并成一个 burst。旧单 prefill 的 `D→own→D` 不足以证明跨轮合并，指控继续撤回。当前不同 request 新产生的 diff 仍有不同 owner；继承旧 diff 则应指向原 owner，不能靠新建一份消除原布局。原始 AttAcc 没有这种软件复用，按用户明确规则执行即可。
-
-独立 agent 还用当前两 agent、两轮生成输入检查 A4c/A4e：同一 worker 的两段 diff 可被另一个 worker 插在中间，因为使用全局 diff_cursor。此例名义行集合仍只有 row4096，未测 ACT 次数或性能；它是“每 agent 是否严格连续”的收益兑现边界，没有证明额外优化 A4c 或削弱 A3b。不作为新增性能整改项。来源：[实际 ledger 间隙](archive/independent_c8_agent_gap_evidence.json)。
+- **C1 / C2：** ladder、sweep 默认 flash，ladder 显式 pipeline；直接 main 仍需传 flash。GQA 的 KV-head 字节公式本轮未改。历史结果不能仅凭现在的默认值认证。
+- **C4：** 按 channel 输入需要的行/列，ACTAB/PREA 交 Ramulator；不加人为“步长/跳转费用”。共同 V 子段边界不重开，不能用绕过实际 `_pool_reads` 的输入指控 A3b。
+- **C5：** A6 仍比较 `Link(真实驻留KV)+共同GPU attention` 与 `各sweep最慢channel完整PIM扫描+context返回`；估价忽略 Q、零回读为零、首层选择后沿用。C8 的旧 diff 已补进同一输入集合。论文简单公式保持。
+- **C7：** A3b 同轮 diff 正常追加紧排，跨轮保留旧物理对象，不人为拆散以制造 A4c 收益。全局 diff_cursor 可能让不同 agent 交错的已知边界保持；没有新的独享优惠证据。
+- **计量来源：** 本轮没有修改 Ramulator wrapper/generator、GPU/PIM 能量单价或 preset；共同链路固定延迟的新增规则见 E2。PIM scan 时间仍来自模拟/缓存周期乘 tCK，能量按 AttAcc 单价计；DIE/TLB、普通 STORE 仍不另加费用，旋转仍按已定 GPU 路径。
 
 <a id="contributions-check"></a>
 
-## 四项贡献和 workload 能否据此确认
+## 对论文四项贡献和 workload 能确认到哪里
 
-| README 的机制 | 当前可以确认什么 | 尚不能声称什么 |
-|---|---|---|
-| A3b→A4c：diff 聚合 | preset、独立 diff 行和 master 通道保留正确；同轮紧排规则保持 | C8 未通过，不能拿静态八段示意证明真实多轮扫描收益；per-agent 连续性另有上述边界 |
-| A4c→A4e：共读 master 放置表 | 本轮没有改变此前已核对的表机制，也未发现私有缩时系数 | C8 的输入缺失未消除前，不能认证完整多轮比较；贪心表也不保证每一对块都分开 |
-| A4e→A5：PIM prefill + MQ | 已声明机制包、MQ 命令/频点路径保持，GQA 字节修复通过 | PIM prefill 当前漏旧 diff，不能把结果全部归因于搬运减少或 MQ |
-| A5→A6：逐 request 选边 | 简单式、零回读/Q 近似、首层复用和 tie-break 符合裁决 | C8 会影响估价输入；局部选边不保证全局最优 |
+本轮没有发现 A3b→A4c、A4c→A4e、A4e→A5、A5→A6 增加用户未声明的档位私有机制。旧 master/diff 能继续进入后续实际扫描，消除了上一轮不能验证跨轮布局的具体漏读；这比只核对相同计划 hash 更进一步。
 
-[贡献 README](../../docs/README_contributions.md) 的 ACT 43.75%、通道 2×、选边 4.18× 均是明确条件下的推导/假设，不是 Ramulator 实验。例子选择了机制能获益的场景，不能推算整体收益；反之少量修正、已均匀分散或全偏向同一侧时收益可小。
+仍不能把 [贡献 README](../../docs/README_contributions.md) 的条件性 ACT、通道并行和假设选边收益当成整体性能结果。`interleaved` 的单次展开与 `turns` 的逐轮输出不是同一执行工作量，不能跨编码归因布局收益。当前默认输入不触发本页新增边界，不代表整个 workload 的收益已实测或能判定总体高估/低估。
 
-新 turns JSON 已重列旧上下文，但 C8 的漏读/继承错误使其尚不能作为跨轮布局效果的完整验证。`interleaved` 仍是一个 request 展开多个段，和每轮分别 decode 的 turns 工作量不同；两种编码之间的 E2E 差异不能解释成只改布局。七档使用同一 JSON/同一计划哈希是必要核对，C8.3 说明它还不足以证明执行工作量一致。本轮没有跑正式 workload，不能量化整体高估或低估。
+## 验证与记录
 
-**PIM 是否都由 Ramulator 出数。** 本轮变更范围内，标准 PIM placement 扫描仍调用 [wrapper](../../src/ramulator_wrapper.py:667)，由模拟/缓存周期乘 tCK 得到时间；没有把 README 比例乘到时延上。能量由相应 traffic 和 AttAcc 单价计价，再做 E1 的共同外推。不能把这描述成无任何解析模型的逐 stack 实测，也没有重新认证全部历史缓存来源。更关键的是，即使计时由 Ramulator 返回，C8 漏送了应读地址也不能得到正确的比较。
+主审加三个独立 agent 完成复核；主体定向测试 **7 个通过**，会话内新增链路测试 **1 个通过**。本轮只用小 helper、实际构图的固定价格设备、地址/计划检查和受控 collector，没有跑 Ramulator 性能实验。没有修改实现、测试、workload、论文或已有结果。
 
-## 验证范围与追溯
-
-15 个已有定向单测通过，覆盖 ledger、head 能量缩放、GQA、两轮绑定、同计划、owner 依赖和 fresh prefill。另用小输入捕获实际操作和地址，才发现单测未覆盖的 C8/C6；没有把设备桩时间当作性能。
-
-最新证据、源码/已有结果未改的 hash 核验以及三个独立 agent 的分工见 [本轮 session](../../docs/sessions/2026-09-05-fbe6756-fix-verification.md) 和 [验证记录](archive/fbe6756_audit_manifest.json)。上次长文保存在 [8c51672 时点全文](archive/CURRENT_ISSUES_before_fbe6756.txt)，旧证据均保留。本文取代旧文的“全部待执行”状态；共同调度、静态预约、DIE/TLB/STORE 零收费等已接受边界不再塞进整改清单。
+详细修改理由、各 agent 分工和执行记录见 [本轮 session](../../docs/sessions/2026-09-05-bb19f31-fix-verification.md)，文件 hash 与链接核验见 [manifest](archive/bb19f31_audit_manifest.json)。上轮全文原样保存在 [fbe6756 审计快照](archive/CURRENT_ISSUES_before_bb19f31.txt)；历史“未修”应按时点理解，当前状态以本页为准。

@@ -1,0 +1,85 @@
+from pathlib import Path
+import hashlib,json,re,shutil,subprocess
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');Z=R/'audit/2026-09-05/archive'
+start=json.loads((Z/'bb19f31_audit_start.json').read_text())
+late=json.loads((Z/'ff5b91e_late_snapshot.json').read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+checks={}
+for kind in ('protected','existing_results','paper'):
+    changes=[]
+    reference=late[kind] if kind=='protected' else start[kind]
+    for name,value in reference.items():
+        p=Path(name) if Path(name).is_absolute() else R/name
+        if not p.is_file() or sha(p)!=value:changes.append(name)
+    checks[kind]={'files':len(reference),'changed':changes,'unchanged':not changes,
+                  'baseline':'ff5b91e after external source commits' if kind=='protected' else 'bb19f31 audit start'}
+assert all(c['unchanged'] for c in checks.values()),checks
+head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip();assert head==late['head']
+external_source_changes=[p for p,h in start['protected'].items() if sha(R/p)!=h]
+assert sorted(external_source_changes)==['src/devices.py','src/workload_runner.py','tests/test_workload.py'],external_source_changes
+changed=subprocess.check_output(['git','diff','--name-only'],cwd=R,text=True).splitlines()
+assert all(p.startswith(('audit/','docs/')) for p in changed),changed
+untracked=subprocess.check_output(['git','ls-files','--others','--exclude-standard'],cwd=R,text=True).splitlines()
+unexpected=[p for p in untracked if not p.startswith(('audit/','docs/')) and p not in start['existing_results']]
+assert not unexpected,unexpected
+history_changes=[p for p,h in start['prior_audit'].items() if p not in changed and sha(R/p)!=h]
+assert not history_changes,history_changes
+previous=subprocess.check_output(['git','show','HEAD:audit/2026-09-05/CURRENT_ISSUES.md'],cwd=R)
+assert (Z/'CURRENT_ISSUES_before_bb19f31.txt').read_bytes()==previous
+manifest=Z/'bb19f31_audit_manifest.json';manifest.write_text('{}\n')
+docs=[R/p for p in changed+untracked if p.startswith(('docs/','audit/')) and p.endswith('.md')]
+bad=[];count=0
+for doc in docs:
+    content=doc.read_text()
+    for raw in re.findall(r'\]\((<[^>]+>|[^)\n]+)\)',content):
+        s=raw[1:-1] if raw.startswith('<') else raw
+        if '://' in s:continue
+        pathpart=s.split('#',1)[0];line=re.search(r':(\d+)$',pathpart)
+        pathpart=re.sub(r':\d+$','',pathpart)
+        if not pathpart:continue
+        p=Path(pathpart) if pathpart.startswith('/') else doc.parent/pathpart
+        count+=1
+        if not p.exists():bad.append({'doc':str(doc.relative_to(R)),'target':s})
+        elif line and int(line.group(1))>len(p.read_text().splitlines()):bad.append({'doc':str(doc.relative_to(R)),'line_past_end':s})
+assert not bad,bad
+current=(R/'audit/2026-09-05/CURRENT_ISSUES.md').read_text()
+assert all(f'<a id="{x}"></a>' in current for x in ('decisions','c1','c2','c3','c4','c5','c6','c7','c8','e1','e2','contributions-check'))
+tests=json.loads((Z/'bb19f31_tests.json').read_text());assert tests['returncode']==0 and 'Ran 7 tests' in tests['stderr']
+energy=json.loads((Z/'head_energy_bb19f31_evidence.json').read_text())
+assert len(energy['cases'])==8 and len(energy['controls'])==4
+assert all(abs(v['after']['diagnostic_to_event_energy_ratio']-1)<1e-12 for v in energy['cases'])
+assert all(abs(v['diagnostic_to_event_energy_ratio']-1)<1e-12 for v in energy['controls'])
+tier=json.loads((Z/'tier_summary_bb19f31_evidence.json').read_text())
+metrics=('ttft_s','prefill_end_s','decode_s','tier_total_s','cum_end_s')
+for stage in ('0','1'):
+    rows=[r for r in tier['collector_rows'] if r['tier']==stage]
+    assert len(rows)==7 and len({tuple(r[k] for k in metrics) for r in rows})==1
+controls={(r['rung'],r['history_len'],r['cacheblend_batch_size']):r for r in tier['actual_small_dags']}
+for key in (('A2',0,8),('A3b',0,8)):
+    r=controls[key];q=r['summary']['requests']['r'];assert q['first_token_s']==r['final_gpu_event']['end_s']
+r=controls[('A3b',0,1)];assert r['summary']['requests']['r']['first_token_s']<r['final_gpu_event']['end_s']
+assert controls[('A2',3,8)]['summary']['requests']['r']['first_token_s']==0
+main=json.loads((Z/'bb19f31_main_verification.json').read_text())
+assert len(main['current_turns_inputs'])==21 and all(not r['nonzero_history_requests'] and not r['output_fingerprint_shared_by_different_parents'] for r in main['current_turns_inputs'])
+shutil.copyfile('/tmp/bb19f31_validate_audit.py',Z/'bb19f31_validate_audit.txt')
+copy_map=json.loads(Path('/tmp/bb19f31_archive_map.json').read_text())
+artifacts=[p for p in Z.rglob('*') if p.is_file() and any(key in str(p.relative_to(Z)) for key in ('bb19f31','ff5b91e')) and p!=manifest]
+late_tests=json.loads((Z/'ff5b91e_late_tests.json').read_text());assert late_tests['returncode']==0
+result={'revision':head,'main_audit_revision':start['head'],'previous_audit':'fbe6756','upstream':'c600051','scope':'Audit/docs only; fixed-price helper/DAG/collector and shared analytic link helper. No Ramulator performance run.',
+ 'external_commits_during_audit':late['commits_during_audit'],'external_source_changes':external_source_changes,
+ 'source_change_attribution':'The audit agent did not edit implementation. bb19f31-to-ff5b91e changes were externally committed during the audit and separately reviewed.',
+ 'user_ruling':'User explicitly confirmed decode small-transfer fixed overhead may be ignored; this model choice is settled, not a pending issue.',
+ 'unmodified_checks':checks,'old_audit_unchanged_except_current_docs':not history_changes,
+ 'previous_current_doc_preserved_byte_for_byte':True,'tracked_changes':changed,'unexpected_non_document_files':unexpected,
+ 'local_links_checked':count,'broken_links':bad,'case_anchors_preserved':True,
+ 'tests':{'count':7,'reported_seconds':float(re.search(r'Ran 7 tests in ([\d.]+)s',tests['stderr']).group(1)),
+ 'returncode':tests['returncode'],'command':tests['command'],'full_output':'bb19f31_tests.json'},
+ 'facts_verified':['E1 8 paths + 4 controls diagnostic/event = 1','Same-summary collector across seven rungs and two tiers',
+ 'Batch 8 history 0 first_token includes final GPU calculation in tested A2/A3b controls','PIM batch 1 / A2 positive-history summary counterexamples',
+ '21 current turns JSON have zero history placeholders and no cross-parent repeated output fingerprint'],
+ 'late_test':{'count':1,'returncode':late_tests['returncode'],'command':late_tests['command']},
+ 'agents':['independent_fairness_audit','ledger_trace_boundary_audit','attacc_model_provenance'],
+ 'archive_copy_map':copy_map,'artifact_sha256':{str(p.relative_to(Z)):sha(p) for p in sorted(artifacts)},
+ 'documentation_sha256':{str(p.relative_to(R)):sha(p) for p in docs}}
+manifest.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'unmodified':checks,'old_evidence_unchanged':not history_changes,'links':count,'bad_links':bad,'tracked_changes':changed,'artifact_files':len(artifacts)},ensure_ascii=False,indent=2))

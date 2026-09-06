@@ -1,0 +1,32 @@
+from pathlib import Path
+import json,sys,subprocess
+sys.dont_write_bytecode=True
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');sys.path.insert(0,str(R))
+from src.workload import load_workload,build_reuse_plan,validate_reuse_plan
+from src import workload_runner as wr
+out={'revision':'bb19f31','scope':'Main audit: public loader, planner, validator, binding only. No simulation.'}
+w=load_workload('/tmp/independent_c8_bb19f31_cacheblend_rounding.json')
+p=build_reuse_plan(w,'cacheblend',cacheblend_recompute_ratio=.3,cacheblend_partial_recompute_layers=(0,))
+try:validate_reuse_plan(w,p,model_layers=1);out['cacheblend_rounding']='unexpected-pass'
+except Exception as e:out['cacheblend_rounding']={'exception':type(e).__name__,'message':str(e)}
+assert 'has 6 recompute rows; expected 5' in out['cacheblend_rounding']['message']
+w=load_workload('/tmp/independent_c8_bb19f31_same_parent_output_fp.json')
+p=build_reuse_plan(w,'recompute',epic_prefix_recompute_tokens=1);validate_reuse_plan(w,p)
+tlb=wr.NaiveKVLayout(256);wr._prepare_cacheblend_tlb(w,p,1,tlb,wr._parent_output_fingerprints(w))
+r=next(r for r in w.requests if r.request_id=='w1')
+out['parent_output_source']={'declared_parent':r.parent_id,'decisions':[{'master_owner':d.owner_request_id,'inherits_from':d.inherits_from,'correction_rows':d.epic_prefix_rows} for d in p.reusable if d.request_id=='w1' and d.fingerprint=='O'],
+ 'binding_owners':[loc.owner for _,_,_,loc in wr._cacheblend_tlb_rows(w,p,0,r,tlb) if loc.fingerprint=='O']}
+assert out['parent_output_source']['declared_parent']=='w0' and set(out['parent_output_source']['binding_owners'])=={'a'}
+out['current_turns_inputs']=[]
+for f in sorted((R/'workload/probe/sweep').glob('*_turns.json')):
+    raw=json.loads(f.read_text());agents=raw['agents'];output_fps={}
+    for a in agents:
+        for seg in a['segs']:
+            if seg['role']=='parent_out':output_fps.setdefault(seg['sha'],set()).add(a['parent'])
+    out['current_turns_inputs'].append({'file':f.name,'nonzero_history_requests':sum(a.get('history_len',0)!=0 for a in agents),
+        'output_fingerprint_shared_by_different_parents':any(len(v)>1 for v in output_fps.values())})
+assert len(out['current_turns_inputs'])==21
+assert not any(r['nonzero_history_requests'] or r['output_fingerprint_shared_by_different_parents'] for r in out['current_turns_inputs'])
+out['implementation_changed_since_last']=subprocess.check_output(['git','diff','--name-only','fbe6756','HEAD','--',':!docs/**',':!audit/**'],cwd=R,text=True).splitlines()
+Path('/tmp/bb19f31_main_verification.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({k:v for k,v in out.items() if k!='current_turns_inputs'},indent=2))

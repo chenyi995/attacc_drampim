@@ -1,0 +1,16 @@
+from pathlib import Path
+import json,os,subprocess,sys,time
+R=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822')
+names=[
+ 'tests.test_workload.AgenticHistoryTests.test_every_later_turn_inherits_from_the_turn_that_wrote_the_diff',
+ 'tests.test_workload.AgenticHistoryTests.test_a_turn_reads_the_inherited_corrections_it_does_not_recompute',
+ 'tests.test_workload.AgenticHistoryTests.test_gpu_only_baseline_does_not_recompute_inherited_corrections',
+ 'tests.test_workload.AgenticHistoryTests.test_cacheblend_inherits_the_sampled_rows_of_the_writer',
+ 'tests.test_workload.AgenticHistoryTests.test_a_changed_prefix_blocks_inheritance',
+ 'tests.test_workload.AgenticHistoryTests.test_every_layout_executes_the_same_correction_plan',
+ 'tests.test_collect_ladder.TierRowsTest']
+cmd=[sys.executable,'-m','unittest',*names]
+start=time.monotonic();r=subprocess.run(cmd,cwd=R,env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1'),text=True,capture_output=True)
+out={'revision':'bb19f31','command':cmd,'returncode':r.returncode,'wall_seconds':time.monotonic()-start,'stdout':r.stdout,'stderr':r.stderr}
+Path('/tmp/bb19f31_tests.json').write_text(json.dumps(out,indent=2)+'\n')
+print(r.stdout+r.stderr);sys.exit(r.returncode)

@@ -1,0 +1,468 @@
+{
+  "policy": "recompute",
+  "latency_model": "physical-dag-gpu-remote-kv",
+  "decode_attn": "gpu",
+  "kv_mapping": "none",
+  "prefill_attention_rows": {
+    "pim": 0,
+    "gpu": 4
+  },
+  "prefill_attention_sides": {
+    "r": "gpu"
+  },
+  "kv_residency": "remote-dumb-storage (ruling 2026-08-26: link bytes = GPU <-> remote storage over NVLink/PCIe)",
+  "pim_prefill_mode": "gpu",
+  "history_rows": 0,
+  "events": [
+    {
+      "id": "cb-0",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "qkv",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.0,
+      "end_s": 0.001
+    },
+    {
+      "id": "cb-1",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_prefill_score",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-0"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.001,
+      "end_s": 0.002
+    },
+    {
+      "id": "cb-2",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_prefill_softmax",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-1"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.002,
+      "end_s": 0.003
+    },
+    {
+      "id": "cb-3",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_prefill_context",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-2"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.003,
+      "end_s": 0.004
+    },
+    {
+      "id": "cb-4",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "kv_gpu_to_remote",
+      "device": "LINK",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 8192,
+      "depends_on": [
+        "cb-0"
+      ],
+      "query_positions": [],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.001,
+      "end_s": 0.002
+    },
+    {
+      "id": "cb-5",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_proj",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-3"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.004,
+      "end_s": 0.005
+    },
+    {
+      "id": "cb-6",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_comm_g2g",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-5"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.005,
+      "end_s": 0.006
+    },
+    {
+      "id": "cb-7",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_norm1",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-6"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.006,
+      "end_s": 0.007
+    },
+    {
+      "id": "cb-8",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_ff1",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-7"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.007,
+      "end_s": 0.008
+    },
+    {
+      "id": "cb-9",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_gelu",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-8"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.008,
+      "end_s": 0.009000000000000001
+    },
+    {
+      "id": "cb-10",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_ff2",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-9"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.009000000000000001,
+      "end_s": 0.010000000000000002
+    },
+    {
+      "id": "cb-11",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_comm_g2g",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-10"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.010000000000000002,
+      "end_s": 0.011000000000000003
+    },
+    {
+      "id": "cb-12",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "gpu_norm2",
+      "device": "GPU",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-11"
+      ],
+      "query_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.011000000000000003,
+      "end_s": 0.012000000000000004
+    },
+    {
+      "id": "cb-13",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "decode_kv_remote_to_gpu",
+      "device": "LINK",
+      "rows": 4,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 8192,
+      "depends_on": [
+        "cb-12",
+        "cb-4"
+      ],
+      "query_positions": [],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.012000000000000004,
+      "end_s": 0.013000000000000005
+    },
+    {
+      "id": "cb-14",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "gpu-decode-t0-s0-w0",
+      "name": "decode_gpu_step_batch",
+      "device": "GPU",
+      "rows": 1,
+      "time_s": 0.012000000000000004,
+      "energy_nj": 0.012,
+      "link_bytes": 0,
+      "depends_on": [
+        "cb-13"
+      ],
+      "query_positions": [
+        4
+      ],
+      "dram_addresses": [],
+      "batch_members": [
+        "r"
+      ],
+      "masked_rows": 0,
+      "start_s": 0.013000000000000005,
+      "end_s": 0.02500000000000001
+    },
+    {
+      "id": "cb-15",
+      "transformer_layer": 0,
+      "tier": 0,
+      "request": "r",
+      "name": "decode_kv_gpu_to_remote",
+      "device": "LINK",
+      "rows": 1,
+      "time_s": 0.001,
+      "energy_nj": 0.001,
+      "link_bytes": 2048,
+      "depends_on": [
+        "cb-14"
+      ],
+      "query_positions": [],
+      "dram_addresses": [],
+      "batch_members": [],
+      "masked_rows": 0,
+      "start_s": 0.02500000000000001,
+      "end_s": 0.02600000000000001
+    }
+  ],
+  "event_count": 16,
+  "summary": {
+    "requests": {
+      "r": {
+        "tier": 0,
+        "prefill_end_s": 0.012000000000000004,
+        "first_token_s": 0.02500000000000001,
+        "end_s": 0.02600000000000001
+      }
+    },
+    "tiers": {
+      "0": {
+        "start_s": 0.0,
+        "end_s": 0.02600000000000001,
+        "requests": 1
+      }
+    }
+  },
+  "link_bytes": 18432,
+  "makespan_s": 0.02600000000000001,
+  "gpu_time_s_unoverlapped": 0.024000000000000007,
+  "pim_pool_time_s_unoverlapped": 0.0,
+  "die_time_s_unoverlapped": 0.0,
+  "energy_nj": 0.027000000000000007,
+  "energy_breakdown_nj": {
+    "by_class": {
+      "GPU": 0.024000000000000004,
+      "LINK": 0.003
+    },
+    "by_event": {
+      "decode_gpu_step_batch": 0.012,
+      "decode_kv_gpu_to_remote": 0.001,
+      "decode_kv_remote_to_gpu": 0.001,
+      "gpu_comm_g2g": 0.002,
+      "gpu_ff1": 0.001,
+      "gpu_ff2": 0.001,
+      "gpu_gelu": 0.001,
+      "gpu_norm1": 0.001,
+      "gpu_norm2": 0.001,
+      "gpu_prefill_context": 0.001,
+      "gpu_prefill_score": 0.001,
+      "gpu_prefill_softmax": 0.001,
+      "gpu_proj": 0.001,
+      "kv_gpu_to_remote": 0.001,
+      "qkv": 0.001
+    },
+    "by_layer": {
+      "0": 0.027000000000000007
+    }
+  },
+  "energy_unit": "nJ"
+}

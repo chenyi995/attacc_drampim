@@ -1,0 +1,181 @@
+{
+  "revision": "ff5b91eb12648d532eed3fdc21a503a331ade025",
+  "main_audit_revision": "bb19f31134362548405a3bc225c43139b4a768af",
+  "previous_audit": "fbe6756",
+  "upstream": "c600051",
+  "scope": "Audit/docs only; fixed-price helper/DAG/collector and shared analytic link helper. No Ramulator performance run.",
+  "external_commits_during_audit": [
+    "ff5b91e Record the link-latency ruling and the first small run",
+    "9c40891 Charge the NVLink transfer latency only on prefill transfers"
+  ],
+  "external_source_changes": [
+    "src/devices.py",
+    "src/workload_runner.py",
+    "tests/test_workload.py"
+  ],
+  "source_change_attribution": "The audit agent did not edit implementation. bb19f31-to-ff5b91e changes were externally committed during the audit and separately reviewed.",
+  "user_ruling": "User explicitly confirmed decode small-transfer fixed overhead may be ignored; this model choice is settled, not a pending issue.",
+  "unmodified_checks": {
+    "protected": {
+      "files": 138,
+      "changed": [],
+      "unchanged": true,
+      "baseline": "ff5b91e after external source commits"
+    },
+    "existing_results": {
+      "files": 126,
+      "changed": [],
+      "unchanged": true,
+      "baseline": "bb19f31 audit start"
+    },
+    "paper": {
+      "files": 10,
+      "changed": [],
+      "unchanged": true,
+      "baseline": "bb19f31 audit start"
+    }
+  },
+  "old_audit_unchanged_except_current_docs": true,
+  "previous_current_doc_preserved_byte_for_byte": true,
+  "tracked_changes": [
+    "audit/2026-09-05/CURRENT_ISSUES.md",
+    "audit/2026-09-05/README.md",
+    "audit/2026-09-05/archive/README.md",
+    "docs/sessions/README.md"
+  ],
+  "unexpected_non_document_files": [],
+  "local_links_checked": 108,
+  "broken_links": [],
+  "case_anchors_preserved": true,
+  "tests": {
+    "count": 7,
+    "reported_seconds": 24.356,
+    "returncode": 0,
+    "command": [
+      "/usr/bin/python3",
+      "-m",
+      "unittest",
+      "tests.test_workload.AgenticHistoryTests.test_every_later_turn_inherits_from_the_turn_that_wrote_the_diff",
+      "tests.test_workload.AgenticHistoryTests.test_a_turn_reads_the_inherited_corrections_it_does_not_recompute",
+      "tests.test_workload.AgenticHistoryTests.test_gpu_only_baseline_does_not_recompute_inherited_corrections",
+      "tests.test_workload.AgenticHistoryTests.test_cacheblend_inherits_the_sampled_rows_of_the_writer",
+      "tests.test_workload.AgenticHistoryTests.test_a_changed_prefix_blocks_inheritance",
+      "tests.test_workload.AgenticHistoryTests.test_every_layout_executes_the_same_correction_plan",
+      "tests.test_collect_ladder.TierRowsTest"
+    ],
+    "full_output": "bb19f31_tests.json"
+  },
+  "facts_verified": [
+    "E1 8 paths + 4 controls diagnostic/event = 1",
+    "Same-summary collector across seven rungs and two tiers",
+    "Batch 8 history 0 first_token includes final GPU calculation in tested A2/A3b controls",
+    "PIM batch 1 / A2 positive-history summary counterexamples",
+    "21 current turns JSON have zero history placeholders and no cross-parent repeated output fingerprint"
+  ],
+  "late_test": {
+    "count": 1,
+    "returncode": 0,
+    "command": [
+      "/usr/bin/python3",
+      "-m",
+      "unittest",
+      "tests.test_workload.AgenticHistoryTests.test_link_latency_is_charged_on_prefill_transfers_only"
+    ]
+  },
+  "agents": [
+    "independent_fairness_audit",
+    "ledger_trace_boundary_audit",
+    "attacc_model_provenance"
+  ],
+  "archive_copy_map": {
+    "bb19f31_audit_setup.py": "bb19f31_audit_setup.txt",
+    "bb19f31_audit_start.json": "bb19f31_audit_start.json",
+    "bb19f31_targeted_tests.py": "bb19f31_targeted_tests.txt",
+    "bb19f31_tests.json": "bb19f31_tests.json",
+    "bb19f31_main_verification.py": "bb19f31_main_verification.txt",
+    "bb19f31_main_verification.json": "bb19f31_main_verification.json",
+    "bb19f31_c8_replay_probe.py": "bb19f31_c8_replay_probe.txt",
+    "bb19f31_c8_replay_bb19f31_evidence.json": "bb19f31_c8_replay_bb19f31_evidence.json",
+    "bb19f31_replay_provenance.json": "bb19f31_replay_provenance.json",
+    "independent_c8_bb19f31_probe.py": "independent_c8_bb19f31_probe.txt",
+    "independent_c8_bb19f31_evidence.json": "independent_c8_bb19f31_evidence.json",
+    "independent_c8_bb19f31_boundaries_probe.py": "independent_c8_bb19f31_boundaries_probe.txt",
+    "independent_c8_bb19f31_boundaries_evidence.json": "independent_c8_bb19f31_boundaries_evidence.json",
+    "ledger_scan_bb19f31_probe.py": "ledger_scan_bb19f31_probe.txt",
+    "ledger_scan_bb19f31_evidence.json": "ledger_scan_bb19f31_evidence.json",
+    "head_energy_bb19f31_probe.py": "head_energy_bb19f31_probe.txt",
+    "head_energy_bb19f31_evidence.json": "head_energy_bb19f31_evidence.json",
+    "tier_summary_bb19f31_probe.py": "tier_summary_bb19f31_probe.txt",
+    "tier_summary_bb19f31_evidence.json": "tier_summary_bb19f31_evidence.json",
+    "independent_c8_bb19f31_two_turns.json": "independent_c8_bb19f31_two_turns.json",
+    "independent_c8_bb19f31_three_turns.json": "independent_c8_bb19f31_three_turns.json",
+    "independent_c8_bb19f31_changed_prefix.json": "independent_c8_bb19f31_changed_prefix.json",
+    "independent_c8_bb19f31_generated_turns.json": "independent_c8_bb19f31_generated_turns.json",
+    "independent_c8_bb19f31_cacheblend_rounding.json": "independent_c8_bb19f31_cacheblend_rounding.json",
+    "independent_c8_bb19f31_same_parent_output_fp.json": "independent_c8_bb19f31_same_parent_output_fp.json",
+    "independent_c8_bb19f31_cacheblend_three_layers.json": "independent_c8_bb19f31_cacheblend_three_layers.json",
+    "bb19f31_c8_replay_two_turns.json": "bb19f31_c8_replay_two_turns.json",
+    "bb19f31_c8_replay_three_turns.json": "bb19f31_c8_replay_three_turns.json",
+    "bb19f31_c8_replay_changed_prefix.json": "bb19f31_c8_replay_changed_prefix.json",
+    "bb19f31_c8_replay_generated_turns.json": "bb19f31_c8_replay_generated_turns.json"
+  },
+  "artifact_sha256": {
+    "CURRENT_ISSUES_before_bb19f31.txt": "e8f366be0ff04ed2407d99678a2f2535cd08d5e2035dbd640de8b4c54239c2b2",
+    "bb19f31_audit_setup.txt": "765a9e106e6cc33662ba6cab81c931f407d3a80cb6b02962e83fbb0470d62a0a",
+    "bb19f31_audit_start.json": "b637e9fdf8b1e64ef6cd1ef7992c7fe8f719d1bdeb05efdc1488320c767ccf7e",
+    "bb19f31_c8_replay_bb19f31_evidence.json": "39d0a3cb6a62dacef2cca37cce13836efe5cebbf6a3d556bbe2edd4265e79535",
+    "bb19f31_c8_replay_changed_prefix.json": "2f376d01df608afc0e042561f78dcc97e14ee9932814e013ac1d66128bd620a4",
+    "bb19f31_c8_replay_generated_turns.json": "f4604df9203211849682ac9b37be0720bf60f77a197102ad6b0d7abcb97f6a39",
+    "bb19f31_c8_replay_probe.txt": "00a014f361d2db2f145b5c487122eb917a461a2d3ced80f19b23e8fafa430dd3",
+    "bb19f31_c8_replay_three_turns.json": "a519a199c6c1a2030ce75fdfcb2270454065835be0f5803c1aa0be436f6425b2",
+    "bb19f31_c8_replay_two_turns.json": "bf3acecebd4af78097ed8122fda2191ecc5f3a27d5c87bcd139b37a39d676b45",
+    "bb19f31_main_verification.json": "b02748d7778464160e8b2aae0090b1e74f020b5ca2d423e2cd3a790719e934a0",
+    "bb19f31_main_verification.txt": "68698c724b5d0f8a0f7a023da54858341259254e9e3c2b5a71126d8065674e69",
+    "bb19f31_raw/README.md": "bee7094e558cc666ee0511dc8010cdc12d5b734480f06a03d7b524580945e83e",
+    "bb19f31_raw/real_A2_history0_batch1.json": "0fadfa0098636d1c1912472adad53820281df091e55e4d941b86866d6fedf81a",
+    "bb19f31_raw/real_A2_history0_batch8.json": "0fadfa0098636d1c1912472adad53820281df091e55e4d941b86866d6fedf81a",
+    "bb19f31_raw/real_A2_history3_batch1.json": "27720fd9066b8516607a34baf8ae3fbcd5740e936d8d367aff435bbd1fc5c473",
+    "bb19f31_raw/real_A2_history3_batch8.json": "27720fd9066b8516607a34baf8ae3fbcd5740e936d8d367aff435bbd1fc5c473",
+    "bb19f31_raw/real_A3b_history0_batch1.json": "f08c52d4c4c909b7a28fa2ca0d7fb3cd77a9428768e3fef9f27136157649c0ee",
+    "bb19f31_raw/real_A3b_history0_batch8.json": "beb910c1bbc2c60cb2f72d3591cec66cafa809486f61e064b70a1d6de66f5ed8",
+    "bb19f31_raw/real_A3b_history3_batch1.json": "9b2d8235870fac2f56ae561a32fe09a2593be350d6818f085cfac95b3c2d33ed",
+    "bb19f31_raw/real_A3b_history3_batch8.json": "8e585597aaaa0026a9334598d5e9845ea16b0588a9cae86b471bd49bb43189aa",
+    "bb19f31_replay_provenance.json": "144d55959aee965ebefd1de49a8a1d7e3ab16d0c759c28dbb22d287dacbc89dd",
+    "bb19f31_targeted_tests.txt": "354eabe1d93eaf21f215c5f59a0a2ca466399c91e212dcceeaea6c8e84a9ce69",
+    "bb19f31_tests.json": "5fd9bc43c2b7ceec1a06bd42d01561faa8f4aa285b1063aa0952209626469d05",
+    "bb19f31_update_audit.txt": "b6b19006da054ab54a48d1dbc2d58591ea6f48ae14c506d5192a3d5283c5de0a",
+    "bb19f31_validate_audit.txt": "7093369adf05bc9f1fa2fcb651be48d28370004adcdb39f2568592486b5b8983",
+    "ff5b91e_extend_audit.txt": "d32faf727241a890deaa7d7cbae64b1ada2afe1f942c6e6720501c2c786dd6db",
+    "ff5b91e_finalize_docs.txt": "fd5a9d865528dbe3296093b3a02d8dc042a7b5f808d0361f82592e27042165ab",
+    "ff5b91e_late_check.txt": "5be46a662afa172c7bc834ea5ecc2265495cdc7d1bf04389fa8d12adf112674e",
+    "ff5b91e_late_snapshot.json": "cefe8279497f76fab43606be98ea0507d797ca4706c11452cc9bfbe010da195e",
+    "ff5b91e_late_tests.json": "c49ed2b4e676bf698791ca2bf071bc9d154f7f535a6a21a08cb7ee1f346511fc",
+    "head_energy_bb19f31_evidence.json": "6bec118a4bef7dd9b42f5a0353ab74dd064ce39f2b0b4472d4073fe328b5b4b3",
+    "head_energy_bb19f31_probe.txt": "2137c94597c352ef78d90dac27138c6ee2570823778e16062d074b34158cadda",
+    "independent_c8_bb19f31_boundaries_evidence.json": "d897bb45bd6ec79f7f91bed8661261fa4e28431923773183fc4469ba0dc88b5d",
+    "independent_c8_bb19f31_boundaries_probe.txt": "3e0c50bc1edce60659f9c59300d7c899322301765bb0b463827082ad8fa44f86",
+    "independent_c8_bb19f31_cacheblend_rounding.json": "bf3acecebd4af78097ed8122fda2191ecc5f3a27d5c87bcd139b37a39d676b45",
+    "independent_c8_bb19f31_cacheblend_three_layers.json": "a519a199c6c1a2030ce75fdfcb2270454065835be0f5803c1aa0be436f6425b2",
+    "independent_c8_bb19f31_changed_prefix.json": "2f376d01df608afc0e042561f78dcc97e14ee9932814e013ac1d66128bd620a4",
+    "independent_c8_bb19f31_evidence.json": "39d0a3cb6a62dacef2cca37cce13836efe5cebbf6a3d556bbe2edd4265e79535",
+    "independent_c8_bb19f31_generated_turns.json": "f4604df9203211849682ac9b37be0720bf60f77a197102ad6b0d7abcb97f6a39",
+    "independent_c8_bb19f31_probe.txt": "299a4c00e8c5e399ae0e48bcf9061deab2580255eeb4eacbf56b469f96c0e32f",
+    "independent_c8_bb19f31_same_parent_output_fp.json": "ac70986511d1cc1d1f5d2fb10bb08b227f95633d09ad1b510d98d92f6a5a1c45",
+    "independent_c8_bb19f31_three_turns.json": "a519a199c6c1a2030ce75fdfcb2270454065835be0f5803c1aa0be436f6425b2",
+    "independent_c8_bb19f31_two_turns.json": "bf3acecebd4af78097ed8122fda2191ecc5f3a27d5c87bcd139b37a39d676b45",
+    "ledger_scan_bb19f31_evidence.json": "54561a9c0c896113c19326ba778cc20c3515f7acc4a7e46d5e5c2688ed199386",
+    "ledger_scan_bb19f31_probe.txt": "91cfcc1183f4608378d4ec0e7aaf3c654509593165550278775282945881b615",
+    "link_latency_ff5b91e_evidence.json": "878dada6003443a2c24dd7b22aa3fddb4c73d628e6ca3909cf9d2c007a185396",
+    "link_latency_ff5b91e_probe.txt": "f53643d26dbb07be066ca891522095d3a82f26fcaab1531c70740208badc1d5c",
+    "tier_summary_bb19f31_evidence.json": "e01c1b9e32dcf60ef176455d2e0d117968ec363922e7cda900569281a00be971",
+    "tier_summary_bb19f31_probe.txt": "2b7767d2d837153469660894f9f6d913d327cc173859d98312b4d3e5c7945aad"
+  },
+  "documentation_sha256": {
+    "audit/2026-09-05/CURRENT_ISSUES.md": "bac50f443994cccd573824f960192d7a76b834e9c4b1344313981ee280663dd8",
+    "audit/2026-09-05/README.md": "cd31dcf2347f759afa19d5c16d96eb3b0a170076a713c06af8ba7d5995593efc",
+    "audit/2026-09-05/archive/README.md": "5c09b1c64d5565cb9c5b8efb70a30f30dbbc59b3ed0520e32db006af6ceff0e8",
+    "docs/sessions/README.md": "2ad3acd002c9c8bd4bbcbb9c6045250ef5d1e9954012b230435aa4ae5873e6df",
+    "audit/2026-09-05/archive/bb19f31_raw/README.md": "bee7094e558cc666ee0511dc8010cdc12d5b734480f06a03d7b524580945e83e",
+    "docs/sessions/2026-09-05-bb19f31-fix-verification.md": "60cbb6c5e2bc6332a2f9edbbe30daf834d5b66cec7bec93d3c6b469ae9e2ba7c"
+  }
+}
