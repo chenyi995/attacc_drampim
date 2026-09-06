@@ -95,6 +95,37 @@ B1 = dict(agents=8, rounds=8, chunks=2, corpus=64, lout=128, retrieval="scattere
 #     nothing to share and their decode was identical to A4e's; a batch
 #     that co-reads the brief is what one MQ sweep serves at once.
 C1 = dict(B1, agents=6, rounds=6, chunks=1, lout_chatty=32, fresh_share=0.1, shared=8)
+# C2, the second baseline (chenyi9 2026-09-05: "如果一个 baseline 不够就两个"):
+# a chat-heavy session -- every worker is chatty (16 own tokens, 32-token
+# answers), the corpus is small (16 chunks), the shared brief is the same 8
+# chunks, no fresh chats.  Every turn is decode-shaped, so here A5's
+# bank-side prefill wins outright (C1 makes it lose on the 16k ingest and
+# the fresh chats) and A6 matches it; the layout levers stay (scattered
+# retrieval, one chunk per turn); more agents sharing the brief give MQ more
+# to share per sweep.
+C2 = dict(B1, agents=8, rounds=8, chunks=1, corpus=16, lout_chatty=32,
+          chatty_share=1.0, fresh_share=0.0, shared=8)
+BASELINES = {"C1": C1, "C2": C2}
+# One-axis sweeps around C1 (sweep points run A3b and A6 only).  Each axis
+# moves one lever of the A3b -> A6 gain: how many agents share the brief and
+# the banks (MQ, table conflicts), how long the session runs (repairs
+# accumulate), how much of the session is decode-shaped (the chooser's PIM
+# share), how large the resident context is (scan share of a step), how
+# long the answers are (decode share of E2E), how many chunks a turn
+# retrieves (repairs per turn), and how much fresh long-prompt work arrives
+# (A6's GPU-side share).
+C1_SWEEPS = {
+    "S1_agents": ("agents", (4, 12, 16)),
+    "S2_rounds": ("rounds", (3, 12)),
+    "S3_chatty_share": ("chatty_share", (0.0, 0.25, 0.75, 1.0)),
+    "S4_shared": ("shared", (0, 16, 32)),
+    "S5_lout_chatty": ("lout_chatty", (8, 128)),
+    "S6_lout": ("lout", (32, 512)),
+    "S7_chunks": ("chunks", (2, 4)),
+    "S8_fresh_share": ("fresh_share", (0.0, 0.25)),
+    "S9_corpus": ("corpus", (32, 128)),
+    "S10_retrieval": ("retrieval", ("consecutive",)),
+}
 B1_SWEEPS = {
     "T1_agents": ("agents", (4, 16)),
     "T2_rounds": ("rounds", (4, 16)),
@@ -255,23 +286,31 @@ def write_all(outdir):
                      "corpus": p["corpus"], "lout": p["lout"], "fresh_share": p["fresh_share"],
                      "requests": n, "prefill_tokens": prefill, "decode_tokens": decode})
 
-    for form in ("interleaved", "turns"):
-        emit("B0", "baseline", "-", dict(BASELINE), form)
-        for axis, (param, values) in SWEEPS.items():
-            for value in values:
-                p = dict(BASELINE)
-                p[param] = value
-                tag = ("%s_%s" % (axis, str(value).replace(".", "p")))
-                emit(tag, axis, value, p, form)
-    if os.environ.get("B1_MATRIX", "1") != "0":
+    # The protocol (chenyi9 2026-09-05): baselines C1 / C2 run every combo
+    # (A1 A2 A3b A4c A4e A5 A6); the C1_S* sweep points run A3b and A6.
+    for name, preset in BASELINES.items():
+        emit(name, "baseline", "-", dict(preset), "turns")
+    for axis, (param, values) in C1_SWEEPS.items():
+        for value in values:
+            p = dict(C1)
+            p[param] = value
+            emit("C1_%s_%s" % (axis, str(value).replace(".", "p")), axis, value, p, "turns")
+    if os.environ.get("LEGACY_MATRIX", "0") == "1":
+        # the 2026-09-05 B0 / S1-S6 (both forms) and B1 / T1-T9 sets, kept
+        # reproducible but no longer written by default
+        for form in ("interleaved", "turns"):
+            emit("B0", "baseline", "-", dict(BASELINE), form)
+            for axis, (param, values) in SWEEPS.items():
+                for value in values:
+                    p = dict(BASELINE)
+                    p[param] = value
+                    emit("%s_%s" % (axis, str(value).replace(".", "p")), axis, value, p, form)
         emit("B1", "baseline", "-", dict(B1), "turns")
-        emit("C1", "classic", "-", dict(C1), "turns")
         for axis, (param, values) in B1_SWEEPS.items():
             for value in values:
                 p = dict(B1)
                 p[param] = value
-                tag = ("%s_%s" % (axis, str(value).replace(".", "p")))
-                emit(tag, axis, value, p, "turns")
+                emit("%s_%s" % (axis, str(value).replace(".", "p")), axis, value, p, "turns")
     with open(os.path.join(outdir, "manifest.csv"), "w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -283,9 +322,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--all", metavar="OUTDIR", help="write the whole matrix + manifest.csv")
     parser.add_argument("--form", choices=("interleaved", "turns"), default="interleaved")
-    parser.add_argument("--preset", choices=("B0", "B1"), default="B0",
-                        help="B0: the plain baseline keys; B1: chatty/writer agents, "
-                             "scattered retrieval, optional lout_chatty")
+    parser.add_argument("--preset", choices=("B0", "B1", "C1", "C2"), default="C1",
+                        help="C1 / C2: the protocol baselines; B1: their parent "
+                             "(chatty/writer agents, scattered retrieval); B0: the plain keys")
     seen = set()
     for preset in (BASELINE, B1):
         for key, value in preset.items():
@@ -299,7 +338,7 @@ def main():
         rows = write_all(args.all)
         print("%d workloads -> %s" % (len(rows), args.all))
         return 0
-    p = dict(BASELINE if args.preset == "B0" else B1)
+    p = dict({"B0": BASELINE, "B1": B1, "C1": C1, "C2": C2}[args.preset])
     for key in p:
         value = getattr(args, key)
         if value is not None:
