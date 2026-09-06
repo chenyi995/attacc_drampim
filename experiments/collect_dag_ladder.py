@@ -128,7 +128,7 @@ def main():
             tier = batch.get("tier")
             if tier is None:
                 continue
-            stamps = [batch.get(k) for k in ("q_arrival_s", "attention_start_s")]
+            stamps = [batch.get("attention_start_s")]        # attention starts only
             stamps = [s for s in stamps if s is not None]
             if not stamps:
                 continue
