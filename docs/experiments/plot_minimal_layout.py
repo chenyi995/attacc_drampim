@@ -163,16 +163,28 @@ def decode_fig(root,out):
 
 
 def bank_measure(events,rid,decode,heads,dhead):
-    selected=[e for e in events if e['request']==rid and 'pim_kv_scan' in e['name'] and e['name'].startswith('decode_')==decode]
+    selected=[]
+    for e in events:
+        members=e.get('batch_members') or [e['request']]
+        if rid not in members or 'pim_kv_scan' not in e['name'] or e['name'].startswith('decode_')!=decode:
+            continue
+        positions=tuple(e['query_positions'])
+        # Shared scans carry a batch label in request, and one query
+        # position per member. Count this request's useful work only.
+        # Unbatched prefill sweeps may contain several queries of rid.
+        if e.get('batch_members') and len(positions)==len(members):
+            positions=(positions[members.index(rid)],)
+        selected.append((e,positions))
     if not selected: return None,None
     if decode:
-        first=min(p for e in selected for p in e['query_positions'])
-        selected=[e for e in selected if any(p>first for p in e['query_positions'])]
+        first=min(p for e,positions in selected for p in positions)
+        selected=[(e,tuple(p for p in positions if p>first)) for e,positions in selected
+                  if any(p>first for p in positions)]
     sweeps={};queries=set()
-    for e in selected:
+    for e,positions in selected:
         key=(e['transformer_layer'],e['name'],tuple(e['query_positions']))
         sweeps[key]=max(sweeps.get(key,0),e['time_s'])
-        queries.update((e['transformer_layer'],p) for p in e['query_positions'])
+        queries.update((e['transformer_layer'],p) for p in positions)
     seconds=sum(sweeps.values())
     # Useful QK+PV MACs: one query attends to positions 0..p.  Two phases,
     # one multiply+add per element; H_Q already includes the GQA Q heads.
