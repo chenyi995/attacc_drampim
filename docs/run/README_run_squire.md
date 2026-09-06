@@ -113,7 +113,7 @@ for p in $(ps -eo pid,args --no-headers | grep -E "run_dag_ladder.sh|run_sweep.s
 
 ```bash
 python3 experiments/extract_protocol.py $KVPIM_SCRATCH/proto_w1_LLAMA3-8B --ref A3b     # protocol.csv + protocol.md：baseline 全表、sweep 的 A6/A3b
-python3 experiments/summarize_ladder.py $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/C1_turns workload/probe/sweep/W1_turns.json A3b
+python3 experiments/summarize_ladder.py $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/W1_turns workload/probe/sweep/W1_turns.json A3b
 #   E2E = makespan；TTFT = 首 token − release；TBT 两种口径（论文用加权）；scan 三列；能量与平均功率；相对某档的比值
 cat $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/W1_turns/dag_ladder.csv     # collect_dag_ladder.py 自动生成
 cat $KVPIM_SCRATCH/proto_w1_LLAMA3-8B/W1_turns.sides.jsonl        # A6 每个请求的 t_xpu / t_bank / side

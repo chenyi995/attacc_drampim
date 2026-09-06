@@ -21,8 +21,8 @@ main 必须在更晚的 tier 引用，否则会被当成写者、得不到修正
 
 | 相邻档 | 机制 | W1 上的结构杠杆 |
 |---|---|---|
-| A3b → A4c | main 每轮的修正落在朴素写入流的不同行（断开的 diff），紧凑的 diff 行把它们收拢，diff 行在 head 的通道上轮转 | 修正行 3412 → 940（少 72%，末通道实现下的探针） |
-| A4c → A4e | worker 的回答被 main 共读，表把它们分到不同通道；main 的修正被表分成一组、放到 main 所读行最少的通道 | 最忙 lane 行数少 35%（同上） |
+| A3b → A4c | main 每轮的修正落在朴素写入流的不同行（断开的 diff），紧凑的 diff 行把它们收拢，diff 行在 head 的通道上轮转 | 修正行 3412 → 940（少 72%）；最忙 lane 的 DRAM 行 A3b 1704 → A4c 1569 |
+| A4c → A4e | worker 的回答被 main 共读，表把它们分到不同通道；main 的修正被表分成一组、放到 main 所读行最少的通道 | 最忙 lane 行数少 34%；最忙 lane 的 DRAM 行 1569 → 957 |
 | A4e → A5 | 每一轮都是 decode 形状（m 为几十、上下文几千）；MQ 合并 batch 里两个会话的共读 sweep | 两会话同号 worker 的文档历史相同 |
 | A5 → A6 | 语料导入是唯一的大 fresh prefill，A6 留在 GPU | owner 12288 token 的导入 |
 

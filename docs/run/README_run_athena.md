@@ -65,7 +65,7 @@ python3 -m unittest discover -s tests          # 应与 squire 一致：121/121
 
 ## 3. 提交
 
-一个 workload 一个作业（baseline C1/C2 七档；sweep 点 `RUNGS="A3b A6"`），`run_dag_ladder.sh` 默认 flash、pipeopt、k=8、batch 8，几何按协议表（LLAMA3-8B：`NGPU=1 NUM_HBM=5`）：
+一个 workload 一个作业（baseline W1 七档；sweep 点 `RUNGS="A3b A6"`），`run_dag_ladder.sh` 默认 flash、pipeopt、k=8、batch 8，几何按协议表（LLAMA3-8B：`NGPU=1 NUM_HBM=5`）：
 
 ```bash
 #!/usr/bin/env bash

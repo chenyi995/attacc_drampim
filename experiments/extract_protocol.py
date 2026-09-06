@@ -5,7 +5,7 @@
                                             [--ref A3b] [--csv out.csv] [--md out.md]
 
 ``<outroot>`` is what ``run_sweep.sh`` wrote: one directory per workload
-(``C1_turns/``, ``C1_S3_chatty_share_0p0_turns/`` ...), each holding the
+(``W1_turns/``, ``W1_S3_sessions_4_turns/`` ...), each holding the
 ``dag_<combo>.json`` reports of the combos that ran there.  For every
 (workload, combo) the script computes the four metrics of the protocol
 (docs/README_run_protocol.md §4) plus energy, and writes

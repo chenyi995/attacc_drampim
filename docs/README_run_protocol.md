@@ -3,14 +3,14 @@
 本页是跑实验的唯一入口。机器细节（编译器、scratch、监视器）见 `run/README_run_squire.md` 与 `run/README_run_athena.md`；
 指标定义见 `../audit/2026-09-05/METRICS_AND_EIGHT_CHANNELS.md`；改动理由见 `sessions/`。
 
-机制专项补充：[持续汇总与周期共读 workload](../workload/probe/targeted/README.md)。这些输入先做了实际地址与工作量手算，另附相邻档运行命令，不替换当前 C1/C2 协议。S11 加长共同简报、或只提高 BATCH 上限，不足以保证 A4c/A4e 的 TBT 收益扩大；参见该指南的反例及预算。
+另一会话 9-05 的设计研究 [持续汇总与周期共读 workload](../workload/probe/targeted/README.md)（D/E/P 输入与手算）不在 W1 协议里，作机制参考。
 
 ## 0. 用词
 
 | 词 | 指什么 | 例子 |
 |---|---|---|
 | **model** | 被服务的 LLM，决定层数、头数、GQA 与 GPU/HBM 几何 | `LLAMA3-8B`、`LLAMA-65B`；`CACHEBLEND-TINY` 只用来证明流程能跑通 |
-| **workload** | 拓扑 JSON：多 agent 多轮的请求依赖图，谁读谁写、每轮多长 | `workload/probe/sweep/C1_turns.json` |
+| **workload** | 拓扑 JSON：多 agent 多轮的请求依赖图，谁读谁写、每轮多长 | `workload/probe/sweep/W1_turns.json` |
 | **combo** | 阶梯上的一档，机制的组合 | `A1 A2 A3b A4c A4e A5 A6`（`--ablation`） |
 
 固定开关：`--engine dag --pipeopt --gpu-model flash --powerlimit --word 2 --pim-link nvlink3`，k=8（`--epic-prefix-recompute-tokens 8`），
@@ -108,7 +108,7 @@ scan_private / scan_shared（一次 decode scan 最慢 lane 的服务时长，�
 
 布局与 MQ 改的是 decode 的 PIM 扫描；一步 decode 的时间是 GPU 的线性层（权重读取、AttAcc 原有的 norm/激活固定项）加扫描加链路。
 扫描占一步的份额 ≈ batch × 驻留上下文 × KV 字节 对 权重字节的比：batch 8、上下文 2–5k 时，即使在真实 model 上扫描也只占一步的几个百分点，
-布局把扫描降 30% 只能在 TBT 上体现 1–2%（TINY 上实测 A3b→A4e 扫描 −29%、TBT −1.75%）。这不是调度 bug，是工作点。
+布局把扫描降 30% 只能在 TBT 上体现 1–2%（9-05 的 C1 上实测 A3b→A4e 扫描 −29%、TBT −1.75%）。这不是调度 bug，是工作点。
 
 用设备模型加 TINY 的扫描标定推导（`LLAMA3-8B`、flash、每头 8 通道；推导值，不是实测）：
 
@@ -118,8 +118,8 @@ scan_private / scan_shared（一次 decode scan 最慢 lane 的服务时长，�
 | 32 | 20% | 50% | 80% |
 | 64 | 29% | 62% | 87% |
 
-所以要让扫描收益在 TBT 上"正确体现"，要把 decode 放进 KV 主导的区间：S11 的长简报（16k / 32k 驻留上下文）是 workload 侧的杠杆，
-batch 是运行侧的杠杆（`BATCH=32 bash experiments/run_sweep.sh <outroot> '^C1_turns' LLAMA3-8B`，同一 workload，只改 batch）。
+所以要让扫描收益在 TBT 上"正确体现"，要把 decode 放进 KV 主导的区间：W1 的 S6（文档长度）和 S1（轮数）拉长驻留上下文、S3（会话数）加大 batch 内的请求数，是 workload 侧的杠杆，
+batch 是运行侧的杠杆（`BATCH=32 bash experiments/run_sweep.sh <outroot> '^W1_turns' LLAMA3-8B`，同一 workload，只改 batch）。
 两者都是 AttAcc 论文自己的评测区间（长上下文、大 batch）。调度器已改为回填空窗（审计 P1），不再让已就绪的 GPU 工作等在
 一个仍在等 PIM 的事件后面；decode 的 QKV 与投影按 KV head 切片（AttAcc 原版 `minimum_ratio` 的 head 流水），扫描只等第一个 head 的 Q，
 投影只有最后一个 head 留在扫描之后。两项对所有 combo 一致，见 session §23–24。

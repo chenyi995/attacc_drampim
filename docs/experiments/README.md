@@ -27,13 +27,13 @@
 
 | 要回答什么 | 已有输入/控制 | 比较档位 |
 |---|---|---|
-| 完整阶梯 | `W1_turns.json`、`C2_turns.json`（协议 baseline） | 七档 |
-| diff 聚合 | C1、`C1_S1_agents_4_turns.json`、`C1_S7_chunks_2_turns.json` | A3b、A4c |
-| 软件表 | C1 散取、`C1_S10_retrieval_consecutive_turns.json` | A4c、A4e，可带 A3b |
-| 选边 | `W1_S3_sessions_0p0_turns.json`、`W1_S3_sessions_1p0_turns.json`、`C1_S8_fresh_share_*` 控制 worker 新计算量与新鲜提示 | A4e、A5、A6 |
-| 输出长度不均 | `C1_S5_lout_chatty_8_turns.json`、`C1_S5_lout_chatty_128_turns.json` | 归因布局需 A3b/A4c/A4e，归因选边需 A4e/A5/A6 |
+| 完整阶梯 | `W1_turns.json`（协议 baseline） | 七档 |
+| diff 聚合 | W1、`W1_S1_rounds_*`（轮数）、`W1_S2_workers_*`（每 main 的 worker 数） | A3b、A4c |
+| 软件表 | W1、`W1_S4_worker_lout_*`（共读块大小）、`W1_S3_sessions_1`（单会话，无跨会话共读的负对照） | A4c、A4e，可带 A3b |
+| MQ 与选边 | `W1_S3_sessions_*`（batch 内共读）、`W1_S6_doc_tokens_*`（导入与驻留上下文长度） | A4e、A5、A6 |
+| 输出长度 | `W1_S4_worker_lout_*`、`W1_S5_main_lout_*` | 归因布局需 A3b/A4c/A4e，归因选边需 A4e/A5/A6 |
 
-旧的 B1/T1–T9 文件（本页最初引用的）已从 `sweep/` 移除，`LEGACY_MATRIX=1 python3 workload/probe/gen_sweep.py --all <dir>` 可复现。
+本页最初引用的 B1/T1–T9 与 C1/C2 文件已归档到 `workload/probe/archive/2026-09-05-C-protocol/`。
 
 文件均位于 `workload/probe/sweep/`。T5 所有 worker 话少仍包含大语料 owner，不等于所有请求都短。按 owner、首轮、后续短/长请求分别解释选边。
 
@@ -113,7 +113,7 @@ bash experiments/run_dag_ladder.sh workload/probe/sweep/W1_turns.json \
 GPU_MODEL=flash EPIC_K=4 NUM_HBM=5 NGPU=1 \
 RUNGS="A4e A5 A6" PARALLEL=1 RAMU_WORKERS=7 \
 bash experiments/run_sweep.sh "$KVPIM_SCRATCH/short_prefill_8ch_k4" \
-    '^(C1_turns|W1_S3_sessions_.*_turns)[.]json$' LLAMA3-8B
+    '^(W1_turns|W1_S3_sessions_.*_turns)[.]json$' LLAMA3-8B
 ```
 
 `run_sweep.sh` 把 `C[0-9]+_turns.json` 视为 baseline（七档），其余点只跑 A3b/A6；要归因 A5/A6 显式给 RUNGS。这些 summary 入口与上一节 full 入口的产物粒度不同，不能把 lane-sum 改名为 scan latency。
