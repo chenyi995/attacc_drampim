@@ -125,6 +125,14 @@ C1_SWEEPS = {
     "S8_fresh_share": ("fresh_share", (0.0, 0.25)),
     "S9_corpus": ("corpus", (32, 128)),
     "S10_retrieval": ("retrieval", ("consecutive",)),
+    # S11 (2026-09-05, after the decode-scan audit): the KV-bound regime.
+    # A decode step is GPU-bound at batch 8 with a 2-5k context (the scan is
+    # a few percent of the step); the scan only carries the step when the
+    # resident context is long -- here 64 / 128 brief chunks = 16k / 32k
+    # tokens read by every turn (the corpus grows with it so 64 chunks stay
+    # for retrieval).  Batch size is the other lever and is a run switch
+    # (BATCH=32 run_sweep.sh ...), not a workload field.
+    "S11_brief": ("shared", (64, 128)),
 }
 B1_SWEEPS = {
     "T1_agents": ("agents", (4, 16)),
@@ -294,6 +302,8 @@ def write_all(outdir):
         for value in values:
             p = dict(C1)
             p[param] = value
+            if param == "shared" and value >= p["corpus"]:
+                p["corpus"] = value + 64      # keep 64 chunks for scattered retrieval
             emit("C1_%s_%s" % (axis, str(value).replace(".", "p")), axis, value, p, "turns")
     if os.environ.get("LEGACY_MATRIX", "0") == "1":
         # the 2026-09-05 B0 / S1-S6 (both forms) and B1 / T1-T9 sets, kept

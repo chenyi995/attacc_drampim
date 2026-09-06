@@ -39,6 +39,11 @@ RAMU_WORKERS=${RAMU_WORKERS:-14}
 # already carries release/TTFT and the decode scan latency statistics, so
 # the default stays the compact "none".
 EVENTS=${EVENTS:-none}
+# BATCH: decode batch size (protocol: 8).  Larger batches are the run-side
+# lever of the KV-bound regime (audit 2026-09-05: at batch 8 and a 2-5k
+# context the scan is a few percent of a decode step); a sensitivity run
+# passes BATCH=32 with the same workload.
+BATCH=${BATCH:-8}
 # GPU model (chenyi9 ruling 2026-09-05, re-audit C1): FlashAttention-2 is
 # the common GPU model of every rung.  Default flash here so no entry point
 # silently runs the legacy AttAcc xPU formulas; GPU_MODEL=legacy opts out.
@@ -75,7 +80,7 @@ for A in $RUNGS; do
         --ablation "$A" --engine dag --pipeopt \
         --workload-report "$OUT/dag_${A}.json" \
         --workload-report-events "${EVENTS:-none}" \
-        --cacheblend-batch-size 8 \
+        --cacheblend-batch-size "${BATCH:-8}" \
         ${NUM_HBM:+--num-hbm "$NUM_HBM"} \
         ${NGPU:+--ngpu "$NGPU"} \
         ${NO_WARM:+--no-warm} \

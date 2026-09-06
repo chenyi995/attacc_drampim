@@ -24,3 +24,5 @@ C1_S8_fresh_share_0p25_turns.json,S8_fresh_share,0.25,turns,6,6,1,16/256,0.5,sca
 C1_S9_corpus_32_turns.json,S9_corpus,32,turns,6,6,1,16/256,0.5,scattered,32,8,32,128,0.1,41,164368,3520
 C1_S9_corpus_128_turns.json,S9_corpus,128,turns,6,6,1,16/256,0.5,scattered,32,8,128,128,0.1,41,188944,3520
 C1_S10_retrieval_consecutive_turns.json,S10_retrieval,consecutive,turns,6,6,1,16/256,0.5,consecutive,32,8,64,128,0.1,41,172560,3520
+C1_S11_brief_64_turns.json,S11_brief,64,turns,6,6,1,16/256,0.5,scattered,32,64,128,128,0.1,41,705040,3520
+C1_S11_brief_128_turns.json,S11_brief,128,turns,6,6,1,16/256,0.5,scattered,32,128,192,128,0.1,41,1311248,3520
