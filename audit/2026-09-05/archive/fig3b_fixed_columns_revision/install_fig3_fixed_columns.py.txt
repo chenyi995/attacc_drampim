@@ -1,0 +1,27 @@
+from pathlib import Path
+import hashlib,json
+manifest_path=Path('/tmp/fugue_fig3_fixed_columns/install_manifest.json')
+m=json.loads(manifest_path.read_text());source=Path(m['source']);destination=Path(m['destination'])
+assert source==Path('/tmp/fugue_fig3_fixed_columns')
+assert destination==Path('/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027')
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+for rel,digest in m['guard_all_initial_files'].items():
+    p=destination/rel;assert p.is_file() and sha(p)==digest,('Concurrent paper change',rel)
+for f in m['files']:
+    rel=Path(f['path']);assert not rel.is_absolute() and '..' not in rel.parts
+    assert sha(source/rel)==f['after'],('Staging changed',str(rel))
+    target=destination/rel
+    if f['before'] is None:assert not target.exists(),('New path now exists',str(rel))
+    else:assert target.is_file() and sha(target)==f['before']
+for f in m['files']:
+    rel=Path(f['path']);target=destination/rel
+    target.parent.mkdir(parents=True,exist_ok=True)
+    target.write_bytes((source/rel).read_bytes())
+for f in m['files']:assert sha(destination/f['path'])==f['after']
+receipt={'installed_and_hash_verified':len(m['files']),'destination':str(destination),'files':m['files']}
+archive=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822/audit/2026-09-05/archive/fig3b_fixed_columns_revision')
+archive.mkdir(parents=True,exist_ok=True)
+(archive/'install_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+(archive/'install_manifest.json').write_bytes(manifest_path.read_bytes())
+for name in ['prepare_install_fig3_fixed_columns.py','install_fig3_fixed_columns.py']:(archive/(name+'.txt')).write_bytes((Path('/tmp')/name).read_bytes())
+print(json.dumps({'installed_and_hash_verified':len(m['files']),'destination':str(destination)},indent=2))

@@ -4,6 +4,7 @@
 
 | 对象 | 入口 | 范围 |
 |---|---|---|
+| Decode scan 到 TBT、GPU 与流水 | [本轮审查](../../audit/2026-09-05/DECODE_SCAN_TBT_PIPELINE.md) | 现有配对降幅、真实 GPU 空窗、AttAcc 共同成本与新增 DAG 限制 |
 | 已定 NVLink 配置 | [链路裁决](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md) | 沿用原 NVLink；两级方案不采用，已关闭讨论 |
 | scan 是否误取平均 | [最慢 channel](../../audit/2026-09-05/SCAN_MAX_AUDIT.md) | 当前五档执行与 A6 取 max(实际耗时)，独立探针通过 |
 | 短输出引起后继 diff 列偏移 | [部分列连续追加](../../audit/2026-09-05/PARTIAL_COLUMN_APPEND_AUDIT.md) | 当前 A3b 行对齐是否遗漏此效应；AttAcc 来源与收益方向分开 |

@@ -1,0 +1,20 @@
+from pathlib import Path
+import hashlib,json,subprocess
+paper=Path('/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027');stage=Path('/tmp/fugue_fig3_reuse_revision')
+initial=json.loads((stage/'initial_hashes.json').read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+# Check every initial input, including the parts of the paper that were not edited.
+changed_elsewhere=[rel for rel,digest in initial.items() if not (paper/rel).is_file() or sha(paper/rel)!=digest]
+assert not changed_elsewhere,changed_elsewhere
+files=[]
+for p in stage.rglob('*'):
+    if not p.is_file() or '__pycache__' in p.parts or p.suffix=='.pyc':continue
+    rel=str(p.relative_to(stage))
+    if rel in ('initial_hashes.json','install_manifest.json'):continue
+    digest=sha(p)
+    if initial.get(rel)!=digest:
+        files.append({'path':rel,'before':initial.get(rel),'after':digest,'bytes':p.stat().st_size})
+assert files
+manifest={'source':str(stage),'destination':str(paper),'guard_all_initial_files':initial,'files':files,'delete':[]}
+(stage/'install_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+print(json.dumps({'changed_files':len(files),'bytes':sum(f['bytes'] for f in files),'existing_files':[f['path'] for f in files if f['before']]},indent=2))

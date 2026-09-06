@@ -1,0 +1,720 @@
+{
+  "installed_and_hash_verified": 119,
+  "destination": "/data2/chenyi9/KV-PIM/KVPIM-1Fugue-ASPLOS2027",
+  "files": [
+    {
+      "path": "main.pdf",
+      "before": "06e734c4c43230c7c54e541d1960f03b0841f21d1a5e8af8fb81ce51da2b09dd",
+      "after": "b1a8179b58d71830d255d84bd1c49b28c68234eb0d84fc6e1d035ff0ec8f79dc",
+      "bytes": 830506
+    },
+    {
+      "path": "sections/03-motivation.tex",
+      "before": "bc06d773d4205d9c32e2cad156605a0a9b0d6d56ddfad4142a08d883b5c6076c",
+      "after": "25f6c77406d1b85f17072519cc827cca3de30d5e8b2b48e9879db6ecb877ba30",
+      "bytes": 5946
+    },
+    {
+      "path": "fig/ver1/fig1_motiv.pdf",
+      "before": "e56e5bac73ade5cb95be938ba501114ef81c49b07856bc40b6a5611975748b91",
+      "after": "eb188962ce00e9c3b284bba6afeceeea8b141dc9c2d4fdf06f3f1edfa1816759",
+      "bytes": 16482
+    },
+    {
+      "path": "fig/plots/README.md",
+      "before": "01041d5df36b59f0b224f30a734ec1e55891f842c7b6970b5c1bc5fcbc6698eb",
+      "after": "f3439916e62ca2588f3eb42af4de0da5c812a48609ca2c60a9ded2b6e53299b8",
+      "bytes": 5506
+    },
+    {
+      "path": "fig/plots/motiv/data_allbank.csv",
+      "before": "2bc862270c65bfb604f25ad997b4dc20f600af6b3bf9aad02525e95b3c0274e6",
+      "after": "566534de052458502279509c954e8dea42a9bb5ebee7583dfdccbd9069bf203e",
+      "bytes": 194
+    },
+    {
+      "path": "fig/plots/motiv/plot_motiv.py",
+      "before": "b3aef9913d18baf38a085f3c52df8562f5dcd08250f99915c40b1500fe409e1f",
+      "after": "fc1ba9758547e873ada665cbb6a85c3e5a38cc7b00fab35e5502e21897548e13",
+      "bytes": 9930
+    },
+    {
+      "path": "fig/plots/motiv/README.md",
+      "before": "017304c9e1edbd343fe129cd3ad7b1259add58c2431567b09ee40ad384794cc8",
+      "after": "6c749e3cb7fd9411aa8d437ca7e106c38a242bc07aaabda3bec3d19116689334",
+      "bytes": 1441
+    },
+    {
+      "path": "fig/plots/motiv/scan_numbers.tex",
+      "before": "20ad6ac6c24ff812f03e5358ccee4f646dfbad5fac92fdf9f45eb6d9f7102e4e",
+      "after": "f81b844e463b416e4693fd1400bcc5c0396110f9f66b90e115e07d002cf2117d",
+      "bytes": 174
+    },
+    {
+      "path": "fig/plots/motiv/scan_summary.json",
+      "before": "1850a4fc5ca7907d03873e2224ee254002a7c5dd8b0ce678dd4a3b35c45565cc",
+      "after": "4b16c844c3681d9cc13bfe67bbfde35462922c7e90f80d81b0dc8f13a2b5ff1d",
+      "bytes": 1310
+    },
+    {
+      "path": "fig/plots/motiv/experiments/README.md",
+      "before": "93605284a135061de533bd34c79cf014053e5f8ef89bb8f17f962d8c8bcf10b8",
+      "after": "7442f7861ed9845bed211c8cb870d366e58075b6c4714fc5e0f1e43e35b83233",
+      "bytes": 870
+    },
+    {
+      "path": "fig/plots/motiv/experiments/02_irregular_access/README.md",
+      "before": "6c016165c36e0239de1b87873b6f33b7200c3600f2c21c49a149253979a5100a",
+      "after": "7a351cb56b05ca471f59c7862afa9211679e3bbdebaea1445ddc2400e5eb79f5",
+      "bytes": 6067
+    },
+    {
+      "path": "fig/plots/motiv/experiments/03_multiagent_reuse/README.md",
+      "before": "33b42481469956c0c58f2e0edd94616030136e092c45c971b3ac0b5ba22d6d1b",
+      "after": "feb382dd7408fb3cd41ea75eba1a2fe56f832199f94f96b9320ca4be58606885",
+      "bytes": 8802
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/ramulator_config.py",
+      "before": null,
+      "after": "fab41471f355472ccbbce16ad2611e3c2ec560893a06ab0f677578f5ba946a51",
+      "bytes": 692
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/fixture.json",
+      "before": null,
+      "after": "68d4acd1981dd922b3823c92d1852fac36ee45da6b69a867b5e0a8a947e20f6d",
+      "bytes": 505
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/experiment.py",
+      "before": null,
+      "after": "7f6ebe532df54b7c6f8c16aaf62227f9bb3eb308235a02ed66d251973ec0491c",
+      "bytes": 6801
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/plot.py",
+      "before": null,
+      "after": "03c3b80f4b098fe3a46aeae57e0fd37abdba69cd9e9ef6d7e83596f28d00599d",
+      "bytes": 1927
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/export.py",
+      "before": null,
+      "after": "620d84ea92de4932ace0b73ec3f31c485af74bb34fb6844e9683c184590640a0",
+      "bytes": 2130
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/RESULTS.md",
+      "before": null,
+      "after": "73fc12e8057363aebbfd813060b77df00e4f44f6b1df677c13a33a14f0fc0e16",
+      "bytes": 346
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/fixed_columns.pdf",
+      "before": null,
+      "after": "0d88d233455914ca00426321cb8c5a1d4fc0aca53fc23d529a89a8e3474d69f4",
+      "bytes": 11619
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/fixed_columns.png",
+      "before": null,
+      "after": "ef5810b85088a31f79203d74a88b49cecace2a267f2585a31d29b19cf46c6864",
+      "bytes": 25794
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/independent_audit.py",
+      "before": null,
+      "after": "e351c2445f7a38cce115dcc58f474dfb2bfeea45a196621e789855c7f891df92",
+      "bytes": 10531
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/independent_audit.json",
+      "before": null,
+      "after": "c0aff98c270518d30217d97f8a3ecaa7556e35f1a73170f7cd1a04a18e432b08",
+      "bytes": 5549
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/independent_audit.md",
+      "before": null,
+      "after": "2c1ece02afe31e8bb03c360086ab61dd387a129b5d0cdc8f9052f7e23b960b88",
+      "bytes": 3001
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/README.md",
+      "before": null,
+      "after": "4ce2b1c2d51702137d15e4de08ef624d51a1f12132038c457ec6bccf35d2db79",
+      "bytes": 5898
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/archive/previous_reuse/sections/03-motivation.tex",
+      "before": null,
+      "after": "bc06d773d4205d9c32e2cad156605a0a9b0d6d56ddfad4142a08d883b5c6076c",
+      "bytes": 6134
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/archive/previous_reuse/fig/ver1/fig1_motiv.pdf",
+      "before": null,
+      "after": "e56e5bac73ade5cb95be938ba501114ef81c49b07856bc40b6a5611975748b91",
+      "bytes": 16078
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/archive/previous_reuse/fig/plots/motiv/plot_motiv.py",
+      "before": null,
+      "after": "b3aef9913d18baf38a085f3c52df8562f5dcd08250f99915c40b1500fe409e1f",
+      "bytes": 10024
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/archive/previous_reuse/fig/plots/motiv/data_allbank.csv",
+      "before": null,
+      "after": "2bc862270c65bfb604f25ad997b4dc20f600af6b3bf9aad02525e95b3c0274e6",
+      "bytes": 964
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/archive/previous_reuse/fig/plots/motiv/scan_numbers.tex",
+      "before": null,
+      "after": "20ad6ac6c24ff812f03e5358ccee4f646dfbad5fac92fdf9f45eb6d9f7102e4e",
+      "bytes": 235
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/archive/previous_reuse/fig/plots/motiv/scan_summary.json",
+      "before": null,
+      "after": "1850a4fc5ca7907d03873e2224ee254002a7c5dd8b0ce678dd4a3b35c45565cc",
+      "bytes": 2440
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/fixture.json",
+      "before": null,
+      "after": "68d4acd1981dd922b3823c92d1852fac36ee45da6b69a867b5e0a8a947e20f6d",
+      "bytes": 505
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/ldd.txt",
+      "before": null,
+      "after": "1fc918e747730afbba16bdf427291e8d7ea271198c8a30eb455f7d875470ba3e",
+      "bytes": 487
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/result.csv",
+      "before": null,
+      "after": "566534de052458502279509c954e8dea42a9bb5ebee7583dfdccbd9069bf203e",
+      "bytes": 194
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/run_manifest.json",
+      "before": null,
+      "after": "da8f8d093523c3f66f1937a8037dc43ba221ce90d9d2dd50f26af533129b028d",
+      "bytes": 4612
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/checks.json",
+      "before": null,
+      "after": "3d87a79f86f91ae42f5e651dbbe87b1d838e3d5b91399073bab278bd7a86a09f",
+      "bytes": 1059
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows1.addresses.json",
+      "before": null,
+      "after": "5af6b69ebf1d1f6b6ab7904a0e58b6a0a7af18b4f4cd6fb495ebdc68c4382d83",
+      "bytes": 598
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows1.trace",
+      "before": null,
+      "after": "ebccd26743637b46940e7e69234eeb63bd2a2392913f5694eabdbb68bae2eb79",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows1.yaml",
+      "before": null,
+      "after": "dccaf6ec0fb6aada149a052aefc7ea025dd4f9d12b2f0f63a975b734e70e5981",
+      "bytes": 721
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows1.commands.ch0",
+      "before": null,
+      "after": "69eb83c2e4612d55e3e1ebb153856c94d6501c77f72237a6189ff54600b6287b",
+      "bytes": 278
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows1.stdout",
+      "before": null,
+      "after": "b4c7a2990bcef0051157e6a26b352a4f7e1eeea6b5b46919ab3e220c390f5982",
+      "bytes": 776
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows1.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows2.addresses.json",
+      "before": null,
+      "after": "fa459a16f9e8dea9f758592ead44983098cd18933f31ff753214cf3a8c839ec8",
+      "bytes": 602
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows2.trace",
+      "before": null,
+      "after": "f2cce2bca66566de6a5491f1ddfbb732f69f4694d8f4b34dfaf78f91ae7141a7",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows2.yaml",
+      "before": null,
+      "after": "1f69007afb9d27156d62da7363aa85098aed02d58ddfbb5bf006c7dd70a18153",
+      "bytes": 721
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows2.commands.ch0",
+      "before": null,
+      "after": "4c0d4dc9341cb7d5c1bad40b80fa3b6b7177b848b7d367ab36c741ae9b1028d0",
+      "bytes": 340
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows2.stdout",
+      "before": null,
+      "after": "7696f451f3835bc4e04af31a3bfbb1b65a14d67a7739f81cd1b6d27f5da3c883",
+      "bytes": 777
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows2.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows4.addresses.json",
+      "before": null,
+      "after": "baa8161453512825313acc1983059d9066fafdceefc7424d77649f4eb49521f6",
+      "bytes": 606
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows4.trace",
+      "before": null,
+      "after": "7002ad12a82c2a80c2067ba8364d23fd587ec8264ecff74471c230f8f51ed932",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows4.yaml",
+      "before": null,
+      "after": "4aa0a07be078daf3ff91203f6007d01da263262cc175a41d35c4f78ddddbf7e8",
+      "bytes": 721
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows4.commands.ch0",
+      "before": null,
+      "after": "494540545a3141e2fa693388198937b4e3eb24f1fec78d91cb2a126f6e548214",
+      "bytes": 469
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows4.stdout",
+      "before": null,
+      "after": "22af8d60f1379583f69b3aad5516f5e0171690131ac23c6e338faf436b94df5a",
+      "bytes": 777
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows4.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows8.addresses.json",
+      "before": null,
+      "after": "fd42e00733f002f45e59703764f84c28f173ca22985ca58afff18dbbad01218d",
+      "bytes": 608
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows8.trace",
+      "before": null,
+      "after": "3900019d3ca747796ec00340563eecea2b0a3f7699f31efbd1ed3b07e3feb3e2",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows8.yaml",
+      "before": null,
+      "after": "f28b6487fe037b4d9bb74694ee1e4a372283f19fd8e38987410ccfa5188fa2fa",
+      "bytes": 721
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows8.commands.ch0",
+      "before": null,
+      "after": "03b934689ac5c4d14ac655db268bc403fffd2e12d46bceeade6b8470e1f9c770",
+      "bytes": 723
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows8.stdout",
+      "before": null,
+      "after": "9fb114aa9684bd1d2a2ea4ac00761fdcdc0edf3603dd60d5b938dbd71f17d266",
+      "bytes": 777
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/raw/rows8.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/scripts/fixture.json",
+      "before": null,
+      "after": "68d4acd1981dd922b3823c92d1852fac36ee45da6b69a867b5e0a8a947e20f6d",
+      "bytes": 505
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/scripts/experiment.py",
+      "before": null,
+      "after": "1c7582a9a5e8e6c621056750625b4445bbfcc37db1711c6685677ea161d8d6d0",
+      "bytes": 6692
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/scripts/ramulator_config.py",
+      "before": null,
+      "after": "fab41471f355472ccbbce16ad2611e3c2ec560893a06ab0f677578f5ba946a51",
+      "bytes": 692
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/source/pim_ramulator_src/HBM3-PIM.cpp",
+      "before": null,
+      "after": "bb51f4ef25325e3ed1a538f0db46dc3b79dd0aabf603ace894a9d4a48d16dce1",
+      "bytes": 31706
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/source/pim_ramulator_src/hbm3_pim_controller.cpp",
+      "before": null,
+      "after": "b5d993b33c061b33858724fbeefdefcbc81cdce89c6f7f41cff08e1aa37824ee",
+      "bytes": 18323
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/source/pim_ramulator_src/hbm3_pim_linear_mappers.cpp",
+      "before": null,
+      "after": "05a3403d4d1c11102361ec3a6a67502a1559234e1218ddd4ed148bdb873bccd1",
+      "bytes": 3563
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/original/source/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py",
+      "before": null,
+      "after": "e92eed2ad4e92376ae7fa9143ebabc878e68c5d28b5546b47d536915511310c0",
+      "bytes": 29933
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/reproduction_comparison.json",
+      "before": null,
+      "after": "9fe43cc574a3e1d1b3e2218a9b48afe38df541d0245d981f3a40b78debb6075a",
+      "bytes": 413
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/stage_fig3_fixed_columns.py.txt",
+      "before": null,
+      "after": "0fadb127d721add958237bfe32b823326742d7860efa7068f5cfdea2ac730ede",
+      "bytes": 1358
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/revise_fixed_columns_paper.py.txt",
+      "before": null,
+      "after": "61476ccec0e4fab2dbdb68f6cd1b1836c3fda5180beac573744ffbc6dc248226",
+      "bytes": 1834
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/complete_fixed_column_sources.py.txt",
+      "before": null,
+      "after": "8038cb6d984b6db23762b500d8ffe4be084271e288f70d2361cf73c675f31092",
+      "bytes": 1714
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/finalize_fixed_columns_docs.py.txt",
+      "before": null,
+      "after": "d6ad9c37e61819b606fa726473fbbf9ce5b77be225f92e9d184fa09caf52f182",
+      "bytes": 10352
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/page4.txt",
+      "before": null,
+      "after": "d70a5a30ca8a2d958fbe1e8b2cd50f2c890a356227670679ed9cc79a0221cf5f",
+      "bytes": 13232
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/page4.png",
+      "before": null,
+      "after": "787e61b4dcbe4005db7673395b226dfa44239570f267216bdbc4c214d828fa3f",
+      "bytes": 665323
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/plot_change.diff.txt",
+      "before": null,
+      "after": "8895bb36eec9648946d29b65a8a5bd54f4acc37779fddffc8f0c886d03e2d249",
+      "bytes": 1731
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/plot_ast_change.txt",
+      "before": null,
+      "after": "1ed49baf578747c0f0eb24727f49a42bbbc662bbba2f4e6e2d07d3b0b325ad5e",
+      "bytes": 6369
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/paper_checks.json",
+      "before": null,
+      "after": "b54140dbd3c3f1712ceec0857a0ddb0e428e119b43517960f94b774f1cc373fd",
+      "bytes": 851
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/build.stdout",
+      "before": null,
+      "after": "8709c4869032d4fcde8ea7781260e02c7501de146cc438e088c436a7684b0a45",
+      "bytes": 78965
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/main.log",
+      "before": null,
+      "after": "2bb5b85fb9ac64d889d3ef7a30ccc0947f9f947f0f390962f07ab96e40ef15fc",
+      "bytes": 56515
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/validate_fixed_columns_paper.py.txt",
+      "before": null,
+      "after": "41f90154a30bced1fb7685f53503f586bcab8503d1baa392bf9b8cf5fc5cc034",
+      "bytes": 4071
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/validation/README.md",
+      "before": null,
+      "after": "43afd3f1c009421f328cb88b4249bb2d22f60fbc1d99ccbd07923dc800dc6d23",
+      "bytes": 655
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/fixture.json",
+      "before": null,
+      "after": "68d4acd1981dd922b3823c92d1852fac36ee45da6b69a867b5e0a8a947e20f6d",
+      "bytes": 505
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/ldd.txt",
+      "before": null,
+      "after": "0c485ed46c65f29092524f7a83d8ba203a5494c595605d016ff66008180dc7b3",
+      "bytes": 487
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/result.csv",
+      "before": null,
+      "after": "566534de052458502279509c954e8dea42a9bb5ebee7583dfdccbd9069bf203e",
+      "bytes": 194
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/run_manifest.json",
+      "before": null,
+      "after": "f1d31176dc8a4784d9db90de14a9d00dea1a42772089d0ae5c6afffbb2155d6f",
+      "bytes": 3882
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/checks.json",
+      "before": null,
+      "after": "3d87a79f86f91ae42f5e651dbbe87b1d838e3d5b91399073bab278bd7a86a09f",
+      "bytes": 1059
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows1.addresses.json",
+      "before": null,
+      "after": "5af6b69ebf1d1f6b6ab7904a0e58b6a0a7af18b4f4cd6fb495ebdc68c4382d83",
+      "bytes": 598
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows1.trace",
+      "before": null,
+      "after": "ebccd26743637b46940e7e69234eeb63bd2a2392913f5694eabdbb68bae2eb79",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows1.yaml",
+      "before": null,
+      "after": "59b9eae0b19133c9d5f2fbbb4a8bccc38999b3eef66064f52057b8e87b7c8b37",
+      "bytes": 615
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows1.commands.ch0",
+      "before": null,
+      "after": "69eb83c2e4612d55e3e1ebb153856c94d6501c77f72237a6189ff54600b6287b",
+      "bytes": 278
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows1.stdout",
+      "before": null,
+      "after": "963c55acf7dabcf31dce16701affa0e88802960f06ef1f312413b8c79373a6f9",
+      "bytes": 723
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows1.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows2.addresses.json",
+      "before": null,
+      "after": "fa459a16f9e8dea9f758592ead44983098cd18933f31ff753214cf3a8c839ec8",
+      "bytes": 602
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows2.trace",
+      "before": null,
+      "after": "f2cce2bca66566de6a5491f1ddfbb732f69f4694d8f4b34dfaf78f91ae7141a7",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows2.yaml",
+      "before": null,
+      "after": "1a3c3e6df6b0e233db5c40835ca2bf4bc937fb3689e2313ecee68d202991deb8",
+      "bytes": 615
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows2.commands.ch0",
+      "before": null,
+      "after": "4c0d4dc9341cb7d5c1bad40b80fa3b6b7177b848b7d367ab36c741ae9b1028d0",
+      "bytes": 340
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows2.stdout",
+      "before": null,
+      "after": "287bee8cdd1ed7ab5f78e2eac5ca37f1fb1f2cc0cf42b1cf58afb41f9703c9ba",
+      "bytes": 724
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows2.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows4.addresses.json",
+      "before": null,
+      "after": "baa8161453512825313acc1983059d9066fafdceefc7424d77649f4eb49521f6",
+      "bytes": 606
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows4.trace",
+      "before": null,
+      "after": "7002ad12a82c2a80c2067ba8364d23fd587ec8264ecff74471c230f8f51ed932",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows4.yaml",
+      "before": null,
+      "after": "8db61e2a058429899e9b07f1102bf8c567403f8dbaf92b265e958e17a969e754",
+      "bytes": 615
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows4.commands.ch0",
+      "before": null,
+      "after": "494540545a3141e2fa693388198937b4e3eb24f1fec78d91cb2a126f6e548214",
+      "bytes": 469
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows4.stdout",
+      "before": null,
+      "after": "296aaf27683832067266c7d3e257ed01f9d7d9a44fd5772bd0ae934acf8f2ff8",
+      "bytes": 724
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows4.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows8.addresses.json",
+      "before": null,
+      "after": "fd42e00733f002f45e59703764f84c28f173ca22985ca58afff18dbbad01218d",
+      "bytes": 608
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows8.trace",
+      "before": null,
+      "after": "3900019d3ca747796ec00340563eecea2b0a3f7699f31efbd1ed3b07e3feb3e2",
+      "bytes": 176
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows8.yaml",
+      "before": null,
+      "after": "297c2d87bcd1712c10adc0afa7f279a30e8581a38b5617207775930dc30faa43",
+      "bytes": 615
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows8.commands.ch0",
+      "before": null,
+      "after": "03b934689ac5c4d14ac655db268bc403fffd2e12d46bceeade6b8470e1f9c770",
+      "bytes": 723
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows8.stdout",
+      "before": null,
+      "after": "565ba3e6dadc4be9c4da39895bea2b887a673115ca2f6580f533cc5cce95983b",
+      "bytes": 724
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/raw/rows8.stderr",
+      "before": null,
+      "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/scripts/fixture.json",
+      "before": null,
+      "after": "68d4acd1981dd922b3823c92d1852fac36ee45da6b69a867b5e0a8a947e20f6d",
+      "bytes": 505
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/scripts/experiment.py",
+      "before": null,
+      "after": "7f6ebe532df54b7c6f8c16aaf62227f9bb3eb308235a02ed66d251973ec0491c",
+      "bytes": 6801
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/scripts/ramulator_config.py",
+      "before": null,
+      "after": "fab41471f355472ccbbce16ad2611e3c2ec560893a06ab0f677578f5ba946a51",
+      "bytes": 692
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/source/pim_ramulator_src/HBM3-PIM.cpp",
+      "before": null,
+      "after": "bb51f4ef25325e3ed1a538f0db46dc3b79dd0aabf603ace894a9d4a48d16dce1",
+      "bytes": 31706
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/source/pim_ramulator_src/hbm3_pim_controller.cpp",
+      "before": null,
+      "after": "b5d993b33c061b33858724fbeefdefcbc81cdce89c6f7f41cff08e1aa37824ee",
+      "bytes": 18323
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/source/pim_ramulator_src/hbm3_pim_linear_mappers.cpp",
+      "before": null,
+      "after": "05a3403d4d1c11102361ec3a6a67502a1559234e1218ddd4ed148bdb873bccd1",
+      "bytes": 3563
+    },
+    {
+      "path": "fig/plots/motiv/experiments/04_fixed_columns/reproduction/source/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py",
+      "before": null,
+      "after": "e92eed2ad4e92376ae7fa9143ebabc878e68c5d28b5546b47d536915511310c0",
+      "bytes": 29933
+    },
+    {
+      "path": "outline/README_logic.md",
+      "before": "19fe264e2c739e09678fdb71b9b40697c8cceaa49d84c2400ee12f8f2db6f2b0",
+      "after": "08c237b6b14bb4e77bb887b72da0c28ebe462f17d2bb56070f49db21d3285eae",
+      "bytes": 23490
+    },
+    {
+      "path": "audit/sessions/2026-09-05-fig3b-multiagent-reuse-revision.md",
+      "before": "d492e4fdb1489f074ce4a440eda1b4649bdbf7792f1508bf2a0701db3ca46f55",
+      "after": "ff625837e583c725db114efcae81785a363de6f072c8b8fa9068d1096d35529b",
+      "bytes": 5023
+    },
+    {
+      "path": "audit/sessions/2026-09-05-fig3b-fixed-columns-revision.md",
+      "before": null,
+      "after": "0ab77d9d857714383552eb6ef798d4700d2294b26a8bf864c7ef76912949a412",
+      "bytes": 4270
+    }
+  ]
+}

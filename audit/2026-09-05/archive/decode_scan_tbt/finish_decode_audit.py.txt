@@ -1,0 +1,24 @@
+from pathlib import Path
+import hashlib,json,shutil
+repo=Path('/data2/chenyi9/KV-PIM/attacc_drampim_822');base=repo/'audit/2026-09-05/archive/decode_scan_tbt'
+old=base/'diag_A6_events_slim.jsonl';new=Path('/tmp/fugue-decode-scan-tbt/diag_A6_events_slim.jsonl');new.parent.mkdir(parents=True,exist_ok=True)
+assert not new.exists();shutil.move(str(old),str(new))
+p=base/'diag_A6_metadata.json';m=json.loads(p.read_text());m['slim_path']=str(new);assert hashlib.sha256(new.read_bytes()).hexdigest()==m['slim_sha256'];p.write_text(json.dumps(m,indent=2)+'\n')
+p=base/'extract_events.py';s=p.read_text().replace("out=HERE/'diag_A6_events_slim.jsonl'","out=Path('/tmp/fugue-decode-scan-tbt/diag_A6_events_slim.jsonl')\nout.parent.mkdir(parents=True,exist_ok=True)")
+s=s.replace("tail['extracted_events']=count","tail['extracted_events']=count\n    tail['slim_path']=str(out)\n    assert count==int(re.search(rb'  \"event_count\": (\\d+)',mm[:end]).group(1))")
+# Avoid slicing the entire multi-GB prefix for the count assertion.
+s=s.replace("mm[:end]).group(1)","mm[:mm.find(b'\\n  \"events\": [\\n')]).group(1)")
+p.write_text(s)
+p=base/'analyze_timeline.py';s=p.read_text().replace("with (HERE/'diag_A6_events_slim.jsonl').open() as f:","metadata=json.loads((HERE/'diag_A6_metadata.json').read_text())\nwith Path(metadata['slim_path']).open() as f:");p.write_text(s)
+p=repo/'docs/analysis/README.md';s=p.read_text();s+='''
+## 9. Scan 收益如何传到 TBT，GPU 与 pipeline 的作用
+
+[Decode scan / TBT 专项](../../audit/2026-09-05/DECODE_SCAN_TBT_PIPELINE.md) 区分 Fig. 3b 的单 K 扫描、C1 的完整 decode scan 和 TBT。给出已有配对结果的降幅，解释“两个百分比的比值”与“省下的微秒传递率”的区别。
+
+GPU 前后处理实际变快可提高 scan 在 TBT 中的占比；提高 FLOPS 不会消除 AttAcc 原有 Norm/激活固定项。已有运行确认 Flash/pipeline 开启，但新 DAG 的按追加顺序预约仍有已就绪工作错过 GPU 空窗的证据。具体候选、上游是否已有和独立检查均在专项中。
+''';p.write_text(s)
+p=repo/'docs/audit/README.md';s=p.read_text();marker='|---|---|---|\n';s=s.replace(marker,marker+'| Decode scan 到 TBT、GPU 与流水 | [本轮审查](../../audit/2026-09-05/DECODE_SCAN_TBT_PIPELINE.md) | 现有配对降幅、真实 GPU 空窗、AttAcc 共同成本与新增 DAG 限制 |\n',1);p.write_text(s)
+p=repo/'audit/2026-09-05/README.md';s=p.read_text();s=s.replace('\n\n','\n\n本轮新增：[Decode scan 到 TBT、GPU 速度与 pipeline](DECODE_SCAN_TBT_PIPELINE.md)——当前源码审核至 `167fe08`；相同 C1 输入的已有实跑指标、可填 GPU 空窗及独立 AttAcc 对照。\n\n',1);p.write_text(s)
+p=repo/'docs/sessions/README.md';s=p.read_text();marker='|---|---|---|\n';s=s.replace(marker,marker+'| 2026-09-05（decode scan / TBT） | [GPU 与流水审查](2026-09-05-decode-scan-tbt-pipeline-audit.md) | 单 scan 与 TBT 降幅、百分比保留口径、真实 GPU 空窗、AttAcc 固定成本与独立审计；仅 audit |\n',1);p.write_text(s)
+(base/'finish_decode_audit.py.txt').write_bytes(Path(__file__).read_bytes())
+print('Evidence indexed; large temporary extraction moved to',new)

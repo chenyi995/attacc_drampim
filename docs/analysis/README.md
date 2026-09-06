@@ -83,3 +83,9 @@ chenyi9 指的是连续追加的起点偏移：4-token 输出占半个 column，
 chenyi9 裁决：GPU 与 AttAcc/PIM 保持原 NVLink 连接，当前跑法沿用 `--pim-link nvlink3`。A5/A6 的分析使用这一固定硬件条件下的实际价格、工作量和选边结果。
 
 此前讨论的 NVLink/PCIe 两级方案不采用，容量阈值示例不作为实验参数；原讨论保留在 [链路历史记录](../../audit/2026-09-05/LINK_TIER_ASSUMPTIONS.md)。
+
+## 9. Scan 收益如何传到 TBT，GPU 与 pipeline 的作用
+
+[Decode scan / TBT 专项](../../audit/2026-09-05/DECODE_SCAN_TBT_PIPELINE.md) 区分 Fig. 3b 的单 K 扫描、C1 的完整 decode scan 和 TBT。给出已有配对结果的降幅，解释“两个百分比的比值”与“省下的微秒传递率”的区别。
+
+GPU 前后处理实际变快可提高 scan 在 TBT 中的占比；提高 FLOPS 不会消除 AttAcc 原有 Norm/激活固定项。已有运行确认 Flash/pipeline 开启，但新 DAG 的按追加顺序预约仍有已就绪工作错过 GPU 空窗的证据。具体候选、上游是否已有和独立检查均在专项中。

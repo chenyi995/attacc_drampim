@@ -1,0 +1,451 @@
+{
+  "existing_reports": [
+    {
+      "path": "/data2/chenyi9/KV-PIM/scratch_0905/out_C1v2_CACHEBLEND-TINY_hbm4_k8/dag_A3b.json",
+      "sha256": "e895cba8ff6538d4e50534f9e3270bc5a4a2b737c3a6dec2dec08faa9de122cc",
+      "run_config": {
+        "cacheblend_batch_size": 8,
+        "engine": "dag",
+        "epic_prefix_recompute_tokens": 8,
+        "git_dirty": true,
+        "git_rev": "4b74849f1910c2e8ac6077da1d7e8479ce993a9f",
+        "gpu": "A100a",
+        "gpu_model": "flash",
+        "model": "CACHEBLEND-TINY",
+        "ngpu": 1,
+        "num_hbm": 4,
+        "pim_link": "nvlink3",
+        "pipeopt": true,
+        "powerlimit": true,
+        "ramulator_dir": "/data2/chenyi9/KV-PIM/scratch_0905",
+        "reuse": "recompute",
+        "word": 2,
+        "workload": "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/sweep/C1_turns.json",
+        "workload_sha256": "d9891881107c2ff7c03f39e9bd46c65a554c1aae119c294ac12e2db1ffab313d"
+      },
+      "corrected_rows_sha": "b6cb900b22076dd1",
+      "scans": {
+        "definition": "service = max over the scan's lanes of the lane duration; elapsed = last lane end - first lane start (queueing included); per_step_elapsed = per (member, layer, position) over every scan serving it.  Shared (MQ) and private scans are not added.",
+        "per_step_elapsed": {
+          "count": 14080,
+          "max_us": 9.084197000019945,
+          "mean_us": 3.5414215750692546,
+          "p50_us": 3.5766189999952847,
+          "p95_us": 6.560339000011295
+        },
+        "private_elapsed": {
+          "count": 14080,
+          "max_us": 5.451441000031698,
+          "mean_us": 2.2271149364388485,
+          "p50_us": 1.9824819999930687,
+          "p95_us": 3.8434619999971886
+        },
+        "private_service": {
+          "count": 14080,
+          "max_us": 3.576619,
+          "mean_us": 1.2450953278407908,
+          "p50_us": 1.1542690000000002,
+          "p95_us": 2.703035
+        },
+        "shared_elapsed": {
+          "count": 2688,
+          "max_us": 4.137220000005604,
+          "mean_us": 2.6568583809569173,
+          "p50_us": 2.123209000004511,
+          "p95_us": 4.137220000005604
+        },
+        "shared_service": {
+          "count": 2688,
+          "max_us": 4.13722,
+          "mean_us": 2.6027354285715867,
+          "p50_us": 2.1232089999999997,
+          "p95_us": 4.13722
+        }
+      }
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/scratch_0905/out_C1v2_CACHEBLEND-TINY_hbm4_k8/dag_A4c.json",
+      "sha256": "85cda76add33a599ba003ac224d849a85df9843915815312faad17922d583a69",
+      "run_config": {
+        "cacheblend_batch_size": 8,
+        "engine": "dag",
+        "epic_prefix_recompute_tokens": 8,
+        "git_dirty": true,
+        "git_rev": "4b74849f1910c2e8ac6077da1d7e8479ce993a9f",
+        "gpu": "A100a",
+        "gpu_model": "flash",
+        "model": "CACHEBLEND-TINY",
+        "ngpu": 1,
+        "num_hbm": 4,
+        "pim_link": "nvlink3",
+        "pipeopt": true,
+        "powerlimit": true,
+        "ramulator_dir": "/data2/chenyi9/KV-PIM/scratch_0905",
+        "reuse": "recompute",
+        "word": 2,
+        "workload": "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/sweep/C1_turns.json",
+        "workload_sha256": "d9891881107c2ff7c03f39e9bd46c65a554c1aae119c294ac12e2db1ffab313d"
+      },
+      "corrected_rows_sha": "b6cb900b22076dd1",
+      "scans": {
+        "definition": "service = max over the scan's lanes of the lane duration; elapsed = last lane end - first lane start (queueing included); per_step_elapsed = per (member, layer, position) over every scan serving it.  Shared (MQ) and private scans are not added.",
+        "per_step_elapsed": {
+          "count": 14080,
+          "max_us": 8.493604999992854,
+          "mean_us": 3.397368977768996,
+          "p50_us": 3.5766189999952847,
+          "p95_us": 6.248125000010707
+        },
+        "private_elapsed": {
+          "count": 14080,
+          "max_us": 5.263804999988686,
+          "mean_us": 2.105801581751093,
+          "p50_us": 1.9186550000022118,
+          "p95_us": 3.645829000004097
+        },
+        "private_service": {
+          "count": 14080,
+          "max_us": 3.576619,
+          "mean_us": 1.2070547329544625,
+          "p50_us": 0.9989310000000001,
+          "p95_us": 2.5738429999999997
+        },
+        "shared_elapsed": {
+          "count": 2688,
+          "max_us": 4.137220000005604,
+          "mean_us": 2.6516996726237494,
+          "p50_us": 2.123209000004511,
+          "p95_us": 4.137220000005604
+        },
+        "shared_service": {
+          "count": 2688,
+          "max_us": 4.13722,
+          "mean_us": 2.6027354285715867,
+          "p50_us": 2.1232089999999997,
+          "p95_us": 4.13722
+        }
+      }
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/scratch_0905/out_C1v2_CACHEBLEND-TINY_hbm4_k8/dag_A4e.json",
+      "sha256": "ae7c65497fbdbaf39499d1683b220467019d0cf38be43098d6cb1dcc13437bc4",
+      "run_config": {
+        "cacheblend_batch_size": 8,
+        "engine": "dag",
+        "epic_prefix_recompute_tokens": 8,
+        "git_dirty": true,
+        "git_rev": "4b74849f1910c2e8ac6077da1d7e8479ce993a9f",
+        "gpu": "A100a",
+        "gpu_model": "flash",
+        "model": "CACHEBLEND-TINY",
+        "ngpu": 1,
+        "num_hbm": 4,
+        "pim_link": "nvlink3",
+        "pipeopt": true,
+        "powerlimit": true,
+        "ramulator_dir": "/data2/chenyi9/KV-PIM/scratch_0905",
+        "reuse": "recompute",
+        "word": 2,
+        "workload": "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/sweep/C1_turns.json",
+        "workload_sha256": "d9891881107c2ff7c03f39e9bd46c65a554c1aae119c294ac12e2db1ffab313d"
+      },
+      "corrected_rows_sha": "b6cb900b22076dd1",
+      "scans": {
+        "definition": "service = max over the scan's lanes of the lane duration; elapsed = last lane end - first lane start (queueing included); per_step_elapsed = per (member, layer, position) over every scan serving it.  Shared (MQ) and private scans are not added.",
+        "per_step_elapsed": {
+          "count": 14080,
+          "max_us": 7.05172999995729,
+          "mean_us": 3.0581645524156493,
+          "p50_us": 2.6907310000101603,
+          "p95_us": 5.315328000021768
+        },
+        "private_elapsed": {
+          "count": 14080,
+          "max_us": 3.5766190000022235,
+          "mean_us": 1.6757629091653512,
+          "p50_us": 1.5664530000000787,
+          "p95_us": 2.7230289999929935
+        },
+        "private_service": {
+          "count": 14080,
+          "max_us": 3.576619,
+          "mean_us": 0.8808255987214697,
+          "p50_us": 0.7466990000000001,
+          "p95_us": 1.774083
+        },
+        "shared_elapsed": {
+          "count": 2688,
+          "max_us": 4.137220000005604,
+          "mean_us": 2.646408220242577,
+          "p50_us": 2.123209000004511,
+          "p95_us": 4.137220000005604
+        },
+        "shared_service": {
+          "count": 2688,
+          "max_us": 4.13722,
+          "mean_us": 2.6027354285715867,
+          "p50_us": 2.1232089999999997,
+          "p95_us": 4.13722
+        }
+      }
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/scratch_0905/out_C1v2_CACHEBLEND-TINY_hbm4_k8/dag_A5.json",
+      "sha256": "dff1a0a6da08de86ce4e3b1cf26ad65d538bd9b5a4b97b093e52b8fb05ed8bc7",
+      "run_config": {
+        "cacheblend_batch_size": 8,
+        "engine": "dag",
+        "epic_prefix_recompute_tokens": 8,
+        "git_dirty": true,
+        "git_rev": "4b74849f1910c2e8ac6077da1d7e8479ce993a9f",
+        "gpu": "A100a",
+        "gpu_model": "flash",
+        "model": "CACHEBLEND-TINY",
+        "ngpu": 1,
+        "num_hbm": 4,
+        "pim_link": "nvlink3",
+        "pipeopt": true,
+        "powerlimit": true,
+        "ramulator_dir": "/data2/chenyi9/KV-PIM/scratch_0905",
+        "reuse": "recompute",
+        "word": 2,
+        "workload": "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/sweep/C1_turns.json",
+        "workload_sha256": "d9891881107c2ff7c03f39e9bd46c65a554c1aae119c294ac12e2db1ffab313d"
+      },
+      "corrected_rows_sha": "b6cb900b22076dd1",
+      "scans": {
+        "definition": "service = max over the scan's lanes of the lane duration; elapsed = last lane end - first lane start (queueing included); per_step_elapsed = per (member, layer, position) over every scan serving it.  Shared (MQ) and private scans are not added.",
+        "per_step_elapsed": {
+          "count": 14080,
+          "max_us": 5.670605999957834,
+          "mean_us": 2.2122499151968547,
+          "p50_us": 2.002475999990372,
+          "p95_us": 3.934203999966801
+        },
+        "private_elapsed": {
+          "count": 14080,
+          "max_us": 3.5766189999952847,
+          "mean_us": 1.534884949213141,
+          "p50_us": 1.4095769999833418,
+          "p95_us": 2.7230289999929935
+        },
+        "private_service": {
+          "count": 14080,
+          "max_us": 3.576619,
+          "mean_us": 0.8808255987214697,
+          "p50_us": 0.7466990000000001,
+          "p95_us": 1.774083
+        },
+        "shared_elapsed": {
+          "count": 2688,
+          "max_us": 2.157814000022795,
+          "mean_us": 1.116903839286109,
+          "p50_us": 0.9904720000009082,
+          "p95_us": 1.3380599999945897
+        },
+        "shared_service": {
+          "count": 2688,
+          "max_us": 1.33806,
+          "mean_us": 1.0732310476190203,
+          "p50_us": 0.9904719999999999,
+          "p95_us": 1.33806
+        }
+      }
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/scratch_0905/out_C1v2_CACHEBLEND-TINY_hbm4_k8/dag_A6.json",
+      "sha256": "68c451d764001a28084e0d4203f5d974fff4c5cce547cd9f1d923619227ba6a1",
+      "run_config": {
+        "cacheblend_batch_size": 8,
+        "engine": "dag",
+        "epic_prefix_recompute_tokens": 8,
+        "git_dirty": true,
+        "git_rev": "4b74849f1910c2e8ac6077da1d7e8479ce993a9f",
+        "gpu": "A100a",
+        "gpu_model": "flash",
+        "model": "CACHEBLEND-TINY",
+        "ngpu": 1,
+        "num_hbm": 4,
+        "pim_link": "nvlink3",
+        "pipeopt": true,
+        "powerlimit": true,
+        "ramulator_dir": "/data2/chenyi9/KV-PIM/scratch_0905",
+        "reuse": "recompute",
+        "word": 2,
+        "workload": "/data2/chenyi9/KV-PIM/attacc_drampim_822/workload/probe/sweep/C1_turns.json",
+        "workload_sha256": "d9891881107c2ff7c03f39e9bd46c65a554c1aae119c294ac12e2db1ffab313d"
+      },
+      "corrected_rows_sha": "b6cb900b22076dd1",
+      "scans": {
+        "definition": "service = max over the scan's lanes of the lane duration; elapsed = last lane end - first lane start (queueing included); per_step_elapsed = per (member, layer, position) over every scan serving it.  Shared (MQ) and private scans are not added.",
+        "per_step_elapsed": {
+          "count": 14080,
+          "max_us": 5.670605999957834,
+          "mean_us": 2.2122499151993487,
+          "p50_us": 2.0024760000042496,
+          "p95_us": 3.934204000022312
+        },
+        "private_elapsed": {
+          "count": 14080,
+          "max_us": 3.5766190000022235,
+          "mean_us": 1.5348849492171543,
+          "p50_us": 1.4095770000041585,
+          "p95_us": 2.7230289999929935
+        },
+        "private_service": {
+          "count": 14080,
+          "max_us": 3.576619,
+          "mean_us": 0.8808255987214697,
+          "p50_us": 0.7466990000000001,
+          "p95_us": 1.774083
+        },
+        "shared_elapsed": {
+          "count": 2688,
+          "max_us": 2.1578140000019785,
+          "mean_us": 1.116903839285097,
+          "p50_us": 0.9904720000009082,
+          "p95_us": 1.3380599999945897
+        },
+        "shared_service": {
+          "count": 2688,
+          "max_us": 1.33806,
+          "mean_us": 1.0732310476190203,
+          "p50_us": 0.9904719999999999,
+          "p95_us": 1.33806
+        }
+      }
+    }
+  ],
+  "rows": [
+    {
+      "tier": "A3b",
+      "tbt_weighted_us": 174.8803170702695,
+      "interval_count": 3479,
+      "private_service_us": 1.2450953278407908,
+      "shared_service_us": 2.6027354285715867,
+      "scan_step_elapsed_us": 3.5414215750692546,
+      "e2e_s": 0.20539337159031587,
+      "gpu_busy_fraction_e2e": 0.8721705883736287
+    },
+    {
+      "tier": "A4c",
+      "tbt_weighted_us": 174.20550685585212,
+      "interval_count": 3479,
+      "private_service_us": 1.2070547329544625,
+      "shared_service_us": 2.6027354285715867,
+      "scan_step_elapsed_us": 3.397368977768996,
+      "e2e_s": 0.20485881542632667,
+      "gpu_busy_fraction_e2e": 0.8744464199657179
+    },
+    {
+      "tier": "A4e",
+      "tbt_weighted_us": 171.8158595399255,
+      "interval_count": 3479,
+      "private_service_us": 0.8808255987214697,
+      "shared_service_us": 2.6027354285715867,
+      "scan_step_elapsed_us": 3.0581645524156493,
+      "e2e_s": 0.20236535671764105,
+      "gpu_busy_fraction_e2e": 0.8852209718777073
+    },
+    {
+      "tier": "A5",
+      "tbt_weighted_us": 169.4055771001241,
+      "interval_count": 3479,
+      "private_service_us": 0.8808255987214697,
+      "shared_service_us": 1.0732310476190203,
+      "scan_step_elapsed_us": 2.2122499151968547,
+      "e2e_s": 0.22470531105965671,
+      "gpu_busy_fraction_e2e": 0.5984654632379024
+    },
+    {
+      "tier": "A6",
+      "tbt_weighted_us": 169.40557710016927,
+      "interval_count": 3479,
+      "private_service_us": 0.8808255987214697,
+      "shared_service_us": 1.0732310476190203,
+      "scan_step_elapsed_us": 2.2122499151993487,
+      "e2e_s": 0.18572694922230235,
+      "gpu_busy_fraction_e2e": 0.8946178675613933
+    }
+  ],
+  "comparisons": [
+    {
+      "comparison": "A3b->A4c",
+      "private_service_us_saved_pct": 3.0552355338363646,
+      "shared_service_us_saved_pct": 0.0,
+      "scan_step_elapsed_us_saved_pct": 4.067648943982094,
+      "tbt_weighted_us_saved_pct": 0.38586973406861125,
+      "percentage_retention_vs_private_service_us": 12.629786796963787,
+      "percentage_retention_vs_scan_step_elapsed_us": 9.4863086609155
+    },
+    {
+      "comparison": "A4c->A4e",
+      "private_service_us_saved_pct": 27.026871717282784,
+      "shared_service_us_saved_pct": 0.0,
+      "scan_step_elapsed_us_saved_pct": 9.984326918064035,
+      "tbt_weighted_us_saved_pct": 1.3717403996326927,
+      "percentage_retention_vs_private_service_us": 5.075468644621236,
+      "percentage_retention_vs_scan_step_elapsed_us": 13.738937145085728
+    },
+    {
+      "comparison": "A3b->A4e",
+      "private_service_us_saved_pct": 29.25637266272836,
+      "shared_service_us_saved_pct": 0.0,
+      "scan_step_elapsed_us_saved_pct": 13.645848493599777,
+      "tbt_weighted_us_saved_pct": 1.7523170026691237,
+      "percentage_retention_vs_private_service_us": 5.989522429421051,
+      "percentage_retention_vs_scan_step_elapsed_us": 12.841392775912773
+    },
+    {
+      "comparison": "A4e->A5",
+      "private_service_us_saved_pct": 0.0,
+      "shared_service_us_saved_pct": 58.765265349770004,
+      "scan_step_elapsed_us_saved_pct": 27.660860713024917,
+      "tbt_weighted_us_saved_pct": 1.402828846100379,
+      "percentage_retention_vs_private_service_us": null,
+      "percentage_retention_vs_scan_step_elapsed_us": 5.071529988363003
+    },
+    {
+      "comparison": "A5->A6",
+      "private_service_us_saved_pct": 0.0,
+      "shared_service_us_saved_pct": 0.0,
+      "scan_step_elapsed_us_saved_pct": -1.127320459204384e-10,
+      "tbt_weighted_us_saved_pct": -2.666755705149626e-11,
+      "percentage_retention_vs_private_service_us": null,
+      "percentage_retention_vs_scan_step_elapsed_us": null
+    }
+  ],
+  "fig3_k_only": [
+    {
+      "rounds": 1,
+      "a3b_cycles": 206,
+      "a4e_cycles": 206,
+      "latency_saved_pct": 0.0
+    },
+    {
+      "rounds": 2,
+      "a3b_cycles": 322,
+      "a4e_cycles": 206,
+      "latency_saved_pct": 36.024844720496894
+    },
+    {
+      "rounds": 4,
+      "a3b_cycles": 682,
+      "a4e_cycles": 206,
+      "latency_saved_pct": 69.79472140762464
+    },
+    {
+      "rounds": 8,
+      "a3b_cycles": 1402,
+      "a4e_cycles": 342,
+      "latency_saved_pct": 75.60627674750357
+    },
+    {
+      "rounds": 16,
+      "a3b_cycles": 2842,
+      "a4e_cycles": 710,
+      "latency_saved_pct": 75.01759324419423
+    }
+  ],
+  "limitation": "Percentage retention is the ratio of two relative reductions with different denominators, not a fraction of saved microseconds. Summary scan means include first-token scans; TBT excludes first-token interval. TINY diagnostic, not LLAMA3 performance conclusion."
+}
