@@ -1,3 +1,5 @@
+> 历史单模型实验文档，保留用于旧结果复现；当前多模型实验见 [KVChime 实验说明](KVChime-multi-model.md)。以下数值与方案定义不属于新版最终结果。
+
 # Fugue simulation scope
 
 The native AttAcc model is pinned to source commit `c60005143a6b492d7ef83231723386478b59a506`. The included source lock covers the GPU cost/energy model, model geometry, decode scheduling, PIM trace generator, mapping and DRAM timing implementation. Pinned upstream Ramulator is `b7c70275f04126c647edb989270cc429776955d1`.
@@ -12,4 +14,4 @@ CacheBlend has full first-layer attention, full QKV at the check layer, and 16% 
 
 TTFT includes the ordered QKV→attention service→projection/FFN/norm path over 32 layers. TBT is the mean remaining native decode step; E2E is TTFT plus those steps. Fixed output caps are ten tokens for CacheBlend and sixteen for EPIC; they are not measured answer lengths. Batch latency is not divided by batch size. Energy is the native dynamic-energy accounting, with pJ converted to J; overlap changes time, not transaction energy. The original combined PIM score energy convention and link-only transfer energy are retained. Static board power, extra endpoint DMA energy, RoPE, top-k runtime, LM head and host scheduling are not added where the original model does not supply them.
 
-This is a deterministic hardware-cost replay, not a numerical vLLM/EPIC accuracy run. Fixed tokenized inputs avoid requiring tokenizer or weight downloads. Shared-object accounting does not implement a physical shared-address allocator, placement change, cross-request scan coalescing, or a numeric RoPE KV-sharing kernel. See each [experiment README](../Fugue-paper/README.md) for complete formulas, limits and unfavorable results.
+This is a deterministic hardware-cost replay, not a numerical vLLM/EPIC accuracy run. Fixed tokenized inputs avoid requiring tokenizer or weight downloads. Shared-object accounting does not implement a physical shared-address allocator, placement change, cross-request scan coalescing, or a numeric RoPE KV-sharing kernel. See each [legacy experiment README](../artifact/legacy-paper/README.md) for complete formulas, limits and unfavorable results.

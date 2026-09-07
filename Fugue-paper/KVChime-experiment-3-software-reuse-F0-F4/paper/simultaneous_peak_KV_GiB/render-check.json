@@ -1,0 +1,5 @@
+{
+  "axes": 1,
+  "response_metric": "Peak KV capacity / F0",
+  "input_rows": 160
+}

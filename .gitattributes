@@ -5,3 +5,5 @@
 # These are byte-preserved upstream documents, including their whitespace.
 docs/AttAcc-upstream.md -whitespace
 vendor/*LICENSE -whitespace
+# Preserve measurement-source bytes recorded in the completed TP4 run.
+fugue/kvchime_model.py whitespace=-blank-at-eof

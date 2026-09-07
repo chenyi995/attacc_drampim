@@ -1,3 +1,5 @@
+> 历史单模型实验文档，保留用于旧结果复现；当前多模型实验见 [KVChime 实验说明](KVChime-multi-model.md)。以下数值与方案定义不属于新版最终结果。
+
 # Independent reproduction check
 
 The exported repository was extracted into a directory named `renamed-checkout` without `.git`, `output`, `ramulator2`, or `ramulator.out`. Only the included source, pinned dependencies and fixed workload inputs were available to the experiment code. Python dependencies and GCC 14 were already installed on the validation host.

@@ -1,0 +1,49 @@
+{
+  "kind": "line",
+  "x_key": "q",
+  "xlabel": "New query tokens, Q",
+  "ylabel": "Attention service (\u00b5s / layer)",
+  "title": "GPT-13B \u00b7 C=1024 \u00b7 32 GB/s",
+  "logx": true,
+  "logy": true,
+  "crossings": [
+    {
+      "model": "GPT-13B",
+      "cached": 1024,
+      "link_GBps": 32,
+      "mode": "plain",
+      "q_low": 192,
+      "q_high": 256,
+      "color": "#26749A"
+    },
+    {
+      "model": "GPT-13B",
+      "cached": 1024,
+      "link_GBps": 32,
+      "mode": "mq",
+      "q_low": 512,
+      "q_high": 768,
+      "color": "#36886B"
+    }
+  ],
+  "series": [
+    {
+      "name": "GPU",
+      "key": "gpu_service_us",
+      "color": "#C9754E",
+      "style": "--s"
+    },
+    {
+      "name": "PIM",
+      "key": "plain_service_us",
+      "color": "#26749A",
+      "style": "-o"
+    },
+    {
+      "name": "MQ PIM",
+      "key": "mq_service_us",
+      "color": "#36886B",
+      "style": "-^"
+    }
+  ]
+}

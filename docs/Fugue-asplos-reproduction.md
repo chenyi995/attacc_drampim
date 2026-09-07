@@ -1,3 +1,5 @@
+> 历史单模型实验文档，保留用于旧结果复现；当前多模型实验见 [KVChime 实验说明](KVChime-multi-model.md)。以下数值与方案定义不属于新版最终结果。
+
 # Reproducing Fugue Experiments 1–5
 
 The supported entry point is `python3 -m fugue`, from this checkout. Historical one-off scripts are archived locally; no step depends on running them or locating old output directories.
@@ -42,7 +44,7 @@ Each stage records argv, cwd, input/source hashes, start/finish times and exit s
 
 `verify` reads reference numbers only after the fresh run. It compares every numeric field of the four main tables with relative tolerance `1e-8` and absolute tolerance `1e-9`, and compares winning-device labels exactly. Small arithmetic representation differences are allowed; this is not permission to shift a crossover. All emitted native-profile commands must succeed and use the new run's executable. Native GPU/DRAM source hashes must match the locked publication model.
 
-The final checked-in paper directory has one current PDF/PNG pair per figure. Complete final sampled CSV data are retained even where the final figure shows only a window; this is one final dataset, not multiple versions. Earlier three-panel/full-range images and one-off script snapshots were moved to local `output` archives, outside `Fugue-paper` and outside runtime dependencies.
+The [legacy paper archive](../artifact/legacy-paper/README.md) retains one final PDF/PNG pair per historical figure and all final sampled CSV data, including samples outside the displayed window. Historical `plot` commands read this archive; `Fugue-paper` now contains the KVChime multi-model results. Earlier three-panel/full-range images and one-off script snapshots remain in local `output` archives, outside runtime dependencies.
 
 ## Extending the code
 

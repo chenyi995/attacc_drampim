@@ -1,0 +1,28 @@
+{
+  "kind": "grouped",
+  "models": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "LLAMA3.1-8B"
+  ],
+  "case_keys": [
+    "cached",
+    "q"
+  ],
+  "case_prefix": {
+    "cached": "C=",
+    "q": "Q="
+  },
+  "wide_series": [
+    {
+      "name": "MQ",
+      "key": "mq_speedup_over_GPU"
+    }
+  ],
+  "series_order": [
+    "MQ"
+  ],
+  "title": "MQ sensitivity to cache",
+  "ylabel": "GPU / MQ PIM service time"
+}

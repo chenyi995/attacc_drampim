@@ -1,0 +1,25 @@
+{
+  "kind": "grouped",
+  "models": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "LLAMA3.1-8B"
+  ],
+  "case_keys": [
+    "workload_id"
+  ],
+  "series_key": "variant",
+  "value_key": "TTFT_ms",
+  "series_order": [
+    "F0",
+    "F1",
+    "F2",
+    "F3",
+    "F4"
+  ],
+  "normalize_to": "F0",
+  "inverse_normalization": true,
+  "title": "TTFT by model and workload",
+  "ylabel": "TTFT speedup over F0"
+}

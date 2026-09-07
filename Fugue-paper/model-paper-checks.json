@@ -1,0 +1,12 @@
+{
+  "figures": 26,
+  "models": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "LLAMA3.1-8B"
+  ],
+  "all_figures_have_single_axis": true,
+  "all_figures_have_raw_data_and_standalone_plot": true,
+  "experiments": 5
+}

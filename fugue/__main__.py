@@ -5,7 +5,7 @@ from fugue.runtime import REPO,check_sources,sha,load,save
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('command',choices=['doctor','build','run','plot','verify','all','check-inputs'])
+    p.add_argument('command',choices=['doctor','build','run','plot','verify','all','check-inputs','kvchime','all-models','all-models-plot','all-models-verify'])
     p.add_argument('--output',type=Path,default=REPO/'output/Fugue-asplos-reproduce')
     p.add_argument('--jobs',type=int,default=8,help='Concurrent processes, 1..24 (8 default); <= 500 GB aggregate address-space limit')
     p.add_argument('--experiments',default='all',help='all, or comma-separated 1..5; 1/2 and 4/5 share runs')
@@ -55,6 +55,21 @@ def main():
                 result=subprocess.run([compiler,'-std=c++20',str(probe),'-o',str(Path(tmp)/'probe')],capture_output=True,text=True)
                 if result.returncode:raise SystemExit('Selected compiler lacks required C++20 support. Set CXX to a suitable compiler.\n'+result.stderr)
             print('C++20 compiler probe passed')
+        return
+    if args.command in ['all-models','kvchime']:
+        execute('fugue.build','build')
+        execute('fugue.kvchime_model_tests','model-tests')
+        execute('fugue.kvchime_tests','shared-tests')
+        execute('fugue.kvchime_sweep','model-sweep')
+        execute('fugue.kvchime','model-workloads')
+        execute('fugue.kvchime_paper','model-paper')
+        execute('fugue.kvchime_verify','verify')
+        return
+    if args.command=='all-models-verify':
+        execute('fugue.kvchime_verify','verify')
+        return
+    if args.command=='all-models-plot':
+        execute('fugue.kvchime_paper','plot')
         return
     if args.command in ['build','all']:execute('fugue.build','build')
     if args.command in ['run','all']:

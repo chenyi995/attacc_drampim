@@ -1,0 +1,49 @@
+{
+  "kind": "line",
+  "x_key": "q",
+  "xlabel": "New query tokens, Q",
+  "ylabel": "Attention service (\u00b5s / layer)",
+  "title": "LLAMA-65B \u00b7 C=0 \u00b7 300 GB/s",
+  "logx": true,
+  "logy": true,
+  "crossings": [
+    {
+      "model": "LLAMA-65B",
+      "cached": 0,
+      "link_GBps": 300,
+      "mode": "mq",
+      "q_low": 1024,
+      "q_high": 1536,
+      "color": "#36886B"
+    },
+    {
+      "model": "LLAMA-65B",
+      "cached": 0,
+      "link_GBps": 300,
+      "mode": "mq",
+      "q_low": 1536,
+      "q_high": 2048,
+      "color": "#36886B"
+    }
+  ],
+  "series": [
+    {
+      "name": "GPU",
+      "key": "gpu_service_us",
+      "color": "#C9754E",
+      "style": "--s"
+    },
+    {
+      "name": "PIM",
+      "key": "plain_service_us",
+      "color": "#26749A",
+      "style": "-o"
+    },
+    {
+      "name": "MQ PIM",
+      "key": "mq_service_us",
+      "color": "#36886B",
+      "style": "-^"
+    }
+  ]
+}

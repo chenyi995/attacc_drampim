@@ -1,0 +1,5 @@
+{
+  "axes": 1,
+  "response_metric": "Decode scan speedup over F2",
+  "input_rows": 96
+}

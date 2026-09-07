@@ -1,0 +1,48 @@
+{
+  "name": "KVChime shared execution and baseline additions",
+  "models": [
+    {
+      "name": "LLAMA-7B",
+      "tensor_parallel": 1
+    },
+    {
+      "name": "GPT-13B",
+      "tensor_parallel": 1
+    },
+    {
+      "name": "LLAMA-65B",
+      "tensor_parallel": 4
+    },
+    {
+      "name": "LLAMA3.1-8B",
+      "tensor_parallel": 1
+    }
+  ],
+  "selector_cached": [
+    0,
+    1024,
+    4096
+  ],
+  "selector_q": [
+    8,
+    32,
+    64,
+    128,
+    256,
+    512,
+    768,
+    1024
+  ],
+  "calibration_n": [
+    1024,
+    4096
+  ],
+  "calibration_resident_queries": 8,
+  "MQ_capacity": 8,
+  "PE_period_ns": 0.769,
+  "link_GBps_one_way": 300,
+  "workers_default": 8,
+  "description": "Frozen CacheBlend and EPIC inputs. Large-model shape inherits native AttAcc hardware assumptions. No frequency resweep or new synthesis.",
+  "model_reference": "https://arxiv.org/html/2407.21783v2#S3.T3",
+  "operator_profile": "All requests/layers evaluated; rectangular attention query tiles use native command-profile lookup, as in original sweep."
+}

@@ -1,71 +1,60 @@
-# Fugue: reproducible KV reuse experiments on AttAcc
+# KVChime: shared KV execution on AttAcc
 
-This repository reproduces Experiments 1–5 using the original AttAcc GPU/DRAM cost models plus Fugue's MQ, partial-recomputation, KV-sharing accounting and prefill execution choices. The final figures and tables are in [Fugue-paper](Fugue-paper/README.md).
+KVChime combines query-side RoPE alignment, shared KV with private replacements, and Multi-Query PIM execution with a simple prefill device selector. This repository supplies reproducible CPU simulations using the original AttAcc GPU cost operators and bundled Ramulator sources.
 
-**The repository is self-contained for the simulation:** pinned Ramulator/dependency sources, fixed tokenized workloads, model settings and executable experiment code are included. No sibling repository, old `output`, downloaded LLM weights, CUDA device, tokenizer download or external vLLM installation is needed. Python packages and a C++ toolchain must be installed first.
+The current results are in [Fugue-paper](Fugue-paper/README.md). Each final figure reports one performance or capacity metric and includes raw absolute values and a standalone plotting script. Energy remains in the CSVs with a brief README note. Hardware area tables and frequency evidence belong to the separate `kvpim-rtl` repository.
 
-## Quick start
+The [completion and verification record](docs/KVChime-reproduction-checks.md) documents the completed TP4 run: 26 independently redrawn figures, 238,384 numeric fields preserved in publication, and 12 passing model/shared-view tests.
 
-Requirements: Linux, Python 3.10+, CMake 3.16+, a C++20 compiler (tested with GCC 14; upstream also documents GCC 12), `make`, and `patch`. Default parallelism is 8 CPU cores. Run from the repository root; the directory may have any name.
+## Reproduce the current experiments
+
+Requirements: Linux, Python 3.10+, CMake 3.16+, C++20 compiler, make, patch. GCC 14 was used on the validation host. No physical GPU, model weights, tokenizer download, sibling repository, or pre-existing output is required. Pinned source archives, licenses, tokenized workload inputs, and provenance are included.
 
 ```bash
-git clone https://github.com/chenyi995/attacc_drampim.git attacc-fugue
-cd attacc-fugue
-git switch chenyi-0906
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install -r requirements-fugue.txt
-# If the default g++ is too old, set CXX to an installed C++20 compiler.
+# Set CXX=/path/to/g++ if the default compiler lacks C++20.
 python3 -m fugue doctor
-python3 -m fugue all --jobs 8
+python3 -m fugue all-models --jobs 8 --output output/KVChime-fresh
 ```
 
-If you receive a source archive instead, extract it, enter its root directory and start with the virtual-environment step above.
+Use a fresh output directory. The command builds the bundled simulator, checks MHA/GQA geometry and shared-view invariants, runs both the shape sweep and complete workloads, verifies event/capacity accounting, compares available checked-in multi-model numeric references, and generates `output/KVChime-fresh/paper/`. It never reads publication latency tables to produce simulation timings. The default is eight workers; CPU affinity, process memory and BLAS threads are bounded.
 
-`all` builds Ramulator from bundled source, runs all five experiments, regenerates the figures, and compares every numeric field of the main result tables with the checked-in final references. It does not copy old timing results into the simulator. Default output: `output/Fugue-asplos-reproduce/`.
+| System experiment | Question | Final figures |
+|---|---|---|
+| 1: Prefill boundary | GPU vs ordinary PIM vs MQ PIM as Q grows | One service-latency curve plot per fixed model/cache/link setting |
+| 2: Link/cache sensitivity | How link and cache change the MQ advantage | Separate long grouped bars for link and cache |
+| 3: Software reuse F0–F4 | Full recomputation, software reuse, materialized PIM, shared views, MQ/selection | Separate TTFT, TBT, E2E, scan and capacity charts |
+| 4: Shared-query MQ | Simultaneously ready agents share KV operands | Separate scan and TBT charts |
+| 5: Device selection | Fixed GPU, fixed MQ PIM, estimated selector and oracle | Attention service normalized to oracle |
 
-For a compiler outside PATH, use `CXX=/path/to/g++ python3 -m fugue all --jobs 8`. On this project's validation host the default GCC 8 is too old; GCC 14 was selected explicitly. CPU simulation is sufficient—A100a is a modeled device, not a hardware requirement.
+All five use **LLAMA-7B, GPT-13B, LLAMA-65B and LLAMA3.1-8B**. The first three inherit native AttAcc geometry; the last is an explicit GQA extension (32 Q / 8 KV heads). LLAMA-65B uses TP4; other models use TP1. Hardware defaults are native A100a, FP16, five PIM HBM stacks per GPU and NVLink 3 at 300 GB/s one way. MQ has up to eight resident queries, about 1.3 GHz and an eight-tCK full-group interval. Native physical mapping is unchanged.
 
-## Commands and output
+These are fixed CacheBlend/EPIC **hardware-shape replays**, not numerical LLM inference or per-model retokenization. All requests and Transformer layers are counted; there is no request extrapolation. Read [workloads, costs, metrics and selector](docs/KVChime-multi-model.md) and [RoPE/shared-view equivalence](docs/KVChime-correctness.md) before interpreting the results. Negative gains and selection errors are retained.
+
+## Redraw without simulation
 
 ```bash
-python3 -m fugue build --jobs 8
-python3 -m fugue run --experiments 1,2 --jobs 8
-python3 -m fugue run --experiments 3 --jobs 8
-python3 -m fugue run --experiments 4,5 --jobs 8
-python3 -m fugue plot
-python3 -m fugue verify
+# Redraw all figures from a completed current run:
+python3 -m fugue all-models-plot --output output/KVChime-fresh
+python3 -m fugue all-models-verify --output output/KVChime-fresh
+# Or copy any final paper/<figure>/ folder elsewhere and run:
+python3 plot.py --output-dir redraw
 ```
 
-Experiments 1/2 share the final shape sweep; 4/5 share the EPIC driver. Asking for one member runs the pair, avoiding duplicate profiles. To redraw only the checked-in final tables:
+Every final `paper/<figure>/` folder contains `raw-data.csv`, `raw-profiles.csv`, `plot-config.json`, `models.json`, `plot.py`, PDF/PNG and provenance. It can be copied outside this repository and redrawn with Python, numpy and matplotlib. Full raw trace/YAML/command logs and stage commands/source hashes remain under the chosen output directory.
 
-```bash
-python3 -m fugue plot --from-paper --output output/Fugue-asplos-redraw
-```
+## Repository map
 
-This last command is explicitly a redraw; it does not claim to rerun simulation. Fresh simulation and redraw outputs are separate from the checked-in `Fugue-paper` results.
+| Path | Purpose |
+|---|---|
+| `src/`, `pim_ramulator_src/` | Native AttAcc operators and physical mapping, protected by source hashes |
+| `fugue/kvchime*.py` | Current model adapters, shared traces, sweep, workloads, selector and plotting |
+| `vendor/` | Pinned Ramulator and dependency source archives plus licenses |
+| `artifact/inputs/` | Frozen token IDs, source text, chunk identities and recomputation indices |
+| `Fugue-paper/` | Latest paper outline and current final experiment packages |
+| `artifact/legacy-paper/` | Superseded single-model figures/tables retained for historical reproduction |
+| `output/` | Fresh or incomplete runs, build products, full command evidence |
 
-| Path | Contents |
-| --- | --- |
-| `fugue/` | Portable CLI, source build, MQ profiles, workload replay, plotting and verification |
-| `src/`, `pim_ramulator_src/` | Original AttAcc models and trace mapping; native source lock is checked |
-| `vendor/` | Pinned Ramulator2, argparse, spdlog, yaml-cpp source archives and licenses |
-| `artifact/inputs/` | Fixed token IDs, recomputation indices, text and provenance; no latency inputs |
-| `artifact/reference/` | Final numeric references, read only by the comparison command |
-| `Fugue-paper/` | One final version per experiment, including full final numerical data |
-| `output/Fugue-asplos-reproduce/logs/` | Stage commands, stdout/stderr and exit status |
-| `output/Fugue-asplos-reproduce/experiment*/` | Fresh trace/YAML, Ramulator command logs, timing, operator/event/energy tables |
-| `output/Fugue-asplos-reproduce/paper/` | Recreated final figures and derived tables |
-| `output/Fugue-asplos-reproduce/Fugue-asplos-verification.json` | Numeric comparison and integrity results |
-
-Existing successful stages can be skipped with `--resume` only when their code/inputs match. Failed or incomplete runs are retained; use a new `--output output/Fugue-asplos-rerun` for a clean retry. Do not delete data to make an assertion disappear. Generated outputs, build products, virtual environments and local archives are Git-ignored.
-
-The [independent source-package check](docs/Fugue-asplos-reproduction-checks.md) reproduced all 50 CSV tables and all 13 PNGs. A complete fresh run took about 128 s on the validation host with 8 workers.
-
-See [full reproduction guide](docs/Fugue-asplos-reproduction.md), [modeling scope](docs/Fugue-asplos-methodology.md), and [input provenance](artifact/inputs/README.md). The original upstream installation and `main.py` usage are preserved in [AttAcc upstream README](docs/AttAcc-upstream.md).
-
-## What is modeled
-
-All final experiments use the native LLAMA-7B/A100a/FP16 configuration, 32 layers and heads, five HBM stacks, bank PIM and the native power constraint. Default link is NVLink 3, 300 GB/s one way. MQ has eight resident queries and eight tCK per full group at approximately 1.3 GHz. The original mapping and read/write timing parameters remain unchanged.
-
-These are hardware cost-model replays of fixed CacheBlend/EPIC workload inputs. They do not reproduce numerical LLM answers or software accuracy experiments. Shared tensor capacity/transfer accounting does not claim a new physical allocator or shared-address hotspot model. Complete service latency, including exposed transfers, determines F4's choice. The detailed per-experiment READMEs retain unfavorable findings, warmup cost and F2 export-overlap sensitivity.
+The historical `all`, `run`, `plot`, and `verify` commands reproduce the earlier single-model suite; their documentation is explicitly marked legacy. The current command is `all-models` (`kvchime` is an alias). Failed or interrupted attempts are retained; `--resume` skips only successful stages with identical code and inputs. Current simulation and historical references must not be mixed. Original upstream usage remains in [AttAcc upstream README](docs/AttAcc-upstream.md).

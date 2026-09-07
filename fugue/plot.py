@@ -19,7 +19,11 @@ num=f
 read=loadcsv
 write=save
 def same(a,b):assert math.isclose(a,b,rel_tol=1e-10,abs_tol=1e-10),(a,b)
-def folder(i):return next(PAPER.glob(f'Fugue-asplos-experiment-{i}-*'))
+def folder(i):
+    for base in [PAPER, REPO/'artifact/legacy-paper']:
+        candidates=sorted(base.glob(f'Fugue-asplos-experiment-{i}-*'))
+        if candidates:return candidates[0]
+    raise FileNotFoundError(f'Legacy experiment {i} reference missing')
 def target(i):
     root=DEST/folder(i).name
     for sub in ['figures','tables','provenance','workload']:(root/sub).mkdir(parents=True,exist_ok=True)

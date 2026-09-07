@@ -1,0 +1,28 @@
+{
+  "kind": "grouped",
+  "models": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "LLAMA3.1-8B"
+  ],
+  "case_keys": [
+    "link_GBps",
+    "q"
+  ],
+  "case_prefix": {
+    "link_GBps": "BW=",
+    "q": "Q="
+  },
+  "wide_series": [
+    {
+      "name": "MQ",
+      "key": "mq_speedup_over_GPU"
+    }
+  ],
+  "series_order": [
+    "MQ"
+  ],
+  "title": "MQ sensitivity to link",
+  "ylabel": "GPU / MQ PIM service time"
+}

@@ -1,0 +1,7 @@
+{
+  "source": "kvchime/Fugue-asplos-results/events.csv",
+  "source_sha256": "cef3c6e1e7c1a46ca21b7675418b183cca498204e703707c6858027d7bd74b36",
+  "original_bytes": 150177356,
+  "compressed_sha256": "8cddc2930822cfd5bbd55fcde09226e95e545cfc82fae1782ad10cc11d499fd9",
+  "compression": "Lossless gzip, deterministic mtime=0; decompressed bytes verified identical."
+}
