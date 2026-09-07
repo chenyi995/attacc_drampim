@@ -1,0 +1,95 @@
+{
+  "kind": "crossover_six_panel",
+  "model": "GPT-13B",
+  "tensor_parallel": 1,
+  "panels": [
+    {
+      "panel": "a",
+      "cached": 0,
+      "link_GBps": 300,
+      "mode": "plain",
+      "crossing_brackets": [],
+      "q_window": [
+        0.82,
+        2500
+      ]
+    },
+    {
+      "panel": "b",
+      "cached": 1024,
+      "link_GBps": 300,
+      "mode": "plain",
+      "crossing_brackets": [
+        [
+          48,
+          64
+        ]
+      ],
+      "q_window": [
+        16,
+        192
+      ]
+    },
+    {
+      "panel": "c",
+      "cached": 1024,
+      "link_GBps": 450,
+      "mode": "mq",
+      "crossing_brackets": [
+        [
+          512,
+          768
+        ]
+      ],
+      "q_window": [
+        192,
+        1536
+      ]
+    },
+    {
+      "panel": "d",
+      "cached": 0,
+      "link_GBps": 300,
+      "mode": "mq",
+      "crossing_brackets": [],
+      "q_window": [
+        0.82,
+        2500
+      ]
+    },
+    {
+      "panel": "e",
+      "cached": 1024,
+      "link_GBps": 300,
+      "mode": "mq",
+      "crossing_brackets": [
+        [
+          512,
+          768
+        ]
+      ],
+      "q_window": [
+        192,
+        1536
+      ]
+    },
+    {
+      "panel": "f",
+      "cached": 1024,
+      "link_GBps": 32,
+      "mode": "mq",
+      "crossing_brackets": [
+        [
+          512,
+          768
+        ]
+      ],
+      "q_window": [
+        192,
+        1536
+      ]
+    }
+  ],
+  "ylabel": "Attention service (\u00b5s / layer)",
+  "title": "Prefill attention crossover \u00b7 GPT-13B"
+}

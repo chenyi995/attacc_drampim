@@ -2,47 +2,45 @@
 
 统一模型：LLAMA-7B, GPT-13B, LLAMA-65B, LLAMA3.1-8B.
 
-每张图只保留一个纵轴指标；多模型/多 case 用 AttAcc Fig. 13 式横向分组条形图。每个 `paper/` 子文件夹均包含最终 PDF/PNG、原始数据与独立 `plot.py`。
+每个模型一张原定的 2×3 六联图，共四张图、24 个面板；保留原 Experiment 1 的留白、配色与分面顺序。每个 `paper/` 子文件夹均包含最终 PDF/PNG、原始数据与独立 `plot.py`。
 
-- [LLAMA-7B-C0-link300](paper/LLAMA-7B-C0-link300/README.md)
-- [LLAMA-7B-C1024-link300](paper/LLAMA-7B-C1024-link300/README.md)
-- [LLAMA-7B-C1024-link32](paper/LLAMA-7B-C1024-link32/README.md)
-- [LLAMA-7B-C1024-link450](paper/LLAMA-7B-C1024-link450/README.md)
-- [GPT-13B-C0-link300](paper/GPT-13B-C0-link300/README.md)
-- [GPT-13B-C1024-link300](paper/GPT-13B-C1024-link300/README.md)
-- [GPT-13B-C1024-link32](paper/GPT-13B-C1024-link32/README.md)
-- [GPT-13B-C1024-link450](paper/GPT-13B-C1024-link450/README.md)
-- [LLAMA-65B-C0-link300](paper/LLAMA-65B-C0-link300/README.md)
-- [LLAMA-65B-C1024-link300](paper/LLAMA-65B-C1024-link300/README.md)
-- [LLAMA-65B-C1024-link32](paper/LLAMA-65B-C1024-link32/README.md)
-- [LLAMA-65B-C1024-link450](paper/LLAMA-65B-C1024-link450/README.md)
-- [LLAMA3.1-8B-C0-link300](paper/LLAMA3.1-8B-C0-link300/README.md)
-- [LLAMA3.1-8B-C1024-link300](paper/LLAMA3.1-8B-C1024-link300/README.md)
-- [LLAMA3.1-8B-C1024-link32](paper/LLAMA3.1-8B-C1024-link32/README.md)
-- [LLAMA3.1-8B-C1024-link450](paper/LLAMA3.1-8B-C1024-link450/README.md)
+- [LLAMA-7B-six-panel](paper/LLAMA-7B-six-panel/README.md)
+- [GPT-13B-six-panel](paper/GPT-13B-six-panel/README.md)
+- [LLAMA-65B-six-panel](paper/LLAMA-65B-six-panel/README.md)
+- [LLAMA3.1-8B-six-panel](paper/LLAMA3.1-8B-six-panel/README.md)
 
 完整采样和绝对值见 `data/`。默认 A100a、NVLink 3；模型几何与 GQA 假设见每图 `models.json` 及仓库 `docs/KVChime-multi-model.md`。
 
-## 交点与成本
+## 六个面板与交点
 
-| Model | C | GB/s 单向 | PIM/GPU Q 区间 | MQ/GPU Q 区间 |
-| --- | --- | --- | --- | --- |
-| LLAMA-7B | 0 | 300 | 无交点；GPU 较快 | 无交点；GPU 较快 |
-| LLAMA-7B | 1024 | 300 | 48–64 | 512–768 |
-| LLAMA-7B | 1024 | 32 | 192–256 | 512–768 |
-| LLAMA-7B | 1024 | 450 | 32–48 | 512–768 |
-| GPT-13B | 0 | 300 | 无交点；GPU 较快 | 无交点；GPU 较快 |
-| GPT-13B | 1024 | 300 | 48–64 | 512–768 |
-| GPT-13B | 1024 | 32 | 192–256 | 512–768 |
-| GPT-13B | 1024 | 450 | 48–64 | 512–768 |
-| LLAMA-65B | 0 | 300 | 无交点；GPU 较快 | 1024–1536, 1536–2048 |
-| LLAMA-65B | 1024 | 300 | 32–48 | 无交点；PIM 较快 |
-| LLAMA-65B | 1024 | 32 | 128–192 | 512–768 |
-| LLAMA-65B | 1024 | 450 | 24–32 | 无交点；PIM 较快 |
-| LLAMA3.1-8B | 0 | 300 | 无交点；GPU 较快 | 无交点；GPU 较快 |
-| LLAMA3.1-8B | 1024 | 300 | 4–8 | 48–64 |
-| LLAMA3.1-8B | 1024 | 32 | 24–32 | 128–192 |
-| LLAMA3.1-8B | 1024 | 450 | 4–8 | 48–64 |
+上排 a/b/c、下排 d/e/f，每格保留 GPU 与指定 PIM 的两条曲线。默认窗口：C=0 使用全部 Q；b 聚焦 Q=16–192；c/e/f 聚焦 Q=192–1536。若某模型交点超出窗口，自动扩展以显示全部交点区间。
+
+| Model | 面板 | PIM 模式 | C | GB/s 单向 | 交点 Q 区间 |
+| --- | --- | --- | --- | --- | --- |
+| LLAMA-7B | a | 普通 PIM | 0 | 300 | 无交点；GPU 较快 |
+| LLAMA-7B | b | 普通 PIM | 1024 | 300 | 48–64 |
+| LLAMA-7B | c | MQ PIM | 1024 | 450 | 512–768 |
+| LLAMA-7B | d | MQ PIM | 0 | 300 | 无交点；GPU 较快 |
+| LLAMA-7B | e | MQ PIM | 1024 | 300 | 512–768 |
+| LLAMA-7B | f | MQ PIM | 1024 | 32 | 512–768 |
+| GPT-13B | a | 普通 PIM | 0 | 300 | 无交点；GPU 较快 |
+| GPT-13B | b | 普通 PIM | 1024 | 300 | 48–64 |
+| GPT-13B | c | MQ PIM | 1024 | 450 | 512–768 |
+| GPT-13B | d | MQ PIM | 0 | 300 | 无交点；GPU 较快 |
+| GPT-13B | e | MQ PIM | 1024 | 300 | 512–768 |
+| GPT-13B | f | MQ PIM | 1024 | 32 | 512–768 |
+| LLAMA-65B | a | 普通 PIM | 0 | 300 | 无交点；GPU 较快 |
+| LLAMA-65B | b | 普通 PIM | 1024 | 300 | 32–48 |
+| LLAMA-65B | c | MQ PIM | 1024 | 450 | 无交点；PIM 较快 |
+| LLAMA-65B | d | MQ PIM | 0 | 300 | 1024–1536, 1536–2048 |
+| LLAMA-65B | e | MQ PIM | 1024 | 300 | 无交点；PIM 较快 |
+| LLAMA-65B | f | MQ PIM | 1024 | 32 | 512–768 |
+| LLAMA3.1-8B | a | 普通 PIM | 0 | 300 | 无交点；GPU 较快 |
+| LLAMA3.1-8B | b | 普通 PIM | 1024 | 300 | 4–8 |
+| LLAMA3.1-8B | c | MQ PIM | 1024 | 450 | 48–64 |
+| LLAMA3.1-8B | d | MQ PIM | 0 | 300 | 无交点；GPU 较快 |
+| LLAMA3.1-8B | e | MQ PIM | 1024 | 300 | 48–64 |
+| LLAMA3.1-8B | f | MQ PIM | 1024 | 32 | 128–192 |
 
 GPU service = max(GPU QK + softmax + PV + cached KV 读回, 新 KV 写入)；PIM service = Q 输入 + QK/PV scan + softmax + 输出返回 + max(0, 新 KV 写入 − overlap 窗口)。窗口取第一组 scan 启动到首次消费新 K 的原生命令时间；C=0 时窗口为零。
 

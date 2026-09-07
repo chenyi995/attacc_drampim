@@ -1,6 +1,6 @@
 # KVChime：多模型最终实验
 
-本轮四模型仿真和最终整理已完成。26 张图均通过独立重画校验，正式数据与原始运行的 238,384 个数值字段一致。详见 [完成与校验记录](../docs/KVChime-reproduction-checks.md)。
+Experiment 1 已恢复原定的 2×3 六联布局，每模型一张，共四张；后续 performance/capacity 保持每张小图一个指标，共十张。正式数据与原始运行的 238,384 个数值字段一致。详见 [完成与校验记录](../docs/KVChime-reproduction-checks.md)。
 
 - [Experiment 1：Prefill attention 的 GPU/PIM/MQ 边界](KVChime-experiment-1-prefill-boundary/README.md)
 - [Experiment 2：MQ 对 link 与 cache 的敏感性](KVChime-experiment-2-link-cache-sensitivity/README.md)

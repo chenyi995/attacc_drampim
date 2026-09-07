@@ -1,5 +1,5 @@
-"""Make self-contained, single-metric figure packages from the multi-model run."""
-import csv,json,math,shutil,os,hashlib,subprocess,sys,gzip
+"""Package six-panel Experiment 1 figures and single-axis later experiments."""
+import csv,json,math,shutil,os,hashlib,subprocess,sys,gzip,datetime
 from pathlib import Path
 from fugue.runtime import REPO,RUN,load,save,csvout,sha,check_sources
 from fugue.kvchime_model import geometry
@@ -20,23 +20,38 @@ for i,(name,title) in experiments.items():
     root=DEST/f'KVChime-experiment-{i}-{name}';root.mkdir(exist_ok=True);(root/'paper').mkdir(exist_ok=True);(root/'data').mkdir(exist_ok=True)
     roots[i]=root
 
+panel_specs=[dict(panel='a',cached=0,link_GBps=300,mode='plain'),
+    dict(panel='b',cached=1024,link_GBps=300,mode='plain'),
+    dict(panel='c',cached=1024,link_GBps=450,mode='mq'),
+    dict(panel='d',cached=0,link_GBps=300,mode='mq'),
+    dict(panel='e',cached=1024,link_GBps=300,mode='mq'),
+    dict(panel='f',cached=1024,link_GBps=32,mode='mq')]
+expected_crossover_dirs={model+'-six-panel' for model in MODELS}
+obsolete=[p for p in (roots[1]/'paper').iterdir() if p.is_dir() and p.name not in expected_crossover_dirs]
+if obsolete:
+    archive=RUN/'archived'/('experiment1-before-six-panel-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
+    archive.mkdir(parents=True)
+    for p in obsolete:shutil.move(p,archive/p.name)
+
 def package(i,name,rows,cfg,source,notes=''):
     d=roots[i]/'paper'/name;d.mkdir(exist_ok=True)
     csvout(d/'raw-data.csv',rows);save(d/'plot-config.json',cfg)
-    shutil.copy2(REPO/'fugue/kvchime_figure.py',d/'plot.py')
+    script='kvchime_crossover_figure.py' if i==1 else 'kvchime_figure.py'
+    shutil.copy2(REPO/'fugue'/script,d/'plot.py')
     save(d/'models.json',[dict(geometry(s['name']),tensor_parallel=s['tensor_parallel']) for s in load(REPO/'artifact/inputs/kvchime.json')['models']])
     profiles=read((S if i in [1,2] else W)/'profiles.csv')
     csvout(d/'raw-profiles.csv',profiles)
     save(d/'provenance.json',dict(source_table=str(source.relative_to(RUN)),source_sha256=sha(source),
         simulator='This attacc-fugue checkout, native AttAcc operators and Ramulator',
         raw_run=str(RUN),native_source_hashes=check_sources(),
-        plotting_reference='AttAcc ASPLOS 2024, Fig. 13: grouped, single-metric bars by model and workload.',
+        plotting_reference=('Original Fugue Experiment 1: agreed 2x3 panels a-f, whitespace, colors, and sampled crossing annotations.' if i==1 else 'AttAcc ASPLOS 2024, Fig. 13: grouped, single-metric bars by model and workload.'),
         note='raw-data.csv contains selected unnormalized source rows; raw-profiles.csv retains native cycle/command records. Full grid is in experiment data/.'))
     (d/'README.md').write_text(f"# {name}\n\n本图只表示 **{cfg['ylabel']}**。{notes}\n\n[PDF](figure.pdf) · [PNG](figure.png) · [原始结果](raw-data.csv) · [绘图脚本](plot.py)\n\n`raw-data.csv` 是未归一化的原始结果行；`raw-profiles.csv` 是该实验的命令 profile 原值。`plot-config.json` 记录取数/分组/归一化，`models.json` 记录模型几何。全量采样在实验上层 `data/`。\n\n```bash\npython3 plot.py\n# 输出到其它目录：\npython3 plot.py --output-dir redraw\n```\n\n只需 Python、numpy 和 matplotlib；把本文件夹单独复制出去仍能重画，不需要仿真器代码或旧 output。\n")
     command=[sys.executable,str(d/'plot.py')];p=subprocess.run(command,env=os.environ,capture_output=True,text=True)
     (d/'plot.log').write_text(p.stdout+p.stderr);assert p.returncode==0,(d,p.stderr)
-    assert load(d/'render-check.json')['axes']==1
-    packages.append(dict(experiment=i,name=name,path=str(d.relative_to(DEST)),source_rows=len(rows),response_metric=cfg['ylabel']))
+    axes=6 if i==1 else 1
+    assert load(d/'render-check.json')['axes']==axes
+    packages.append(dict(experiment=i,name=name,path=str(d.relative_to(DEST)),source_rows=len(rows),response_metric=cfg['ylabel'],axes=axes))
 
 crossings=[]
 for model in MODELS:
@@ -49,10 +64,21 @@ for model in MODELS:
                 if da*db<0:
                     record=dict(model=model,cached=c,link_GBps=bw,mode=mode,q_low=int(a['q']),q_high=int(b['q']),color=color)
                     cc.append(record);crossings.append(record)
-        cfg=dict(kind='line',x_key='q',xlabel='New query tokens, Q',ylabel='Attention service (µs / layer)',
-            title=f'{model} · C={c} · {bw} GB/s',logx=True,logy=True,crossings=cc,
-            series=[dict(name='GPU',key='gpu_service_us',color='#C9754E',style='--s'),dict(name='PIM',key='plain_service_us',color='#26749A',style='-o'),dict(name='MQ PIM',key='mq_service_us',color='#36886B',style='-^')])
-        package(1,f'{model}-C{c}-link{bw}',rows,cfg,S/'sweep.csv','交点标注为相邻采样 Q 的区间；没有交点时不制造交点。')
+    rows=[r for r in sweep if r['model']==model and
+        (int(r['cached']),num(r,'link_GBps')) in {(p['cached'],p['link_GBps']) for p in panel_specs}]
+    panels=[]
+    for spec in panel_specs:
+        brackets=[[r['q_low'],r['q_high']] for r in crossings if r['model']==model and
+            r['cached']==spec['cached'] and r['link_GBps']==spec['link_GBps'] and r['mode']==spec['mode']]
+        window=[.82,2500] if spec['cached']==0 else [16,192] if spec['mode']=='plain' else [192,1536]
+        panels.append(dict(spec,crossing_brackets=brackets,q_window=window))
+    tp=next(s['tensor_parallel'] for s in load(REPO/'artifact/inputs/kvchime.json')['models'] if s['name']==model)
+    cfg=dict(kind='crossover_six_panel',model=model,tensor_parallel=tp,panels=panels,
+        ylabel='Attention service (µs / layer)',title=f'Prefill attention crossover · {model}')
+    package(1,model+'-six-panel',rows,cfg,S/'sweep.csv','。'.join(
+        ['按原定 a–f 的 2×3 六联布局，每个面板只比较 GPU 与指定的普通/MQ PIM',
+         '交点标注为相邻实际采样 Q 的区间；没有交点时不制造交点',
+         '默认沿用旧图的聚焦窗口，若本模型交点超出窗口则扩展边界；完整 Q=1–2048 原始采样保留在 CSV'])+'。')
 csvout(roots[1]/'data/crossings.csv',crossings)
 csvout(roots[1]/'data/raw-sweep.csv',sweep)
 for axis,key,values in [('link','link_GBps',[32,150,300,450]),('cache','cached',[0,1024,4096,8192])]:
@@ -110,7 +136,8 @@ for cid in dict.fromkeys(r['case_id'] for r in summary):
 csvout(roots[3]/'data/reductions.csv',reductions)
 for i,root in roots.items():
     title=experiments[i][1];items=[r for r in packages if r['experiment']==i]
-    (root/'README.md').write_text(f'# Experiment {i}：{title}\n\n统一模型：'+', '.join(MODELS)+'.\n\n每张图只保留一个纵轴指标；多模型/多 case 用 AttAcc Fig. 13 式横向分组条形图。每个 `paper/` 子文件夹均包含最终 PDF/PNG、原始数据与独立 `plot.py`。\n\n'+ '\n'.join(f"- [{r['name']}](paper/{r['name']}/README.md)" for r in items)+'\n\n完整采样和绝对值见 `data/`。默认 A100a、NVLink 3；模型几何与 GQA 假设见每图 `models.json` 及仓库 `docs/KVChime-multi-model.md`。\n')
+    layout=('每个模型一张原定的 2×3 六联图，共四张图、24 个面板；保留原 Experiment 1 的留白、配色与分面顺序。' if i==1 else '每张图只保留一个纵轴指标；多模型/多 case 用 AttAcc Fig. 13 式横向分组条形图。')
+    (root/'README.md').write_text(f'# Experiment {i}：{title}\n\n统一模型：'+', '.join(MODELS)+'.\n\n'+layout+'每个 `paper/` 子文件夹均包含最终 PDF/PNG、原始数据与独立 `plot.py`。\n\n'+ '\n'.join(f"- [{r['name']}](paper/{r['name']}/README.md)" for r in items)+'\n\n完整采样和绝对值见 `data/`。默认 A100a、NVLink 3；模型几何与 GQA 假设见每图 `models.json` 及仓库 `docs/KVChime-multi-model.md`。\n')
 energy_reductions=[r['reduction_percent'] for r in reductions if r['baseline']=='F0' and r['variant']=='F4' and r['metric']=='E2E_energy_mJ']
 p=roots[3]/'README.md'
 p.write_text(p.read_text()+f'\n能耗采用 AttAcc 原生动态能耗口径，F4 相对 F0 的 E2E 能耗降低范围为 {min(energy_reductions):.1f}%–{max(energy_reductions):.1f}%（负值为增加）；完整数值保留在 `data/summary.csv`，不单独绘图。\n')
@@ -121,17 +148,16 @@ def append(i,text):
     p=roots[i]/'README.md';p.write_text(p.read_text()+text)
 ct=[]
 for model in MODELS:
-    for c,bw in [(0,300),(1024,300),(1024,32),(1024,450)]:
-        values=[]
-        for mode in ['plain','mq']:
-            cr=[r for r in crossings if r['model']==model and r['cached']==c and r['link_GBps']==bw and r['mode']==mode]
-            if cr:values.append(', '.join(str(r['q_low'])+'–'+str(r['q_high']) for r in cr))
-            else:
-                samples=[r for r in sweep if r['model']==model and int(r['cached'])==c and num(r,'link_GBps')==bw]
-                differences=[num(r,mode+'_service_us')-num(r,'gpu_service_us') for r in samples]
-                values.append('无交点；PIM 较快' if max(differences)<0 else '无交点；GPU 较快' if min(differences)>0 else '无严格交点；含相等样本')
-        ct.append([model,c,bw,*values])
-append(1,'\n## 交点与成本\n\n'+mdtable(['Model','C','GB/s 单向','PIM/GPU Q 区间','MQ/GPU Q 区间'],ct)+
+    for spec in panel_specs:
+        c,bw,mode=spec['cached'],spec['link_GBps'],spec['mode']
+        cr=[r for r in crossings if r['model']==model and r['cached']==c and r['link_GBps']==bw and r['mode']==mode]
+        if cr:value=', '.join(str(r['q_low'])+'–'+str(r['q_high']) for r in cr)
+        else:
+            samples=[r for r in sweep if r['model']==model and int(r['cached'])==c and num(r,'link_GBps')==bw]
+            differences=[num(r,mode+'_service_us')-num(r,'gpu_service_us') for r in samples]
+            value='无交点；PIM 较快' if max(differences)<0 else '无交点；GPU 较快' if min(differences)>0 else '无严格交点；含相等样本'
+        ct.append([model,spec['panel'],'普通 PIM' if mode=='plain' else 'MQ PIM',c,bw,value])
+append(1,'\n## 六个面板与交点\n\n上排 a/b/c、下排 d/e/f，每格保留 GPU 与指定 PIM 的两条曲线。默认窗口：C=0 使用全部 Q；b 聚焦 Q=16–192；c/e/f 聚焦 Q=192–1536。若某模型交点超出窗口，自动扩展以显示全部交点区间。\n\n'+mdtable(['Model','面板','PIM 模式','C','GB/s 单向','交点 Q 区间'],ct)+
     '\nGPU service = max(GPU QK + softmax + PV + cached KV 读回, 新 KV 写入)；PIM service = Q 输入 + QK/PV scan + softmax + 输出返回 + max(0, 新 KV 写入 − overlap 窗口)。窗口取第一组 scan 启动到首次消费新 K 的原生命令时间；C=0 时窗口为零。\n\n小 Q 的 GPU 成本可能主要是旧 KV 读回；普通 PIM 的逐 query 扫描随 Q 增长，MQ 让一列读取服务最多 8 个 query，推迟 PIM 算力成为限制的区间。Q 较大时 GPU 的矩阵吞吐可能占优，因此出现交点。缓存大小同时改变计算和读取，但 padding、固定传输项及设备带宽不同，交点不保证与 C 无关；C=0 没有旧 KV 回读项，也不保证存在 PIM 优势区。范围是实际相邻采样，不能解释为已逐整数测量。\n')
 st=[]
 for model in MODELS:
@@ -174,6 +200,6 @@ save(DEST/'figure-index.json',packages)
 for d in [DEST/r['path'] for r in packages]+[DEST]:
     files=[p for p in d.rglob('*') if p.is_file() and p.name!='SHA256SUMS.txt']
     (d/'SHA256SUMS.txt').write_text('\n'.join(sha(p)+'  '+str(p.relative_to(d)) for p in sorted(files))+'\n')
-save(RUN/'model-paper-checks.json',dict(figures=len(packages),models=MODELS,all_figures_have_single_axis=True,
+save(RUN/'model-paper-checks.json',dict(figures=len(packages),models=MODELS,experiment1_six_panel_layout=True,later_figures_have_single_axis=True,
     all_figures_have_raw_data_and_standalone_plot=True,experiments=len(roots)))
 print('PAPER PACKAGES',len(packages),flush=True)

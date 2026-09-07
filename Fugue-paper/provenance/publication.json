@@ -8,9 +8,9 @@
     "LLAMA-65B",
     "LLAMA3.1-8B"
   ],
-  "figures": 26,
+  "figures": 14,
   "figure_scope": "Performance and capacity only; energy values retained in raw tables, no area figures.",
-  "note": "Plot/documentation scope changed during the run; measurement modules match both stage source identities exactly. No simulation timing changed during publication.",
+  "note": "Simulation values are unchanged. Experiment 1 layout restored from the original a-f specification; later figure packages retain their previous bytes.",
   "archived_single_model_results": "artifact/legacy-paper",
   "verified": {
     "published_reference_comparisons": [
@@ -48,193 +48,142 @@
       }
     },
     "native_sources_unchanged": true,
-    "figures": 26,
+    "figures": 14,
     "figure_checks": [
       {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-7B-C0-link300",
-        "png_sha256": "b5bd13daded3e5b98d2ae97dfb3cdfd1f441285a75512d7d79b3a29a6bf00341",
+        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-7B-six-panel",
+        "png_sha256": "b8e1d49b8fbf41c0fda306541d2045abde136cf696eec2824436f62ba180a5de",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 6,
+        "single_response_axis": false,
+        "experiment1_six_panel_layout": true
       },
       {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-7B-C1024-link300",
-        "png_sha256": "68abdfc0bb6a901b36a49b5ed5645054f2c3c951b003d453f6e6cd9d4c53fd0b",
+        "path": "KVChime-experiment-1-prefill-boundary/paper/GPT-13B-six-panel",
+        "png_sha256": "65dc03e75098f100c1c7e2c7baecd14a6efab59b8d2ae576b2b12ea41de3c7e7",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 6,
+        "single_response_axis": false,
+        "experiment1_six_panel_layout": true
       },
       {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-7B-C1024-link32",
-        "png_sha256": "dda4d97baa1dcfcacc86dbbf3dbd8642c810133671872a0d119146eb226b6488",
+        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-65B-six-panel",
+        "png_sha256": "1d222b6efeac66d0470a617c9c769e2c7943b4309d11666c3cbd2c1eff8592a0",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 6,
+        "single_response_axis": false,
+        "experiment1_six_panel_layout": true
       },
       {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-7B-C1024-link450",
-        "png_sha256": "6a7a1155e7de46371d98f16365bdb221cc52f6381cb2214440e89ad2ff348671",
+        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA3.1-8B-six-panel",
+        "png_sha256": "5efc1ad415810930a2dc466d361cbe75c2a0154f6d6654bf51651e57ab27fa09",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/GPT-13B-C0-link300",
-        "png_sha256": "f6f5450cacdbe168c78a601c593fe8f2159b6b07fbbaa164bc6aaabb577c9a12",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/GPT-13B-C1024-link300",
-        "png_sha256": "be328a88590032a09e079ce3cbe84b7015a73803518186e7be48c9bce9204be1",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/GPT-13B-C1024-link32",
-        "png_sha256": "07fbd115868552d187daf1eef43abef2ca6956065d672ae1db3ca25f001a00c8",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/GPT-13B-C1024-link450",
-        "png_sha256": "9da8b421c55bad72d9ac6f3f1766cbe634c345343ae0952282318440c5780b28",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-65B-C0-link300",
-        "png_sha256": "4d21e48fd8b1f0c916a79fcf44d14d70daecaeeef8dfc95813cdd156a651ebd1",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-65B-C1024-link300",
-        "png_sha256": "70dd7b3419c86a00a3369ca2335b82ffb8bed78086b2342bffd535a240112eb8",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-65B-C1024-link32",
-        "png_sha256": "9000147168e9cb659b7aeb13b197763418aef9f9ba26dce932748fc20e3041f2",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA-65B-C1024-link450",
-        "png_sha256": "3e056cc0d5ef9ea64073d8186561eab644ca7d25944f949dbecea106d99db4e6",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA3.1-8B-C0-link300",
-        "png_sha256": "40f63eb73d85d7c4c1e273fee255d1f214b16eed99be29d130c09fac95ada4c7",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA3.1-8B-C1024-link300",
-        "png_sha256": "68467898cd322add421cfc58569c8123dca9bded2f6f3348ccc51ab5c95ceeb7",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA3.1-8B-C1024-link32",
-        "png_sha256": "94da984a766f32ebc089d0331aa52c9bec53ed4d8339ac5c82e41a6b19730838",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
-      },
-      {
-        "path": "KVChime-experiment-1-prefill-boundary/paper/LLAMA3.1-8B-C1024-link450",
-        "png_sha256": "67920476ed167afb65b079033d98e4a4ee8768bb2ff025f74abb4aa87dda3337",
-        "raw_rows_match_simulation": true,
-        "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 6,
+        "single_response_axis": false,
+        "experiment1_six_panel_layout": true
       },
       {
         "path": "KVChime-experiment-2-link-cache-sensitivity/paper/link-sensitivity",
         "png_sha256": "d5f45eba39e1f53f7dbfa35f61de0dfd5c87009d9ddfd9dc8f73d4d9924507d1",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-2-link-cache-sensitivity/paper/cache-sensitivity",
         "png_sha256": "92e81118af49de7bab5248e583b2ea482eb196db603a9a7a968d93e74385c42e",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-3-software-reuse-F0-F4/paper/TTFT_ms",
         "png_sha256": "785ac942757ee705f96cc70ab2c6f6c50beffd4d209d25f8c9809fa7dd1eba73",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-3-software-reuse-F0-F4/paper/TBT_ms",
         "png_sha256": "4a740dd87d636a2008f9f1f4821b92433377f851ff86b32b3481793776778fa6",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-3-software-reuse-F0-F4/paper/E2E_ms",
         "png_sha256": "7f65dfcd0bfb512342cec1b0955ce2437a9ce539d2c2227295cc65bd420b1406",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-3-software-reuse-F0-F4/paper/simultaneous_peak_KV_GiB",
         "png_sha256": "437b6bba844d14e25c0fed7d466e52172669b43fbf4146c8eda2b81035d70ebf",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-3-software-reuse-F0-F4/paper/decode_scan_ms_per_token",
         "png_sha256": "588ba7093a312ded9d9bf6233445a953e1229a25891bb4d3fd0ba41b9782b828",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-4-shared-query-MQ/paper/scan_us",
         "png_sha256": "56a3b96628b382fbcaee67a91b8decd553a237bbfaea4c36b16d22c37c1e4fa8",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-4-shared-query-MQ/paper/TBT_ms",
         "png_sha256": "80b4022383ba5ae3207371a9110a759424e317cd335d76eafdc4b5fda4f5e666",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       },
       {
         "path": "KVChime-experiment-5-device-selection/paper/four-policies",
         "png_sha256": "3c2b908419b45a30f8e0114f2043c54900acfbdb2a74d49ddfe33f5ee692953a",
         "raw_rows_match_simulation": true,
         "independent_PNG_identical": true,
-        "single_response_axis": true
+        "axes": 1,
+        "single_response_axis": true,
+        "experiment1_six_panel_layout": false
       }
     ],
+    "experiment1_figures": 4,
+    "experiment1_panels_per_model": 6,
+    "later_single_axis_figures": 10,
     "final_figures_only_performance_and_capacity": true,
     "scope": "Every figure independently redrawn in an external temporary directory with only CSV, config, and plot.py; numeric operands are not evaluated by this timing simulator."
   },
-  "finalized_utc": "2026-09-07T19:59:07.339316+00:00"
+  "finalized_utc": "2026-09-07T19:59:07.339316+00:00",
+  "layout_corrected_utc": "2026-09-07T20:21:47.880932+00:00",
+  "figure_layout": "Experiment 1: four model-specific 2x3 figures, six agreed panels each. Later experiments: ten single-axis figures."
 }

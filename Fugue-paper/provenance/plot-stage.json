@@ -1,5 +1,5 @@
 {
-  "started_utc": "2026-09-07T19:42:02.104656+00:00",
+  "started_utc": "2026-09-07T20:17:27.897211+00:00",
   "command": [
     "/usr/bin/python3",
     "-m",
@@ -26,8 +26,9 @@
     "fugue/kvchime_sweep.py": "91690290f3ade41661ad309ba485e23c46ad1c5c2dcb2dfe47ad7aba52395bca",
     "fugue/kvchime_model_tests.py": "4abbfd813e147228c072ac5e59d4822daef41c0ea458e628f0c01b42abd7d1ed",
     "fugue/kvchime_figure.py": "361f7cb4842d46d64b14723de855ec24b4030bd00d785e7529ecff14b9275797",
-    "fugue/kvchime_paper.py": "5cfcd03b876e016261a227c942c047d7f5236a8550fef2e52bcf0b8424bfdf95",
-    "fugue/kvchime_verify.py": "dcacf81b7b7eb5c0dc72ef124d7466c8fe15a9cf29cd074ac9b5a95414cb54b2",
+    "fugue/kvchime_paper.py": "7e38494dfb9c4887c7a9d145297ebae978dabbb4fa10991b6cbc50afd2564837",
+    "fugue/kvchime_verify.py": "6a633f4209166b54b99a69159812371b315e39dd5fbaa44357e1e90207f2cd26",
+    "fugue/kvchime_crossover_figure.py": "855981123c53dc3d6f4aa5ef4d365fc04941dc72bd0172b4cacb116b94ed6156",
     "src/config.py": "9c568d6a66edc26f5d9f891d07a718e1fcd223579ddbdeb7e1a11f819e9aa9e3",
     "src/devices.py": "21421e53c99e38b55ea7e4f8dd3904adbc365bb2fa036325c8bd0978aba920f8",
     "src/model.py": "afc2a9354010dc95be273bcb0e390f36d018c1d56d8cb58a50298a9d20215d08",
@@ -111,5 +112,5 @@
     "from_paper": false
   },
   "returncode": 0,
-  "finished_utc": "2026-09-07T19:42:27.872431+00:00"
+  "finished_utc": "2026-09-07T20:17:45.424626+00:00"
 }

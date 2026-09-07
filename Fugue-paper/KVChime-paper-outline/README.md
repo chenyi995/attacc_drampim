@@ -164,7 +164,7 @@ prefill 选边的首要工作量变量是实际参与计算的 Q，而不是仅�
 
 这部分接入当前目录的 **Experiment 1 交点曲线与 Experiment 2 敏感性长条形图**。比较普通 PIM、MQ PIM 和 GPU，分别 sweep 实际 Q、历史 cache 大小和 link 带宽；同时保留 scan 与完整 attention service 两个口径。
 
-主图使用每张一个响应指标的交点曲线；多个 Q/link/cache/model 组合按 AttAcc 样式展开为分组长条形图。交点是范围或存在反复切换时，如实报告；不能预设固定的“200 token 以下选 PIM”，也不为了得到交点修改开销。频率来自 E1，面积代价来自 E2。
+Experiment 1 按原定 a–f 配置画 2×3 六联图，四个模型各一张；保留普通/MQ、C=0/1024 和三个指定 link 条件的位置与原图风格。后续 performance/capacity 才采用每张小图一个响应指标的布局，多个 Q/link/cache/model 组合按 AttAcc 样式展开为分组长条形图。交点是范围或存在反复切换时，如实报告；不能预设固定的“200 token 以下选 PIM”，也不为了得到交点修改开销。频率来自 E1，面积代价来自 E2。
 
 **分解项：** GPU kernel、旧 KV 回读、位置处理、Q 输入、PIM scan、softmax/归约、结果返回、新 KV 写入及其中暴露在关键路径上的部分。RoPE/Q 变体与新数据流若新增了成本，应重新定价后再作为 KVChime 的边界。
 

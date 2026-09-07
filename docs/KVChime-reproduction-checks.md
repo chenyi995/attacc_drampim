@@ -1,6 +1,6 @@
 # KVChime 多模型实验完成记录
 
-2026-09-07 已完成本轮仿真结果的最终校验和目录整理。正式入口为 [Fugue-paper](../Fugue-paper/README.md)，机器可读记录为 [finalization.json](../Fugue-paper/provenance/finalization.json) 和 [KVChime-verification.json](../Fugue-paper/KVChime-verification.json)。
+2026-09-07 已完成本轮仿真结果的最终校验和目录整理，并按用户原定方案恢复 Experiment 1 的 2×3 六联图：四个模型各一张，后续十张 performance/capacity 图仍各有一个响应轴。正式入口为 [Fugue-paper](../Fugue-paper/README.md)，机器可读记录为 [finalization.json](../Fugue-paper/provenance/finalization.json) 和 [KVChime-verification.json](../Fugue-paper/KVChime-verification.json)。
 
 ## 本轮运行与收尾
 
@@ -14,13 +14,15 @@
 | 12:42 | 更新绘图后的 26 个图包 |
 | 12:59 | 最新图包校验、正式目录整理、旧结果归档和回归检查全部通过 |
 
+上表的 26 张图是版式修正前的历史记录。当前图包为 4 张 Experiment 1 六联图加 10 张后续单轴图，共 14 个 PDF/PNG 图包。Experiment 1 的六个配置和位置见 [实验说明](../Fugue-paper/KVChime-experiment-1-prefill-boundary/README.md)；当前校验检查每张六联图的 a–f 顺序、模式、cache 和 link 配置。
+
 本次收尾使用已经完成的 TP4 仿真结果，没有重新执行全量仿真。七个测量模块的 SHA-256 与该轮 sweep/workload 阶段记录一致；绘图和校验模块按更新后的版本重新检查。正式目录与运行目录的比较验证了整理过程没有改变结果，不能把它称为第二次独立全量仿真。
 
 ## 校验结果
 
-- 26 张图在临时目录中仅使用 CSV、配置和独立绘图脚本重画，PNG 全部逐字节一致；每图只有一个响应指标。
+- 当前 14 个图包在临时目录中仅使用 CSV、配置和独立绘图脚本重画，PNG 全部逐字节一致；Experiment 1 每张六个面板，后续图每张一个响应轴。
 - 四张主结果表共核对 238,384 个数值字段，最大相对差为 0。表分别为 `summary.csv`、`sweep.csv`、`selection.csv` 和 `shared-mq.csv`。
-- 339 个图包文件与运行目录对应文件逐字节一致；完整事件表的 gzip 解压字节与原始 `events.csv` 一致。
+- Experiment 1 图包文件与最新重画输出逐字节一致，后续十张图的正式图包保留版式修正前的文件字节；原始仿真表没有修改。完整事件表的 gzip 解压字节校验和其余归档检查见 [上一轮完成记录](../Fugue-paper/provenance/finalization-before-six-panel.json)。
 - 模型几何、GQA 算术/容量、TP4 容量、共享替换视图、MQ 和校准选择器的 12 项测试通过。
 - 旧版 106 个结果/来源文件与前一提交逐字节一致；迁移只调整 README 导航和清单。历史重画命令生成的 13 张 PNG 与归档原图一致。
 - 当前及历史目录清单、仓库文档的本地链接检查通过。

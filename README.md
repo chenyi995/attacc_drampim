@@ -2,9 +2,9 @@
 
 KVChime combines query-side RoPE alignment, shared KV with private replacements, and Multi-Query PIM execution with a simple prefill device selector. This repository supplies reproducible CPU simulations using the original AttAcc GPU cost operators and bundled Ramulator sources.
 
-The current results are in [Fugue-paper](Fugue-paper/README.md). Each final figure reports one performance or capacity metric and includes raw absolute values and a standalone plotting script. Energy remains in the CSVs with a brief README note. Hardware area tables and frequency evidence belong to the separate `kvpim-rtl` repository.
+The current results are in [Fugue-paper](Fugue-paper/README.md). Experiment 1 uses the agreed six-panel (2×3) layout for each model. Later performance and capacity figures each have one response axis. Every figure includes raw absolute values and a standalone plotting script. Energy remains in the CSVs with a brief README note. Hardware area tables and frequency evidence belong to the separate `kvpim-rtl` repository.
 
-The [completion and verification record](docs/KVChime-reproduction-checks.md) documents the completed TP4 run: 26 independently redrawn figures, 238,384 numeric fields preserved in publication, and 12 passing model/shared-view tests.
+The [completion and verification record](docs/KVChime-reproduction-checks.md) documents the completed TP4 run: four six-panel Experiment 1 figures and ten later single-axis figures, 238,384 numeric fields preserved in publication, and 12 passing model/shared-view tests.
 
 ## Reproduce the current experiments
 
@@ -23,7 +23,7 @@ Use a fresh output directory. The command builds the bundled simulator, checks M
 
 | System experiment | Question | Final figures |
 |---|---|---|
-| 1: Prefill boundary | GPU vs ordinary PIM vs MQ PIM as Q grows | One service-latency curve plot per fixed model/cache/link setting |
+| 1: Prefill boundary | GPU vs ordinary PIM vs MQ PIM as Q grows | One 2×3 six-panel figure per model, retaining the agreed a–f configuration order |
 | 2: Link/cache sensitivity | How link and cache change the MQ advantage | Separate long grouped bars for link and cache |
 | 3: Software reuse F0–F4 | Full recomputation, software reuse, materialized PIM, shared views, MQ/selection | Separate TTFT, TBT, E2E, scan and capacity charts |
 | 4: Shared-query MQ | Simultaneously ready agents share KV operands | Separate scan and TBT charts |

@@ -1,0 +1,104 @@
+{
+  "axes": 6,
+  "layout": [
+    2,
+    3
+  ],
+  "response_metric": "Attention service (\u00b5s / layer)",
+  "input_rows": 80,
+  "model": "GPT-13B",
+  "panels": [
+    {
+      "panel": "a",
+      "mode": "plain",
+      "cached": 0,
+      "link_GBps": 300,
+      "rows": 20,
+      "q_window": [
+        0.82,
+        2500
+      ],
+      "crossing_brackets": []
+    },
+    {
+      "panel": "b",
+      "mode": "plain",
+      "cached": 1024,
+      "link_GBps": 300,
+      "rows": 20,
+      "q_window": [
+        16,
+        192
+      ],
+      "crossing_brackets": [
+        [
+          48,
+          64
+        ]
+      ]
+    },
+    {
+      "panel": "c",
+      "mode": "mq",
+      "cached": 1024,
+      "link_GBps": 450,
+      "rows": 20,
+      "q_window": [
+        192,
+        1536
+      ],
+      "crossing_brackets": [
+        [
+          512,
+          768
+        ]
+      ]
+    },
+    {
+      "panel": "d",
+      "mode": "mq",
+      "cached": 0,
+      "link_GBps": 300,
+      "rows": 20,
+      "q_window": [
+        0.82,
+        2500
+      ],
+      "crossing_brackets": []
+    },
+    {
+      "panel": "e",
+      "mode": "mq",
+      "cached": 1024,
+      "link_GBps": 300,
+      "rows": 20,
+      "q_window": [
+        192,
+        1536
+      ],
+      "crossing_brackets": [
+        [
+          512,
+          768
+        ]
+      ]
+    },
+    {
+      "panel": "f",
+      "mode": "mq",
+      "cached": 1024,
+      "link_GBps": 32,
+      "rows": 20,
+      "q_window": [
+        192,
+        1536
+      ],
+      "crossing_brackets": [
+        [
+          512,
+          768
+        ]
+      ]
+    }
+  ]
+}

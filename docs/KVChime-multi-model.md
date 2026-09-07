@@ -70,7 +70,7 @@ reuse 方案的共享池预热在 `warmup.csv` 独立报告，不混入在线 TT
 
 ## 五个系统实验各回答什么
 
-1. **Prefill 边界**：Q 从 1 到 2048；每模型固定 C=0/1024 和指定 link，画 GPU、PIM、MQ PIM 单层服务曲线。交点用相邻采样区间，未扫描整数不补造精确值。完整 8320 行 sweep 同时保留 8 种 C、13 种 link。
+1. **Prefill 边界**：每模型一张原定的 2×3 六联图，上排依次为 a 普通 PIM/C=0/300 GB/s、b 普通 PIM/C=1024/300 GB/s、c MQ/C=1024/450 GB/s；下排为 d MQ/C=0/300 GB/s、e MQ/C=1024/300 GB/s、f MQ/C=1024/32 GB/s。每格比较 GPU 与指定 PIM 的单层服务时间，保留原图留白、配色和聚焦窗口；交点超出默认窗口时扩展边界。四个模型共四张六联图。交点用相邻实际采样区间，未扫描整数不补造精确值。完整 8320 行 sweep 保留 Q=1–2048、8 种 C、13 种 link。
 2. **Link/cache 敏感性**：分别固定 C=1024 或 link=300，按 Q、link/cache、model 展开长条形图；纵轴统一为 GPU/MQ 服务时间，>1 表示 MQ 更快。
 3. **F0–F4**：分别画 TTFT、TBT、E2E、decode scan 和 KV 容量；每张图只有一个响应指标，模型外层分组，workload 内层分组。性能图为基准 latency / 本方案 latency（加速比），容量图为本方案 / F0。归一化只在同一模型、同一 workload 内进行。
 4. **共享 MQ**：分别画 scan 与 TBT，展示就绪 query/agent 对共享列读取的影响。MHA 单 agent 的 decode 无跨 query 复用，因此 F3/F4 的 decode 必须相同；GQA 单 agent 已有同 KV head 的多个 Q，允许收益。
