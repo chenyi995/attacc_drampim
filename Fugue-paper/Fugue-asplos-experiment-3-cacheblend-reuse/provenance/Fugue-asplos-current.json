@@ -1,0 +1,66 @@
+{
+  "experiment": 3,
+  "edition": "final numeric results; portable reproduction interface",
+  "model_commit": "c60005143a6b492d7ef83231723386478b59a506",
+  "final_tables_sha256": {
+    "Fugue-asplos-workload-selection.csv": "1216e85fd71992d257bd81e0416575630565c7075a7af7e5793cdecbc25a0dba",
+    "Fugue-asplos-warmup.csv": "6983133c35fcc2004a32292714f0208351e7d34033f3cd0805613af5ff4129cb",
+    "Fugue-asplos-summary.csv": "56d30d4a0f9deeb8bdcc0cd549a0785a1ccf43a6ad5ccc61a8ced35216e37ca6",
+    "Fugue-asplos-operators.csv": "d61f1a4f4ae440ae8a108cf2b3d0341c20c890d3a6f8e7838a95311dda4fa70b",
+    "Fugue-asplos-events.csv": "9d5b53e3aa90d88c421eca8a1a5d2c5654d617bc30a31417471493aa224c0c08",
+    "Fugue-asplos-decisions.csv": "657d8f1aece99723db598aec300142d27f989f7cb2ba82015c7f4dcb57d5e8f8",
+    "Fugue-asplos-transfers.csv": "c1256e5b20d41c99feb72902e7f2eaf0abc2dfddce5c259084b7a508dd275cc8",
+    "Fugue-asplos-storage.csv": "2bd906e75b6d89a8e32903c0ac38d12c3f6dd1bcf4fc4586affeff9aebec82c5",
+    "Fugue-asplos-layers.csv": "1b99d71a3502d4b6c48cf1cd79ad637a5db980b929ac84d1c2275652e26252f1",
+    "Fugue-asplos-aggregate.csv": "accb3519a9c5d355b78c5a0ebf9d757121d6adead6b266930efa6ecd075ae655",
+    "Fugue-asplos-comparisons.csv": "11ff429b783176d59ef2dc4fac10d4107e38ad46655f5540c1df39b648a62c2e",
+    "Fugue-asplos-F2-export-overlap-sensitivity.csv": "f86082e0cf3a6a956967a48d0b1fddc35a3cb3250ed27fe5a97f026e616e6de5",
+    "Fugue-asplos-capacity-peaks.csv": "a71305f421cd03335826f24561b959fb5a46e61cc68afc3e59237859666b0ef6"
+  },
+  "final_figures_sha256": {
+    "Fugue-asplos-experiment3-latency.pdf": "a8389a3dcca687cb2fe50e0621ef5f0f105c2e17132b58c3eb403f7523708e8c",
+    "Fugue-asplos-experiment3-latency.png": "b064de48dcf67540696da144a0700a186f13648f36d8c9321bf845f16a01cc16",
+    "Fugue-asplos-experiment3-energy.pdf": "e51835c496010aa2085414f81e2f5834314cf15575964d7648543816c16863f3",
+    "Fugue-asplos-experiment3-energy.png": "5443e837776bbbfaef095744b91dc3e52770f2a2c13e6d7fe404afe0d5adf314",
+    "Fugue-asplos-experiment3-capacity.pdf": "ace7815dea06af7959f2d56768fd81d5b0be215d0a245d4032d809451019c5a5",
+    "Fugue-asplos-experiment3-capacity.png": "25561d9da29c416e37a6f9089b7bf609252e0726baf0e8ec9f891d8e5a87702f"
+  },
+  "fresh_reproduction_verification": {
+    "input_hashes_pass": true,
+    "token_counts_and_recompute_indices_pass": true,
+    "workloads": {
+      "cacheblend": 2,
+      "epic": 6
+    },
+    "comparisons": [
+      {
+        "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment1.csv",
+        "rows": 168,
+        "numeric_fields_compared": 5544,
+        "max_relative_difference": 2.4851523796784477e-16
+      },
+      {
+        "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment2.csv",
+        "rows": 144,
+        "numeric_fields_compared": 4752,
+        "max_relative_difference": 2.6254048668358757e-16
+      },
+      {
+        "actual": "experiment3/Fugue-asplos-results/Fugue-asplos-summary.csv",
+        "rows": 8,
+        "numeric_fields_compared": 168,
+        "max_relative_difference": 0.0
+      },
+      {
+        "actual": "experiment45/Fugue-asplos-results/Fugue-asplos-summary.csv",
+        "rows": 24,
+        "numeric_fields_compared": 744,
+        "max_relative_difference": 0.0
+      }
+    ],
+    "fresh_profile_records_verified": 639,
+    "all_native_sources_match": true,
+    "tolerance": "Every numeric field: rel_tol=1e-8, abs_tol=1e-9. Winners exact. No timing data imported by simulation."
+  },
+  "note": "Current final values retained. Historical absolute output paths inside table provenance are records, never runtime inputs."
+}

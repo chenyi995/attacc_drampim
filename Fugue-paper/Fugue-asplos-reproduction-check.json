@@ -1,0 +1,601 @@
+{
+  "generated_utc": "2026-09-07T16:25:45.850279+00:00",
+  "archive": "output/Fugue-asplos-archive-before-portable-20260907T162545Z",
+  "all_final_numeric_values_preserved": true,
+  "only_final_figure_versions": true,
+  "figure_checks": [
+    {
+      "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/figures/Fugue-asplos-experiment1-prefill-crossover.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-2-mq-bandwidth-cache/figures/Fugue-asplos-experiment2-mq-sensitivity.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-3-cacheblend-reuse/figures/Fugue-asplos-experiment3-latency.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-3-cacheblend-reuse/figures/Fugue-asplos-experiment3-energy.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-3-cacheblend-reuse/figures/Fugue-asplos-experiment3-capacity.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-latency.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-energy.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-capacity.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-prefill-breakdown.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-latency.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-energy.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-capacity.png",
+      "fresh_redraw_identical": true
+    },
+    {
+      "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-prefill-breakdown.png",
+      "fresh_redraw_identical": true
+    }
+  ],
+  "reproduction": {
+    "input_hashes_pass": true,
+    "token_counts_and_recompute_indices_pass": true,
+    "workloads": {
+      "cacheblend": 2,
+      "epic": 6
+    },
+    "comparisons": [
+      {
+        "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment1.csv",
+        "rows": 168,
+        "numeric_fields_compared": 5544,
+        "max_relative_difference": 2.4851523796784477e-16
+      },
+      {
+        "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment2.csv",
+        "rows": 144,
+        "numeric_fields_compared": 4752,
+        "max_relative_difference": 2.6254048668358757e-16
+      },
+      {
+        "actual": "experiment3/Fugue-asplos-results/Fugue-asplos-summary.csv",
+        "rows": 8,
+        "numeric_fields_compared": 168,
+        "max_relative_difference": 0.0
+      },
+      {
+        "actual": "experiment45/Fugue-asplos-results/Fugue-asplos-summary.csv",
+        "rows": 24,
+        "numeric_fields_compared": 744,
+        "max_relative_difference": 0.0
+      }
+    ],
+    "fresh_profile_records_verified": 639,
+    "all_native_sources_match": true,
+    "tolerance": "Every numeric field: rel_tol=1e-8, abs_tol=1e-9. Winners exact. No timing data imported by simulation."
+  },
+  "independent_source_export_test": {
+    "checked_utc": "2026-09-07T16:32:37.053166+00:00",
+    "clean_export_without_git_or_outputs": true,
+    "commands": [
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "fugue",
+          "doctor"
+        ],
+        "cwd": "/tmp/Fugue-asplos-independent-reproduction/renamed-checkout",
+        "returncode": 0,
+        "wall_seconds": 0.1204519085586071,
+        "log": "/tmp/Fugue-asplos-independent-reproduction/Fugue-asplos-doctor.log"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "fugue",
+          "all",
+          "--jobs",
+          "8"
+        ],
+        "cwd": "/tmp/Fugue-asplos-independent-reproduction/renamed-checkout",
+        "returncode": 0,
+        "wall_seconds": 128.2116654906422,
+        "log": "/tmp/Fugue-asplos-independent-reproduction/Fugue-asplos-all.log"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "fugue",
+          "all",
+          "--jobs",
+          "8",
+          "--resume"
+        ],
+        "cwd": "/tmp/Fugue-asplos-independent-reproduction/renamed-checkout",
+        "returncode": 0,
+        "wall_seconds": 0.04581834655255079,
+        "log": "/tmp/Fugue-asplos-independent-reproduction/Fugue-asplos-resume.log"
+      },
+      {
+        "command": [
+          "/usr/bin/python3",
+          "-m",
+          "fugue",
+          "plot",
+          "--from-paper",
+          "--output",
+          "output/Fugue-asplos-redraw"
+        ],
+        "cwd": "/tmp/Fugue-asplos-independent-reproduction/renamed-checkout",
+        "returncode": 0,
+        "wall_seconds": 4.609640493988991,
+        "log": "/tmp/Fugue-asplos-independent-reproduction/Fugue-asplos-redraw.log"
+      }
+    ],
+    "clean_run_verification": {
+      "input_hashes_pass": true,
+      "token_counts_and_recompute_indices_pass": true,
+      "workloads": {
+        "cacheblend": 2,
+        "epic": 6
+      },
+      "comparisons": [
+        {
+          "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment1.csv",
+          "rows": 168,
+          "numeric_fields_compared": 5544,
+          "max_relative_difference": 2.4851523796784477e-16
+        },
+        {
+          "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment2.csv",
+          "rows": 144,
+          "numeric_fields_compared": 4752,
+          "max_relative_difference": 2.6254048668358757e-16
+        },
+        {
+          "actual": "experiment3/Fugue-asplos-results/Fugue-asplos-summary.csv",
+          "rows": 8,
+          "numeric_fields_compared": 168,
+          "max_relative_difference": 0.0
+        },
+        {
+          "actual": "experiment45/Fugue-asplos-results/Fugue-asplos-summary.csv",
+          "rows": 24,
+          "numeric_fields_compared": 744,
+          "max_relative_difference": 0.0
+        }
+      ],
+      "fresh_profile_records_verified": 639,
+      "all_native_sources_match": true,
+      "tolerance": "Every numeric field: rel_tol=1e-8, abs_tol=1e-9. Winners exact. No timing data imported by simulation."
+    },
+    "final_CSV_comparison": {
+      "files": 50,
+      "numeric_fields": 157136,
+      "tables": [
+        {
+          "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/tables/Fugue-asplos-experiment1-bandwidth.csv",
+          "rows": 564,
+          "numeric_fields": 12972
+        },
+        {
+          "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/tables/Fugue-asplos-experiment1-components.csv",
+          "rows": 14,
+          "numeric_fields": 322
+        },
+        {
+          "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/tables/Fugue-asplos-experiment1-crossings.csv",
+          "rows": 18,
+          "numeric_fields": 162
+        },
+        {
+          "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/tables/Fugue-asplos-experiment1-latency.csv",
+          "rows": 168,
+          "numeric_fields": 5544
+        },
+        {
+          "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/tables/Fugue-asplos-experiment1-selected-latency.csv",
+          "rows": 11,
+          "numeric_fields": 363
+        },
+        {
+          "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/tables/Fugue-asplos-experiment1-transition-evidence.csv",
+          "rows": 8,
+          "numeric_fields": 80
+        },
+        {
+          "path": "Fugue-asplos-experiment-2-mq-bandwidth-cache/tables/Fugue-asplos-experiment2-cache-Q-focused.csv",
+          "rows": 88,
+          "numeric_fields": 2024
+        },
+        {
+          "path": "Fugue-asplos-experiment-2-mq-bandwidth-cache/tables/Fugue-asplos-experiment2-cache-Q.csv",
+          "rows": 144,
+          "numeric_fields": 3312
+        },
+        {
+          "path": "Fugue-asplos-experiment-2-mq-bandwidth-cache/tables/Fugue-asplos-experiment2-link-Q-focused.csv",
+          "rows": 117,
+          "numeric_fields": 2691
+        },
+        {
+          "path": "Fugue-asplos-experiment-2-mq-bandwidth-cache/tables/Fugue-asplos-experiment2-link-Q.csv",
+          "rows": 234,
+          "numeric_fields": 5382
+        },
+        {
+          "path": "Fugue-asplos-experiment-2-mq-bandwidth-cache/tables/Fugue-asplos-experiment2-shapes.csv",
+          "rows": 144,
+          "numeric_fields": 4752
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-F2-export-overlap-sensitivity.csv",
+          "rows": 2,
+          "numeric_fields": 8
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-aggregate.csv",
+          "rows": 4,
+          "numeric_fields": 76
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-capacity-peaks.csv",
+          "rows": 4,
+          "numeric_fields": 23
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-comparisons.csv",
+          "rows": 36,
+          "numeric_fields": 106
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-decisions.csv",
+          "rows": 64,
+          "numeric_fields": 1152
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-events.csv",
+          "rows": 2896,
+          "numeric_fields": 17304
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-layers.csv",
+          "rows": 256,
+          "numeric_fields": 2048
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-operators.csv",
+          "rows": 198,
+          "numeric_fields": 2376
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-storage.csv",
+          "rows": 328,
+          "numeric_fields": 2224
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-summary.csv",
+          "rows": 8,
+          "numeric_fields": 168
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-transfers.csv",
+          "rows": 1280,
+          "numeric_fields": 6400
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-warmup.csv",
+          "rows": 11,
+          "numeric_fields": 44
+        },
+        {
+          "path": "Fugue-asplos-experiment-3-cacheblend-reuse/tables/Fugue-asplos-workload-selection.csv",
+          "rows": 10,
+          "numeric_fields": 30
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-F2-export-overlap-sensitivity.csv",
+          "rows": 3,
+          "numeric_fields": 12
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-capacity-peaks.csv",
+          "rows": 12,
+          "numeric_fields": 66
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-comparisons.csv",
+          "rows": 3,
+          "numeric_fields": 21
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-decisions.csv",
+          "rows": 3,
+          "numeric_fields": 51
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-events.csv",
+          "rows": 4404,
+          "numeric_fields": 26244
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-layers.csv",
+          "rows": 384,
+          "numeric_fields": 2304
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-operators.csv",
+          "rows": 341,
+          "numeric_fields": 4092
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-scan.csv",
+          "rows": 3,
+          "numeric_fields": 18
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-signatures.csv",
+          "rows": 94,
+          "numeric_fields": 1128
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-storage.csv",
+          "rows": 564,
+          "numeric_fields": 3204
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-summary.csv",
+          "rows": 12,
+          "numeric_fields": 372
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-transfers.csv",
+          "rows": 1536,
+          "numeric_fields": 6144
+        },
+        {
+          "path": "Fugue-asplos-experiment-4-epic-long-prefill/tables/Fugue-asplos-warmup.csv",
+          "rows": 44,
+          "numeric_fields": 132
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-F2-export-overlap-sensitivity.csv",
+          "rows": 3,
+          "numeric_fields": 12
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-capacity-peaks.csv",
+          "rows": 12,
+          "numeric_fields": 66
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-comparisons.csv",
+          "rows": 3,
+          "numeric_fields": 21
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-decisions.csv",
+          "rows": 3,
+          "numeric_fields": 51
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-events.csv",
+          "rows": 4404,
+          "numeric_fields": 26244
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-layers.csv",
+          "rows": 384,
+          "numeric_fields": 2304
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-operators.csv",
+          "rows": 341,
+          "numeric_fields": 4092
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-scan.csv",
+          "rows": 3,
+          "numeric_fields": 18
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-signatures.csv",
+          "rows": 94,
+          "numeric_fields": 1128
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-storage.csv",
+          "rows": 564,
+          "numeric_fields": 3204
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-summary.csv",
+          "rows": 12,
+          "numeric_fields": 372
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-transfers.csv",
+          "rows": 1536,
+          "numeric_fields": 6144
+        },
+        {
+          "path": "Fugue-asplos-experiment-5-epic-shared-readers/tables/Fugue-asplos-warmup.csv",
+          "rows": 43,
+          "numeric_fields": 129
+        }
+      ],
+      "issues": []
+    },
+    "final_PNGs": [
+      {
+        "path": "Fugue-asplos-experiment-1-prefill-attention-crossover/figures/Fugue-asplos-experiment1-prefill-crossover.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-2-mq-bandwidth-cache/figures/Fugue-asplos-experiment2-mq-sensitivity.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-3-cacheblend-reuse/figures/Fugue-asplos-experiment3-capacity.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-3-cacheblend-reuse/figures/Fugue-asplos-experiment3-energy.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-3-cacheblend-reuse/figures/Fugue-asplos-experiment3-latency.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-capacity.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-energy.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-latency.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-4-epic-long-prefill/figures/Fugue-asplos-experiment4-prefill-breakdown.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-capacity.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-energy.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-latency.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      },
+      {
+        "path": "Fugue-asplos-experiment-5-epic-shared-readers/figures/Fugue-asplos-experiment5-prefill-breakdown.png",
+        "fresh_and_redraw_byte_identical_to_final": true
+      }
+    ],
+    "executable_and_input_hashes_match_tested_export": true,
+    "source_identity": {
+      "artifact/Fugue-asplos-inputs-SHA256SUMS.txt": "5f78df07880b51a03485e57ab5361e1552638fac992b33726fe5cf2cf7bdb0ac",
+      "artifact/inputs/2.json": "203984f8e139eea22102d3e07af5694cb326bc9d37f4fe5a4c94589d2a799d86",
+      "artifact/inputs/3.json": "7ac388384897aff14e54cabd0d24f201f7cc46a753bdc271ae9cfcea1985ff0c",
+      "artifact/inputs/Fugue-asplos-context-16000.json": "4b593027402d21260f386ee30f8f608a9a68c5e3f7df9d38c8ea6ca20942cb06",
+      "artifact/inputs/Fugue-asplos-context-4000.json": "ec2ec1aef4cf9be9c2981a6bcb10d3e75a36e843e00e02b5e48ae306cc8cc06a",
+      "artifact/inputs/Fugue-asplos-context-8000.json": "2883163d9bec17790a60f01f84f61b0b3e26536b0746429c194c276301d9fad3",
+      "artifact/inputs/README.md": "9c476c63da279b4e4f93ade204ebc734f55082489c148903254ba9d8dbc47c5e",
+      "artifact/inputs/cacheblend-LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "artifact/inputs/cacheblend-provenance.json": "8ab8da3c68740efdb664076a5533ad67765c84697761b59225bfebe0bf88fb4f",
+      "artifact/inputs/cacheblend-selection.csv": "1216e85fd71992d257bd81e0416575630565c7075a7af7e5793cdecbc25a0dba",
+      "artifact/inputs/cacheblend-token-ids.json": "d372e8b234cd10a6f40a6e12b4ba26b99f81b88521357b0d7a8f969d5ed7ec02",
+      "artifact/inputs/cacheblend.json": "4e9ed10181efffc754effcc8b5f29f04b0ad8f3c305e9b801b68850514448479",
+      "artifact/inputs/epic-LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "artifact/inputs/epic-provenance.json": "6f4097dff7214b99ed1000354269c87406873c96eba0f4f6f0fb9150002bc947",
+      "artifact/inputs/epic.json": "cab25640698174d185913c1af12e398665586075f0146597ed55a35dee05e0bf",
+      "artifact/inputs/sweep.json": "fcb1d9490aa4d77ac26368c8f96cafa7f8ff28797c1d63f80d511b187f1fa1f9",
+      "artifact/native-source-lock.json": "d57a997727f673b98745733c152a0f059238927334b55f4af581b42e4ea61bdd",
+      "artifact/reference/experiment1.csv": "47af82126cf567974f2941687f401f4cb6ca1bd6922e8baf46c980d639785c18",
+      "artifact/reference/experiment2.csv": "2506d223762ba2678aeb01025dc4743f5322b6a2b9ee3ddce5d2f88086b85f1c",
+      "artifact/reference/experiment3.csv": "56d30d4a0f9deeb8bdcc0cd549a0785a1ccf43a6ad5ccc61a8ced35216e37ca6",
+      "artifact/reference/experiment45.csv": "e50d1fe34a337365b4035825a47ec4c737bd813f8b9eb53c9655c73ebc4f30c3",
+      "fugue/__init__.py": "e39e28e6ae1bfe221ddb332af79178e5cf43b676ea607a5fc6c41fe3f7a63a40",
+      "fugue/__main__.py": "22e3151266f20f4d4b13bfea1b075c886da010463779e664aa1d56a50c7e7c5f",
+      "fugue/attention.py": "d27ff9631590a54d353d92f473a3f939f8be46c98d8713852697177939b20b71",
+      "fugue/build.py": "db0c427ddddf9833d213ad4dc5687db233dc4fa24e8493d2b3f9ab6c38d151b5",
+      "fugue/cacheblend.py": "8055cd4cafbd734b56c0d1dd18b9682a854ef22e079998654760499581fca864",
+      "fugue/epic.py": "816fd481faf7af8e56695ea9cb23987771f67edff46117a0918182e8bf3e4ac4",
+      "fugue/plot.py": "3327c23e9c7c596b70288f9937260fff45235053b4f7e55db116cf7c3dd12674",
+      "fugue/runtime.py": "bd30844f3c88c1b258c80e317cf8cb66c0385ae3ca6b6e0fbe37ddbce70c0d9d",
+      "fugue/sweep.py": "83b3ef0c026a081c80261bb384090dd8fa93556467c52926c67f5d8a60754010",
+      "fugue/validate.py": "245ed774b673cbb875ee475763792e4dedac3d520e326682a520d3f125594289",
+      "main.py": "ea0f14b2a5a7c3b76a7210ad1aec259982671f4f96d208a5ffa555e54ead07ea",
+      "pim_ramulator_src/HBM3-PIM.cpp": "c9255cec93f8d4f61e9688d228be53f358e81d79a338d0b532260b01899f5e13",
+      "pim_ramulator_src/HBM3_base.yaml": "55bf53fee37a7656243dc636c9c69983ca33ac49789c785b92431c98815c5568",
+      "pim_ramulator_src/PIM_DRAM_system.cpp": "a952b3bdba9f32dfe2b8e22f5923355bb9fefeba42811c2a291a65d9b7814276",
+      "pim_ramulator_src/all_bank_refresh_hbm3.cpp": "58c20a723e01d04b529df52b944f44c7c59ace9db9db8acd9814c8b09f364acf",
+      "pim_ramulator_src/attacc_bank.yaml": "90f47ee655e12bdc87ed27590d1b7bdbc2a3e111db318de69ee0c9bb13e69185",
+      "pim_ramulator_src/attacc_bg.yaml": "1e13d809c6a989529652995cd54d2a1d00dff8e83afa633cd68262b20eb40859",
+      "pim_ramulator_src/attacc_buffer.yaml": "f6bebc8e4dfd4eeb4ed465810cc874b750f9395901384822475aba5955939cc8",
+      "pim_ramulator_src/hbm3_controller.cpp": "e9417f5a654c17e1578928ad3961e20459d82422355c902b82d10685b1dd7924",
+      "pim_ramulator_src/hbm3_linear_mappers.cpp": "c789fd1ef8e79d4ea6bbb3cfd11a54c5f9d92bf688c5e0eb065c3e517abc5651",
+      "pim_ramulator_src/hbm3_pim_controller.cpp": "c610f8aaba62b060958386e5f1b2df9eafc136511a712d2686c5764ffad4ed6b",
+      "pim_ramulator_src/hbm3_pim_linear_mappers.cpp": "05a3403d4d1c11102361ec3a6a67502a1559234e1218ddd4ed148bdb873bccd1",
+      "pim_ramulator_src/hbm3_trace_recorder.cpp": "0b28b72a8a1afd33821fbe9fda8e4797dca4cfe84a8166544ed69071402f0010",
+      "pim_ramulator_src/no_refresh.cpp": "9ec3a05a3bd0f1578c9c30816b0b1081f06e9008523dc0eb4ba37fa9d3879ad1",
+      "pim_ramulator_src/patches/src_CMakeLists.patch": "ecdd28b4811b0c521ddd27ca919c527c15c95713434cbecc61eac5e7a488c475",
+      "pim_ramulator_src/patches/src_addr_mapper_CMakeLists.patch": "8ea6729734aa0ecc51884f6a1ab829d4748ef8e0ae3a7874826e0eed903b91c6",
+      "pim_ramulator_src/patches/src_addr_mapper_impl_linear_mappers.patch": "c3e9e30eabdb86f901d9f521ede63fecf1eca4b04cd1e4c393b5e608988b0a0e",
+      "pim_ramulator_src/patches/src_base_base.patch": "26fb983c8c2a0422c631cbc854c558318a41461962a0fd9078f9bd13ffdb4627",
+      "pim_ramulator_src/patches/src_base_request.patch": "1af07c66207d9a7a627e45fb5c75e9ce15fe1fb26a662d1b7ac4a38bf762d30a",
+      "pim_ramulator_src/patches/src_dram_CMakeLists.patch": "a2663015d79a143fc53278ed0b34d5bd89487e61e1bfc68caf0c65f256d653a8",
+      "pim_ramulator_src/patches/src_dram_controller_CMakeLists.patch": "b70acdabcdaae9c470e5dc507811aa47e211adbcb1fc64828a6e64540636b25f",
+      "pim_ramulator_src/patches/src_dram_controller_controller.patch": "6bf762086f98971e04b4f66bf1501fa3c4b8089352adaebf0f07fca4a748ef6b",
+      "pim_ramulator_src/patches/src_dram_controller_impl_dummy_controller.patch": "0b6332b666fc6da4136ebc6d9e5983e6917b7326af2c623ada928de5479c0b21",
+      "pim_ramulator_src/patches/src_dram_controller_impl_generic_dram_controller.patch": "17c18dfc63c86a95a2e12a5ec2b38f373d8072c884d742c6b192c52c1a1d942f",
+      "pim_ramulator_src/patches/src_dram_controller_impl_scheduler_generic_scheduler.patch": "a534bae8abbd4ab6845d01b5e5fa24856647ccb6a5ca773893d8da16e927ef1a",
+      "pim_ramulator_src/patches/src_dram_impl_HBM3.patch": "fd3a3a1c87897eea82b51d6d45e3a29eaa08acdea0749de28104224fb119f913",
+      "pim_ramulator_src/patches/src_dram_lambdas_action.patch": "85672a0f4e4f4e86c0af6d0cc71be905606516964a223602f6b8193885820234",
+      "pim_ramulator_src/patches/src_dram_lambdas_preq.patch": "17e79b5ae4f9f791b0f0cada07cec06e75f39ebc94de364256a998723044f3b9",
+      "pim_ramulator_src/patches/src_frontend_CMakeLists.patch": "715d59a7d4f6560be0a1c3f263430774383fdcd33e4b0104359e4f918a515d66",
+      "pim_ramulator_src/patches/src_frontend_impl_memory_trace_loadstore_trace.patch": "498d42c9f40351d353398906cd90402cbe11f629224a6a99b12687d44ce2472c",
+      "pim_ramulator_src/patches/src_main.patch": "ecf400fb803e9b0c57cdda1037aa65e76eb3e78cd0ded81e596158e0ddc3e622",
+      "pim_ramulator_src/patches/src_memory_system_CMakeLists.patch": "e597ea1aee29e678dd305f9d0f366e87d97cc1c3fcd7c3e16f656ca42efac980",
+      "pim_ramulator_src/patches/src_memory_system_impl_dummy_memory_system.patch": "1b9d1cd835b17cc56d44997e0fd55a9c21751474cf0e448771e437a78933ab55",
+      "pim_ramulator_src/patches/src_memory_system_impl_generic_DRAM_system.patch": "eec287e66ab96cb8a99881afc92243ec3bd128ebf06bfd79f157fdb4cc3df88c",
+      "pim_ramulator_src/patches/src_memory_system_memory_system.patch": "0dc6fd58fd44dedb47d26690f32078f28aaa2835e46e838efe3a3254d082a16c",
+      "pim_ramulator_src/pim_loadstore_trace.cpp": "847433454cf59a7ef09c0a724e523508ff4dfd002cb2bdecb500390743752a64",
+      "pim_ramulator_src/pim_scheduler.cpp": "be8cb800438931b0f7fc69818264b7967d5d41bfc7406018edad2ee6453e7ec2",
+      "pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py": "3d532527c684c3ae14cc85a7726773b2e6896a962d6921dd1bb4188d155f573b",
+      "pim_ramulator_src/trace_gen/gen_trace_attacc_bg.py": "e2dc8e032f4e2da064c6294f3c90ef9c151cb578dbb8cf6ae32edb77866b9ff6",
+      "pim_ramulator_src/trace_gen/gen_trace_attacc_buffer.py": "e5020974cfa299c234ce4adf4dfc023b38f531768945bdba7b76f8a333736d7c",
+      "requirements-fugue.txt": "7318d91c7cc8aa042e80b86c2590d94a4ce49509b0aff3043d44572b539c83bb",
+      "set_pim_ramulator.sh": "341dce2a2cca0244e6e89e725524e034cd1e7f617e6dad0124e6315cb2065cfc",
+      "src/config.py": "9c568d6a66edc26f5d9f891d07a718e1fcd223579ddbdeb7e1a11f819e9aa9e3",
+      "src/devices.py": "21421e53c99e38b55ea7e4f8dd3904adbc365bb2fa036325c8bd0978aba920f8",
+      "src/model.py": "afc2a9354010dc95be273bcb0e390f36d018c1d56d8cb58a50298a9d20215d08",
+      "src/ramulator_wrapper.py": "fcfd182901d234935a47774b5cd5dbedbc984da0cb34672fc2ad740522917334",
+      "src/system.py": "b0cd6f8d6fb38a6b32a55c2b7ca43cb613511d4f9b2037c28d20d82d076b9bac",
+      "src/type.py": "5045fe5d777321b531185e0f0bee489193a3aca330c3704c6ce10f62d2ba8b22",
+      "vendor/Fugue-asplos-dependencies.json": "4d75296100e1c30db16792a57e33c4656a91202a4eb3188c5c6369700406f425",
+      "vendor/README.md": "97ac92acc40315b06f6e01a8e17f59f522c63a2b8cda23ff218254b50391a13c",
+      "vendor/argparse-997da9255618311d1fcb0135ce86022729d1f1cb.tar.gz": "63e155518feb614f845a842d4435b7d8ca1dc1e5d0b373ed720e070b0e97144f",
+      "vendor/argparse-LICENSE": "a3a9e0dc669644b703773777503f73abff8dffacc4e697d8535be930766fa771",
+      "vendor/ramulator2-LICENSE": "74a1f19701bb06cb80b4ec31e6de6472f5fd767e5949c1c4d51f70007d18b3f2",
+      "vendor/ramulator2-b7c70275f04126c647edb989270cc429776955d1.tar.gz": "81a46a53120b966627f46bef4e5771063a9d85a3d9b7c1fc2d337eb9c37c8c2b",
+      "vendor/spdlog-LICENSE": "a7241a379cb98d37788f82c2fc2e484c3ae85dae881fd3406f0637644850926f",
+      "vendor/spdlog-ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36.tar.gz": "041b18d97373c3a71f7d381090ec18031ca0c5dfb571c062b72aff70ef33c193",
+      "vendor/yaml-cpp-0579ae3d976091d7d664aa9d2527e0d0cff25763.tar.gz": "913c7b4dbd42f7ef5f6cbe6743a23bf5b549530f37cbf857c7dd0ee893f4c0ea",
+      "vendor/yaml-cpp-LICENSE": "aa6fcc27be034e41e21dd832f9175bfe694a48491d9e14ff0fa278e19ad14f1b"
+    },
+    "scope": "Fresh build and all five experiments from an exported source package, renamed directory, no prior output or sibling repository. Python dependencies/toolchain already installed.",
+    "raw_validation_directory": "output/Fugue-asplos-portability-validation"
+  }
+}

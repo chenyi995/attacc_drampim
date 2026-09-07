@@ -1,170 +1,71 @@
-# Simulator for AttAcc
-This repository includes Python-based simulator designed to analyze the transformer-based generation model (TbGM) inference in a heterogeneous system consisting of an xPU and an Attention Accelerator (AttAcc). 
-AttAcc is an accelerator for the attention layer of TbGM, which consists of an HBM-based processing-in-memory (PIM) structure.
-In simulating an xPU and AttAcc system, the simulator outputs the performance and energy usage of the xPU, while the behavior of AttAcc is simulated using a properly modified [Ramulator 2.0](https://github.com/CMU-SAFARI/ramulator2).
-We set the memory device of AttAcc in Ramulator2 to HBM3 and implemented AttAcc\_bank, AttAcc\_BG, and AttAcc\_buffer, which represent AttAcc deploying processing units per bank, per bank group, or per pseudo-channel (on the buffer die), respectively.
-For more details of AttAcc, please check the [paper](https://dl.acm.org/doi/10.1145/3620665.3640422) **AttAcc! Unleashing the Power of PIM for Batched Transformer-based Generative Model Inference** published at [ASPLOS 2024](https://www.asplos-conference.org/asplos2024).
+# Fugue: reproducible KV reuse experiments on AttAcc
 
- 
-## Prerequisites
-- Python
-- cmake, g++, and clang++ (for building Ramulator2)
+This repository reproduces Experiments 1–5 using the original AttAcc GPU/DRAM cost models plus Fugue's MQ, partial-recomputation, KV-sharing accounting and prefill execution choices. The final figures and tables are in [Fugue-paper](Fugue-paper/README.md).
 
-AttAcc simulator is tested under the following system.
+**The repository is self-contained for the simulation:** pinned Ramulator/dependency sources, fixed tokenized workloads, model settings and executable experiment code are included. No sibling repository, old `output`, downloaded LLM weights, CUDA device, tokenizer download or external vLLM installation is needed. Python packages and a C++ toolchain must be installed first.
 
-* OS: Ubuntu 22.04.3 LTS (Kernel 6.1.45)
-* Compiler: g++ version 12.3.0
-* python 3.8.8
+## Quick start
 
-We use a similar build system (CMake) as original Ramulator 2.0, which automatically downloads following external libraries.
-- [argparse](https://github.com/p-ranav/argparse)
-- [spdlog](https://github.com/gabime/spdlog)
-- [yaml-cpp](https://github.com/jbeder/yaml-cpp)
-
-
-## How to install
-1. Clone the Github repository
+Requirements: Linux, Python 3.10+, CMake 3.16+, a C++20 compiler (tested with GCC 14; upstream also documents GCC 12), `make`, and `patch`. Default parallelism is 8 CPU cores. Run from the repository root; the directory may have any name.
 
 ```bash
-$ git clone https://github.com/scale-snu/attacc_simulator.git
-$ cd attacc_simulator
-$ git submodule update --init --recursive
-``` 
+git clone https://github.com/chenyi995/attacc_drampim.git attacc-fugue
+cd attacc-fugue
+git switch chenyi-0906
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install -r requirements-fugue.txt
+# If the default g++ is too old, set CXX to an installed C++20 compiler.
+python3 -m fugue doctor
+python3 -m fugue all --jobs 8
+```
 
-2. Build Ramulator2
+If you receive a source archive instead, extract it, enter its root directory and start with the virtual-environment step above.
+
+`all` builds Ramulator from bundled source, runs all five experiments, regenerates the figures, and compares every numeric field of the main result tables with the checked-in final references. It does not copy old timing results into the simulator. Default output: `output/Fugue-asplos-reproduce/`.
+
+For a compiler outside PATH, use `CXX=/path/to/g++ python3 -m fugue all --jobs 8`. On this project's validation host the default GCC 8 is too old; GCC 14 was selected explicitly. CPU simulation is sufficient—A100a is a modeled device, not a hardware requirement.
+
+## Commands and output
+
 ```bash
-$ bash set_pim_ramulator.sh 
-$ cd ramulator2
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make -j
-$ cp ramulator2 ../ramulator2
-$ cd ../../
+python3 -m fugue build --jobs 8
+python3 -m fugue run --experiments 1,2 --jobs 8
+python3 -m fugue run --experiments 3 --jobs 8
+python3 -m fugue run --experiments 4,5 --jobs 8
+python3 -m fugue plot
+python3 -m fugue verify
 ```
 
-## How to run
+Experiments 1/2 share the final shape sweep; 4/5 share the EPIC driver. Asking for one member runs the pair, avoiding duplicate profiles. To redraw only the checked-in final tables:
 
-### Run GPU simulator 
 ```bash
-$ export PYTHONPATH=$PYTHONPATH:$PWD
-$ python main.py --system {} --gpu {} --ngpu {} --model {} --lin {} --lout {} --batch {} --pim {} --powerlimit --ffopt --pipeopt
-
-$ python main.py --help
-
-    ## set system configuration
-    parser.add_argument("--system",  type=str, default="dgx",
-            help="dgx(each GPU has 80GB HBM), \
-                  dgx-cpu (In dgx-base, offloading the attention layer to cpu), \
-                  dgx-attacc (dgx-base + attacc")
-    parser.add_argument("--gpu", type=str, default='A100a', 
-            help="GPU type (A100a, A100, and H100), A100a is A100 with HBM3")
-    parser.add_argument("--ngpu", type=int, default=8, 
-            help="number of GPUs")
-    parser.add_argument("--gmemcap",
-                        type=int,
-                        default=80,
-                        help="memory capacity per GPU (GB).  default=80")
-
-
-
-    ## set attacc configuration
-    parser.add_argument("--pim", type=str, default='bank',
-            help="pim mode. list: bank, bg, buffer")
-    parser.add_argument("--powerlimit",  action='store_true', 
-            help="power constraint for PIM ")
-    parser.add_argument("--ffopt",  action='store_true', 
-            help="apply feedforward parallel optimization ")
-    parser.add_argument("--pipeopt",  action='store_true', 
-            help="apply pipeline optimization ")
-
-
-    ## set model and service environment
-    parser.add_argument("--model", type=str, default='GPT-175B', 
-            help="model list: GPT-175B, LLAMA-65B, MT-530B, OPT-66B")
-    parser.add_argument("--word", type=int, default='2', 
-            help="word size (precision): 1(INT8), 2(FP16)")
-    parser.add_argument("--lin",  type=int, default=2048,
-            help="input sequence length")
-    parser.add_argument("--lout",  type=int, default=128,
-            help="number of generated tokens")
-    parser.add_argument("--batch", type=int, default=1,
-            help="batch size, default = 1")
+python3 -m fugue plot --from-paper --output output/Fugue-asplos-redraw
 ```
 
-### Examples
-```bash 
-# dgx (A100 with HBM3) example 
-$ python main.py --system dgx --gpu A100a --ngpu 8 --model GPT-175B --lin 2048 --lout 128 --batch 1
+This last command is explicitly a redraw; it does not claim to rerun simulation. Fresh simulation and redraw outputs are separate from the checked-in `Fugue-paper` results.
 
-# 2xdgx (A100 with HBM3) example 
-$ python main.py --system dgx --gpu A100a --ngpu 16 --model GPT-175B --lin 2048 --lout 128 --batch 1
+| Path | Contents |
+| --- | --- |
+| `fugue/` | Portable CLI, source build, MQ profiles, workload replay, plotting and verification |
+| `src/`, `pim_ramulator_src/` | Original AttAcc models and trace mapping; native source lock is checked |
+| `vendor/` | Pinned Ramulator2, argparse, spdlog, yaml-cpp source archives and licenses |
+| `artifact/inputs/` | Fixed token IDs, recomputation indices, text and provenance; no latency inputs |
+| `artifact/reference/` | Final numeric references, read only by the comparison command |
+| `Fugue-paper/` | One final version per experiment, including full final numerical data |
+| `output/Fugue-asplos-reproduce/logs/` | Stage commands, stdout/stderr and exit status |
+| `output/Fugue-asplos-reproduce/experiment*/` | Fresh trace/YAML, Ramulator command logs, timing, operator/event/energy tables |
+| `output/Fugue-asplos-reproduce/paper/` | Recreated final figures and derived tables |
+| `output/Fugue-asplos-reproduce/Fugue-asplos-verification.json` | Numeric comparison and integrity results |
 
-# dgx-attacc (based HBM3) example 
- ## bank level PIM
-$ python main.py --system dgx-attacc --gpu A100a --ngpu 8 --model GPT-175B --lin 2048 --lout 128 --batch 1 --pim bank --powerlimit --ffopt --pipeopt
+Existing successful stages can be skipped with `--resume` only when their code/inputs match. Failed or incomplete runs are retained; use a new `--output output/Fugue-asplos-rerun` for a clean retry. Do not delete data to make an assertion disappear. Generated outputs, build products, virtual environments and local archives are Git-ignored.
 
- ## bank group level PIM
-$ python main.py --system dgx-attacc --gpu A100a --ngpu 8 --model GPT-175B --lin 2048 --lout 128 --batch 1 --pim bg --powerlimit --ffopt --pipeopt
+The [independent source-package check](docs/Fugue-asplos-reproduction-checks.md) reproduced all 50 CSV tables and all 13 PNGs. A complete fresh run took about 128 s on the validation host with 8 workers.
 
- ## buffer level PIM
-$ python main.py --system dgx-attacc --gpu A100a --ngpu 8 --model GPT-175B --lin 2048 --lout 128 --batch 1 --pim buffer --powerlimit --ffopt --pipeopt 
+See [full reproduction guide](docs/Fugue-asplos-reproduction.md), [modeling scope](docs/Fugue-asplos-methodology.md), and [input provenance](artifact/inputs/README.md). The original upstream installation and `main.py` usage are preserved in [AttAcc upstream README](docs/AttAcc-upstream.md).
 
-```
+## What is modeled
 
-## Details of the Ramulator for AttAcc
-### How to Run
-1. Generate PIM command traces for the Transformer-based Generative Model.
-```bash
-$ cd ramulator2
-$ cd trace_gen
-$ python gen_trace_attacc_bank.py
-$ python gen_trace_attacc_bg.py
-$ python gen_trace_attacc_buffer.py
-```
+All final experiments use the native LLAMA-7B/A100a/FP16 configuration, 32 layers and heads, five HBM stacks, bank PIM and the native power constraint. Default link is NVLink 3, 300 GB/s one way. MQ has eight resident queries and eight tCK per full group at approximately 1.3 GHz. The original mapping and read/write timing parameters remain unchanged.
 
-This produces `attacc_bank.trace`, `attacc_bg.trace`, and `attacc_buffer.trace` which are GPT-175B traces of attention layer in a single decoder for AttAcc\_bank, AttAcc\_BG, AttAcc\_buffer, respectively.
-
-
-You can change the model, batch, and request configuration by setting arguments as below.
-```python
-  parser.add_argument("-dh", "--dhead", type=int, default=128, 
-                      help="dhead, default= 128")
-  parser.add_argument("-nh", "--nhead", type=int, default=1, 
-                      help="Number of heads, default=1")
-  parser.add_argument("-l", "--seqlen", type=int, default=2048,
-                      help="Sequence length L, default= 2048")
-  parser.add_argument("-maxl", "--maxlen", type=int, default=4096, 
-                      help="maximum L, default= 4096")
-  parser.add_argument("-db", "--dbyte", type=int, default=2, 
-                      help="data type (B), default= 2")
-  parser.add_argument("-o", "--output", type=str, default="attacc_bank.trace", 
-                      help="output path")
-```
-
-2. Run Ramulator-AttAcc
-```bash
-$ ./ramulator2 -f attacc_bank.yaml
-$ ./ramulator2 -f attacc_bg.yaml
-$ ./ramulator2 -f attacc_buffer.yaml
-```
-
-This will print the total number of DRAM/PIM request and total elapsed memory cycles (`memory_system_cycles`).
-
-The command log will be generated in `log` directory.
-
-
-### Modeling AttAcc with a Power Contraint
-We reflect the DRAM power constraint to AttAcc by increasing the delay between consecutive MAC commands (`nCCDAB`, `nCCDSB`).
-
-We calculate these delay with the activation and read energy.
-
-To evaulate AttAcc with no power constraint (NPC), uncomment `preset: HBM3_5.2Gbps_NPC` and comment out `preset: HBM3_5.2Gbps` in yaml config files.
-
-
-
-
-## Contact
-Jaehyun Park jhpark@scale.snu.ac.kr
-
-Jaewan Choi jwchoi@scale.snu.ac.kr
+These are hardware cost-model replays of fixed CacheBlend/EPIC workload inputs. They do not reproduce numerical LLM answers or software accuracy experiments. Shared tensor capacity/transfer accounting does not claim a new physical allocator or shared-address hotspot model. Complete service latency, including exposed transfers, determines F4's choice. The detailed per-experiment READMEs retain unfavorable findings, warmup cost and F2 export-overlap sensitivity.

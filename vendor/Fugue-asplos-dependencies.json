@@ -1,0 +1,26 @@
+{
+  "ramulator2": {
+    "archive": "vendor/ramulator2-b7c70275f04126c647edb989270cc429776955d1.tar.gz",
+    "commit": "b7c70275f04126c647edb989270cc429776955d1",
+    "sha256": "81a46a53120b966627f46bef4e5771063a9d85a3d9b7c1fc2d337eb9c37c8c2b",
+    "tar_sha256": "1fe6895dbc92f8d8aa8249016843b6f138a9dff6c1b6cf316dbf0cd6324537f4"
+  },
+  "yaml-cpp": {
+    "archive": "vendor/yaml-cpp-0579ae3d976091d7d664aa9d2527e0d0cff25763.tar.gz",
+    "commit": "0579ae3d976091d7d664aa9d2527e0d0cff25763",
+    "sha256": "913c7b4dbd42f7ef5f6cbe6743a23bf5b549530f37cbf857c7dd0ee893f4c0ea",
+    "tar_sha256": "d6c21138f5845dcd93095ecea321081a247a84fae3aab7cb8068c6a2b23dfe0e"
+  },
+  "spdlog": {
+    "archive": "vendor/spdlog-ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36.tar.gz",
+    "commit": "ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36",
+    "sha256": "041b18d97373c3a71f7d381090ec18031ca0c5dfb571c062b72aff70ef33c193",
+    "tar_sha256": "34b2d5788c4cc32c5079117e3e4dd308f0ba376137cf801875085edfa5359990"
+  },
+  "argparse": {
+    "archive": "vendor/argparse-997da9255618311d1fcb0135ce86022729d1f1cb.tar.gz",
+    "commit": "997da9255618311d1fcb0135ce86022729d1f1cb",
+    "sha256": "63e155518feb614f845a842d4435b7d8ca1dc1e5d0b373ed720e070b0e97144f",
+    "tar_sha256": "bbd918cfe2cf6768d1e6b0fe3a63c9ab4f1e5bd856019cea9d37adc7004306be"
+  }
+}

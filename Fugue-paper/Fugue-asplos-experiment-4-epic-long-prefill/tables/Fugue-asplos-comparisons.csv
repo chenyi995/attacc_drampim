@@ -1,0 +1,4 @@
+case_id,TTFT_ms_F4_reduction_vs_F3_percent,TBT_ms_F4_reduction_vs_F3_percent,E2E_ms_F4_reduction_vs_F3_percent,TTFT_energy_mJ_F4_reduction_vs_F3_percent,TBT_energy_mJ_F4_reduction_vs_F3_percent,E2E_energy_mJ_F4_reduction_vs_F3_percent,F3_remote_capacity_reduction_vs_F2_percent
+Fugue-asplos-EPIC-long-4000,37.84792250147275,0.0,7.5710135726588135,8.309801081291113,0.0,1.410223593894444,48.59373064056498
+Fugue-asplos-EPIC-long-8000,31.669355206377915,0.0,10.716076144852538,11.230436874321503,0.0,2.938980895976695,48.79671662210061
+Fugue-asplos-EPIC-long-16000,20.43334043280607,0.0,11.243177290442985,13.768550308727189,0.0,5.905382523861624,48.89892540102788

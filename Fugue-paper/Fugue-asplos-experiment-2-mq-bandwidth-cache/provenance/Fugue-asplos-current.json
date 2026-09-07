@@ -1,0 +1,55 @@
+{
+  "experiment": 2,
+  "edition": "final numeric results; portable reproduction interface",
+  "model_commit": "c60005143a6b492d7ef83231723386478b59a506",
+  "final_tables_sha256": {
+    "Fugue-asplos-experiment2-link-Q.csv": "672c62bc7c893acdda8d834e0e0ff5fa2e4309102c16e30d109cd6fd6f82a09b",
+    "Fugue-asplos-experiment2-cache-Q.csv": "92cccf9574c58915f4154606448874bf1a7894092a49fd1b60c247295dd411f6",
+    "Fugue-asplos-experiment2-shapes.csv": "2506d223762ba2678aeb01025dc4743f5322b6a2b9ee3ddce5d2f88086b85f1c",
+    "Fugue-asplos-experiment2-summary.md": "31d57e3d0da874ee3a1be546ab5ae4b208db9026ed0fd00dc63fece6e7e52c03",
+    "Fugue-asplos-experiment2-link-Q-focused.csv": "79183c2cac82b91b8ff1724acf46c9234acfce2aa0facf2dbb936395dbf80ec1",
+    "Fugue-asplos-experiment2-cache-Q-focused.csv": "7b83be37cd4bd71f85b26c6d7e63c291fc2b780f936327949e45b470bff225fd"
+  },
+  "final_figures_sha256": {
+    "Fugue-asplos-experiment2-mq-sensitivity.pdf": "a7aee2d12dd0234391525b9e165fd7686f593bf7d9d690205b40f49349ad148b",
+    "Fugue-asplos-experiment2-mq-sensitivity.png": "cdaf77aa2524fedfc89397cf8f4da6e7fa6cefc31d7a2dfc9d957064f8dbb62d"
+  },
+  "fresh_reproduction_verification": {
+    "input_hashes_pass": true,
+    "token_counts_and_recompute_indices_pass": true,
+    "workloads": {
+      "cacheblend": 2,
+      "epic": 6
+    },
+    "comparisons": [
+      {
+        "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment1.csv",
+        "rows": 168,
+        "numeric_fields_compared": 5544,
+        "max_relative_difference": 2.4851523796784477e-16
+      },
+      {
+        "actual": "experiment12/Fugue-asplos-results/Fugue-asplos-experiment2.csv",
+        "rows": 144,
+        "numeric_fields_compared": 4752,
+        "max_relative_difference": 2.6254048668358757e-16
+      },
+      {
+        "actual": "experiment3/Fugue-asplos-results/Fugue-asplos-summary.csv",
+        "rows": 8,
+        "numeric_fields_compared": 168,
+        "max_relative_difference": 0.0
+      },
+      {
+        "actual": "experiment45/Fugue-asplos-results/Fugue-asplos-summary.csv",
+        "rows": 24,
+        "numeric_fields_compared": 744,
+        "max_relative_difference": 0.0
+      }
+    ],
+    "fresh_profile_records_verified": 639,
+    "all_native_sources_match": true,
+    "tolerance": "Every numeric field: rel_tol=1e-8, abs_tol=1e-9. Winners exact. No timing data imported by simulation."
+  },
+  "note": "Current final values retained. Historical absolute output paths inside table provenance are records, never runtime inputs."
+}

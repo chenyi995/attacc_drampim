@@ -1,0 +1,7 @@
+# Preserve checked-in bytes: publication/input/source manifests use SHA-256.
+* -text
+# Python csv.writer uses CRLF record terminators.
+*.csv whitespace=cr-at-eol
+# These are byte-preserved upstream documents, including their whitespace.
+docs/AttAcc-upstream.md -whitespace
+vendor/*LICENSE -whitespace

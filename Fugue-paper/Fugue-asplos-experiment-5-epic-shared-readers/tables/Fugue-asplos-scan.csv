@@ -1,0 +1,4 @@
+case_id,Q,N,batch,native_plain_PIM_scan_us,MQ_PIM_scan_us,scan_speedup,note
+Fugue-asplos-EPIC-shared-readers-B1,188,8035,1,2375.028816,508.73810200000025,4.668470489359963,"Ordinary PIM repeats Q native single-query scans; MQ sums ceil(Q/8) profiled tiles, not request extrapolation."
+Fugue-asplos-EPIC-shared-readers-B2,188,8035,2,2375.028816,508.67658200000005,4.669035100184737,"Ordinary PIM repeats Q native single-query scans; MQ sums ceil(Q/8) profiled tiles, not request extrapolation."
+Fugue-asplos-EPIC-shared-readers-B4,188,8035,4,4689.19282,1013.3697440000003,4.627326647320939,"Ordinary PIM repeats Q native single-query scans; MQ sums ceil(Q/8) profiled tiles, not request extrapolation."
