@@ -1,0 +1,142 @@
+{
+  "label": "request-capacity",
+  "kind": "representative-cases",
+  "title": "",
+  "width_inches": 3.2559055118110236,
+  "height_inches": 1.4,
+  "fonts_pt": {
+    "title": 7.5,
+    "label": 7.5,
+    "legend": 7.5,
+    "note": 7.5
+  },
+  "reference": "PAPI Fig. 2/8: white background, thin axes, compact panels; AttAcc area/grouped bars; Tessera dataflow; source Experiment 1 blue/orange line style",
+  "metric": "KV Footprint Reduction (×)",
+  "field": "simultaneous_peak_KV_GiB",
+  "source_fields": [
+    "simultaneous_peak_KV_GiB"
+  ],
+  "endpoints": [
+    "Materialized PIM",
+    "KVChime"
+  ],
+  "reference_variant": "F2",
+  "method_variant": "F4",
+  "normalization": "Paired Materialized PIM / KVChime simultaneous KV peaks",
+  "group_order": [
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+    "KVChime-CB-musique-0075",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+    "KVChime-LongMemEval-oracle-d851d5ba"
+  ],
+  "series": [
+    "Document 8k",
+    "Readers 4",
+    "MuSiQue",
+    "Long 32k",
+    "LTM recall"
+  ],
+  "group_case_ids": {
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026": [
+      "KVChime-EPIC-chunk2048-target8000-B1-N8026"
+    ],
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028": [
+      "KVChime-EPIC-chunk2048-target8000-B4-N8028"
+    ],
+    "KVChime-CB-musique-0075": [
+      "KVChime-CB-musique-0075"
+    ],
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034": [
+      "KVChime-EPIC-chunk2048-target32000-B2-N32034"
+    ],
+    "KVChime-LongMemEval-oracle-d851d5ba": [
+      "KVChime-LongMemEval-oracle-d851d5ba"
+    ]
+  },
+  "model_order": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "OPT-66B",
+    "MT-76B"
+  ],
+  "workload_order": [
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+    "KVChime-CB-musique-0075",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+    "KVChime-LongMemEval-oracle-d851d5ba"
+  ],
+  "workload_display": [
+    "Document 8k",
+    "Readers 4",
+    "MuSiQue source request",
+    "Long context 32k",
+    "LTM recall"
+  ],
+  "model_label_rotation_degrees": 0,
+  "margins": {
+    "left": 0.145,
+    "right": 0.985,
+    "bottom": 0.26,
+    "top": 0.74
+  },
+  "bar_width_group_units": 0.12,
+  "bar_colors": [
+    "#FF9200",
+    "#7E54AA",
+    "#3CAC3A",
+    "#238CC1",
+    "#FFD966"
+  ],
+  "bar_hatches": [
+    "",
+    "//",
+    "..",
+    "xx",
+    "\\\\",
+    "++",
+    "--",
+    "oo"
+  ],
+  "legend_columns": 3,
+  "legend_anchor": [
+    0.52,
+    0.995
+  ],
+  "gpu_marker": "x",
+  "gpu_marker_y_axes": 0.025,
+  "model_selection": "Current paper model scope, in original source order",
+  "aggregation": "None: each bar is one matched model/workload pair; no mean or aggregate throughput",
+  "display_rule": "Show every eligible model/workload pair; retain unavailable model slots",
+  "geometry_validity_schema": "attention-geometry-publication-validity-v1",
+  "renderer": "outline/analysis/representative_figure_adapter.py",
+  "status": "checked complete representative requests with the paper point-estimate selector",
+  "font_limit_body_pt": 10.0,
+  "font_limit_margin_pt": 0.5,
+  "xlabel": "",
+  "outlier_policy": {
+    "method": "Cap only isolated upper-tail values, retaining raw ratios and marking each interrupted bar with a zigzag and its actual ratio.",
+    "current_decision": "No sparse outlier; use true bar heights."
+  },
+  "ylim": 5.6,
+  "yticks": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "x_limits": [
+    -0.5,
+    4.5
+  ],
+  "horizontal_line_bounds": [
+    -0.3,
+    4.3
+  ],
+  "model_label_format": "family-size-two-lines",
+  "font_family": "DejaVu Sans"
+}

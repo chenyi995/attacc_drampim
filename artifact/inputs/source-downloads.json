@@ -1,0 +1,252 @@
+{
+  "schema": "kvchime-ae-source-downloads-v1",
+  "files": [
+    {
+      "path": "CacheBlend/README.md",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/README.md",
+      "sha256": "590d631964e176a7f33d8dd56b0a4855766448379d0a847f9a35c2a70c274e8d",
+      "size_bytes": 1450,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "CacheBlend/vllm_blend/LICENSE",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/vllm_blend/LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "size_bytes": 11357,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "CacheBlend/inputs/musique_s.json",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/inputs/musique_s.json",
+      "sha256": "d679da1dad32b7f3645de9db0d7a1aaa7e679eb76ed48c02c4688137e5ce6674",
+      "size_bytes": 3760082,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "CacheBlend/example/blend_musique.py",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/example/blend_musique.py",
+      "sha256": "ea70e9d54a5571c2eadb90e27965c4b193e64c5d98b71501c4d81f6ef4604174",
+      "size_bytes": 5363,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "CacheBlend/example/blend.py",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/example/blend.py",
+      "sha256": "510542fe13a026f59d3909de769231f840bc5432d49736781ebbf85fd91043e5",
+      "size_bytes": 4055,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "CacheBlend/example/utils.py",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/example/utils.py",
+      "sha256": "fb54c87d0d5248eba29cc879d955d6cec13e3bbb476f09d69dda15deba42376f",
+      "size_bytes": 2947,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "CacheBlend/vllm_blend/vllm/model_executor/models/llama.py",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/vllm_blend/vllm/model_executor/models/llama.py",
+      "sha256": "cd40aa6f12bd6511ed52c49b035651dfa054d771075e40310e07ecdfcae6a60c",
+      "size_bytes": 20874,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "CacheBlend/vllm_blend/vllm/attention/backends/xformers.py",
+      "url": "https://raw.githubusercontent.com/YaoJiayi/CacheBlend/55ad02675939f783a38d579393527d218a7fd581/vllm_blend/vllm/attention/backends/xformers.py",
+      "sha256": "3730942468a6c29d155b4992205dd5ac788a4bc7c5275d0be9989a04e5d14229",
+      "size_bytes": 24193,
+      "purpose": "Original CacheBlend source/QA input for provenance inspection; no inference is invoked."
+    },
+    {
+      "path": "epic/README.md",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/README.md",
+      "sha256": "48f903002a5970720032893df83f7af65090e3984e4e9e60b85ab03bbee5f3c6",
+      "size_bytes": 9452,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/LICENSE",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "size_bytes": 11357,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/data_set.py",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/data_set.py",
+      "sha256": "9ab01dbd4393a47489ce5e8e78cbc0d0efe2407de6e3b7c26cd94fbf13222117",
+      "size_bytes": 5633,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/long_context.py",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/long_context.py",
+      "sha256": "681bfe08a1ef2ef1e68616028cf85a402c8bd3a74791d96ae04f44d76f27fe95",
+      "size_bytes": 3232,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/evals/long_context/main.py",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/evals/long_context/main.py",
+      "sha256": "3a08536289650a49ca941d0e816260e08470a863d9635c3cae5ab655c4f8bea0",
+      "size_bytes": 12918,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/addiction.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/addiction.txt",
+      "sha256": "32b4b8f14a126a14bb7da5a25fb134601510344d9bd3456bd509c2c14609e102",
+      "size_bytes": 7446,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/aord.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/aord.txt",
+      "sha256": "ca1a95525193b977ca9e5b4d2523ed6f33ce10272b00fb2e83dfc4df742d7195",
+      "size_bytes": 8504,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/apple.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/apple.txt",
+      "sha256": "e84fd53a3792f196fd07614ee28d721af98e7425b3b092ab7f02b90fa61e5e84",
+      "size_bytes": 12413,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/avg.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/avg.txt",
+      "sha256": "0111c10328933b0e90d7a696cb07fa1c89aaf9c773706b28d687a2489384692b",
+      "size_bytes": 25387,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/before.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/before.txt",
+      "sha256": "db4bd3fd62ba3c98eeb8822d048ac664742709d4cd6d4dc0c2f9da4af0a9a1f5",
+      "size_bytes": 25539,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/bias.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/bias.txt",
+      "sha256": "363e55ef481571ab75173229d237491f203d4e7a4f04837bf88bb6bd6cc51e91",
+      "size_bytes": 3370,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/boss.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/boss.txt",
+      "sha256": "a0b98955ffb64162048538fcc7372c5f51c06e5a11fe1b15826ae737a3d2cd44",
+      "size_bytes": 14327,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/copy.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/copy.txt",
+      "sha256": "15259f67aa300ccec434b955b1ea100fa23b8d16733adf140da0332c20d63125",
+      "size_bytes": 5367,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/corpdev.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/corpdev.txt",
+      "sha256": "c966a343377308ccc11b5bd7f0967f226b89a6f9708d96c709f50913890ca8b2",
+      "size_bytes": 7086,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/desres.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/desres.txt",
+      "sha256": "3982864276f95b1a606d76f187ce2c0450a3810b9858fd33a61af1489e1a00ae",
+      "size_bytes": 14988,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/diff.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/diff.txt",
+      "sha256": "281adb331d84feafaf9954aa9f38188a6e30856c19cbcf745eca43c70759952f",
+      "size_bytes": 4231,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/ecw.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/ecw.txt",
+      "sha256": "754e542a397e82bc23b488c3600b5bdb7d285aaf774c6fbfb0e5302ca89dd1df",
+      "size_bytes": 6263,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/founders.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/founders.txt",
+      "sha256": "b49b61dba29889880d66fb00b52c1c37a9373ba473a61e95a0701eca80beb247",
+      "size_bytes": 4544,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/foundervisa.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/foundervisa.txt",
+      "sha256": "331d5492353c6207efec65c949fe6c813909fb58f85aa606ba393d021af04d27",
+      "size_bytes": 2261,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/gap.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/gap.txt",
+      "sha256": "fd753f0535797ac3dff137766ed2a71adc71179bb5cfe4521822b85d8e84e7c5",
+      "size_bytes": 32652,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/gba.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/gba.txt",
+      "sha256": "aede19c44c7f337eed5e72d28b8a1ff040510662621ff3fbd1301d51e126a9da",
+      "size_bytes": 11465,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "epic/benchmarks_ours/data_sets/PaulGrahamEssays/gh.txt",
+      "url": "https://raw.githubusercontent.com/DerekHJH/epic/3204410f1723ed0f39575b4eba8c17578a1ee1a1/benchmarks_ours/data_sets/PaulGrahamEssays/gh.txt",
+      "sha256": "ea1aa69c11b29b298ae5068e3b13bb6a6706c0e2276820f77ee60c2b080ee62c",
+      "size_bytes": 29511,
+      "purpose": "Pinned EPIC source and original corpus, in the recorded corpus order."
+    },
+    {
+      "path": "LongMemEval/README.md",
+      "url": "https://raw.githubusercontent.com/xiaowu0162/LongMemEval/9e0b455f4ef0e2ab8f2e582289761153549043fc/README.md",
+      "sha256": "c4ff45676683d9e2f7cf7d9099d26426f14635ec110dbb1da818d1019a142573",
+      "size_bytes": 15970,
+      "purpose": "Original LongMemEval prompt formatter and source notices."
+    },
+    {
+      "path": "LongMemEval/LICENSE",
+      "url": "https://raw.githubusercontent.com/xiaowu0162/LongMemEval/9e0b455f4ef0e2ab8f2e582289761153549043fc/LICENSE",
+      "sha256": "d3c4b9aa54759df6ded337978a6f3b55b75615e5e4525c3b82d7e2627d4b9732",
+      "size_bytes": 1062,
+      "purpose": "Original LongMemEval prompt formatter and source notices."
+    },
+    {
+      "path": "LongMemEval/src/generation/run_generation.py",
+      "url": "https://raw.githubusercontent.com/xiaowu0162/LongMemEval/9e0b455f4ef0e2ab8f2e582289761153549043fc/src/generation/run_generation.py",
+      "sha256": "4f1eb3c69d7ad40f04065b9c0bc86f6582441018fc6ff751d162d66c95baf672",
+      "size_bytes": 21608,
+      "purpose": "Original LongMemEval prompt formatter and source notices."
+    },
+    {
+      "path": "longmemeval-cleaned/longmemeval_oracle.json",
+      "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/98d7416c24c778c2fee6e6f3006e7a073259d48f/longmemeval_oracle.json",
+      "sha256": "821a2034d219ab45846873dd14c14f12cfe7776e73527a483f9dac095d38620c",
+      "size_bytes": 15388478,
+      "purpose": "Original cleaned oracle evidence; the selected source question ID is d851d5ba."
+    },
+    {
+      "path": "longmemeval-cleaned/README.md",
+      "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/98d7416c24c778c2fee6e6f3006e7a073259d48f/README.md",
+      "sha256": "fe31783d4e5d132681a25e4192e85def8edd214094939879f5283818c0a4a3e0",
+      "size_bytes": 626,
+      "purpose": "Original cleaned oracle evidence; the selected source question ID is d851d5ba."
+    }
+  ],
+  "total_size_bytes": 19516011,
+  "scope": "Optional source inspection, independent of simulator inputs. No tokenizer, model weights or inference dependencies."
+}

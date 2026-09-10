@@ -1,0 +1,157 @@
+{
+  "calibration_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/selector-model/calibration.json",
+  "calibration_sha256": "1e95e4b822b23a7090071c2e2429c4d1d7b3bd15822bef82d13837285a795e48",
+  "capacity_by_dhead": {
+    "128": {
+      "bank_query_columns": 2,
+      "buffer_bytes": 512,
+      "capacity": 8,
+      "dbyte": 2,
+      "dhead": 128,
+      "interval_model_limit": 8,
+      "padded_query_bytes": 64,
+      "scope": "QK query compute-side budget; PV/state buffering and double-buffer pooling are not validated.",
+      "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/attacc-fugue/Fugue-paper/Fugue-asplos-experiment-1-prefill-attention-crossover/README.md",
+      "source_sha256": "cd6bcd74fbb592d6845b500d74c900624433e620574c017ff29868a50118e2be",
+      "unpadded_query_bytes": 64.0
+    },
+    "160": {
+      "bank_query_columns": 3,
+      "buffer_bytes": 512,
+      "capacity": 5,
+      "dbyte": 2,
+      "dhead": 160,
+      "interval_model_limit": 8,
+      "padded_query_bytes": 96,
+      "scope": "QK query compute-side budget; PV/state buffering and double-buffer pooling are not validated.",
+      "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/attacc-fugue/Fugue-paper/Fugue-asplos-experiment-1-prefill-attention-crossover/README.md",
+      "source_sha256": "cd6bcd74fbb592d6845b500d74c900624433e620574c017ff29868a50118e2be",
+      "unpadded_query_bytes": 80.0
+    }
+  },
+  "coefficient_parent_policy_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/selector-model-v2/policy.json",
+  "coefficient_parent_policy_sha256": "cce7a3176e8b73d2497efcc637ca7fb1c45e00956298ff0d3e4ffaec89b92f2f",
+  "coefficient_policy": "Reuse unchanged frozen calibration coefficients; no refit.",
+  "decision_rule": "point-estimate-argmin",
+  "geometry_repairs": {
+    "MT-146B": {
+      "derivation": "Source hidden divided by explicit source dhead; matched against primary Table 1 hidden, layers and heads.",
+      "dhead": 128,
+      "heads": 96,
+      "hidden": 12288,
+      "old_heads": 80
+    },
+    "MT-76B": {
+      "derivation": "Source hidden divided by explicit source dhead; matched against primary Table 1 hidden, layers and heads.",
+      "dhead": 128,
+      "heads": 80,
+      "hidden": 10240,
+      "old_heads": 40
+    }
+  },
+  "gpu_gqa": {
+    "KV_location": "Repeated K/V operands are read from GPU-local HBM; this is not additional GPU-PIM link traffic.",
+    "bandwidth": "Unchanged native HBM bandwidth and native compute/memory utilization formulas.",
+    "limitation": "Analytical native operator model; no claim of measured GPU kernel or physical cache behavior.",
+    "parallelism": "Native MATMUL m=q and numOp=batch times local query heads.",
+    "sharing": "No wrapper sharing discount: native off-HBM, L2, L1 and register operands are returned unchanged."
+  },
+  "gpu_traffic_policy": "native-per-query-head-HBM-no-GQA-L2-discount",
+  "limitations": [
+    "QK buffer bound does not validate PV/state buffering or pooled double-buffer operation.",
+    "Native command-address defects remain inherited and separately qualified.",
+    "No numerical attention, RoPE arithmetic, online waits, or general DMA contention is added.",
+    "Per-query-head repeated HBM traffic is the chosen abstraction; no GPU GQA cache/broadcast benefit is modeled."
+  ],
+  "parent_policy_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/repair-0908/correction-policy.json",
+  "parent_policy_sha256": "d7c0d28687bfe0b62d146e9ad864dfc76b3f359c31885fe1d9111b316d0d1694",
+  "preserved_scope": [
+    "Corrected MT head geometry and all projection/KV capacity identities.",
+    "Same dimension-dependent resident cap, QK/PV tails, state assignments and predictor schedule.",
+    "Runner retains the separately implemented F2 readback + max(attention, export) timeline."
+  ],
+  "schema": "hbm-2k-batch-native-hbm-logical-head-v1",
+  "sources": [
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/archived/0907/56b63f495431f807/coverage-expansion/attacc-fugue/fugue/kvchime_model.py",
+      "sha256": "6f648b520521665cde38ac29b3a0461c422a62e6cd62acbd2f514a95642cbf57"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/archived/0907/56b63f495431f807/coverage-expansion/attacc-fugue/fugue/official-gqa-geometry.json",
+      "sha256": "d72bc39b4d460bea271e5c438b7d61a6a4721355c680d2578f797fb6dc45a9f1"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/archived/0907/56b63f495431f807/coverage-expansion/attacc-fugue/src/config.py",
+      "sha256": "9c568d6a66edc26f5d9f891d07a718e1fcd223579ddbdeb7e1a11f819e9aa9e3"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/archived/0907/56b63f495431f807/coverage-expansion/attacc-fugue/src/devices.py",
+      "sha256": "21421e53c99e38b55ea7e4f8dd3904adbc365bb2fa036325c8bd0978aba920f8"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/archived/0907/56b63f495431f807/coverage-expansion/attacc-fugue/src/model.py",
+      "sha256": "afc2a9354010dc95be273bcb0e390f36d018c1d56d8cb58a50298a9d20215d08"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/archived/0907/56b63f495431f807/selector-model-v2/policy.json",
+      "sha256": "cce7a3176e8b73d2497efcc637ca7fb1c45e00956298ff0d3e4ffaec89b92f2f"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/archived/0907/56b63f495431f807/selector-model/calibration.json",
+      "sha256": "1e95e4b822b23a7090071c2e2429c4d1d7b3bd15822bef82d13837285a795e48"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/attacc-fugue/Fugue-paper/Fugue-asplos-experiment-1-prefill-attention-crossover/README.md",
+      "sha256": "cd6bcd74fbb592d6845b500d74c900624433e620574c017ff29868a50118e2be"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/repair-0908/correction-policy.json",
+      "sha256": "d7c0d28687bfe0b62d146e9ad864dfc76b3f359c31885fe1d9111b316d0d1694"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/hbm_2k_model.py",
+      "sha256": "1acbf7301a08e94e020a29f52769105e3ed76a89841df1a6740ca664a4a923ad"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/hbm_2k_run.py",
+      "sha256": "ca029242f5647e6cfcfdd530dc44dd221b09c4c66d0719b76d608d1e72915fb0"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/hbm_2k_staging.py",
+      "sha256": "70a6a2c0f28dbfe9cc4a570673e4d18698c7f7426a5156aae696f510d48849a4"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/repair_0908.py",
+      "sha256": "c8054d72fb44cf98b53855c3c3d23fc8aef10d386118b06b6247068aa3b798e0"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/repair_0908_model.py",
+      "sha256": "c5f91d7fc5cc2b6c9a3ef63926a40a7b70393ddb96ca5b2a4a26eae7e3f22da9"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/repair_0908_traces.py",
+      "sha256": "f43942e6c961cb871a94ee91d6eb609ab01dcacb7b2e0c8f2fd1e6c972cdea62"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/selector_cost_model.py",
+      "sha256": "48c60bd16d4f90fc35e1d28b9f1e75ff8308ce1290a57f867afd3573c183be47"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/selector_point_model.py",
+      "sha256": "7cf379fc7f032b61f542e6c68dc6ba1900cf68f020a1f0d4094dd2dea1fc2f41"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/test_hbm_2k_model.py",
+      "sha256": "4bbcec22a533a531c99f0820a8e875c24b5848fa567167a31ed8ae688d4ea81a"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/session/local/attention-shape-residency/megatron-source.json",
+      "sha256": "755f6cfdeddbb8dd19fef0e6560524c7aad02785289ab3623eb11ea8e2a451d3"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/ref/megatron-sc21-2104.04473.pdf",
+      "sha256": "7d78344f7fd322c901ad14046eeeaa9fd798416ad35190ffc6a6ecca0f7f79b0"
+    }
+  ],
+  "status": "frozen-hbm-policy"
+}

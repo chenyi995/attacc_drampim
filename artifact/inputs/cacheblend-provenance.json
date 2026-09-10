@@ -1,9 +1,0 @@
-{
-  "software_commit": "55ad02675939f783a38d579393527d218a7fd581",
-  "software_sources_sha256": {
-    "example/blend.py": "510542fe13a026f59d3909de769231f840bc5432d49736781ebbf85fd91043e5",
-    "vllm_blend/vllm/model_executor/models/llama.py": "cd40aa6f12bd6511ed52c49b035651dfa054d771075e40310e07ecdfcae6a60c",
-    "vllm_blend/vllm/attention/backends/xformers.py": "3730942468a6c29d155b4992205dd5ac788a4bc7c5275d0be9989a04e5d14229"
-  },
-  "tokenizer_sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"
-}

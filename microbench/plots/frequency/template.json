@@ -1,0 +1,71 @@
+{
+  "kind": "frequency-line",
+  "title": "MQ PE operating point",
+  "width_inches": 3.2559055118110236,
+  "height_inches": 1.35,
+  "fonts_pt": {
+    "title": 7.5,
+    "label": 7.5,
+    "legend": 7.5,
+    "note": 7.5
+  },
+  "reference": "PAPI Fig. 2/8: white background, thin axes, compact panels; AttAcc area/grouped bars; Tessera dataflow; source Experiment 1 blue/orange line style",
+  "metric": "Column-group interval (DRAM cycles)",
+  "status": "source analytical power model",
+  "label": "frequency",
+  "colors": {
+    "base": "#FF9200",
+    "improved": "#238CC1",
+    "shared": "#DDEBF1",
+    "private": "#F2DFD2",
+    "state": "#E6E8EB",
+    "ink": "#333333"
+  },
+  "line_width_pt": 1.25,
+  "axis_width_pt": 0.6,
+  "model_order": [],
+  "grouping": "",
+  "renderer": "outline/analysis/plot_figures.py",
+  "xlabel": "PE frequency (GHz)",
+  "ylabel": "Column-group interval\n(DRAM cycles)",
+  "margins": {
+    "left": 0.23,
+    "right": 0.98,
+    "bottom": 0.28,
+    "top": 0.81
+  },
+  "x_limits": [
+    0.2,
+    2.7
+  ],
+  "x_ticks": [
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5
+  ],
+  "y_limits": [
+    0,
+    34
+  ],
+  "y_ticks": [
+    0,
+    8,
+    16,
+    24,
+    32
+  ],
+  "curve_labels": {
+    "effective": "Effective",
+    "compute": "Compute",
+    "power": "Power limit"
+  },
+  "power_line_color": "#B2182B",
+  "operating_label_y_fraction": 0.61,
+  "power_label_x_fraction": 0.96,
+  "power_label_y_offset": 1.5,
+  "power_line_width_pt": 1.65,
+  "power_line_style": "-",
+  "font_family": "DejaVu Sans"
+}

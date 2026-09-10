@@ -1,0 +1,256 @@
+{
+  "schema": "kvchime-ae-request-code-lock-v1",
+  "files": [
+    {
+      "path": "ae/frozen/hbm_2k_model.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/hbm_2k_model.py",
+      "sha256": "1acbf7301a08e94e020a29f52769105e3ed76a89841df1a6740ca664a4a923ad",
+      "bytes": 8294
+    },
+    {
+      "path": "ae/frozen/hbm_2k_staging.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/hbm_2k_staging.py",
+      "sha256": "70a6a2c0f28dbfe9cc4a570673e4d18698c7f7426a5156aae696f510d48849a4",
+      "bytes": 20623
+    },
+    {
+      "path": "ae/frozen/repair_0908_model.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/repair_0908_model.py",
+      "sha256": "c5f91d7fc5cc2b6c9a3ef63926a40a7b70393ddb96ca5b2a4a26eae7e3f22da9",
+      "bytes": 17120
+    },
+    {
+      "path": "ae/frozen/repair_0908_traces.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/repair_0908_traces.py",
+      "source_sha256": "f43942e6c961cb871a94ee91d6eb609ab01dcacb7b2e0c8f2fd1e6c972cdea62",
+      "sha256": "8d62034324f16f233372b13179cd1c20bcbae9c561bef4207d1ef120f095f96f",
+      "bytes": 10135,
+      "transform": "Replace one non-ASCII regex character with its equivalent Unicode escape; portable runner sources this configuration from the frozen policy.",
+      "numeric_or_timing_expressions_changed": false
+    },
+    {
+      "path": "ae/frozen/selector_cost_model.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/selector_cost_model.py",
+      "sha256": "48c60bd16d4f90fc35e1d28b9f1e75ff8308ce1290a57f867afd3573c183be47",
+      "bytes": 10303
+    },
+    {
+      "path": "ae/frozen/selector_point_model.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/selector_point_model.py",
+      "sha256": "7cf379fc7f032b61f542e6c68dc6ba1900cf68f020a1f0d4094dd2dea1fc2f41",
+      "bytes": 2568
+    },
+    {
+      "path": "ae/frozen/coverage_trace_cache.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/coverage_trace_cache.py",
+      "sha256": "61c5dfe61b6486fde4dc73089bd11e1fa1cc7768cdd5fb50d3f4d4a5317e24ca",
+      "bytes": 24109
+    },
+    {
+      "path": "ae/frozen/run_coverage_expansion.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/run_coverage_expansion.py",
+      "sha256": "183366f41222813acb15d63cdab3893eac0474d193d41ca7a8eb16b1f94ae1c9",
+      "bytes": 19474
+    },
+    {
+      "path": "ae/frozen/hbm_2k_run.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/hbm_2k_run.py",
+      "sha256": "ca029242f5647e6cfcfdd530dc44dd221b09c4c66d0719b76d608d1e72915fb0",
+      "bytes": 31064
+    },
+    {
+      "path": "ae/frozen/coverage_status.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/docs/analysis/coverage_status.py",
+      "source_sha256": "1dc4c1ca8d2e61c6af57f31cc0c8690233c47dd1fe8f21e17a770e9d7701b22d",
+      "sha256": "0d89988e79a3b1b5a92d51bd7fec07dc45810e595a5b856f6b0e424de725b8c9",
+      "bytes": 8395,
+      "transform": "Retain exact needed imports/constants and five accounting functions; remove unreachable historical report renderer and CLI.",
+      "retained_source_ranges": [
+        [
+          2,
+          5
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          7,
+          7
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          9,
+          9
+        ],
+        [
+          10,
+          10
+        ],
+        [
+          11,
+          11
+        ],
+        [
+          12,
+          12
+        ],
+        [
+          13,
+          13
+        ],
+        [
+          14,
+          14
+        ],
+        [
+          16,
+          16
+        ],
+        [
+          17,
+          17
+        ],
+        [
+          18,
+          18
+        ],
+        [
+          19,
+          19
+        ],
+        [
+          20,
+          20
+        ],
+        [
+          21,
+          21
+        ],
+        [
+          22,
+          22
+        ],
+        [
+          25,
+          26
+        ],
+        [
+          29,
+          30
+        ],
+        [
+          33,
+          34
+        ],
+        [
+          37,
+          46
+        ],
+        [
+          58,
+          149
+        ]
+      ],
+      "retained_function_AST_identical": true
+    },
+    {
+      "path": "simulator/fugue/__init__.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/__init__.py",
+      "sha256": "e39e28e6ae1bfe221ddb332af79178e5cf43b676ea607a5fc6c41fe3f7a63a40",
+      "bytes": 61
+    },
+    {
+      "path": "simulator/fugue/attention.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/attention.py",
+      "sha256": "d27ff9631590a54d353d92f473a3f939f8be46c98d8713852697177939b20b71",
+      "bytes": 5622
+    },
+    {
+      "path": "simulator/fugue/runtime.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/runtime.py",
+      "sha256": "bd30844f3c88c1b258c80e317cf8cb66c0385ae3ca6b6e0fbe37ddbce70c0d9d",
+      "bytes": 2034
+    },
+    {
+      "path": "simulator/fugue/kvchime.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/kvchime.py",
+      "sha256": "d56bd4b321d01bda8327bd4f8615395cebe417dda75639eb6c7e6bb214a01c6f",
+      "bytes": 20993
+    },
+    {
+      "path": "simulator/fugue/kvchime_model.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/kvchime_model.py",
+      "sha256": "6f648b520521665cde38ac29b3a0461c422a62e6cd62acbd2f514a95642cbf57",
+      "bytes": 7862
+    },
+    {
+      "path": "simulator/fugue/kvchime_traces.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/kvchime_traces.py",
+      "sha256": "1030a0e4878e2ce905273d603af79b0504a74de1b271ac807916ceb0fafdef56",
+      "bytes": 11418
+    },
+    {
+      "path": "simulator/fugue/kvchime_selector.py",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/kvchime_selector.py",
+      "sha256": "8e05eec1754eff207f6ee7bc5676700179b69a5031c16674820544df9bfd06c3",
+      "bytes": 1661
+    },
+    {
+      "path": "simulator/fugue/official-gqa-geometry.json",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/official-gqa-geometry.json",
+      "sha256": "d72bc39b4d460bea271e5c438b7d61a6a4721355c680d2578f797fb6dc45a9f1",
+      "bytes": 1939
+    },
+    {
+      "path": "artifact/request/calibration.json",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/selector-model/calibration.json",
+      "sha256": "1e95e4b822b23a7090071c2e2429c4d1d7b3bd15822bef82d13837285a795e48",
+      "bytes": 228470
+    },
+    {
+      "path": "artifact/request/point-policy.json",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/selector-model-v2/policy.json",
+      "sha256": "cce7a3176e8b73d2497efcc637ca7fb1c45e00956298ff0d3e4ffaec89b92f2f",
+      "bytes": 1267
+    },
+    {
+      "path": "artifact/request/repair-policy.json",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/repair-0908/correction-policy.json",
+      "sha256": "d7c0d28687bfe0b62d146e9ad864dfc76b3f359c31885fe1d9111b316d0d1694",
+      "bytes": 5857
+    },
+    {
+      "path": "artifact/request/hbm-policy.json",
+      "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/hbm-2k-batch/policy.json",
+      "sha256": "5b4df86dd5813a73d331eb756e6a5650b17b24e34451244b174850fd26e12ef3",
+      "bytes": 8173
+    },
+    {
+      "path": "artifact/request/models.json",
+      "sha256": "6fc753d6e326d18c85be79c443949e8e063ea609f1c57247150dccacb8d26db8",
+      "bytes": 5348,
+      "derivation": "Final-scope projection of frozen HBM plan; timing geometry and budgets copied exactly."
+    },
+    {
+      "path": "artifact/request/timing-qualification.json",
+      "sha256": "0d47377f790dbcca0e59cfccf57a7af910c8dba2c79eecd29c54af98b3132ab9",
+      "bytes": 38849,
+      "derivation": "Selected original validity flags and approved timing qualification."
+    },
+    {
+      "path": "ae/request.py",
+      "source": "/tmp/kvchime-ae-stage/request-work/request.py",
+      "sha256": "008b9d9744327852d6da979c4664758e5a05b52b8bad679ebbf3cead0e03169a",
+      "bytes": 18594
+    }
+  ],
+  "original_runners": {
+    "hbm_2k_run.py": "ca029242f5647e6cfcfdd530dc44dd221b09c4c66d0719b76d608d1e72915fb0",
+    "ltm_run.py": "e5c1dda34aec6ccea7c67c8e549ec83041a24cb21c71015bddb89c6edf8f08dc"
+  },
+  "original_native_lock_sha256": "d57a997727f673b98745733c152a0f059238927334b55f4af581b42e4ea61bdd"
+}

@@ -1,5 +1,0 @@
-variant,request_id,phase,layer,decode_step,shared_remote_GiB,private_remote_GiB,GPU_KV_GiB,simultaneous_total_GiB
-F1,Fugue-asplos-request-02,decode,all,9,3.29833984375,0.0,1.69287109375,4.9912109375
-F2,Fugue-asplos-request-02,prefill,31,0,3.29833984375,1.6884765625,0.052764892578125,5.039581298828125
-F3,Fugue-asplos-request-02,prefill,31,0,3.29833984375,0.38201904296875,0.052764892578125,3.733123779296875
-F4,Fugue-asplos-request-02,prefill,31,0,3.29833984375,0.38201904296875,0.00921630859375,3.6895751953125

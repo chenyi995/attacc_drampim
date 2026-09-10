@@ -1,0 +1,13 @@
+{
+  "schema": "command-aware-point-selector-v2",
+  "status": "frozen",
+  "decision_rule": "point-estimate-argmin",
+  "calibration_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/selector-model/calibration.json",
+  "calibration_sha256": "1e95e4b822b23a7090071c2e2429c4d1d7b3bd15822bef82d13837285a795e48",
+  "wrapper_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/outline/analysis/selector_point_model.py",
+  "wrapper_sha256": "7cf379fc7f032b61f542e6c68dc6ba1900cf68f020a1f0d4094dd2dea1fc2f41",
+  "base_prediction_sha256": "48c60bd16d4f90fc35e1d28b9f1e75ff8308ce1290a57f867afd3573c183be47",
+  "development_disclosure": "V1 improved scan prediction but its train-maximum guard increased wrong GPU choices and aggregate regret on already observed legacy regression cases. V2 removes that global multiplier from device choice because a one-sided empirical scan bound is not an expected complete-service estimate or a probability guarantee. No feature or coefficient is changed. Legacy regression is retrospective; this new service holdout is evaluated once without further adjustment.",
+  "guard_scope": "Retained as an error diagnostic only.",
+  "write_policy": "Conservative full write in prediction; actual declared first-private scan window in labels."
+}

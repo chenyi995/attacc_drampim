@@ -1,0 +1,179 @@
+{
+  "model_order": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "OPT-66B",
+    "MT-76B"
+  ],
+  "workload_order": [
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+    "KVChime-CB-musique-0075",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+    "KVChime-LongMemEval-oracle-d851d5ba"
+  ],
+  "workload_display": [
+    "Document 8k",
+    "Readers 4",
+    "MuSiQue source request",
+    "Long context 32k",
+    "LTM recall"
+  ],
+  "variant_order": [
+    "F0",
+    "F1",
+    "F2",
+    "F4"
+  ],
+  "variant_names": [
+    "Full GPU",
+    "GPU reuse",
+    "Materialized PIM",
+    "KVChime"
+  ],
+  "drawing_reference": "ref/drawing1.png",
+  "label": "request-e2e",
+  "width_inches": 7.0,
+  "fonts_pt": {
+    "title": 7.5,
+    "label": 7.5,
+    "legend": 7.5,
+    "note": 7.5
+  },
+  "aggregation": "None: each bar is one model-workload-method result",
+  "kind": "e2e-throughput",
+  "height_inches": 1.75,
+  "metric": "Full GPU E2E latency / method E2E latency",
+  "bar_colors": [
+    "#BFBFBF",
+    "#FF9200",
+    "#7E54AA",
+    "#238CC1"
+  ],
+  "bar_hatches": [
+    "",
+    "",
+    "//",
+    ""
+  ],
+  "bar_width_group_units": 0.26,
+  "margins": {
+    "left": 0.06,
+    "right": 0.992
+  },
+  "unresolved_display": "Keep source values and flags in CSV; omit pending excess-PV timing bars from formal results without special markers",
+  "font_limit_body_pt": 10.0,
+  "font_limit_margin_pt": 0.5,
+  "xlabel": "",
+  "outlier_policy": {
+    "method": "Cap only isolated upper-tail values, retaining raw ratios and marking each interrupted bar with a zigzag and its actual ratio.",
+    "current_decision": "No sparse outlier among the displayed F1/F2/F4 bars; use true bar heights."
+  },
+  "display_layout": "five-workload-panels-one-row",
+  "ylabel": "E2E throughput (×)",
+  "panel_labels": [
+    "(a)",
+    "(b)",
+    "(c)",
+    "(d)",
+    "(e)"
+  ],
+  "panel_names": [
+    "Document 8k",
+    "Readers 4",
+    "MuSiQue\nsource request",
+    "Long context 32k",
+    "LTM recall"
+  ],
+  "ylim": [
+    15,
+    30,
+    4,
+    60,
+    35
+  ],
+  "yticks": [
+    [
+      0,
+      5,
+      10,
+      15
+    ],
+    [
+      0,
+      10,
+      20,
+      30
+    ],
+    [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    [
+      0,
+      20,
+      40,
+      60
+    ],
+    [
+      0,
+      10,
+      20,
+      30
+    ]
+  ],
+  "display_variant_order": [
+    "F1",
+    "F2",
+    "F4"
+  ],
+  "baseline_variant": "F0",
+  "panel_grid": {
+    "columns": 5,
+    "column_gap": 0.028,
+    "row_top": [
+      0.875
+    ],
+    "row_bottom": [
+      0.49
+    ],
+    "row_label_y": [
+      0.013
+    ]
+  },
+  "x_limits": [
+    -0.5,
+    4.5
+  ],
+  "category_margin_slots": {
+    "left": 0,
+    "right": 0
+  },
+  "shared_y_label_x": 0.012,
+  "shared_y_label_y": 0.68,
+  "model_groups": [
+    [
+      "LLAMA-7B",
+      "GPT-13B",
+      "LLAMA-65B",
+      "OPT-66B",
+      "MT-76B"
+    ]
+  ],
+  "legend_anchor": [
+    0.52,
+    0.997
+  ],
+  "legend_columns": 3,
+  "horizontal_line_bounds": [
+    -0.39,
+    4.39
+  ],
+  "model_label_rotation_degrees": 90,
+  "model_label_format": "single-line",
+  "font_family": "DejaVu Sans"
+}

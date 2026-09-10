@@ -1,0 +1,2 @@
+frequency_ghz,exact_frequency_ghz,power_interval_tck,effective_interval_tck,effective_query_mac_per_ns,power_budget_mw_per_bank,modeled_power_mw_per_bank
+1.3003901170351104,1000/769,8,8,1.3003901170351104,31.64906805374946,29.68634590377113

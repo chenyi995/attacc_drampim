@@ -1,0 +1,739 @@
+{
+  "schema": "kvchime-paper-native-model-display-v1",
+  "model_order": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "OPT-66B",
+    "MT-76B"
+  ],
+  "model_display": {
+    "LLAMA-7B": "Llama 7B",
+    "GPT-13B": "GPT 13B",
+    "LLAMA-65B": "Llama 65B",
+    "OPT-66B": "OPT 66B",
+    "MT-76B": "MT 76B"
+  },
+  "workload_order": [
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+    "KVChime-CB-musique-0075",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+    "KVChime-LongMemEval-oracle-d851d5ba"
+  ],
+  "workload_display": {
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026": "Document 8k",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028": "Readers 4",
+    "KVChime-CB-musique-0075": "MuSiQue source request",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034": "Long context 32k",
+    "KVChime-LongMemEval-oracle-d851d5ba": "LTM recall"
+  },
+  "model_parameters": [
+    {
+      "name": "LLAMA-7B",
+      "source_kind": "native",
+      "layers": 32,
+      "query_heads": 32,
+      "kv_heads": 32,
+      "GPUs": 1,
+      "remote_PIM_HBM_stacks": 5,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "Llama 7B"
+    },
+    {
+      "name": "GPT-13B",
+      "source_kind": "native",
+      "layers": 40,
+      "query_heads": 40,
+      "kv_heads": 40,
+      "GPUs": 1,
+      "remote_PIM_HBM_stacks": 5,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "GPT 13B"
+    },
+    {
+      "name": "LLAMA-65B",
+      "source_kind": "native",
+      "layers": 80,
+      "query_heads": 64,
+      "kv_heads": 64,
+      "GPUs": 4,
+      "remote_PIM_HBM_stacks": 20,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "Llama 65B"
+    },
+    {
+      "name": "OPT-66B",
+      "source_kind": "native",
+      "layers": 64,
+      "query_heads": 72,
+      "kv_heads": 72,
+      "GPUs": 3,
+      "remote_PIM_HBM_stacks": 15,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "OPT 66B"
+    },
+    {
+      "name": "MT-76B",
+      "source_kind": "native",
+      "layers": 60,
+      "query_heads": 80,
+      "kv_heads": 80,
+      "GPUs": 4,
+      "remote_PIM_HBM_stacks": 20,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "MT 76B"
+    }
+  ],
+  "workload_parameters": [
+    {
+      "id": "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+      "display_label": "Document 8k",
+      "family": "EPIC",
+      "dataset": "long-context-chunk2048-control",
+      "n": 8026,
+      "q": 58,
+      "b": 1,
+      "output": 16
+    },
+    {
+      "id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+      "display_label": "Readers 4",
+      "family": "EPIC",
+      "dataset": "long-context-chunk2048-control",
+      "n": 8028,
+      "q": 60,
+      "b": 4,
+      "output": 16
+    },
+    {
+      "id": "KVChime-CB-musique-0075",
+      "display_label": "MuSiQue source request",
+      "family": "CacheBlend",
+      "dataset": "musique",
+      "n": 8082,
+      "q": 1341,
+      "b": 1,
+      "output": 32
+    },
+    {
+      "id": "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+      "display_label": "Long context 32k",
+      "family": "EPIC",
+      "dataset": "long-context-chunk2048-control",
+      "n": 32034,
+      "q": 188,
+      "b": 2,
+      "output": 16
+    },
+    {
+      "id": "KVChime-LongMemEval-oracle-d851d5ba",
+      "display_label": "LTM recall",
+      "family": "LongMemEval",
+      "dataset": "oracle-evidence",
+      "n": 15832,
+      "q": 144,
+      "b": 1,
+      "output": 16
+    }
+  ],
+  "omitted_model_order": [
+    "GPT-175B",
+    "GPT-89B",
+    "MT-146B",
+    "MT-310B",
+    "MT-530B",
+    "MT-1008B",
+    "LLAMA3.1-8B",
+    "LLAMA3.1-70B"
+  ],
+  "selection_reason": "User-approved five-model display, in the fixed order Llama 7B, GPT 13B, Llama 65B, OPT 66B, and MT 76B, across the same five common workloads. The selection preserves the global maxima of the displayed contribution comparisons while favoring models with visible benefits; it is a selected showcase, not an unbiased model-family average. All thirteen-model and eight-workload evidence, omitted models, and source validity fields remain unchanged in the publication and archived artifacts.",
+  "evidence_scope": {
+    "model_count": 13,
+    "workload_count": 8,
+    "case_count": 104,
+    "summary_rows": 520,
+    "decision_count": 130
+  },
+  "display_scope": {
+    "model_count": 5,
+    "workload_count": 5,
+    "case_count": 25,
+    "summary_rows": 125,
+    "decision_count": 35
+  },
+  "source": {
+    "path": "archive/ltm-memory/combined/publication/bundle.json",
+    "sha256": "a284503299d052968e91ca0b0a538b984d723778c70020e2113d394372490f78"
+  },
+  "generator": {
+    "path": "docs/analysis/paper_native_model_scope.py",
+    "sha256": "2c97fb674c1c590d9ccbfe5dfeae8c32efa9ad1dcb50718c1b81616887d9e9a0"
+  },
+  "validity_policy": "Preserve every original invalid_fields and invalid_reasons flag. Readers 4 / GPT-13B / F2 timing is accepted through equal saved PV counts and user-confirmed repeated-address equivalence. Readers 4 / OPT-66B and LLAMA-7B / F2 original timing is accepted as a controlled approximation: the completed isolated PV tail-index control covers every decode step and meets the user-authorized error threshold. Only reviewed TBT, E2E and scan timing fields are qualified; energy and numerical attention are not inferred.",
+  "validity_reviews": {
+    "evidence": {
+      "path": "docs/session/local/readers4-pv-check.json",
+      "sha256": "0b539316a9e348f880c740034b4076079b9aa6e8172dba75d3cd5e0d5f559969"
+    },
+    "source_fields_unchanged": true,
+    "generator_runs_no_simulation": true,
+    "completed_authorized_control": {
+      "evidence": {
+        "path": "archive/readers4-pv-approximation/results.json",
+        "sha256": "18563d4e55913fd84d30c958a4401754dedbd66afe95e82da51af5bcf90b01f4"
+      },
+      "threshold_percent": 3.0,
+      "error_denominator": "controlled timing",
+      "unique_profiles": 30,
+      "decode_step_references": 45,
+      "data_directory": "archive/readers4-pv-approximation",
+      "source_generator_sha256": "3d532527c684c3ae14cc85a7726773b2e6896a962d6921dd1bb4188d155f573b",
+      "controlled_generator_sha256": "f9a8ec602bac026d156388cb37eb99b9399cf70c196fde0cfa09ce2339532507",
+      "binary_sha256": "539a758333ddfe395e38348566a25787c67087f80ee7bae72725c5af35c17163",
+      "library_sha256": "a7ad64ba312bae1a37e496a2eaa1055b9c12eface3edc00050a9ed2af99f5d1e",
+      "change": "Only Head1 Context cmd_context_mac[i] and cmd_context_mvsb[i] become i+1; all other source bytes unchanged.",
+      "unchanged": "QK, wave stride, active-channel generation, barriers, softmax, transfers, refresh, timings, memory mapping, model and request configuration.",
+      "address_scope": "User accepts equivalent address identity for this timing approximation; no tensor/numerical validation is claimed."
+    },
+    "records": [
+      {
+        "model": "GPT-13B",
+        "workload_id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+        "variant": "F2",
+        "status": "user-confirmed-address-equivalence",
+        "source_invalid_fields": [
+          "TBT_ms",
+          "E2E_ms",
+          "TBT_energy_mJ",
+          "E2E_energy_mJ",
+          "decode_scan_ms_per_token"
+        ],
+        "source_invalid_reasons": [
+          "Inherited native dense multiwave Context-index/address behavior; source preserved."
+        ],
+        "accepted_fields": [
+          "TBT_ms",
+          "E2E_ms",
+          "decode_scan_ms_per_token"
+        ],
+        "reason": "Saved PV counts match at every decode step; the user explicitly confirmed the timing equivalence of equal-count repeated-address access. This is a timing assumption, not numerical-attention validation.",
+        "PV_extra_range": [
+          0,
+          0
+        ],
+        "traces_counted": 15,
+        "source_case": {
+          "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/hbm-2k-batch/runs/GPT-13B/cases/KVChime-EPIC-chunk2048-target8000-B4-N8028.json",
+          "sha256": "1ed5e4aa8d9ac042214da07c9dc51d929e37603eb35509f394f6754f92bd566f"
+        },
+        "row_source": {
+          "path": "archive/ltm-memory/combined/publication/bundle.json",
+          "selector": {
+            "model": "GPT-13B",
+            "workload_id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+            "variant": "F2"
+          }
+        }
+      },
+      {
+        "model": "LLAMA-7B",
+        "workload_id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+        "variant": "F2",
+        "status": "controlled-native-timing-approximation-within-user-threshold",
+        "source_invalid_fields": [
+          "TBT_ms",
+          "E2E_ms",
+          "TBT_energy_mJ",
+          "E2E_energy_mJ",
+          "decode_scan_ms_per_token"
+        ],
+        "source_invalid_reasons": [
+          "Inherited native dense multiwave Context-index/address behavior; source preserved."
+        ],
+        "accepted_fields": [
+          "TBT_ms",
+          "E2E_ms",
+          "decode_scan_ms_per_token"
+        ],
+        "reason": "The isolated PV tail-index control covers every configured decode step and finds both complete TBT and E2E timing differences below the user-authorized threshold. The original timings are accepted as a controlled approximation; a blanket timing exclusion was stronger than the measured effect. Original source flags and values remain historical. This does not validate energy or numerical attention.",
+        "PV_extra_range": [
+          6024,
+          6036
+        ],
+        "traces_counted": 15,
+        "source_case": {
+          "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/hbm-2k-batch/runs/LLAMA-7B/cases/KVChime-EPIC-chunk2048-target8000-B4-N8028.json",
+          "sha256": "c11c87f0813dfc44bb348b02aa7f0094abd18531800a05a122b6345d513f9f6c"
+        },
+        "row_source": {
+          "path": "archive/ltm-memory/combined/publication/bundle.json",
+          "selector": {
+            "model": "LLAMA-7B",
+            "workload_id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+            "variant": "F2"
+          }
+        },
+        "control_evidence": {
+          "path": "archive/readers4-pv-approximation/results.json",
+          "sha256": "18563d4e55913fd84d30c958a4401754dedbd66afe95e82da51af5bcf90b01f4"
+        },
+        "error_definition": "100 * abs(original - controlled) / controlled",
+        "error_denominator": "controlled timing",
+        "threshold_percent": 3.0,
+        "original_times_ms": {
+          "TBT_ms": 6.533243633070398,
+          "E2E_ms": 225.95378766518854,
+          "decode_scan_ms_per_token": 0.7979537728000002
+        },
+        "controlled_times_ms": {
+          "TBT_ms": 6.534227953070398,
+          "E2E_ms": 225.96855246518854,
+          "decode_scan_ms_per_token": 0.7989380928000002
+        },
+        "absolute_error_percent_of_controlled": {
+          "TBT_ms": 0.015064059703305375,
+          "E2E_ms": 0.006534006541582496,
+          "decode_scan_ms_per_token": 0.12320353840561392
+        },
+        "max_profile_scan_error_percent_of_controlled": 0.12330836338973583,
+        "decode_steps": 15,
+        "covered_decode_steps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "profiles": [
+          "scan-D128-B2-N8029-H26-Q1",
+          "scan-D128-B2-N8030-H26-Q1",
+          "scan-D128-B2-N8031-H26-Q1",
+          "scan-D128-B2-N8032-H26-Q1",
+          "scan-D128-B2-N8033-H26-Q1",
+          "scan-D128-B2-N8034-H26-Q1",
+          "scan-D128-B2-N8035-H26-Q1",
+          "scan-D128-B2-N8036-H26-Q1",
+          "scan-D128-B2-N8037-H26-Q1",
+          "scan-D128-B2-N8038-H26-Q1",
+          "scan-D128-B2-N8039-H26-Q1",
+          "scan-D128-B2-N8040-H26-Q1",
+          "scan-D128-B2-N8041-H26-Q1",
+          "scan-D128-B2-N8042-H26-Q1",
+          "scan-D128-B2-N8043-H26-Q1"
+        ],
+        "profile_consumers": {
+          "scan-D128-B2-N8029-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 1
+            }
+          ],
+          "scan-D128-B2-N8030-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 2
+            }
+          ],
+          "scan-D128-B2-N8031-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 3
+            }
+          ],
+          "scan-D128-B2-N8032-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 4
+            }
+          ],
+          "scan-D128-B2-N8033-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 5
+            }
+          ],
+          "scan-D128-B2-N8034-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 6
+            }
+          ],
+          "scan-D128-B2-N8035-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 7
+            }
+          ],
+          "scan-D128-B2-N8036-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 8
+            }
+          ],
+          "scan-D128-B2-N8037-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 9
+            }
+          ],
+          "scan-D128-B2-N8038-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 10
+            }
+          ],
+          "scan-D128-B2-N8039-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 11
+            }
+          ],
+          "scan-D128-B2-N8040-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 12
+            }
+          ],
+          "scan-D128-B2-N8041-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 13
+            }
+          ],
+          "scan-D128-B2-N8042-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 14
+            }
+          ],
+          "scan-D128-B2-N8043-H26-Q1": [
+            {
+              "model": "LLAMA-7B",
+              "step": 15
+            }
+          ]
+        },
+        "propagation": "F2 attention service adds scan+softmax+link once per layer. Only scan changed; common operators, softmax, link, TTFT and capacity are unchanged. No batch/TP/HBM-count multiplier on latency.",
+        "experiment_directory": "archive/readers4-pv-approximation",
+        "profile_data_directories": {
+          "scan-D128-B2-N8029-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8029-H26-Q1",
+          "scan-D128-B2-N8030-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8030-H26-Q1",
+          "scan-D128-B2-N8031-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8031-H26-Q1",
+          "scan-D128-B2-N8032-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8032-H26-Q1",
+          "scan-D128-B2-N8033-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8033-H26-Q1",
+          "scan-D128-B2-N8034-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8034-H26-Q1",
+          "scan-D128-B2-N8035-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8035-H26-Q1",
+          "scan-D128-B2-N8036-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8036-H26-Q1",
+          "scan-D128-B2-N8037-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8037-H26-Q1",
+          "scan-D128-B2-N8038-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8038-H26-Q1",
+          "scan-D128-B2-N8039-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8039-H26-Q1",
+          "scan-D128-B2-N8040-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8040-H26-Q1",
+          "scan-D128-B2-N8041-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8041-H26-Q1",
+          "scan-D128-B2-N8042-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8042-H26-Q1",
+          "scan-D128-B2-N8043-H26-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8043-H26-Q1"
+        }
+      },
+      {
+        "model": "OPT-66B",
+        "workload_id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+        "variant": "F2",
+        "status": "controlled-native-timing-approximation-within-user-threshold",
+        "source_invalid_fields": [
+          "TBT_ms",
+          "E2E_ms",
+          "TBT_energy_mJ",
+          "E2E_energy_mJ",
+          "decode_scan_ms_per_token"
+        ],
+        "source_invalid_reasons": [
+          "Inherited native dense multiwave Context-index/address behavior; source preserved."
+        ],
+        "accepted_fields": [
+          "TBT_ms",
+          "E2E_ms",
+          "decode_scan_ms_per_token"
+        ],
+        "reason": "The isolated PV tail-index control covers every configured decode step and finds both complete TBT and E2E timing differences below the user-authorized threshold. The original timings are accepted as a controlled approximation; a blanket timing exclusion was stronger than the measured effect. Original source flags and values remain historical. This does not validate energy or numerical attention.",
+        "PV_extra_range": [
+          12048,
+          12072
+        ],
+        "traces_counted": 15,
+        "source_case": {
+          "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/hbm-2k-batch/runs/OPT-66B/cases/KVChime-EPIC-chunk2048-target8000-B4-N8028.json",
+          "sha256": "3c432535064c94194413efec3c9083364652c6cfc4600316d337b8c99c54c6b4"
+        },
+        "row_source": {
+          "path": "archive/ltm-memory/combined/publication/bundle.json",
+          "selector": {
+            "model": "OPT-66B",
+            "workload_id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+            "variant": "F2"
+          }
+        },
+        "control_evidence": {
+          "path": "archive/readers4-pv-approximation/results.json",
+          "sha256": "18563d4e55913fd84d30c958a4401754dedbd66afe95e82da51af5bcf90b01f4"
+        },
+        "error_definition": "100 * abs(original - controlled) / controlled",
+        "error_denominator": "controlled timing",
+        "threshold_percent": 3.0,
+        "original_times_ms": {
+          "TBT_ms": 21.917518639678963,
+          "E2E_ms": 551.3097939426498,
+          "decode_scan_ms_per_token": 1.5959075456000005
+        },
+        "controlled_times_ms": {
+          "TBT_ms": 21.919487279678968,
+          "E2E_ms": 551.3393235426498,
+          "decode_scan_ms_per_token": 1.5978761856000003
+        },
+        "absolute_error_percent_of_controlled": {
+          "TBT_ms": 0.00898123197356819,
+          "E2E_ms": 0.00535597566491408,
+          "decode_scan_ms_per_token": 0.12320353840561392
+        },
+        "max_profile_scan_error_percent_of_controlled": 0.12330836338973583,
+        "decode_steps": 15,
+        "covered_decode_steps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "profiles": [
+          "scan-D128-B2-N8029-H20-Q1",
+          "scan-D128-B2-N8030-H20-Q1",
+          "scan-D128-B2-N8031-H20-Q1",
+          "scan-D128-B2-N8032-H20-Q1",
+          "scan-D128-B2-N8033-H20-Q1",
+          "scan-D128-B2-N8034-H20-Q1",
+          "scan-D128-B2-N8035-H20-Q1",
+          "scan-D128-B2-N8036-H20-Q1",
+          "scan-D128-B2-N8037-H20-Q1",
+          "scan-D128-B2-N8038-H20-Q1",
+          "scan-D128-B2-N8039-H20-Q1",
+          "scan-D128-B2-N8040-H20-Q1",
+          "scan-D128-B2-N8041-H20-Q1",
+          "scan-D128-B2-N8042-H20-Q1",
+          "scan-D128-B2-N8043-H20-Q1"
+        ],
+        "profile_consumers": {
+          "scan-D128-B2-N8029-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 1
+            },
+            {
+              "model": "OPT-66B",
+              "step": 1
+            }
+          ],
+          "scan-D128-B2-N8030-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 2
+            },
+            {
+              "model": "OPT-66B",
+              "step": 2
+            }
+          ],
+          "scan-D128-B2-N8031-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 3
+            },
+            {
+              "model": "OPT-66B",
+              "step": 3
+            }
+          ],
+          "scan-D128-B2-N8032-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 4
+            },
+            {
+              "model": "OPT-66B",
+              "step": 4
+            }
+          ],
+          "scan-D128-B2-N8033-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 5
+            },
+            {
+              "model": "OPT-66B",
+              "step": 5
+            }
+          ],
+          "scan-D128-B2-N8034-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 6
+            },
+            {
+              "model": "OPT-66B",
+              "step": 6
+            }
+          ],
+          "scan-D128-B2-N8035-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 7
+            },
+            {
+              "model": "OPT-66B",
+              "step": 7
+            }
+          ],
+          "scan-D128-B2-N8036-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 8
+            },
+            {
+              "model": "OPT-66B",
+              "step": 8
+            }
+          ],
+          "scan-D128-B2-N8037-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 9
+            },
+            {
+              "model": "OPT-66B",
+              "step": 9
+            }
+          ],
+          "scan-D128-B2-N8038-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 10
+            },
+            {
+              "model": "OPT-66B",
+              "step": 10
+            }
+          ],
+          "scan-D128-B2-N8039-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 11
+            },
+            {
+              "model": "OPT-66B",
+              "step": 11
+            }
+          ],
+          "scan-D128-B2-N8040-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 12
+            },
+            {
+              "model": "OPT-66B",
+              "step": 12
+            }
+          ],
+          "scan-D128-B2-N8041-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 13
+            },
+            {
+              "model": "OPT-66B",
+              "step": 13
+            }
+          ],
+          "scan-D128-B2-N8042-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 14
+            },
+            {
+              "model": "OPT-66B",
+              "step": 14
+            }
+          ],
+          "scan-D128-B2-N8043-H20-Q1": [
+            {
+              "model": "GPT-89B",
+              "step": 15
+            },
+            {
+              "model": "OPT-66B",
+              "step": 15
+            }
+          ]
+        },
+        "propagation": "F2 attention service adds scan+softmax+link once per layer. Only scan changed; common operators, softmax, link, TTFT and capacity are unchanged. No batch/TP/HBM-count multiplier on latency.",
+        "experiment_directory": "archive/readers4-pv-approximation",
+        "profile_data_directories": {
+          "scan-D128-B2-N8029-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8029-H20-Q1",
+          "scan-D128-B2-N8030-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8030-H20-Q1",
+          "scan-D128-B2-N8031-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8031-H20-Q1",
+          "scan-D128-B2-N8032-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8032-H20-Q1",
+          "scan-D128-B2-N8033-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8033-H20-Q1",
+          "scan-D128-B2-N8034-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8034-H20-Q1",
+          "scan-D128-B2-N8035-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8035-H20-Q1",
+          "scan-D128-B2-N8036-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8036-H20-Q1",
+          "scan-D128-B2-N8037-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8037-H20-Q1",
+          "scan-D128-B2-N8038-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8038-H20-Q1",
+          "scan-D128-B2-N8039-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8039-H20-Q1",
+          "scan-D128-B2-N8040-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8040-H20-Q1",
+          "scan-D128-B2-N8041-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8041-H20-Q1",
+          "scan-D128-B2-N8042-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8042-H20-Q1",
+          "scan-D128-B2-N8043-H20-Q1": "archive/readers4-pv-approximation/profiles/scan-D128-B2-N8043-H20-Q1"
+        }
+      }
+    ]
+  },
+  "no_new_experiments": true,
+  "original_values_unchanged": true
+}

@@ -1,0 +1,166 @@
+{
+  "model_order": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "OPT-66B",
+    "MT-76B"
+  ],
+  "model_display": {
+    "LLAMA-7B": "Llama 7B",
+    "GPT-13B": "GPT 13B",
+    "LLAMA-65B": "Llama 65B",
+    "OPT-66B": "OPT 66B",
+    "MT-76B": "MT 76B"
+  },
+  "model_parameters": [
+    {
+      "name": "LLAMA-7B",
+      "source_kind": "native",
+      "layers": 32,
+      "query_heads": 32,
+      "kv_heads": 32,
+      "GPUs": 1,
+      "remote_PIM_HBM_stacks": 5,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "Llama 7B"
+    },
+    {
+      "name": "GPT-13B",
+      "source_kind": "native",
+      "layers": 40,
+      "query_heads": 40,
+      "kv_heads": 40,
+      "GPUs": 1,
+      "remote_PIM_HBM_stacks": 5,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "GPT 13B"
+    },
+    {
+      "name": "LLAMA-65B",
+      "source_kind": "native",
+      "layers": 80,
+      "query_heads": 64,
+      "kv_heads": 64,
+      "GPUs": 4,
+      "remote_PIM_HBM_stacks": 20,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "Llama 65B"
+    },
+    {
+      "name": "OPT-66B",
+      "source_kind": "native",
+      "layers": 64,
+      "query_heads": 72,
+      "kv_heads": 72,
+      "GPUs": 3,
+      "remote_PIM_HBM_stacks": 15,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "OPT 66B"
+    },
+    {
+      "name": "MT-76B",
+      "source_kind": "native",
+      "layers": 60,
+      "query_heads": 80,
+      "kv_heads": 80,
+      "GPUs": 4,
+      "remote_PIM_HBM_stacks": 20,
+      "head_dimension": 128,
+      "resident_queries": 8,
+      "query_buffer_bytes": 512,
+      "query_slice_bytes_per_query": 64,
+      "gqa_size": 1,
+      "display": "MT 76B"
+    }
+  ],
+  "workload_order": [
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+    "KVChime-CB-musique-0075",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+    "KVChime-LongMemEval-oracle-d851d5ba"
+  ],
+  "workload_display": {
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026": "Document 8k",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028": "Readers 4",
+    "KVChime-CB-musique-0075": "MuSiQue source request",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034": "Long context 32k",
+    "KVChime-LongMemEval-oracle-d851d5ba": "LTM recall"
+  },
+  "workload_parameters": [
+    {
+      "id": "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+      "display_label": "Document 8k",
+      "family": "EPIC",
+      "dataset": "long-context-chunk2048-control",
+      "n": 8026,
+      "q": 58,
+      "b": 1,
+      "output": 16
+    },
+    {
+      "id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+      "display_label": "Readers 4",
+      "family": "EPIC",
+      "dataset": "long-context-chunk2048-control",
+      "n": 8028,
+      "q": 60,
+      "b": 4,
+      "output": 16
+    },
+    {
+      "id": "KVChime-CB-musique-0075",
+      "display_label": "MuSiQue source request",
+      "family": "CacheBlend",
+      "dataset": "musique",
+      "n": 8082,
+      "q": 1341,
+      "b": 1,
+      "output": 32
+    },
+    {
+      "id": "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+      "display_label": "Long context 32k",
+      "family": "EPIC",
+      "dataset": "long-context-chunk2048-control",
+      "n": 32034,
+      "q": 188,
+      "b": 2,
+      "output": 16
+    },
+    {
+      "id": "KVChime-LongMemEval-oracle-d851d5ba",
+      "display_label": "LTM recall",
+      "family": "LongMemEval",
+      "dataset": "oracle-evidence",
+      "n": 15832,
+      "q": 144,
+      "b": 1,
+      "output": 16
+    }
+  ],
+  "selection_reason": "User-approved five-model display, in the fixed order Llama 7B, GPT 13B, Llama 65B, OPT 66B, and MT 76B, across the same five common workloads. The selection preserves the global maxima of the displayed contribution comparisons while favoring models with visible benefits; it is a selected showcase, not an unbiased model-family average. All thirteen-model and eight-workload evidence, omitted models, and source validity fields remain unchanged in the publication and archived artifacts.",
+  "schema": "kvchime-ae-final-input-scope-v1",
+  "source": {
+    "path": "paper/fig/reproduce/paper-scope.json",
+    "sha256": "5d78eb07f03f2d2605f338a42365850bd4e2fb602c423acd58f11aa37403b369",
+    "size_bytes": 25814
+  }
+}

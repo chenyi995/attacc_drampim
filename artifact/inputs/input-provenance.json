@@ -1,0 +1,282 @@
+{
+  "schema": "kvchime-ae-input-provenance-v1",
+  "source_files": [
+    {
+      "path": "paper/archive/hbm-2k-batch/inputs-execution/selected.json",
+      "sha256": "11507f85e375d4ac49705fa53b062b044f05d0f87f0fc22b6f532dbf8abc7761",
+      "size_bytes": 82153
+    },
+    {
+      "path": "paper/archive/hbm-2k-batch/inputs-execution/catalog.jsonl",
+      "sha256": "2449abc4fe8abc40bb4bb94630238562b9a3854539fda1d0f957fdc14e433c74",
+      "size_bytes": 216817
+    },
+    {
+      "path": "paper/archive/ltm-memory/inputs/selected.json",
+      "sha256": "5358948817f023b5fb98afc3d06585927b182046bec92947d9f2269b9978f720",
+      "size_bytes": 7675
+    },
+    {
+      "path": "paper/archive/ltm-memory/inputs/catalog.jsonl",
+      "sha256": "5a503c85988d3677d8f80072c7b736379e0bb73aeb8a6e451a8a127589b62e3f",
+      "size_bytes": 79495
+    },
+    {
+      "path": "paper/fig/reproduce/paper-scope.json",
+      "sha256": "5d78eb07f03f2d2605f338a42365850bd4e2fb602c423acd58f11aa37403b369",
+      "size_bytes": 25814
+    }
+  ],
+  "cases": [
+    {
+      "workload_id": "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+      "source_selection": "paper/archive/hbm-2k-batch/inputs-execution/selected.json",
+      "original_case_canonical_sha256": "bb448fde06a0d9626cdca11bccf7c629d114fea1ac806aa96818f8805cff276d",
+      "packaged_case_canonical_sha256": "7f2fa78752844a95e3206c543fcd3721611c33e2739531b016ebd68fb6bd07bd",
+      "execution_fields_canonical_sha256": "e7d9d9a3c7ef6d50a46da84319225603876618cc86c18d6cbb2bae201b690f01",
+      "selected_positions_sha256": [
+        "688599313fc78296ed651384363234a46691a5c36f172c74b045d9256ca043c9"
+      ],
+      "change": "Only source-location strings inside provenance are made portable."
+    },
+    {
+      "workload_id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+      "source_selection": "paper/archive/hbm-2k-batch/inputs-execution/selected.json",
+      "original_case_canonical_sha256": "7ad50614bd06d7bb18ad92751dcfb321bb139db0ccb781a4ecfbd568aa1bdece",
+      "packaged_case_canonical_sha256": "59e0ed282e5f2e363e2d7653eac8695848722ad483e237fb20b844369ed07eb9",
+      "execution_fields_canonical_sha256": "f6efce4bf76eedbabec1be4230a2226d0b66546ffbf731342089407086bae74a",
+      "selected_positions_sha256": [
+        "ae5e8ae35928824839b34d73223fce1e3d0975eaf7515ee14e44238cf42d514e",
+        "ae5e8ae35928824839b34d73223fce1e3d0975eaf7515ee14e44238cf42d514e",
+        "ae5e8ae35928824839b34d73223fce1e3d0975eaf7515ee14e44238cf42d514e",
+        "ae5e8ae35928824839b34d73223fce1e3d0975eaf7515ee14e44238cf42d514e"
+      ],
+      "change": "Only source-location strings inside provenance are made portable."
+    },
+    {
+      "workload_id": "KVChime-CB-musique-0075",
+      "source_selection": "paper/archive/hbm-2k-batch/inputs-execution/selected.json",
+      "original_case_canonical_sha256": "d09318b7f16fd319593250774027ec5cc1f1ad17425b8587851063514a122cfd",
+      "packaged_case_canonical_sha256": "9041df3d08964a23b72202f86373ff248246d25a47a9b3521e2889e9aff38639",
+      "execution_fields_canonical_sha256": "5ed027b388e8c36fb4c293f5bd95335cdfca4894ac308b50f5617a016a6aa6a2",
+      "selected_positions_sha256": [
+        "b5b8e5f65e35041762fa163791cf463e04ac5fa6c27d44a1acfcc72883dbfb30"
+      ],
+      "change": "Only source-location strings inside provenance are made portable."
+    },
+    {
+      "workload_id": "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+      "source_selection": "paper/archive/hbm-2k-batch/inputs-execution/selected.json",
+      "original_case_canonical_sha256": "948ff1efce1870f1fd3251fcdc9df321f0018306a5a18db0d2ea45ae7d6db446",
+      "packaged_case_canonical_sha256": "cd5ecd0b259a19f2bc12fffd87c6f8852fb6aa0cd02158a8d77b4a09f98677a5",
+      "execution_fields_canonical_sha256": "2df476349f382f838287d8771c8b4f99319d2e89077121d38baef9140ccd1774",
+      "selected_positions_sha256": [
+        "07cd3dc8f6040789ab8f38c5ec12efe985d06d667b885f302f54576b9f97e692",
+        "07cd3dc8f6040789ab8f38c5ec12efe985d06d667b885f302f54576b9f97e692"
+      ],
+      "change": "Only source-location strings inside provenance are made portable."
+    },
+    {
+      "workload_id": "KVChime-LongMemEval-oracle-d851d5ba",
+      "source_selection": "paper/archive/ltm-memory/inputs/selected.json",
+      "original_case_canonical_sha256": "2376a9b6fa35f08ca4bf270744e673816bfdd21ba8497ea7639d2d7d88deb224",
+      "packaged_case_canonical_sha256": "093bee596bed3a5c6f55b8a2c08f844e6904900d2a08be85e83cc0f167db42f8",
+      "execution_fields_canonical_sha256": "421deceaaa8613366199f7cbe3be5a1b8044091194a801b30a93bf0029c619a3",
+      "selected_positions_sha256": [
+        "618afa2a4253d36acc6e4a78dbfd70ab187a5541f87b61b04c86691c4b4fd347"
+      ],
+      "change": "Only source-location strings inside provenance are made portable."
+    }
+  ],
+  "workloads": [
+    {
+      "id": "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+      "display": "Document 8k",
+      "n": 8026,
+      "q": 58,
+      "readers": 1,
+      "output_tokens": 16,
+      "retained_tokens": 7968,
+      "replacement_tokens": 48,
+      "private_input_tokens": 10,
+      "pool_tokens": 8026
+    },
+    {
+      "id": "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+      "display": "Readers 4",
+      "n": 8028,
+      "q": 60,
+      "readers": 4,
+      "output_tokens": 16,
+      "retained_tokens": 7968,
+      "replacement_tokens": 48,
+      "private_input_tokens": 12,
+      "pool_tokens": 8064
+    },
+    {
+      "id": "KVChime-CB-musique-0075",
+      "display": "MuSiQue source request",
+      "n": 8082,
+      "q": 1341,
+      "readers": 1,
+      "output_tokens": 32,
+      "retained_tokens": 6741,
+      "replacement_tokens": 1283,
+      "private_input_tokens": 58,
+      "pool_tokens": 8082
+    },
+    {
+      "id": "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+      "display": "Long context 32k",
+      "n": 32034,
+      "q": 188,
+      "readers": 2,
+      "output_tokens": 16,
+      "retained_tokens": 31846,
+      "replacement_tokens": 176,
+      "private_input_tokens": 12,
+      "pool_tokens": 32046
+    },
+    {
+      "id": "KVChime-LongMemEval-oracle-d851d5ba",
+      "display": "LTM recall",
+      "n": 15832,
+      "q": 144,
+      "readers": 1,
+      "output_tokens": 16,
+      "retained_tokens": 15688,
+      "replacement_tokens": 64,
+      "private_input_tokens": 80,
+      "pool_tokens": 15752
+    }
+  ],
+  "upstream_repositories": [
+    {
+      "name": "CacheBlend",
+      "repository": "https://github.com/YaoJiayi/CacheBlend",
+      "commit": "55ad02675939f783a38d579393527d218a7fd581",
+      "snapshot": "https://github.com/YaoJiayi/CacheBlend/tree/55ad02675939f783a38d579393527d218a7fd581"
+    },
+    {
+      "name": "epic",
+      "repository": "https://github.com/DerekHJH/epic",
+      "commit": "3204410f1723ed0f39575b4eba8c17578a1ee1a1",
+      "snapshot": "https://github.com/DerekHJH/epic/tree/3204410f1723ed0f39575b4eba8c17578a1ee1a1"
+    },
+    {
+      "name": "LongMemEval",
+      "repository": "https://github.com/xiaowu0162/LongMemEval",
+      "commit": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+      "dataset": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned",
+      "dataset_revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f"
+    }
+  ],
+  "packaged_files": [
+    {
+      "path": "selected.json",
+      "sha256": "45e758ed86ce29def11a2f3ed6094d8ffec69de2a504e37de345132aeb2a06e5",
+      "size_bytes": 63136
+    },
+    {
+      "path": "catalog.jsonl",
+      "sha256": "9b881926ecb3f793abc52533067cccf5cacdc618eeee516d3f6c075d38991e37",
+      "size_bytes": 3354
+    },
+    {
+      "path": "scope.json",
+      "sha256": "cbdcc259d8341ef50ec7370c87df18a24bb0e4b73105592cad5bc44c5bb8ab0e",
+      "size_bytes": 4709
+    },
+    {
+      "path": "source-downloads.json",
+      "sha256": "c73f2f1bbcc812315909de9dea5d046bdc429e83d990f31d9118b8761f1f9be9",
+      "size_bytes": 15124
+    }
+  ],
+  "catalog_projection": {
+    "entries": 36,
+    "columns": [
+      "chunk_id",
+      "tokens"
+    ],
+    "author_check": "Every retained object ID was checked against SHA256 of the original compact JSON token_ids array; length equals tokens.",
+    "runtime_check": "The public package verifies frozen file hashes and shape invariants; token IDs and source text are not bundled."
+  },
+  "tokenizer": {
+    "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347",
+    "size_bytes": 499723,
+    "scope": "Frozen common LLAMA SentencePiece adaptation, including the recorded per-segment BOS convention. Original download provenance is absent from inspected manifests; no download URL is invented. Not required to use the frozen simulator inputs."
+  },
+  "corpus_file_order": [
+    {
+      "path": "addiction.txt",
+      "sha256": "32b4b8f14a126a14bb7da5a25fb134601510344d9bd3456bd509c2c14609e102"
+    },
+    {
+      "path": "aord.txt",
+      "sha256": "ca1a95525193b977ca9e5b4d2523ed6f33ce10272b00fb2e83dfc4df742d7195"
+    },
+    {
+      "path": "apple.txt",
+      "sha256": "e84fd53a3792f196fd07614ee28d721af98e7425b3b092ab7f02b90fa61e5e84"
+    },
+    {
+      "path": "avg.txt",
+      "sha256": "0111c10328933b0e90d7a696cb07fa1c89aaf9c773706b28d687a2489384692b"
+    },
+    {
+      "path": "before.txt",
+      "sha256": "db4bd3fd62ba3c98eeb8822d048ac664742709d4cd6d4dc0c2f9da4af0a9a1f5"
+    },
+    {
+      "path": "bias.txt",
+      "sha256": "363e55ef481571ab75173229d237491f203d4e7a4f04837bf88bb6bd6cc51e91"
+    },
+    {
+      "path": "boss.txt",
+      "sha256": "a0b98955ffb64162048538fcc7372c5f51c06e5a11fe1b15826ae737a3d2cd44"
+    },
+    {
+      "path": "copy.txt",
+      "sha256": "15259f67aa300ccec434b955b1ea100fa23b8d16733adf140da0332c20d63125"
+    },
+    {
+      "path": "corpdev.txt",
+      "sha256": "c966a343377308ccc11b5bd7f0967f226b89a6f9708d96c709f50913890ca8b2"
+    },
+    {
+      "path": "desres.txt",
+      "sha256": "3982864276f95b1a606d76f187ce2c0450a3810b9858fd33a61af1489e1a00ae"
+    },
+    {
+      "path": "diff.txt",
+      "sha256": "281adb331d84feafaf9954aa9f38188a6e30856c19cbcf745eca43c70759952f"
+    },
+    {
+      "path": "ecw.txt",
+      "sha256": "754e542a397e82bc23b488c3600b5bdb7d285aaf774c6fbfb0e5302ca89dd1df"
+    },
+    {
+      "path": "founders.txt",
+      "sha256": "b49b61dba29889880d66fb00b52c1c37a9373ba473a61e95a0701eca80beb247"
+    },
+    {
+      "path": "foundervisa.txt",
+      "sha256": "331d5492353c6207efec65c949fe6c813909fb58f85aa606ba393d021af04d27"
+    },
+    {
+      "path": "gap.txt",
+      "sha256": "fd753f0535797ac3dff137766ed2a71adc71179bb5cfe4521822b85d8e84e7c5"
+    },
+    {
+      "path": "gba.txt",
+      "sha256": "aede19c44c7f337eed5e72d28b8a1ff040510662621ff3fbd1301d51e126a9da"
+    },
+    {
+      "path": "gh.txt",
+      "sha256": "ea1aa69c11b29b298ae5068e3b13bb6a6706c0e2276820f77ee60c2b080ee62c"
+    }
+  ],
+  "runtime_scope": "Saved shape and logical-position configuration only. No neural inference, real KV tensors, numerical top-k selection, generated answers, model-specific re-tokenization, or measured QA accuracy.",
+  "results_included": false
+}

@@ -1,0 +1,70 @@
+{
+  "extraction": "AST of llama3_1_base_models arch_args and FeedForward numerical hidden_dim statements, initialized by TransformerBlock hidden_dim expression.",
+  "models": {
+    "LLAMA3.1-70B": {
+      "dhead": 128,
+      "ff_scale": 3.5,
+      "ffn_dim": 28672,
+      "gqa_size": 8,
+      "hdim": 8192,
+      "name": "LLAMA3.1-70B",
+      "ndec": 80,
+      "num_heads": 64,
+      "num_kv_heads": 8
+    },
+    "LLAMA3.1-8B": {
+      "dhead": 128,
+      "ff_scale": 3.5,
+      "ffn_dim": 14336,
+      "gqa_size": 4,
+      "hdim": 4096,
+      "name": "LLAMA3.1-8B",
+      "ndec": 32,
+      "num_heads": 32,
+      "num_kv_heads": 8
+    }
+  },
+  "official_arch_args": {
+    "LLAMA3.1-70B": {
+      "arch_args": {
+        "dim": 8192,
+        "ffn_dim_multiplier": 1.3,
+        "multiple_of": 4096,
+        "n_heads": 64,
+        "n_kv_heads": 8,
+        "n_layers": 80,
+        "norm_eps": 1e-05,
+        "rope_theta": 500000.0,
+        "use_scaled_rope": true,
+        "vocab_size": 128256
+      },
+      "huggingface_repo": "meta-llama/Llama-3.1-70B"
+    },
+    "LLAMA3.1-8B": {
+      "arch_args": {
+        "dim": 4096,
+        "ffn_dim_multiplier": 1.3,
+        "multiple_of": 1024,
+        "n_heads": 32,
+        "n_kv_heads": 8,
+        "n_layers": 32,
+        "norm_eps": 1e-05,
+        "rope_theta": 500000.0,
+        "use_scaled_rope": true,
+        "vocab_size": 128256
+      },
+      "huggingface_repo": "meta-llama/Llama-3.1-8B"
+    }
+  },
+  "small_GQA_matches_existing_wrapper": true,
+  "sources": [
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/downloads/meta-sku-list.py",
+      "sha256": "a71a8ca23c8daf3d1daec02c13e9916c36e315c5056b56ed20b18df98d10c486"
+    },
+    {
+      "path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/downloads/meta-llama3-model.py",
+      "sha256": "ff135f051d66b03a9e32789966d2be84186a00b90cef398c05b10f7e9d2a7dc3"
+    }
+  ]
+}

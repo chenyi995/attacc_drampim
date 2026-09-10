@@ -1,5 +1,0 @@
-{
-  "axes": 1,
-  "response_metric": "E2E latency speedup over F0",
-  "input_rows": 160
-}

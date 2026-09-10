@@ -1,0 +1,112 @@
+{
+  "title": "Selective-Prefill Breakdown: From Recomputation to KV Movement",
+  "width_inches": 2.4,
+  "height_inches": 2.7,
+  "font_family": "DejaVu Sans",
+  "fonts_pt": {
+    "title": 7.5,
+    "label": 7.5,
+    "legend": 7.5,
+    "note": 7.5
+  },
+  "model": "LLAMA-7B",
+  "workload": "Readers 4",
+  "phase": "prefill",
+  "variants": [
+    "F0",
+    "F1",
+    "F4"
+  ],
+  "variant_names": [
+    "GPU w/o KV reuse",
+    "GPU w/ KV reuse",
+    "KVChime"
+  ],
+  "variant_tick_labels": [
+    "GPU w/o\nKV reuse",
+    "GPU w/\nKV reuse",
+    "KVChime"
+  ],
+  "bar_width_pt": 24,
+  "bar_gap_pt": 14,
+  "axis_inner_margin_pt": 4,
+  "axis_left_pt": 34,
+  "axis_bottom_pt": 40,
+  "axis_height_pt": 110,
+  "legend_top_fraction": 0.995,
+  "percent_label_min": 8,
+  "percent_label_min_height_pt": 7.5,
+  "capped_ylim_ms": 100,
+  "annotations": {
+    "recomputation": "KV reuse\nreduce\ncomputation",
+    "memory": "KV movement\ndominates {kv_pct:.0f}%"
+  },
+  "annotation_colors": {
+    "compute": "#238CC1",
+    "memory": "#FF9200"
+  },
+  "segments": [
+    {
+      "field": "memory_compute_overlap_ms",
+      "label": "Compute\u2013memory overlap",
+      "color": "#7E54AA",
+      "hatch": "",
+      "text_color": "white"
+    },
+    {
+      "field": "memory_only_ms",
+      "label": "Memory access",
+      "color": "#FF9200",
+      "hatch": "",
+      "text_color": "white"
+    },
+    {
+      "field": "compute_ms",
+      "label": "GPU compute",
+      "color": "#238CC1",
+      "hatch": "",
+      "text_color": "white"
+    },
+    {
+      "field": "fused_scan_ms",
+      "label": "PIM",
+      "color": "#3CAC3A",
+      "hatch": "",
+      "text_color": "white"
+    },
+    {
+      "field": "other_ms",
+      "label": "Other",
+      "color": "#BFBFBF",
+      "hatch": "",
+      "text_color": "black"
+    }
+  ],
+  "legend_order": [
+    "compute_ms",
+    "memory_compute_overlap_ms",
+    "memory_only_ms",
+    "other_ms",
+    "fused_scan_ms"
+  ],
+  "bar_break_fraction": 0.93,
+  "bar_break_amplitude_fraction": 0.005,
+  "panel_label_y_fraction": 0.015,
+  "legend_columns": 2,
+  "annotation_positions": {
+    "recomputation": [
+      92,
+      85
+    ],
+    "memory": [
+      58,
+      72
+    ]
+  },
+  "tick_label_offsets_pt": [
+    -3,
+    0,
+    0
+  ],
+  "legend_labelspacing": 0.35
+}

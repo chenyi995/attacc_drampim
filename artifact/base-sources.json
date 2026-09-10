@@ -1,0 +1,520 @@
+[
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/main.py",
+    "target": "simulator/main.py",
+    "sha256": "ea0f14b2a5a7c3b76a7210ad1aec259982671f4f96d208a5ffa555e54ead07ea",
+    "packaged_sha256": "ea0f14b2a5a7c3b76a7210ad1aec259982671f4f96d208a5ffa555e54ead07ea",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/src/config.py",
+    "target": "simulator/src/config.py",
+    "sha256": "9c568d6a66edc26f5d9f891d07a718e1fcd223579ddbdeb7e1a11f819e9aa9e3",
+    "packaged_sha256": "9c568d6a66edc26f5d9f891d07a718e1fcd223579ddbdeb7e1a11f819e9aa9e3",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/src/devices.py",
+    "target": "simulator/src/devices.py",
+    "sha256": "21421e53c99e38b55ea7e4f8dd3904adbc365bb2fa036325c8bd0978aba920f8",
+    "packaged_sha256": "21421e53c99e38b55ea7e4f8dd3904adbc365bb2fa036325c8bd0978aba920f8",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/src/model.py",
+    "target": "simulator/src/model.py",
+    "sha256": "afc2a9354010dc95be273bcb0e390f36d018c1d56d8cb58a50298a9d20215d08",
+    "packaged_sha256": "afc2a9354010dc95be273bcb0e390f36d018c1d56d8cb58a50298a9d20215d08",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/src/system.py",
+    "target": "simulator/src/system.py",
+    "sha256": "b0cd6f8d6fb38a6b32a55c2b7ca43cb613511d4f9b2037c28d20d82d076b9bac",
+    "packaged_sha256": "b0cd6f8d6fb38a6b32a55c2b7ca43cb613511d4f9b2037c28d20d82d076b9bac",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/src/type.py",
+    "target": "simulator/src/type.py",
+    "sha256": "5045fe5d777321b531185e0f0bee489193a3aca330c3704c6ce10f62d2ba8b22",
+    "packaged_sha256": "5045fe5d777321b531185e0f0bee489193a3aca330c3704c6ce10f62d2ba8b22",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/src/ramulator_wrapper.py",
+    "target": "simulator/src/ramulator_wrapper.py",
+    "sha256": "fcfd182901d234935a47774b5cd5dbedbc984da0cb34672fc2ad740522917334",
+    "packaged_sha256": "fcfd182901d234935a47774b5cd5dbedbc984da0cb34672fc2ad740522917334",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/HBM3-PIM.cpp",
+    "target": "simulator/pim_ramulator_src/HBM3-PIM.cpp",
+    "sha256": "c9255cec93f8d4f61e9688d228be53f358e81d79a338d0b532260b01899f5e13",
+    "packaged_sha256": "c9255cec93f8d4f61e9688d228be53f358e81d79a338d0b532260b01899f5e13",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/HBM3_base.yaml",
+    "target": "simulator/pim_ramulator_src/HBM3_base.yaml",
+    "sha256": "55bf53fee37a7656243dc636c9c69983ca33ac49789c785b92431c98815c5568",
+    "packaged_sha256": "55bf53fee37a7656243dc636c9c69983ca33ac49789c785b92431c98815c5568",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/PIM_DRAM_system.cpp",
+    "target": "simulator/pim_ramulator_src/PIM_DRAM_system.cpp",
+    "sha256": "a952b3bdba9f32dfe2b8e22f5923355bb9fefeba42811c2a291a65d9b7814276",
+    "packaged_sha256": "a952b3bdba9f32dfe2b8e22f5923355bb9fefeba42811c2a291a65d9b7814276",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/all_bank_refresh_hbm3.cpp",
+    "target": "simulator/pim_ramulator_src/all_bank_refresh_hbm3.cpp",
+    "sha256": "58c20a723e01d04b529df52b944f44c7c59ace9db9db8acd9814c8b09f364acf",
+    "packaged_sha256": "58c20a723e01d04b529df52b944f44c7c59ace9db9db8acd9814c8b09f364acf",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/attacc_bank.yaml",
+    "target": "simulator/pim_ramulator_src/attacc_bank.yaml",
+    "sha256": "90f47ee655e12bdc87ed27590d1b7bdbc2a3e111db318de69ee0c9bb13e69185",
+    "packaged_sha256": "90f47ee655e12bdc87ed27590d1b7bdbc2a3e111db318de69ee0c9bb13e69185",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/attacc_bg.yaml",
+    "target": "simulator/pim_ramulator_src/attacc_bg.yaml",
+    "sha256": "1e13d809c6a989529652995cd54d2a1d00dff8e83afa633cd68262b20eb40859",
+    "packaged_sha256": "1e13d809c6a989529652995cd54d2a1d00dff8e83afa633cd68262b20eb40859",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/attacc_buffer.yaml",
+    "target": "simulator/pim_ramulator_src/attacc_buffer.yaml",
+    "sha256": "f6bebc8e4dfd4eeb4ed465810cc874b750f9395901384822475aba5955939cc8",
+    "packaged_sha256": "f6bebc8e4dfd4eeb4ed465810cc874b750f9395901384822475aba5955939cc8",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/hbm3_controller.cpp",
+    "target": "simulator/pim_ramulator_src/hbm3_controller.cpp",
+    "sha256": "e9417f5a654c17e1578928ad3961e20459d82422355c902b82d10685b1dd7924",
+    "packaged_sha256": "e9417f5a654c17e1578928ad3961e20459d82422355c902b82d10685b1dd7924",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/hbm3_linear_mappers.cpp",
+    "target": "simulator/pim_ramulator_src/hbm3_linear_mappers.cpp",
+    "sha256": "c789fd1ef8e79d4ea6bbb3cfd11a54c5f9d92bf688c5e0eb065c3e517abc5651",
+    "packaged_sha256": "c789fd1ef8e79d4ea6bbb3cfd11a54c5f9d92bf688c5e0eb065c3e517abc5651",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/hbm3_pim_controller.cpp",
+    "target": "simulator/pim_ramulator_src/hbm3_pim_controller.cpp",
+    "sha256": "c610f8aaba62b060958386e5f1b2df9eafc136511a712d2686c5764ffad4ed6b",
+    "packaged_sha256": "c610f8aaba62b060958386e5f1b2df9eafc136511a712d2686c5764ffad4ed6b",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/hbm3_pim_linear_mappers.cpp",
+    "target": "simulator/pim_ramulator_src/hbm3_pim_linear_mappers.cpp",
+    "sha256": "05a3403d4d1c11102361ec3a6a67502a1559234e1218ddd4ed148bdb873bccd1",
+    "packaged_sha256": "05a3403d4d1c11102361ec3a6a67502a1559234e1218ddd4ed148bdb873bccd1",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/hbm3_trace_recorder.cpp",
+    "target": "simulator/pim_ramulator_src/hbm3_trace_recorder.cpp",
+    "sha256": "0b28b72a8a1afd33821fbe9fda8e4797dca4cfe84a8166544ed69071402f0010",
+    "packaged_sha256": "0b28b72a8a1afd33821fbe9fda8e4797dca4cfe84a8166544ed69071402f0010",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/no_refresh.cpp",
+    "target": "simulator/pim_ramulator_src/no_refresh.cpp",
+    "sha256": "9ec3a05a3bd0f1578c9c30816b0b1081f06e9008523dc0eb4ba37fa9d3879ad1",
+    "packaged_sha256": "9ec3a05a3bd0f1578c9c30816b0b1081f06e9008523dc0eb4ba37fa9d3879ad1",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/pim_loadstore_trace.cpp",
+    "target": "simulator/pim_ramulator_src/pim_loadstore_trace.cpp",
+    "sha256": "847433454cf59a7ef09c0a724e523508ff4dfd002cb2bdecb500390743752a64",
+    "packaged_sha256": "847433454cf59a7ef09c0a724e523508ff4dfd002cb2bdecb500390743752a64",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/pim_scheduler.cpp",
+    "target": "simulator/pim_ramulator_src/pim_scheduler.cpp",
+    "sha256": "be8cb800438931b0f7fc69818264b7967d5d41bfc7406018edad2ee6453e7ec2",
+    "packaged_sha256": "be8cb800438931b0f7fc69818264b7967d5d41bfc7406018edad2ee6453e7ec2",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_CMakeLists.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_CMakeLists.patch",
+    "sha256": "ecdd28b4811b0c521ddd27ca919c527c15c95713434cbecc61eac5e7a488c475",
+    "packaged_sha256": "ecdd28b4811b0c521ddd27ca919c527c15c95713434cbecc61eac5e7a488c475",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_addr_mapper_CMakeLists.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_addr_mapper_CMakeLists.patch",
+    "sha256": "8ea6729734aa0ecc51884f6a1ab829d4748ef8e0ae3a7874826e0eed903b91c6",
+    "packaged_sha256": "8ea6729734aa0ecc51884f6a1ab829d4748ef8e0ae3a7874826e0eed903b91c6",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_addr_mapper_impl_linear_mappers.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_addr_mapper_impl_linear_mappers.patch",
+    "sha256": "c3e9e30eabdb86f901d9f521ede63fecf1eca4b04cd1e4c393b5e608988b0a0e",
+    "packaged_sha256": "c3e9e30eabdb86f901d9f521ede63fecf1eca4b04cd1e4c393b5e608988b0a0e",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_base_base.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_base_base.patch",
+    "sha256": "26fb983c8c2a0422c631cbc854c558318a41461962a0fd9078f9bd13ffdb4627",
+    "packaged_sha256": "26fb983c8c2a0422c631cbc854c558318a41461962a0fd9078f9bd13ffdb4627",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_base_request.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_base_request.patch",
+    "sha256": "1af07c66207d9a7a627e45fb5c75e9ce15fe1fb26a662d1b7ac4a38bf762d30a",
+    "packaged_sha256": "1af07c66207d9a7a627e45fb5c75e9ce15fe1fb26a662d1b7ac4a38bf762d30a",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_CMakeLists.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_CMakeLists.patch",
+    "sha256": "a2663015d79a143fc53278ed0b34d5bd89487e61e1bfc68caf0c65f256d653a8",
+    "packaged_sha256": "a2663015d79a143fc53278ed0b34d5bd89487e61e1bfc68caf0c65f256d653a8",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_controller_CMakeLists.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_controller_CMakeLists.patch",
+    "sha256": "b70acdabcdaae9c470e5dc507811aa47e211adbcb1fc64828a6e64540636b25f",
+    "packaged_sha256": "b70acdabcdaae9c470e5dc507811aa47e211adbcb1fc64828a6e64540636b25f",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_controller_controller.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_controller_controller.patch",
+    "sha256": "6bf762086f98971e04b4f66bf1501fa3c4b8089352adaebf0f07fca4a748ef6b",
+    "packaged_sha256": "6bf762086f98971e04b4f66bf1501fa3c4b8089352adaebf0f07fca4a748ef6b",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_controller_impl_dummy_controller.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_controller_impl_dummy_controller.patch",
+    "sha256": "0b6332b666fc6da4136ebc6d9e5983e6917b7326af2c623ada928de5479c0b21",
+    "packaged_sha256": "0b6332b666fc6da4136ebc6d9e5983e6917b7326af2c623ada928de5479c0b21",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_controller_impl_generic_dram_controller.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_controller_impl_generic_dram_controller.patch",
+    "sha256": "17c18dfc63c86a95a2e12a5ec2b38f373d8072c884d742c6b192c52c1a1d942f",
+    "packaged_sha256": "17c18dfc63c86a95a2e12a5ec2b38f373d8072c884d742c6b192c52c1a1d942f",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_controller_impl_scheduler_generic_scheduler.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_controller_impl_scheduler_generic_scheduler.patch",
+    "sha256": "a534bae8abbd4ab6845d01b5e5fa24856647ccb6a5ca773893d8da16e927ef1a",
+    "packaged_sha256": "a534bae8abbd4ab6845d01b5e5fa24856647ccb6a5ca773893d8da16e927ef1a",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_impl_HBM3.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_impl_HBM3.patch",
+    "sha256": "fd3a3a1c87897eea82b51d6d45e3a29eaa08acdea0749de28104224fb119f913",
+    "packaged_sha256": "fd3a3a1c87897eea82b51d6d45e3a29eaa08acdea0749de28104224fb119f913",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_lambdas_action.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_lambdas_action.patch",
+    "sha256": "85672a0f4e4f4e86c0af6d0cc71be905606516964a223602f6b8193885820234",
+    "packaged_sha256": "85672a0f4e4f4e86c0af6d0cc71be905606516964a223602f6b8193885820234",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_dram_lambdas_preq.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_dram_lambdas_preq.patch",
+    "sha256": "17e79b5ae4f9f791b0f0cada07cec06e75f39ebc94de364256a998723044f3b9",
+    "packaged_sha256": "17e79b5ae4f9f791b0f0cada07cec06e75f39ebc94de364256a998723044f3b9",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_frontend_CMakeLists.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_frontend_CMakeLists.patch",
+    "sha256": "715d59a7d4f6560be0a1c3f263430774383fdcd33e4b0104359e4f918a515d66",
+    "packaged_sha256": "715d59a7d4f6560be0a1c3f263430774383fdcd33e4b0104359e4f918a515d66",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_frontend_impl_memory_trace_loadstore_trace.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_frontend_impl_memory_trace_loadstore_trace.patch",
+    "sha256": "498d42c9f40351d353398906cd90402cbe11f629224a6a99b12687d44ce2472c",
+    "packaged_sha256": "498d42c9f40351d353398906cd90402cbe11f629224a6a99b12687d44ce2472c",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_main.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_main.patch",
+    "sha256": "ecf400fb803e9b0c57cdda1037aa65e76eb3e78cd0ded81e596158e0ddc3e622",
+    "packaged_sha256": "ecf400fb803e9b0c57cdda1037aa65e76eb3e78cd0ded81e596158e0ddc3e622",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_memory_system_CMakeLists.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_memory_system_CMakeLists.patch",
+    "sha256": "e597ea1aee29e678dd305f9d0f366e87d97cc1c3fcd7c3e16f656ca42efac980",
+    "packaged_sha256": "e597ea1aee29e678dd305f9d0f366e87d97cc1c3fcd7c3e16f656ca42efac980",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_memory_system_impl_dummy_memory_system.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_memory_system_impl_dummy_memory_system.patch",
+    "sha256": "1b9d1cd835b17cc56d44997e0fd55a9c21751474cf0e448771e437a78933ab55",
+    "packaged_sha256": "1b9d1cd835b17cc56d44997e0fd55a9c21751474cf0e448771e437a78933ab55",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_memory_system_impl_generic_DRAM_system.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_memory_system_impl_generic_DRAM_system.patch",
+    "sha256": "eec287e66ab96cb8a99881afc92243ec3bd128ebf06bfd79f157fdb4cc3df88c",
+    "packaged_sha256": "eec287e66ab96cb8a99881afc92243ec3bd128ebf06bfd79f157fdb4cc3df88c",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/patches/src_memory_system_memory_system.patch",
+    "target": "simulator/pim_ramulator_src/patches/src_memory_system_memory_system.patch",
+    "sha256": "0dc6fd58fd44dedb47d26690f32078f28aaa2835e46e838efe3a3254d082a16c",
+    "packaged_sha256": "0dc6fd58fd44dedb47d26690f32078f28aaa2835e46e838efe3a3254d082a16c",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py",
+    "target": "simulator/pim_ramulator_src/trace_gen/gen_trace_attacc_bank.py",
+    "sha256": "3d532527c684c3ae14cc85a7726773b2e6896a962d6921dd1bb4188d155f573b",
+    "packaged_sha256": "3d532527c684c3ae14cc85a7726773b2e6896a962d6921dd1bb4188d155f573b",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/trace_gen/gen_trace_attacc_bg.py",
+    "target": "simulator/pim_ramulator_src/trace_gen/gen_trace_attacc_bg.py",
+    "sha256": "e2dc8e032f4e2da064c6294f3c90ef9c151cb578dbb8cf6ae32edb77866b9ff6",
+    "packaged_sha256": "e2dc8e032f4e2da064c6294f3c90ef9c151cb578dbb8cf6ae32edb77866b9ff6",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/pim_ramulator_src/trace_gen/gen_trace_attacc_buffer.py",
+    "target": "simulator/pim_ramulator_src/trace_gen/gen_trace_attacc_buffer.py",
+    "sha256": "e5020974cfa299c234ce4adf4dfc023b38f531768945bdba7b76f8a333736d7c",
+    "packaged_sha256": "e5020974cfa299c234ce4adf4dfc023b38f531768945bdba7b76f8a333736d7c",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/artifact/native-source-lock.json",
+    "target": "simulator/artifact/native-source-lock.json",
+    "sha256": "d57a997727f673b98745733c152a0f059238927334b55f4af581b42e4ea61bdd",
+    "packaged_sha256": "d57a997727f673b98745733c152a0f059238927334b55f4af581b42e4ea61bdd",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/set_pim_ramulator.sh",
+    "target": "simulator/set_pim_ramulator.sh",
+    "sha256": "341dce2a2cca0244e6e89e725524e034cd1e7f617e6dad0124e6315cb2065cfc",
+    "packaged_sha256": "341dce2a2cca0244e6e89e725524e034cd1e7f617e6dad0124e6315cb2065cfc",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/LICENSE",
+    "target": "simulator/LICENSE",
+    "sha256": "89e78a789b21f2fc808a6833d4dcd720366744d582f88f76765c84e6a9bb8092",
+    "packaged_sha256": "89e78a789b21f2fc808a6833d4dcd720366744d582f88f76765c84e6a9bb8092",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/ramulator2-b7c70275f04126c647edb989270cc429776955d1.tar.gz",
+    "target": "simulator/vendor/ramulator2-b7c70275f04126c647edb989270cc429776955d1.tar.gz",
+    "sha256": "81a46a53120b966627f46bef4e5771063a9d85a3d9b7c1fc2d337eb9c37c8c2b",
+    "packaged_sha256": "81a46a53120b966627f46bef4e5771063a9d85a3d9b7c1fc2d337eb9c37c8c2b",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/ramulator2-LICENSE",
+    "target": "simulator/vendor/ramulator2-LICENSE",
+    "sha256": "74a1f19701bb06cb80b4ec31e6de6472f5fd767e5949c1c4d51f70007d18b3f2",
+    "packaged_sha256": "74a1f19701bb06cb80b4ec31e6de6472f5fd767e5949c1c4d51f70007d18b3f2",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/yaml-cpp-0579ae3d976091d7d664aa9d2527e0d0cff25763.tar.gz",
+    "target": "simulator/vendor/yaml-cpp-0579ae3d976091d7d664aa9d2527e0d0cff25763.tar.gz",
+    "sha256": "913c7b4dbd42f7ef5f6cbe6743a23bf5b549530f37cbf857c7dd0ee893f4c0ea",
+    "packaged_sha256": "913c7b4dbd42f7ef5f6cbe6743a23bf5b549530f37cbf857c7dd0ee893f4c0ea",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/yaml-cpp-LICENSE",
+    "target": "simulator/vendor/yaml-cpp-LICENSE",
+    "sha256": "aa6fcc27be034e41e21dd832f9175bfe694a48491d9e14ff0fa278e19ad14f1b",
+    "packaged_sha256": "aa6fcc27be034e41e21dd832f9175bfe694a48491d9e14ff0fa278e19ad14f1b",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/spdlog-ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36.tar.gz",
+    "target": "simulator/vendor/spdlog-ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36.tar.gz",
+    "sha256": "041b18d97373c3a71f7d381090ec18031ca0c5dfb571c062b72aff70ef33c193",
+    "packaged_sha256": "041b18d97373c3a71f7d381090ec18031ca0c5dfb571c062b72aff70ef33c193",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/spdlog-LICENSE",
+    "target": "simulator/vendor/spdlog-LICENSE",
+    "sha256": "a7241a379cb98d37788f82c2fc2e484c3ae85dae881fd3406f0637644850926f",
+    "packaged_sha256": "a7241a379cb98d37788f82c2fc2e484c3ae85dae881fd3406f0637644850926f",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/argparse-997da9255618311d1fcb0135ce86022729d1f1cb.tar.gz",
+    "target": "simulator/vendor/argparse-997da9255618311d1fcb0135ce86022729d1f1cb.tar.gz",
+    "sha256": "63e155518feb614f845a842d4435b7d8ca1dc1e5d0b373ed720e070b0e97144f",
+    "packaged_sha256": "63e155518feb614f845a842d4435b7d8ca1dc1e5d0b373ed720e070b0e97144f",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/argparse-LICENSE",
+    "target": "simulator/vendor/argparse-LICENSE",
+    "sha256": "a3a9e0dc669644b703773777503f73abff8dffacc4e697d8535be930766fa771",
+    "packaged_sha256": "a3a9e0dc669644b703773777503f73abff8dffacc4e697d8535be930766fa771",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/vendor/Fugue-asplos-dependencies.json",
+    "target": "simulator/vendor/Fugue-asplos-dependencies.json",
+    "sha256": "4d75296100e1c30db16792a57e33c4656a91202a4eb3188c5c6369700406f425",
+    "packaged_sha256": "4d75296100e1c30db16792a57e33c4656a91202a4eb3188c5c6369700406f425",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/runtime.py",
+    "target": "simulator/fugue/runtime.py",
+    "sha256": "bd30844f3c88c1b258c80e317cf8cb66c0385ae3ca6b6e0fbe37ddbce70c0d9d",
+    "packaged_sha256": "bd30844f3c88c1b258c80e317cf8cb66c0385ae3ca6b6e0fbe37ddbce70c0d9d",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/coverage-expansion/attacc-fugue/fugue/build.py",
+    "target": "simulator/fugue/build.py",
+    "sha256": "db0c427ddddf9833d213ad4dc5687db233dc4fa24e8493d2b3f9ab6c38d151b5",
+    "packaged_sha256": "db0c427ddddf9833d213ad4dc5687db233dc4fa24e8493d2b3f9ab6c38d151b5",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/attacc-fugue/requirements-fugue.txt",
+    "target": "requirements.txt",
+    "sha256": "7318d91c7cc8aa042e80b86c2590d94a4ce49509b0aff3043d44572b539c83bb",
+    "packaged_sha256": "18be5c1ff3231c0dda1d66b36a3ba6fe5ceba2094a5a6c8cd1dd1ff39cff30cb",
+    "transformation": "Project only the columns needed by the published figure."
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-e2e/plot.py",
+    "target": "plots/request-e2e/plot.py",
+    "sha256": "ae4d4d35001874898de6f3ca80b5b1a6762dd81db01828f5d72d21b2dd7f5dec",
+    "packaged_sha256": "ae4d4d35001874898de6f3ca80b5b1a6762dd81db01828f5d72d21b2dd7f5dec",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-e2e/figure_style.py",
+    "target": "plots/request-e2e/figure_style.py",
+    "sha256": "c26d94ea97d52bd8a03af417d37878e63c61a14a99db3d51de5718eb9ef483a7",
+    "packaged_sha256": "c26d94ea97d52bd8a03af417d37878e63c61a14a99db3d51de5718eb9ef483a7",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-e2e/template.json",
+    "target": "plots/request-e2e/template.json",
+    "sha256": "5b5259266f24351879731b97fb79fc7e690b44f07a3babd0d88e61557a7d9b7a",
+    "packaged_sha256": "5b5259266f24351879731b97fb79fc7e690b44f07a3babd0d88e61557a7d9b7a",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-e2e/data.csv",
+    "target": "plots/request-e2e/data.csv",
+    "sha256": "33ecc6ab150fe29f155212a6f95c28119592587b2264bb844d21a1af3c29a583",
+    "packaged_sha256": "14bcffd233dc79150d791e518fd65061126709c5093188cbeb2b6532277164c1",
+    "transformation": "Project only the columns needed by the published figure."
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-phase-breakdown/plot.py",
+    "target": "plots/request-phase-breakdown/plot.py",
+    "sha256": "ae4d4d35001874898de6f3ca80b5b1a6762dd81db01828f5d72d21b2dd7f5dec",
+    "packaged_sha256": "ae4d4d35001874898de6f3ca80b5b1a6762dd81db01828f5d72d21b2dd7f5dec",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-phase-breakdown/figure_style.py",
+    "target": "plots/request-phase-breakdown/figure_style.py",
+    "sha256": "c26d94ea97d52bd8a03af417d37878e63c61a14a99db3d51de5718eb9ef483a7",
+    "packaged_sha256": "c26d94ea97d52bd8a03af417d37878e63c61a14a99db3d51de5718eb9ef483a7",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-phase-breakdown/template.json",
+    "target": "plots/request-phase-breakdown/template.json",
+    "sha256": "af052608022d2e797b44457487e0110aebd77cf580fe38bc5ef6c3d320a060f4",
+    "packaged_sha256": "af052608022d2e797b44457487e0110aebd77cf580fe38bc5ef6c3d320a060f4",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-phase-breakdown/data.csv",
+    "target": "plots/request-phase-breakdown/data.csv",
+    "sha256": "9476293abbc737ac580784e8f1fb896ea4de219c40249c01f21e77568c104577",
+    "packaged_sha256": "34975248ecc9a46aa4186eb2e61e2e1cf9fc3941bb269432709be03216f6c127",
+    "transformation": "Project only the columns needed by the published figure."
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-capacity/plot.py",
+    "target": "plots/request-capacity/plot.py",
+    "sha256": "90d818e90e78d03320a483ee00f6b96cf818e5c31658ac8b35e0a29aa23ccddf",
+    "packaged_sha256": "90d818e90e78d03320a483ee00f6b96cf818e5c31658ac8b35e0a29aa23ccddf",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-capacity/figure_style.py",
+    "target": "plots/request-capacity/figure_style.py",
+    "sha256": "c26d94ea97d52bd8a03af417d37878e63c61a14a99db3d51de5718eb9ef483a7",
+    "packaged_sha256": "c26d94ea97d52bd8a03af417d37878e63c61a14a99db3d51de5718eb9ef483a7",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-capacity/template.json",
+    "target": "plots/request-capacity/template.json",
+    "sha256": "ff878ba2d2ba0d78eca7db6f96b3ce96778fb75bf92e5d69f3d1931b0eb81a39",
+    "packaged_sha256": "ff878ba2d2ba0d78eca7db6f96b3ce96778fb75bf92e5d69f3d1931b0eb81a39",
+    "transformation": "none"
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/request-capacity/data.csv",
+    "target": "plots/request-capacity/data.csv",
+    "sha256": "5c64b2e107ec7770fb08bd106b6d6af3838a17942a5243231f56cbf502379b52",
+    "packaged_sha256": "9b16fa72812a58b62e46e8b9efeaedcadcc2395c1aa1ecc94882ec6246e96bf8",
+    "transformation": "Project only the columns needed by the published figure."
+  },
+  {
+    "source": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/paper-scope.json",
+    "target": "artifact/paper-scope.json",
+    "sha256": "5d78eb07f03f2d2605f338a42365850bd4e2fb602c423acd58f11aa37403b369",
+    "packaged_sha256": "5d78eb07f03f2d2605f338a42365850bd4e2fb602c423acd58f11aa37403b369",
+    "transformation": "none"
+  }
+]

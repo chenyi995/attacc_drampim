@@ -1,3 +1,0 @@
-request_id,F2_native_serial_export_TTFT_ms,F2_export_overlap_sensitivity_TTFT_ms,F3_TTFT_ms,latency_saved_if_F2_export_overlaps_attention_ms,interpretation
-Fugue-asplos-request-01,79.5163154167709,73.53943221677109,73.53943221677093,5.976883199999804,"Diagnostic only; F2 main result preserves native serial prefill export. Export bytes, energy and capacity unchanged in the sensitivity case."
-Fugue-asplos-request-02,80.86733990633003,74.8240468929966,74.82404689299665,6.043293013333425,"Diagnostic only; F2 main result preserves native serial prefill export. Export bytes, energy and capacity unchanged in the sensitivity case."

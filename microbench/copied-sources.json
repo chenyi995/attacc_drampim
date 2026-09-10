@@ -1,0 +1,363 @@
+[
+  {
+    "path": "plots/crossover/plot.py",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/plot.py",
+    "sha256": "ef6af71053979348f8a10e59066dc247118ddce20e4ae0a9e5ba844319d79f56",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/crossover/figure_style.py",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/figure_style.py",
+    "sha256": "9143d804cb61b7a2dd3b8fca32d19dcce504971daee076833edcf7e6409ceb5e",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/crossover/template.json",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/template.json",
+    "sha256": "72e25fdc0fd3c26a646539c4328c9d9cb9b384dc83ababb0c8c4f6c191712c25",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/crossover/panel_data.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/panel_data.csv",
+    "sha256": "dd8d1fda06348375f9ea8c0a9e93d9603e5b024d5cfdfba284827f47dbcceea6",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/crossover/gpu_data.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/gpu_data.csv",
+    "sha256": "a84484e3c719978c49973b19c3a7c53ae3817078b641208ff953982e0c91ea5a",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/crossover/panels.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/panels.csv",
+    "sha256": "2e698774596415b9764026f4ab037136e2f8aae04dc31040231af9c24e7bd1d2",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/crossover/crossings.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/crossings.csv",
+    "sha256": "c924f31b77fa1f9a98bee832c732b4603ea486040fd3faa3ba898e2d208d531a",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/crossover/source-data.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/crossover/source-data.csv",
+    "sha256": "a431534a7758ad35c1afd42e49c8dd820323738be68fd8fa15b0f7891500247d",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/frequency/plot.py",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/frequency/plot.py",
+    "sha256": "d87ceb8468aed6fb672bd740fd2ff6678cc6855456078a8518e8f36adf6f42be",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/frequency/figure_style.py",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/frequency/figure_style.py",
+    "sha256": "9143d804cb61b7a2dd3b8fca32d19dcce504971daee076833edcf7e6409ceb5e",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/frequency/template.json",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/frequency/template.json",
+    "sha256": "8e615c4ee232910506832a2a8da302d51fb49007f9699992c96da5a930e60732",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/frequency/curve.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/frequency/curve.csv",
+    "sha256": "ecbc25454c6aeb74d34c8cbfc3102505aa5d45d69a947c8b14b96eeac191c21e",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/frequency/balance.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/frequency/balance.csv",
+    "sha256": "4dcf5b56401f2068ed06405abb7035b2c63f625a4828541463e59837ae5757f4",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/frequency/intervals.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/frequency/intervals.csv",
+    "sha256": "db745f9c58920f503404f318034a8564d650b5ca1be0ea19919be1ff6ec8e802",
+    "byte_identical": true
+  },
+  {
+    "path": "reference/frequency/parameters.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/frequency/parameters.csv",
+    "sha256": "88ec739970f757e03ab6d603becc5cb7490e7b820dd8ac65088d67a1c07f0b7a",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/fig1a/plot.py",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/intro-prefill-readers4-preview/plot.py",
+    "sha256": "5f8568a288fd9254aac639484f2e2362c296529d2e182bd522f6e2ca11a4f81b",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/fig1a/figure_style.py",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/intro-prefill-readers4-preview/figure_style.py",
+    "sha256": "385319eb7f1dd33e0427c88112940218730e9a7a52ce82db8a631a02f29ab46b",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/fig1a/template.json",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/intro-prefill-readers4-preview/template.json",
+    "sha256": "7f941f472153a27ec068237ed0131d18343d9fb18ccd53d85dea9bf7d7d07f51",
+    "byte_identical": true
+  },
+  {
+    "path": "plots/fig1a/columns.json",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/reproduce/intro-prefill-readers4-preview/columns.json",
+    "sha256": "93692d98c19d96f6a93cf7897dde1653d26abcb7b053db2e14588002b112af78",
+    "byte_identical": true
+  },
+  {
+    "path": "area/data_components.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/plots/overhead/data_components.csv",
+    "sha256": "1179a99845ce681be05b1c17bb2692d1b58d3c1a310767e1531405ebe15422cb",
+    "byte_identical": true
+  },
+  {
+    "path": "area/data_overhead.csv",
+    "source_path": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/fig/plots/overhead/data_overhead.csv",
+    "sha256": "410f6f3c9201ac27b2009f0f84ed97a31fcdb08bfa0857d9b8a0a8465f6ec962",
+    "byte_identical": true
+  },
+  {
+    "path": "source/coverage_trace_cache.py",
+    "source_path": "docs/analysis/coverage_trace_cache.py",
+    "source_sha256": "61c5dfe61b6486fde4dc73089bd11e1fa1cc7768cdd5fb50d3f4d4a5317e24ca",
+    "sha256": "3fd6d0cb712d416caddb11650058403b330434a5c15bd24f6a893e2bf0e4bf5c",
+    "source_line_spans": [
+      [
+        2,
+        8
+      ],
+      [
+        9,
+        9
+      ],
+      [
+        10,
+        10
+      ],
+      [
+        11,
+        11
+      ],
+      [
+        12,
+        12
+      ],
+      [
+        13,
+        13
+      ],
+      [
+        14,
+        14
+      ],
+      [
+        15,
+        15
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        17,
+        17
+      ],
+      [
+        18,
+        18
+      ],
+      [
+        19,
+        19
+      ],
+      [
+        20,
+        20
+      ],
+      [
+        21,
+        21
+      ],
+      [
+        22,
+        22
+      ],
+      [
+        23,
+        23
+      ],
+      [
+        25,
+        25
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        32,
+        32
+      ],
+      [
+        33,
+        33
+      ],
+      [
+        34,
+        34
+      ],
+      [
+        35,
+        35
+      ],
+      [
+        37,
+        37
+      ],
+      [
+        40,
+        41
+      ],
+      [
+        44,
+        45
+      ],
+      [
+        48,
+        53
+      ],
+      [
+        56,
+        61
+      ],
+      [
+        64,
+        72
+      ],
+      [
+        75,
+        95
+      ],
+      [
+        98,
+        106
+      ],
+      [
+        109,
+        120
+      ],
+      [
+        123,
+        337
+      ]
+    ],
+    "identity": "Selected source functions retain their original AST; imports and execution roots are adapted."
+  },
+  {
+    "path": "source/current_frequency.py",
+    "source_path": "docs/analysis/current_frequency.py",
+    "source_sha256": "b2de480f2dd2b08f9cfc8f75c833d312a41f0f36d54d750f2fbc1219002ac55b",
+    "sha256": "65810d36a74526ffa620e407c12c8e901726bb8fa849805afca9f2fdff48fd3e",
+    "source_line_spans": [
+      [
+        30,
+        66
+      ],
+      [
+        69,
+        75
+      ],
+      [
+        78,
+        81
+      ],
+      [
+        121,
+        203
+      ]
+    ],
+    "identity": "Selected source functions retain their original AST; imports and execution roots are adapted."
+  },
+  {
+    "path": "source/area_data.py",
+    "source_path": "docs/analysis/area_data.py",
+    "source_sha256": "b38dd98a395eb1266080b12f041db07b3c512d5c9e765c7109baa7631eaf2a5e",
+    "sha256": "371deb3a1b10d03cd99ff2ff9076bbc96ea9e5df120182ccdc39f6befca4325f",
+    "source_line_spans": [
+      [
+        21,
+        114
+      ]
+    ],
+    "identity": "Selected source functions retain their original AST; imports and execution roots are adapted."
+  },
+  {
+    "path": "source/area_constants.py",
+    "source_path": "fig/archived/hardware/area-summary/plot_overhead.py",
+    "source_sha256": "3464909e34ba552a37d3f94af6dcb91f61846f6c8b95b6f5f517541bcb31e6d5",
+    "sha256": "000e7b3d31e9b75ea25f8b74304a263ecec7c198bc59d7ade63454580bfc7cf3",
+    "source_line_spans": [
+      [
+        48,
+        48
+      ],
+      [
+        49,
+        49
+      ],
+      [
+        50,
+        50
+      ],
+      [
+        51,
+        51
+      ]
+    ],
+    "identity": "Selected source functions retain their original AST; imports and execution roots are adapted."
+  },
+  {
+    "path": "source/operator_attribution.py",
+    "source_path": "docs/analysis/memory_stage_breakdown.py",
+    "source_sha256": "e3241cd2f7f13b860fddb48b75903bb23f9cc354aaa4287acd7d7927b639cfc1",
+    "sha256": "8a1b3d24c3a84aca167ca95b0d9772030fc5e837cd30e293bd9eb523a8f137f9",
+    "source_line_spans": [
+      [
+        99,
+        137
+      ]
+    ],
+    "identity": "Selected source functions retain their original AST; imports and execution roots are adapted."
+  },
+  {
+    "path": "source/crossover_kernel.py",
+    "source_path": "docs/analysis/refine_crossover.py",
+    "source_sha256": "d007f2ae6c26e99ded1c5fc85f6cbb04ec85e19fa4202b137d25241f941ee8a5",
+    "sha256": "e2a426fde2e3d025c9aebb14f5dc290ad23e60f68993b093b9102f77b81a786a",
+    "source_line_spans": [
+      [
+        125,
+        132
+      ],
+      [
+        230,
+        250
+      ]
+    ],
+    "identity": "Grouping function and service statements have byte-identical AST; service statements extracted into a callable without changing arithmetic."
+  },
+  {
+    "path": "area/source-measurements.csv",
+    "sha256": "4f6dfa1ac4eb4da2023018db961899c081e4a12b63b415c6f970e1c28b01fb68",
+    "identity": "Exact required Cell-Area and QOR scalar operands extracted from the 13 retained original reports. Raw reports remain local; each row records their SHA-256 and original repository path."
+  }
+]

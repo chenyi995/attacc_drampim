@@ -1,0 +1,204 @@
+{
+  "schema": "kvchime-ae-final-request-models-v1",
+  "models": [
+    {
+      "name": "LLAMA-7B",
+      "source_kind": "native",
+      "geometry": {
+        "name": "LLAMA-7B",
+        "ndec": 32,
+        "hdim": 4096,
+        "num_heads": 32,
+        "dhead": 128,
+        "ff_scale": 2.6666666666666665,
+        "gqa_size": 1,
+        "dtype": "DataType.W16A16",
+        "num_kv_heads": 32
+      },
+      "selected": {
+        "tensor_parallel": 1,
+        "GPU_budget_bytes_per_device": 85899345920,
+        "remote_budget_bytes": 85899345920,
+        "PIM_HBM_stacks": 5,
+        "heads_per_HBM": 7
+      },
+      "repair_geometry": {
+        "hidden": 4096,
+        "heads": 32,
+        "kv_heads": 32,
+        "dhead": 128,
+        "tensor_parallel": 1,
+        "local_query_heads": 32,
+        "local_kv_heads": 32,
+        "QKV_output_width": 12288,
+        "PV_output_width": 4096,
+        "projection_input_width": 4096,
+        "Q_bytes_per_token": 8192,
+        "KV_bytes_per_token": 16384,
+        "MQ_capacity": 8,
+        "passed": true
+      }
+    },
+    {
+      "name": "GPT-13B",
+      "source_kind": "native",
+      "geometry": {
+        "name": "GPT-13B",
+        "ndec": 40,
+        "hdim": 5120,
+        "num_heads": 40,
+        "dhead": 128,
+        "ff_scale": 4,
+        "gqa_size": 1,
+        "dtype": "DataType.W16A16",
+        "num_kv_heads": 40
+      },
+      "selected": {
+        "tensor_parallel": 1,
+        "GPU_budget_bytes_per_device": 85899345920,
+        "remote_budget_bytes": 85899345920,
+        "PIM_HBM_stacks": 5,
+        "heads_per_HBM": 8
+      },
+      "repair_geometry": {
+        "hidden": 5120,
+        "heads": 40,
+        "kv_heads": 40,
+        "dhead": 128,
+        "tensor_parallel": 1,
+        "local_query_heads": 40,
+        "local_kv_heads": 40,
+        "QKV_output_width": 15360,
+        "PV_output_width": 5120,
+        "projection_input_width": 5120,
+        "Q_bytes_per_token": 10240,
+        "KV_bytes_per_token": 20480,
+        "MQ_capacity": 8,
+        "passed": true
+      }
+    },
+    {
+      "name": "LLAMA-65B",
+      "source_kind": "native",
+      "geometry": {
+        "name": "LLAMA-65B",
+        "ndec": 80,
+        "hdim": 8192,
+        "num_heads": 64,
+        "dhead": 128,
+        "ff_scale": 2.6666666666666665,
+        "gqa_size": 1,
+        "dtype": "DataType.W16A16",
+        "num_kv_heads": 64
+      },
+      "selected": {
+        "tensor_parallel": 4,
+        "GPU_budget_bytes_per_device": 85899345920,
+        "remote_budget_bytes": 343597383680,
+        "PIM_HBM_stacks": 20,
+        "heads_per_HBM": 4
+      },
+      "repair_geometry": {
+        "hidden": 8192,
+        "heads": 64,
+        "kv_heads": 64,
+        "dhead": 128,
+        "tensor_parallel": 4,
+        "local_query_heads": 16,
+        "local_kv_heads": 16,
+        "QKV_output_width": 6144,
+        "PV_output_width": 2048,
+        "projection_input_width": 2048,
+        "Q_bytes_per_token": 4096,
+        "KV_bytes_per_token": 8192,
+        "MQ_capacity": 8,
+        "passed": true
+      }
+    },
+    {
+      "name": "OPT-66B",
+      "source_kind": "native",
+      "geometry": {
+        "name": "OPT-66B",
+        "ndec": 64,
+        "hdim": 9216,
+        "num_heads": 72,
+        "dhead": 128,
+        "ff_scale": 4,
+        "gqa_size": 1,
+        "dtype": "DataType.W16A16",
+        "num_kv_heads": 72
+      },
+      "selected": {
+        "tensor_parallel": 3,
+        "GPU_budget_bytes_per_device": 85899345920,
+        "remote_budget_bytes": 257698037760,
+        "PIM_HBM_stacks": 15,
+        "heads_per_HBM": 5
+      },
+      "repair_geometry": {
+        "hidden": 9216,
+        "heads": 72,
+        "kv_heads": 72,
+        "dhead": 128,
+        "tensor_parallel": 3,
+        "local_query_heads": 24,
+        "local_kv_heads": 24,
+        "QKV_output_width": 9216,
+        "PV_output_width": 3072,
+        "projection_input_width": 3072,
+        "Q_bytes_per_token": 6144,
+        "KV_bytes_per_token": 12288,
+        "MQ_capacity": 8,
+        "passed": true
+      }
+    },
+    {
+      "name": "MT-76B",
+      "source_kind": "native",
+      "geometry": {
+        "name": "MT-76B",
+        "ndec": 60,
+        "hdim": 10240,
+        "num_heads": 80,
+        "dhead": 128,
+        "ff_scale": 4,
+        "gqa_size": 1,
+        "dtype": "DataType.W16A16",
+        "num_kv_heads": 80
+      },
+      "selected": {
+        "tensor_parallel": 4,
+        "GPU_budget_bytes_per_device": 85899345920,
+        "remote_budget_bytes": 343597383680,
+        "PIM_HBM_stacks": 20,
+        "heads_per_HBM": 4
+      },
+      "repair_geometry": {
+        "hidden": 10240,
+        "heads": 80,
+        "kv_heads": 80,
+        "dhead": 128,
+        "tensor_parallel": 4,
+        "local_query_heads": 20,
+        "local_kv_heads": 20,
+        "QKV_output_width": 7680,
+        "PV_output_width": 2560,
+        "projection_input_width": 2560,
+        "Q_bytes_per_token": 5120,
+        "KV_bytes_per_token": 10240,
+        "MQ_capacity": 8,
+        "passed": true
+      }
+    }
+  ],
+  "plan_sha256": "66c4577904d17c83155ca810a5f79b49ae5e42f787587bea6a8819c8c6fd993d",
+  "scope_sha256": "5d78eb07f03f2d2605f338a42365850bd4e2fb602c423acd58f11aa37403b369",
+  "source_plan": "/data2/chenyi9/KV-PIM/KVChime-ASPLOS-2027/archive/hbm-2k-batch/plan.json",
+  "variants": [
+    "F0",
+    "F1",
+    "F2",
+    "F4"
+  ]
+}

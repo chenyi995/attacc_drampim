@@ -1,0 +1,148 @@
+{
+  "model_order": [
+    "LLAMA-7B",
+    "GPT-13B",
+    "LLAMA-65B",
+    "OPT-66B",
+    "MT-76B"
+  ],
+  "workload_order": [
+    "KVChime-EPIC-chunk2048-target8000-B1-N8026",
+    "KVChime-EPIC-chunk2048-target8000-B4-N8028",
+    "KVChime-CB-musique-0075",
+    "KVChime-EPIC-chunk2048-target32000-B2-N32034",
+    "KVChime-LongMemEval-oracle-d851d5ba"
+  ],
+  "workload_display": [
+    "Document 8k",
+    "Readers 4",
+    "MuSiQue source request",
+    "Long context 32k",
+    "LTM recall"
+  ],
+  "variant_order": [
+    "F0",
+    "F1",
+    "F2",
+    "F4"
+  ],
+  "variant_names": {
+    "F0": "Full GPU",
+    "F1": "GPU reuse",
+    "F2": "Materialized PIM",
+    "F4": "KVChime"
+  },
+  "drawing_reference": "ref/drawing2.png",
+  "label": "request-phase-breakdown",
+  "width_inches": 3.2559055118110236,
+  "fonts_pt": {
+    "title": 7.5,
+    "label": 7.5,
+    "legend": 7.5,
+    "note": 7.5
+  },
+  "aggregation": "None: each bar is one model-workload-method result",
+  "kind": "phase-throughput",
+  "height_inches": 2.6,
+  "bar_colors": [
+    "#FF9200",
+    "#7E54AA",
+    "#3CAC3A",
+    "#238CC1",
+    "#FFD966"
+  ],
+  "bar_hatches": [
+    "",
+    "//",
+    "..",
+    "\\\\",
+    ""
+  ],
+  "bar_width_group_units": 0.13,
+  "margins": {
+    "left": 0.145,
+    "right": 0.985
+  },
+  "panels": [
+    {
+      "key": "prefill",
+      "reference_variant": "F2",
+      "ylabel": "TTFT speedup",
+      "title": "",
+      "display_cap": null,
+      "ylim": 3.6,
+      "yticks": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "key": "decode",
+      "reference_variant": "F1",
+      "ylabel": "TBT speedup",
+      "title": "",
+      "display_cap": 4.0,
+      "ylim": 4.4,
+      "yticks": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "font_limit_body_pt": 10.0,
+  "font_limit_margin_pt": 0.5,
+  "xlabel": "",
+  "outlier_policy": {
+    "method": "Cap only isolated upper-tail values, retaining raw ratios and marking each interrupted bar with a zigzag and its actual ratio.",
+    "current_decision": "Only OPT-66B / Long context 32k decode is capped at4×; actual ratio9.776672647302368×. Next largest decode ratio3.399143193933931×. Prefill retains true heights."
+  },
+  "display_layout": "stacked-phase-panels",
+  "panel_labels": [
+    "(a)",
+    "(b)"
+  ],
+  "legend_columns": 3,
+  "legend_anchor": [
+    0.52,
+    0.995
+  ],
+  "x_limits": [
+    -0.5,
+    4.5
+  ],
+  "horizontal_line_bounds": [
+    -0.325,
+    4.325
+  ],
+  "panel_label_y": 0.025,
+  "model_label_rotation_degrees": 0,
+  "model_label_format": "family-size-two-lines",
+  "panel_grid": {
+    "columns": 1,
+    "row_top": [
+      0.835,
+      0.42
+    ],
+    "row_bottom": [
+      0.6,
+      0.17
+    ],
+    "row_label_y": [
+      0.45,
+      0.012
+    ]
+  },
+  "legend_names": [
+    "Document 8k",
+    "Readers 4",
+    "MuSiQue",
+    "Long 32k",
+    "LTM recall"
+  ],
+  "font_family": "DejaVu Sans"
+}

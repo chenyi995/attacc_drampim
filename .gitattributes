@@ -1,9 +1,3 @@
-# Preserve checked-in bytes: publication/input/source manifests use SHA-256.
+# Preserve all bytes used by source and input identity checks.
 * -text
-# Python csv.writer uses CRLF record terminators.
 *.csv whitespace=cr-at-eol
-# These are byte-preserved upstream documents, including their whitespace.
-docs/AttAcc-upstream.md -whitespace
-vendor/*LICENSE -whitespace
-# Preserve measurement-source bytes recorded in the completed TP4 run.
-fugue/kvchime_model.py whitespace=-blank-at-eof

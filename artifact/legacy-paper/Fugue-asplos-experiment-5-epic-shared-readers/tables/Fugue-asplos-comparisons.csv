@@ -1,4 +1,0 @@
-case_id,TTFT_ms_F4_reduction_vs_F3_percent,TBT_ms_F4_reduction_vs_F3_percent,E2E_ms_F4_reduction_vs_F3_percent,TTFT_energy_mJ_F4_reduction_vs_F3_percent,TBT_energy_mJ_F4_reduction_vs_F3_percent,E2E_energy_mJ_F4_reduction_vs_F3_percent,F3_remote_capacity_reduction_vs_F2_percent
-Fugue-asplos-EPIC-shared-readers-B1,31.641761917357957,0.0,10.750433578764785,11.393250927752252,0.0,2.996571406006654,48.784581908610505
-Fugue-asplos-EPIC-shared-readers-B2,35.9058760197399,0.0,15.788462652388468,14.169735800005146,0.0,5.3820292307501845,64.99358098314491
-Fugue-asplos-EPIC-shared-readers-B4,36.111549486514846,0.0,21.246572689927167,12.313575745643924,0.0,6.26560192831419,77.94194333391275

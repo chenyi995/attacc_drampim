@@ -1,0 +1,3 @@
+order,panel,source_panel,model,mode,pim_label,cached_tokens,link_GBps,display_q_low,display_q_high
+0,A,b,LLAMA-7B,plain,Single-query PIM,1024,300,16,1536
+1,B,e,LLAMA-7B,mq,MQ PIM,1024,300,16,1536
