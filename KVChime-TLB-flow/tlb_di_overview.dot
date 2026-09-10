@@ -1,0 +1,47 @@
+digraph TLBAndDiMap {
+  graph [rankdir=TB, bgcolor="white", pad="0.3", nodesep="0.5", ranksep="0.5",
+         splines=polyline, fontname="DejaVu Sans", fontsize=20, labelloc=t,
+         label="KVChime: D_i Map and TLB Interfaces\n", outputorder=edgesfirst];
+  node [shape=box, style="rounded,filled", fillcolor="#F2F4F6", color="#506477",
+        penwidth=1.3, fontname="DejaVu Sans", fontsize=12, margin="0.18,0.12"];
+  edge [color="#506477", penwidth=1.3, arrowsize=0.7,
+        fontname="DejaVu Sans", fontsize=10];
+
+  request [label="Request View\ncontext, layer, logical position"];
+  map [label="D_i Map\nBitmap Lookup + Exclusive Prefix Sum\nreplacement bit + local compact rank", fillcolor="#DCEEDC"];
+  resolve [label="Multiplexer + Offset Addition\nselect object and resolve packed row\nrequest-view interface", style="rounded,dashed,filled", fillcolor="#F2F4F6"];
+  rowmeta [label="Object / Word Metadata\nsegment identity + compact word offset\nprivate tail reference", style="rounded,dashed,filled"];
+  lookup [label="Range TLB Lookup\nselected segment descriptor", fillcolor="#DCEAF7"];
+  walk [label="Range Table Walker\n+ TLB Refill", fillcolor="#F9DFC6"];
+  address [label="Physical Address Generation\nobject base + native layout offset", fillcolor="#DCEAF7"];
+  memory [label="Memory Controller / HBM\nmaster and private objects may share a channel\nphysical allocations remain disjoint"];
+
+  request -> map;
+  map -> resolve [label="replacement bit + rank"];
+  rowmeta -> resolve [style=dashed];
+  resolve -> lookup [label="selected object + packed row"];
+  lookup -> address [label="hit"];
+  lookup -> walk [label="miss"];
+  walk -> lookup [style=dashed, label="refill / retry", constraint=false];
+  address -> memory;
+  {rank=same; resolve; rowmeta;}
+  {rank=same; lookup; walk;}
+
+  qk [label="QK\nshared / private scores", fillcolor="#DCEAF7"];
+  overwrite [label="D_i Map: Multiplexers\nscatter / overwrite\noriginal logical score lanes", fillcolor="#DCEEDC"];
+  softmax [label="Global Softmax\nall selected tokens of one query", fillcolor="#DCEEDC"];
+  routing [label="D_i Map: Mask Gating\nmaster / private probability lanes", fillcolor="#DCEEDC"];
+  pv [label="PV\nmatching selected V\nsame resolved object / row", fillcolor="#F9DFC6"];
+
+  memory -> qk [label="K reads"];
+  qk -> overwrite;
+  overwrite -> softmax;
+  softmax -> routing;
+  routing -> pv;
+  memory -> pv [label="V reads after softmax", constraint=false];
+  {rank=same; qk; overwrite; softmax; routing; pv;}
+
+  note [shape=note, fillcolor="#F8FAFB", fontsize=10,
+        label="D_i determines the selected version and logical-lane correspondence; TLB resolves physical addresses.\nThe same D_i map governs the two phase-specific routing blocks.\nDashed boxes are view interfaces, not additional completed RTL blocks.\nPacked V consumption follows the same row order; reverse RTL itself does not compact probabilities."];
+  softmax -> note [style=invis];
+}
